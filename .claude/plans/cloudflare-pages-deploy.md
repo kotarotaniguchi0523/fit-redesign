@@ -1,6 +1,6 @@
 ---
-status: 廃止
-reason: デプロイ方針が未確定のため一旦廃止
+status: 進行中
+started: 2025-01-24
 ---
 
 # Plan: Cloudflare Pages デプロイ
