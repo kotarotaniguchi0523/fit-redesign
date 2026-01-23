@@ -1,3 +1,8 @@
+---
+status: 廃止
+reason: デプロイ方針が未確定のため一旦廃止
+---
+
 # Plan: Cloudflare Pages デプロイ
 
 ## 概要
