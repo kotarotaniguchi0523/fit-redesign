@@ -1,7 +1,7 @@
 import { Tab, Tabs } from "@heroui/react";
 import { getExamByNumber } from "../data/exams";
-import { slideOnlyUnits, tabGroups2014, units2013 } from "../data/units";
-import type { ExamByYear, TabGroup, Unit, Year } from "../types/index";
+import { slideOnlyUnits, tabs2013, tabs2014 } from "../data/units";
+import type { Unit, Year } from "../types/index";
 import { ExamSection } from "./ExamSection";
 import { SlideSection } from "./SlideSection";
 
@@ -10,27 +10,9 @@ interface Props {
 	onYearChange: (year: Year) => void;
 }
 
-function isUnit(tab: Unit | TabGroup): tab is Unit {
-	return !("units" in tab);
-}
-
-/**
- * タブに対応するExamByYearを取得
- * @param tab Unit または TabGroup
- * @returns 対応するExamByYear、見つからない場合はundefined
- */
-function getExamForTab(tab: Unit | TabGroup): ExamByYear | undefined {
-	if (isUnit(tab)) {
-		// 2013年度のUnitの場合、examsプロパティを直接返す
-		return tab.exams;
-	}
-	// 2014年度以降のTabGroupの場合、examNumberから取得
-	return getExamByNumber(tab.examNumber);
-}
-
 export function UnitTabs({ selectedYear, onYearChange }: Props) {
 	const is2013 = selectedYear === "2013";
-	const tabs: (Unit | TabGroup)[] = is2013 ? units2013 : tabGroups2014;
+	const tabs = is2013 ? tabs2013 : tabs2014;
 
 	return (
 		<div className="w-full">
@@ -45,10 +27,10 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 				}}
 			>
 				{tabs.map((tab) => {
-					// TabGroupの場合は、含まれるunitsから講義スライドを集約
-					const slides = isUnit(tab) ? tab.slides : tab.units.flatMap((unit) => unit.slides);
-					// タブに対応するexamデータを取得
-					const examData = getExamForTab(tab);
+					// スライド取得（統一された構造なので分岐不要）
+					const slides = tab.slides;
+					// 試験データ取得（統一された構造なので分岐不要）
+					const examData = tab.examNumber ? getExamByNumber(tab.examNumber) : undefined;
 
 					return (
 						<Tab key={tab.id} title={tab.name}>
@@ -62,7 +44,7 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 										exam={examData.exams[selectedYear]}
 										onYearChange={onYearChange}
 										selectedYear={selectedYear}
-										title={isUnit(tab) ? `小テスト: ${tab.name}` : tab.title}
+										title={tab.title}
 									/>
 								)}
 							</div>

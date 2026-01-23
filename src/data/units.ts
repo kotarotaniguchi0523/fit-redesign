@@ -1,4 +1,4 @@
-import type { TabGroup, Unit } from "../types/index";
+import type { TabGroup, TabItem, Unit } from "../types/index";
 import { exam1, exam2, exam3, exam4, exam5, exam6, exam7, exam8, exam9 } from "./exams";
 import { getSlide } from "./slides";
 
@@ -215,3 +215,36 @@ export const slideOnlyUnits: Unit[] = [
 		slides: [getSlide("slide-12")],
 	},
 ];
+
+// ===== 変換関数 =====
+
+/**
+ * Unit から TabItem への変換
+ */
+function unitToTabItem(unit: Unit): TabItem {
+	return {
+		id: unit.id,
+		name: unit.name,
+		title: `小テスト: ${unit.name}`,
+		slides: unit.slides,
+		examNumber: unit.exams?.examNumber,
+	};
+}
+
+/**
+ * TabGroup から TabItem への変換
+ */
+function tabGroupToTabItem(group: TabGroup): TabItem {
+	return {
+		id: group.id,
+		name: group.name,
+		title: group.title,
+		slides: group.units.flatMap((u) => u.slides),
+		examNumber: group.examNumber,
+	};
+}
+
+// ===== 統一されたタブアイテム（UI用） =====
+
+export const tabs2013: TabItem[] = units2013.map(unitToTabItem);
+export const tabs2014: TabItem[] = tabGroups2014.map(tabGroupToTabItem);

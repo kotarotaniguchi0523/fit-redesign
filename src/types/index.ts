@@ -89,3 +89,12 @@ export interface TabGroup {
 	examNumber: number;
 	title: string;
 }
+
+// 統一されたタブアイテム（Unit と TabGroup の統合型）
+export interface TabItem {
+	id: string;
+	name: string;
+	title: string; // 小テストのタイトル
+	slides: Slide[]; // スライド一覧
+	examNumber?: number; // 試験番号（存在する場合）
+}
