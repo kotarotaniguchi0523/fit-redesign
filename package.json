@@ -1,0 +1,30 @@
+{
+	"name": "fit-redesign",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc && vite build",
+		"preview": "vite preview",
+		"lint": "biome check .",
+		"format": "biome check --write .",
+		"typecheck": "tsgo --noEmit"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.3.11",
+		"@tailwindcss/vite": "^4.1.18",
+		"@types/react": "^19.2.9",
+		"@types/react-dom": "^19.2.3",
+		"@typescript/native-preview": "7.0.0-dev.20260122.4",
+		"@vitejs/plugin-react": "^5.1.2",
+		"tailwindcss": "^4.1.18",
+		"vite": "^7.2.4"
+	},
+	"dependencies": {
+		"@heroui/react": "^2.8.7",
+		"framer-motion": "^12.29.0",
+		"react": "^19.2.3",
+		"react-dom": "^19.2.3"
+	}
+}
