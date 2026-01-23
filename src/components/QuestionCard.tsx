@@ -44,7 +44,7 @@ export function QuestionCard({ question }: Props) {
                         {question.number}
                     </span>
                     <div className="flex-1">
-                        <p className="text-gray-800 leading-relaxed">
+                        <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
                             {question.text}
                         </p>
                     </div>
@@ -61,6 +61,25 @@ export function QuestionCard({ question }: Props) {
                         <p className="text-sm text-blue-800">
                             <strong>図:</strong> {question.figureDescription}
                         </p>
+                    </div>
+                )}
+
+                {/* 選択肢 */}
+                {question.options && question.options.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                        {question.options.map((option) => (
+                            <div
+                                key={option.label}
+                                className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+                            >
+                                <span className="shrink-0 w-6 h-6 rounded bg-[#1e3a5f] text-white flex items-center justify-center text-xs font-bold">
+                                    {option.label}
+                                </span>
+                                <span className="text-gray-800">
+                                    {option.value || "(選択肢未入力)"}
+                                </span>
+                            </div>
+                        ))}
                     </div>
                 )}
 
