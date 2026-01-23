@@ -143,3 +143,12 @@ export const allExams: ExamByYear[] = [
 	exam8,
 	exam9,
 ];
+
+/**
+ * examNumberから対応するExamByYearを取得
+ * @param examNumber 小テスト番号（1-9）
+ * @returns 対応するExamByYear、見つからない場合はundefined
+ */
+export function getExamByNumber(examNumber: number): ExamByYear | undefined {
+	return allExams.find((exam) => exam.examNumber === examNumber);
+}
