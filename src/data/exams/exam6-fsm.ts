@@ -8,6 +8,36 @@ import type { Question } from "../../types/index";
 
 export const exam6_2017: Question[] = [
 	{
+		id: "exam6-2017-q0",
+		number: 0,
+		text: "以下の状態遷移図で定義される有限オートマトンが受理する入力文字列を全て挙げよ",
+		hasFigure: true,
+		figureDescription: "状態遷移図: S0(初期状態) --1--> S1 --1--> S2(受理状態)",
+		figureData: {
+			type: "stateDiagram",
+			nodes: [
+				{ id: "s0", label: "S0", x: 50, y: 75, isInitial: true },
+				{ id: "s1", label: "S1", x: 150, y: 75 },
+				{ id: "s2", label: "S2", x: 250, y: 75, isAccepting: true },
+			],
+			transitions: [
+				{ from: "s0", to: "s1", label: "1" },
+				{ from: "s1", to: "s2", label: "1" },
+				{ from: "s1", to: "s0", label: "0", curveOffset: -30 },
+				{ from: "s2", to: "s2", label: "0,1" },
+			],
+		},
+		options: [
+			{ label: "ア", value: "01010" },
+			{ label: "イ", value: "11000", isCorrect: true },
+			{ label: "ウ", value: "10110", isCorrect: true },
+			{ label: "エ", value: "10101" },
+		],
+		answer: "イ, ウ",
+		explanation:
+			"S0から始まり、'11'でS2（受理状態）に到達し、以降は任意の文字列を受理する。イ(11000)とウ(10110)は'11'を含み受理される。",
+	},
+	{
 		id: "exam6-2017-q1",
 		number: 1,
 		text: "事象 A「1回目に赤玉が出る」，事象 B「2回目に赤玉が出る」とするとき，事象 A が生起した時の B の条件付確率を表す記号はどれか？",

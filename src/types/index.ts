@@ -1,3 +1,12 @@
+// 図コンポーネントの型をインポート
+import type {
+	StateNode,
+	Transition,
+	TreeNode,
+	TruthTableColumn,
+	TruthTableRow,
+} from "../components/figures";
+
 // 年度の型
 export type Year = "2013" | "2014" | "2015" | "2016" | "2017";
 
@@ -17,6 +26,20 @@ export interface QuestionOption {
 	isCorrect?: boolean;
 }
 
+// 図コンポーネントの型をre-export
+export type { StateNode, Transition, TreeNode, TruthTableColumn, TruthTableRow };
+
+// 図データの型定義
+export type FigureData =
+	| {
+			type: "stateDiagram";
+			nodes: StateNode[];
+			transitions: Transition[];
+	  }
+	| { type: "binaryTree"; root: TreeNode }
+	| { type: "truthTable"; columns: TruthTableColumn[]; rows: TruthTableRow[] }
+	| { type: "parityCheck"; data: number[][] };
+
 // 問題
 export interface Question {
 	id: string;
@@ -27,6 +50,7 @@ export interface Question {
 	explanation?: string;
 	hasFigure?: boolean; // 図が必要かどうか
 	figureDescription?: string; // 図の説明（状態遷移図、表、グラフなど）
+	figureData?: FigureData; // 図データ
 }
 
 // 小テスト

@@ -48,6 +48,13 @@ export const exam7_2017: Question[] = [
 		explanation: "水平垂直パリティチェックにより誤り位置を特定し、訂正する",
 		hasFigure: true,
 		figureDescription: "水平垂直パリティ検査符号の構造図",
+		figureData: {
+			type: "parityCheck",
+			data: [
+				[0, 1],
+				[1, 0],
+			],
+		},
 	},
 	{
 		id: "exam7-2017-q5",

@@ -15,6 +15,21 @@ export const exam8_2017: Question[] = [
 		explanation: "二分木のS式表現または括弧表記の問題。PDFが不足しているため詳細不明",
 		hasFigure: true,
 		figureDescription: "二分木の図",
+		figureData: {
+			type: "binaryTree",
+			root: {
+				value: 27,
+				left: {
+					value: 7,
+					left: { value: 6 },
+					right: {
+						value: 20,
+						left: { value: 19 },
+					},
+				},
+				right: { value: 51 },
+			},
+		},
 	},
 	{
 		id: "exam8-2017-q2",
