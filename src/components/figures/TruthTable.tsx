@@ -1,13 +1,5 @@
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
-
-export interface TruthTableColumn {
-	key: string;
-	label: string;
-}
-
-export interface TruthTableRow {
-	[key: string]: string | number | boolean;
-}
+import type { TruthTableColumn, TruthTableRow } from "../../types/figures";
 
 export interface TruthTableProps {
 	columns: TruthTableColumn[];

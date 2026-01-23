@@ -1,8 +1,4 @@
-export interface TreeNode {
-	value: string | number;
-	left?: TreeNode;
-	right?: TreeNode;
-}
+import type { TreeNode } from "../../types/figures";
 
 export interface BinaryTreeProps {
 	root: TreeNode;
@@ -55,13 +51,19 @@ export function BinaryTree({ root, width = 300, height = 200, nodeRadius = 20 }:
 
 	calculatePositions(root, 0, nodeRadius * 2, width - nodeRadius * 2);
 
+	// positions配列からMapを作成してO(1)の検索を可能にする
+	const positionMap = new Map<TreeNode, NodePosition>();
+	for (const pos of positions) {
+		positionMap.set(pos.node, pos);
+	}
+
 	// エッジを描画するためのデータを準備
 	const edges: Array<{ from: NodePosition; to: NodePosition }> = [];
 
 	const collectEdges = (node: TreeNode | undefined, parentPos: NodePosition | null) => {
 		if (!node || !parentPos) return;
 
-		const currentPos = positions.find((p) => p.node === node);
+		const currentPos = positionMap.get(node);
 		if (!currentPos) return;
 
 		edges.push({ from: parentPos, to: currentPos });
@@ -74,7 +76,7 @@ export function BinaryTree({ root, width = 300, height = 200, nodeRadius = 20 }:
 		}
 	};
 
-	const rootPos = positions.find((p) => p.node === root);
+	const rootPos = positionMap.get(root);
 	if (rootPos) {
 		if (root.left) {
 			collectEdges(root.left, rootPos);

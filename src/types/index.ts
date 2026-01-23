@@ -5,7 +5,7 @@ import type {
 	TreeNode,
 	TruthTableColumn,
 	TruthTableRow,
-} from "../components/figures";
+} from "./figures";
 
 // 年度一覧
 export const YEARS = ["2013", "2014", "2015", "2016", "2017"] as const;

@@ -3,67 +3,95 @@ import type { FigureData, Question } from "../types/index";
 import { BinaryTree, ParityCheck, StateDiagram, TruthTable } from "./figures";
 
 interface Props {
-	question: Question;
+    question: Question;
+}
+
+function assertNever(value: never): never {
+    throw new Error(`Unexpected figure type: ${JSON.stringify(value)}`);
 }
 
 function renderFigure(figureData: FigureData) {
-	switch (figureData.type) {
-		case "stateDiagram":
-			return <StateDiagram nodes={figureData.nodes} transitions={figureData.transitions} />;
-		case "binaryTree":
-			return <BinaryTree root={figureData.root} />;
-		case "truthTable":
-			return <TruthTable columns={figureData.columns} rows={figureData.rows} />;
-		case "parityCheck":
-			return <ParityCheck data={figureData.data} />;
-	}
+    switch (figureData.type) {
+        case "stateDiagram":
+            return (
+                <StateDiagram
+                    nodes={figureData.nodes}
+                    transitions={figureData.transitions}
+                />
+            );
+        case "binaryTree":
+            return <BinaryTree root={figureData.root} />;
+        case "truthTable":
+            return (
+                <TruthTable
+                    columns={figureData.columns}
+                    rows={figureData.rows}
+                />
+            );
+        case "parityCheck":
+            return <ParityCheck data={figureData.data} />;
+        default:
+            return assertNever(figureData);
+    }
 }
 
 export function QuestionCard({ question }: Props) {
-	return (
-		<Card className="mb-4 border-l-4 border-l-[#1e3a5f] shadow-sm hover:shadow-md transition-shadow">
-			<CardBody className="p-5">
-				<div className="flex gap-3">
-					<span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#1e3a5f] text-white flex items-center justify-center text-sm font-bold">
-						{question.number}
-					</span>
-					<div className="flex-1">
-						<p className="text-gray-800 leading-relaxed">{question.text}</p>
-					</div>
-				</div>
+    return (
+        <Card className="mb-4 border-l-4 border-l-[#1e3a5f] shadow-sm hover:shadow-md transition-shadow">
+            <CardBody className="p-5">
+                <div className="flex gap-3">
+                    <span className="shrink-0 w-8 h-8 rounded-full bg-[#1e3a5f] text-white flex items-center justify-center text-sm font-bold">
+                        {question.number}
+                    </span>
+                    <div className="flex-1">
+                        <p className="text-gray-800 leading-relaxed">
+                            {question.text}
+                        </p>
+                    </div>
+                </div>
 
-				{question.figureData && (
-					<div className="my-4 flex justify-center">{renderFigure(question.figureData)}</div>
-				)}
+                {question.figureData && (
+                    <div className="my-4 flex justify-center">
+                        {renderFigure(question.figureData)}
+                    </div>
+                )}
 
-				{!question.figureData && question.figureDescription && (
-					<div className="my-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-						<p className="text-sm text-blue-800">
-							<strong>図:</strong> {question.figureDescription}
-						</p>
-					</div>
-				)}
+                {!question.figureData && question.figureDescription && (
+                    <div className="my-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-sm text-blue-800">
+                            <strong>図:</strong> {question.figureDescription}
+                        </p>
+                    </div>
+                )}
 
-				<Accordion variant="light" className="mt-4">
-					<AccordionItem
-						key="answer"
-						aria-label="解答"
-						title={<span className="text-sm font-medium text-[#1e3a5f]">解答を表示</span>}
-					>
-						<div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
-							<div className="flex items-start gap-2">
-								<span className="text-emerald-600 font-bold">A.</span>
-								<span className="font-medium text-emerald-900">{question.answer}</span>
-							</div>
-						</div>
-						{question.explanation && (
-							<div className="mt-3 p-3 bg-gray-50 rounded-lg text-gray-600 text-sm">
-								<strong>解説:</strong> {question.explanation}
-							</div>
-						)}
-					</AccordionItem>
-				</Accordion>
-			</CardBody>
-		</Card>
-	);
+                <Accordion variant="light" className="mt-4">
+                    <AccordionItem
+                        key="answer"
+                        aria-label="解答"
+                        title={
+                            <span className="text-sm font-medium text-[#1e3a5f]">
+                                解答を表示
+                            </span>
+                        }
+                    >
+                        <div className="p-4 bg-linear-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
+                            <div className="flex items-start gap-2">
+                                <span className="text-emerald-600 font-bold">
+                                    A.
+                                </span>
+                                <span className="font-medium text-emerald-900">
+                                    {question.answer}
+                                </span>
+                            </div>
+                        </div>
+                        {question.explanation && (
+                            <div className="mt-3 p-3 bg-gray-50 rounded-lg text-gray-600 text-sm">
+                                <strong>解説:</strong> {question.explanation}
+                            </div>
+                        )}
+                    </AccordionItem>
+                </Accordion>
+            </CardBody>
+        </Card>
+    );
 }

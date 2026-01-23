@@ -1,18 +1,4 @@
-export interface StateNode {
-	id: string;
-	label: string;
-	x: number;
-	y: number;
-	isInitial?: boolean;
-	isAccepting?: boolean;
-}
-
-export interface Transition {
-	from: string;
-	to: string;
-	label: string;
-	curveOffset?: number; // 曲線の場合のオフセット
-}
+import type { StateNode, Transition } from "../../types/figures";
 
 export interface StateDiagramProps {
 	nodes: StateNode[];
@@ -25,8 +11,9 @@ export function StateDiagram({ nodes, transitions, width = 400, height = 150 }: 
 	const nodeRadius = 20;
 	const acceptingNodeRadius = 25;
 
-	// ノードIDから座標を取得するヘルパー
-	const getNode = (id: string) => nodes.find((n) => n.id === id);
+	// ノードIDから座標を取得するヘルパー用のMapを作成
+	const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+	const getNode = (id: string) => nodeMap.get(id);
 
 	// 2点間の矢印を描画するパスを生成
 	const getArrowPath = (
