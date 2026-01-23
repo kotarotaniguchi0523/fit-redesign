@@ -34,7 +34,7 @@ export const exam4_2014: Question[] = [
 	{
 		id: "exam4-2014-q4",
 		number: 4,
-		text: "A̅∨̅B̅∨C̅̅̅̅̅̅̅̅̅̅（オーバーラインはA∨Bとその全体に対するCの否定）と恒等な論理式を求めよ",
+		text: "A̅∨B̅∨C（全体にオーバーライン）と恒等な論理式を求めよ",
 		options: [
 			{ label: "ア", value: "A∧B ∨ A∧C̅" },
 			{ label: "イ", value: "A∧C̅ ∨ B" },
@@ -43,7 +43,7 @@ export const exam4_2014: Question[] = [
 		],
 		answer: "エ",
 		explanation:
-			"ド・モルガンの定理を適用: A̅∨̅B̅∨C̅̅̅̅̅̅̅̅̅̅ = (A∨B)̅ ∨ C̅ = A̅∧B̅ ∨ C̅。さらに変形すると A∧C̅ ∨ B∧C̅ = (A∨B)∧C̅",
+			"ド・モルガンの定理を適用: (A̅∨B̅∨C)̅ = A∧B∧C̅。これを分配法則で展開すると (A∨B)∧C̅ = A∧C̅ ∨ B∧C̅",
 	},
 	{
 		id: "exam4-2014-q5",
