@@ -46,7 +46,6 @@ export const exam7_2017: Question[] = [
 		text: "水平垂直パリティ検査符号 w=(x₁,x₂,x₃,x₄,c₁,c₂,c₃,c₄,c₅)がある．\n受信語 y =(0, 1, 1, 0, 1, 1, 1, 1, 1)に誤りがあるか？あれば訂正した符号語を示せ．",
 		answer: "(0,1,1,0, 1,1,1,1,0)",
 		explanation: "水平垂直パリティチェックにより誤り位置を特定し、訂正する",
-		hasFigure: true,
 		figureDescription: "水平垂直パリティ検査符号の構造図",
 		figureData: {
 			type: "parityCheck",

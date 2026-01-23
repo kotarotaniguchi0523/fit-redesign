@@ -1,0 +1,65 @@
+import type { Question } from "../../types/index";
+
+/**
+ * 小テスト3: 集合・確率 / データ構造
+ * 2014年度版（Exam6b-FSM.pdf）
+ * 注: 2014年度は確率、情報理論、逆ポーランド記法、FSMの複合問題
+ */
+
+export const exam6_2014: Question[] = [
+	{
+		id: "exam6-2014-q1",
+		number: 1,
+		text: "男3人、女5人から4人を選ぶとき、女が2人以上含まれる場合の数を求めよ",
+		answer: "65",
+		explanation:
+			"女2人: C(5,2)×C(3,2) = 10×3 = 30通り、女3人: C(5,3)×C(3,1) = 10×3 = 30通り、女4人: C(5,4) = 5通り。合計: 30+30+5 = 65通り",
+	},
+	{
+		id: "exam6-2014-q2",
+		number: 2,
+		text: "0と1をn個組合せて100種類の数を表すためのnを求めよ",
+		answer: "7",
+		explanation: "2^n ≥ 100となる最小のnを求める。2^6 = 64 < 100、2^7 = 128 ≥ 100。したがってn = 7",
+	},
+	{
+		id: "exam6-2014-q3",
+		number: 3,
+		text: "平均70点で正規分布している100人分のテスト結果において、80点以上は16人だった。標準正規分布表が下の様に与えられている時、標準偏差σを求めよ\n\nU=(x-μ)/σ  0.0  1.0  2.0  3.0\nPr(U > u)  0.5  0.159  0.023  0.001",
+		answer: "10",
+		explanation:
+			"80点以上が16人 = 16%。Pr(U > u) = 0.16 ≒ 0.159より u = 1.0。U = (80-70)/σ = 1.0より、σ = 10",
+	},
+	{
+		id: "exam6-2014-q4",
+		number: 4,
+		text: "A=3, B=4, C=5, D=6である時、逆ポーランド記法で示された式 AB+CD−∗ を評価せよ",
+		answer: "-7",
+		explanation: "AB+ = 3+4 = 7、CD− = 5-6 = -1、7 × (-1) = -7",
+	},
+	{
+		id: "exam6-2014-q5",
+		number: 5,
+		text: "次の状態遷移表を表す状態遷移図を書け",
+		answer: "略",
+		explanation: "状態遷移表から状態遷移図を描く。S0, S1, S2の3状態があり、入力0と1で遷移する",
+		figureDescription: "状態遷移表: 入力0でS0→S0, S1→S1, S2→S0。入力1でS0→S1, S1→S0, S2→S1",
+		// TODO: 状態遷移表用の型定義を追加するまで、状態遷移図として表現
+		figureData: {
+			type: "stateDiagram",
+			nodes: [
+				{ id: "s0", label: "S0", x: 50, y: 75, isInitial: true },
+				{ id: "s1", label: "S1", x: 150, y: 75 },
+				{ id: "s2", label: "S2", x: 250, y: 75 },
+			],
+			transitions: [
+				{ from: "s0", to: "s0", label: "0" },
+				{ from: "s0", to: "s1", label: "1" },
+				{ from: "s1", to: "s1", label: "0" },
+				{ from: "s1", to: "s0", label: "1" },
+				{ from: "s2", to: "s0", label: "0" },
+				{ from: "s2", to: "s1", label: "1" },
+			],
+		},
+	},
+];

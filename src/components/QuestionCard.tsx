@@ -6,7 +6,6 @@ interface Props {
 	question: Question;
 }
 
-// 図を描画するヘルパー関数
 function renderFigure(figureData: FigureData) {
 	switch (figureData.type) {
 		case "stateDiagram":
@@ -22,33 +21,43 @@ function renderFigure(figureData: FigureData) {
 
 export function QuestionCard({ question }: Props) {
 	return (
-		<Card className="mb-4">
-			<CardBody>
-				<div className="mb-2 font-medium">
-					({question.number}) {question.text}
+		<Card className="mb-4 border-l-4 border-l-[#1e3a5f] shadow-sm hover:shadow-md transition-shadow">
+			<CardBody className="p-5">
+				<div className="flex gap-3">
+					<span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#1e3a5f] text-white flex items-center justify-center text-sm font-bold">
+						{question.number}
+					</span>
+					<div className="flex-1">
+						<p className="text-gray-800 leading-relaxed">{question.text}</p>
+					</div>
 				</div>
 
-				{/* 図を表示 */}
-				{question.hasFigure && question.figureData && (
+				{question.figureData && (
 					<div className="my-4 flex justify-center">{renderFigure(question.figureData)}</div>
 				)}
 
-				{/* 図の説明文を表示（figureDataがない場合のフォールバック） */}
-				{question.hasFigure && !question.figureData && question.figureDescription && (
-					<div className="my-4 p-3 bg-blue-50 rounded border border-blue-200">
+				{!question.figureData && question.figureDescription && (
+					<div className="my-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
 						<p className="text-sm text-blue-800">
 							<strong>図:</strong> {question.figureDescription}
 						</p>
 					</div>
 				)}
 
-				<Accordion variant="bordered">
-					<AccordionItem key="answer" aria-label="解答" title="解答を表示" className="text-sm">
-						<div className="p-2 bg-green-50 rounded">
-							<strong>解答:</strong> {question.answer}
+				<Accordion variant="light" className="mt-4">
+					<AccordionItem
+						key="answer"
+						aria-label="解答"
+						title={<span className="text-sm font-medium text-[#1e3a5f]">解答を表示</span>}
+					>
+						<div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
+							<div className="flex items-start gap-2">
+								<span className="text-emerald-600 font-bold">A.</span>
+								<span className="font-medium text-emerald-900">{question.answer}</span>
+							</div>
 						</div>
 						{question.explanation && (
-							<div className="mt-2 p-2 bg-gray-50 rounded text-gray-600">
+							<div className="mt-3 p-3 bg-gray-50 rounded-lg text-gray-600 text-sm">
 								<strong>解説:</strong> {question.explanation}
 							</div>
 						)}

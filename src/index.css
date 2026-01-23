@@ -1,1 +1,32 @@
 @import "tailwindcss";
+
+/* Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+/* CSS Variables */
+:root {
+	--color-primary: #1e3a5f;
+	--color-primary-light: #2d4a6f;
+	--color-accent: #c9a227;
+	--color-accent-light: #dbb84a;
+	--color-bg: #faf9f7;
+	--color-bg-card: #ffffff;
+	--color-text: #1a1a1a;
+	--color-text-muted: #64748b;
+	--color-border: #e2e0dc;
+	--font-serif: "Noto Serif JP", serif;
+	--font-sans: "Noto Sans JP", sans-serif;
+	--font-mono: "JetBrains Mono", monospace;
+}
+
+body {
+	font-family: var(--font-sans);
+	background-color: var(--color-bg);
+	color: var(--color-text);
+}
+
+/* 微細なテクスチャ背景 */
+.bg-texture {
+	background-image: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.03) 1px, transparent 0);
+	background-size: 24px 24px;
+}

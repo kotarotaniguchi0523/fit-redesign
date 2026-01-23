@@ -5,8 +5,8 @@
 ### 1. 型定義の拡張
 - **ファイル**: `src/types/index.ts`
 - **変更内容**: Question型に以下のフィールドを追加
-  - `hasFigure?: boolean` - 図が必要かどうか
-  - `figureDescription?: string` - 図の説明
+  - `figureDescription?: string` - 図の説明（テキストのみの図はここを使用）
+  - `figureData?: FigureData` - 図データ（truthTable/binaryTree/stateDiagram/parityCheck など）
 
 ### 2. ディレクトリ構造の作成
 - **作成ディレクトリ**: `src/data/exams/`
@@ -90,7 +90,7 @@
 
 ## 図が必要な問題（2017年度）
 
-### 実装済み（hasFigure: true）
+### 実装済み（figureDescription / figureData を設定）
 
 1. **Exam4e 問題3**: 真理値表
    - figureDescription: "真理値表: X, Y, F の3列。(0,0,1), (0,1,0), (1,0,0), (1,1,1)"
@@ -150,8 +150,8 @@
   options?: [...],  // 選択肢がある場合
   answer: "解答",
   explanation?: "解説",
-  hasFigure?: true,  // 図が必要な場合
-  figureDescription?: "図の説明"
+  figureDescription?: "図の説明", // 図がある場合のテキスト説明
+  figureData?: FigureData // 図コンポーネント用データ（ある場合）
 }
 ```
 

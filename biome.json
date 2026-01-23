@@ -1,16 +1,32 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.3.11/schema.json",
-	"assist": { "actions": { "source": { "organizeImports": "on" } } },
+	"files": {
+		"includes": [
+			"src/**",
+			"docs/**",
+			"!!**/.claude/**",
+			"!!**/.serena/**",
+			"!!**/node_modules/**",
+			"!!**/.git/**",
+			"!!**/.vscode/**",
+			"!!**/.idea/**",
+			"!!**/screenshots/**",
+			"!!**/dist/**",
+			"!!**/dist-ssr/**",
+			"!!**/public/pdf/**"
+		]
+	},
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	},
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
-			"complexity": {},
-			"correctness": {},
-			"performance": {},
-			"security": {},
-			"style": {},
-			"suspicious": {}
+			"recommended": true
 		}
 	},
 	"formatter": {

@@ -34,7 +34,16 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 
 	return (
 		<div className="w-full">
-			<Tabs aria-label="単元" color="primary" variant="underlined">
+			<Tabs
+				aria-label="単元"
+				variant="light"
+				classNames={{
+					tabList: "gap-2 p-1 bg-white rounded-xl shadow-sm border border-gray-200",
+					tab: "px-4 py-2 rounded-lg data-[hover=true]:bg-gray-100 transition-all",
+					tabContent: "text-gray-600 group-data-[selected=true]:text-[#1e3a5f] font-medium",
+					cursor: "bg-[#1e3a5f] rounded-lg shadow-md",
+				}}
+			>
 				{tabs.map((tab) => {
 					// TabGroupの場合は、含まれるunitsから講義スライドを集約
 					const slides = isUnit(tab) ? tab.slides : tab.units.flatMap((unit) => unit.slides);

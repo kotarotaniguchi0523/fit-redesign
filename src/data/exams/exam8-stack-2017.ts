@@ -13,7 +13,6 @@ export const exam8_2017: Question[] = [
 		text: "二分木の表現に関する問題",
 		answer: "(27 (7 6 (20 19)) 51)",
 		explanation: "二分木のS式表現または括弧表記の問題。PDFが不足しているため詳細不明",
-		hasFigure: true,
 		figureDescription: "二分木の図",
 		figureData: {
 			type: "binaryTree",

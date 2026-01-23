@@ -1,15 +1,13 @@
 import { Radio, RadioGroup } from "@heroui/react";
-import type { Year } from "../types/index";
+import { YEARS, type Year } from "../types/index";
 
 interface Props {
 	selectedYear: Year;
 	onYearChange: (year: Year) => void;
-	availableYears?: Year[];
+	availableYears?: readonly Year[];
 }
 
-const allYears: Year[] = ["2013", "2014", "2015", "2016", "2017"];
-
-export function YearSelector({ selectedYear, onYearChange, availableYears = allYears }: Props) {
+export function YearSelector({ selectedYear, onYearChange, availableYears = YEARS }: Props) {
 	return (
 		<div className="w-full">
 			<RadioGroup
@@ -18,12 +16,22 @@ export function YearSelector({ selectedYear, onYearChange, availableYears = allY
 				value={selectedYear}
 				onValueChange={(value) => onYearChange(value as Year)}
 				classNames={{
-					label: "whitespace-nowrap text-sm font-medium mb-2",
-					wrapper: "flex-row flex-wrap gap-x-6 gap-y-2",
+					label: "text-sm font-medium text-gray-600 mb-2",
+					wrapper: "flex flex-row flex-wrap gap-3",
 				}}
 			>
-				{allYears.map((year) => (
-					<Radio key={year} value={year} isDisabled={!availableYears.includes(year)}>
+				{YEARS.map((year) => (
+					<Radio
+						key={year}
+						value={year}
+						isDisabled={!availableYears.includes(year)}
+						classNames={{
+							base: "border-2 border-gray-200 data-[selected=true]:border-[#c9a227] rounded-full px-4 py-1.5 bg-white shadow-sm hover:border-gray-300 transition-colors m-0",
+							wrapper: "hidden",
+							label: "text-sm font-medium",
+							labelWrapper: "m-0",
+						}}
+					>
 						{year}年度
 					</Radio>
 				))}

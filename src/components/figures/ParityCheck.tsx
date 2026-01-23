@@ -17,6 +17,27 @@ export function ParityCheck({ data, width = 300, height = 300, cellSize = 40 }: 
 		data.reduce((acc, row) => acc ^ row[colIndex], 0),
 	);
 
+	const dataCells = data.flatMap((row, rowIndex) =>
+		row.map((bit, colIndex) => ({
+			id: `data-${rowIndex}-${colIndex}`,
+			bit,
+			rowIndex,
+			colIndex,
+		})),
+	);
+
+	const horizontalCells = horizontalParity.map((bit, rowIndex) => ({
+		id: `h-parity-${rowIndex}`,
+		bit,
+		rowIndex,
+	}));
+
+	const verticalCells = verticalParity.map((bit, colIndex) => ({
+		id: `v-parity-${colIndex}`,
+		bit,
+		colIndex,
+	}));
+
 	// 全体パリティビット（右下）
 	const totalParity = horizontalParity.reduce((acc, bit) => acc ^ bit, 0);
 
@@ -34,40 +55,38 @@ export function ParityCheck({ data, width = 300, height = 300, cellSize = 40 }: 
 		>
 			<title>Parity check diagram</title>
 			{/* データビット */}
-			{data.map((row, rowIndex) =>
-				row.map((bit, colIndex) => (
-					<g key={`data-${rowIndex}-${colIndex}`}>
-						{/* セル */}
-						<rect
-							x={(colIndex + 1) * cellSize}
-							y={(rowIndex + 1) * cellSize}
-							width={cellSize}
-							height={cellSize}
-							fill="white"
-							stroke="black"
-							strokeWidth="1"
-						/>
-						{/* ビット値 */}
-						<text
-							x={(colIndex + 1.5) * cellSize}
-							y={(rowIndex + 1.5) * cellSize}
-							fontSize="16"
-							textAnchor="middle"
-							dominantBaseline="middle"
-							fill="black"
-						>
-							{bit}
-						</text>
-					</g>
-				)),
-			)}
+			{dataCells.map((cell) => (
+				<g key={cell.id}>
+					{/* セル */}
+					<rect
+						x={(cell.colIndex + 1) * cellSize}
+						y={(cell.rowIndex + 1) * cellSize}
+						width={cellSize}
+						height={cellSize}
+						fill="white"
+						stroke="black"
+						strokeWidth="1"
+					/>
+					{/* ビット値 */}
+					<text
+						x={(cell.colIndex + 1.5) * cellSize}
+						y={(cell.rowIndex + 1.5) * cellSize}
+						fontSize="16"
+						textAnchor="middle"
+						dominantBaseline="middle"
+						fill="black"
+					>
+						{cell.bit}
+					</text>
+				</g>
+			))}
 
 			{/* 水平パリティビット（右端） */}
-			{horizontalParity.map((bit, rowIndex) => (
-				<g key={`h-parity-${rowIndex}`}>
+			{horizontalCells.map((cell) => (
+				<g key={cell.id}>
 					<rect
 						x={(cols + 1) * cellSize}
-						y={(rowIndex + 1) * cellSize}
+						y={(cell.rowIndex + 1) * cellSize}
 						width={cellSize}
 						height={cellSize}
 						fill="#e0f2fe"
@@ -76,22 +95,22 @@ export function ParityCheck({ data, width = 300, height = 300, cellSize = 40 }: 
 					/>
 					<text
 						x={(cols + 1.5) * cellSize}
-						y={(rowIndex + 1.5) * cellSize}
+						y={(cell.rowIndex + 1.5) * cellSize}
 						fontSize="16"
 						textAnchor="middle"
 						dominantBaseline="middle"
 						fill="black"
 					>
-						{bit}
+						{cell.bit}
 					</text>
 				</g>
 			))}
 
 			{/* 垂直パリティビット（下端） */}
-			{verticalParity.map((bit, colIndex) => (
-				<g key={`v-parity-${colIndex}`}>
+			{verticalCells.map((cell) => (
+				<g key={cell.id}>
 					<rect
-						x={(colIndex + 1) * cellSize}
+						x={(cell.colIndex + 1) * cellSize}
 						y={(rows + 1) * cellSize}
 						width={cellSize}
 						height={cellSize}
@@ -100,14 +119,14 @@ export function ParityCheck({ data, width = 300, height = 300, cellSize = 40 }: 
 						strokeWidth="1"
 					/>
 					<text
-						x={(colIndex + 1.5) * cellSize}
+						x={(cell.colIndex + 1.5) * cellSize}
 						y={(rows + 1.5) * cellSize}
 						fontSize="16"
 						textAnchor="middle"
 						dominantBaseline="middle"
 						fill="black"
 					>
-						{bit}
+						{cell.bit}
 					</text>
 				</g>
 			))}

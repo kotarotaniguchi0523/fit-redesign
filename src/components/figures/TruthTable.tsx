@@ -26,15 +26,21 @@ export function TruthTable({ columns, rows, ariaLabel = "Truth table" }: TruthTa
 				))}
 			</TableHeader>
 			<TableBody>
-				{rows.map((row, index) => (
-					<TableRow key={`row-${index}`}>
-						{columns.map((column) => (
-							<TableCell key={`${index}-${column.key}`} className="text-center">
-								{String(row[column.key])}
-							</TableCell>
-						))}
-					</TableRow>
-				))}
+				{rows.map((row) => {
+					const rowKey = columns
+						.map((column) => `${column.key}:${String(row[column.key])}`)
+						.join("|");
+
+					return (
+						<TableRow key={rowKey}>
+							{columns.map((column) => (
+								<TableCell key={`${rowKey}-${column.key}`} className="text-center">
+									{String(row[column.key])}
+								</TableCell>
+							))}
+						</TableRow>
+					);
+				})}
 			</TableBody>
 		</Table>
 	);

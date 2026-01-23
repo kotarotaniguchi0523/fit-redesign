@@ -33,7 +33,6 @@ export const exam4_2017: Question[] = [
 		text: "次の真理値表の F の論理式を求めよ．",
 		answer: "~x+y ∨ xy",
 		explanation: "真理値表から主加法標準形または主乗法標準形を導出する",
-		hasFigure: true,
 		figureDescription: "真理値表: X, Y, F の3列。(0,0,1), (0,1,0), (1,0,0), (1,1,1)",
 		figureData: {
 			type: "truthTable",

@@ -11,7 +11,6 @@ export const exam6_2017: Question[] = [
 		id: "exam6-2017-q0",
 		number: 0,
 		text: "以下の状態遷移図で定義される有限オートマトンが受理する入力文字列を全て挙げよ",
-		hasFigure: true,
 		figureDescription: "状態遷移図: S0(初期状態) --1--> S1 --1--> S2(受理状態)",
 		figureData: {
 			type: "stateDiagram",

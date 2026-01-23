@@ -7,17 +7,11 @@ import type {
 	TruthTableRow,
 } from "../components/figures";
 
-// 年度の型
-export type Year = "2013" | "2014" | "2015" | "2016" | "2017";
+// 年度一覧
+export const YEARS = ["2013", "2014", "2015", "2016", "2017"] as const;
 
-// 年度別のサフィックス
-export const yearSuffix: Record<Year, string> = {
-	"2013": "",
-	"2014": "b",
-	"2015": "c",
-	"2016": "d",
-	"2017": "e",
-};
+// 年度の型
+export type Year = (typeof YEARS)[number];
 
 // 問題の選択肢
 export interface QuestionOption {
@@ -48,7 +42,6 @@ export interface Question {
 	options?: QuestionOption[];
 	answer: string;
 	explanation?: string;
-	hasFigure?: boolean; // 図が必要かどうか
 	figureDescription?: string; // 図の説明（状態遷移図、表、グラフなど）
 	figureData?: FigureData; // 図データ
 }

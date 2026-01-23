@@ -15,3 +15,15 @@ export const slides: Slide[] = [
 	{ id: "slide-11", title: "計算量", pdfPath: "/pdf/FIT11-Orderb.pdf" },
 	{ id: "slide-12", title: "プログラミング言語", pdfPath: "/pdf/FIT12-Progb.pdf" },
 ];
+
+const slidesById: Record<string, Slide> = Object.fromEntries(
+	slides.map((slide) => [slide.id, slide]),
+);
+
+export function getSlide(id: Slide["id"]): Slide {
+	const slide = slidesById[id];
+	if (!slide) {
+		throw new Error(`Unknown slide id: ${id}`);
+	}
+	return slide;
+}
