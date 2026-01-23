@@ -11,17 +11,23 @@ const allYears: Year[] = ["2013", "2014", "2015", "2016", "2017"];
 
 export function YearSelector({ selectedYear, onYearChange, availableYears = allYears }: Props) {
 	return (
-		<RadioGroup
-			label="年度を選択"
-			orientation="horizontal"
-			value={selectedYear}
-			onValueChange={(value) => onYearChange(value as Year)}
-		>
-			{allYears.map((year) => (
-				<Radio key={year} value={year} isDisabled={!availableYears.includes(year)}>
-					{year}年度
-				</Radio>
-			))}
-		</RadioGroup>
+		<div className="w-full">
+			<RadioGroup
+				label="年度を選択"
+				orientation="horizontal"
+				value={selectedYear}
+				onValueChange={(value) => onYearChange(value as Year)}
+				classNames={{
+					label: "whitespace-nowrap text-sm font-medium mb-2",
+					wrapper: "flex-row flex-wrap gap-x-6 gap-y-2",
+				}}
+			>
+				{allYears.map((year) => (
+					<Radio key={year} value={year} isDisabled={!availableYears.includes(year)}>
+						{year}年度
+					</Radio>
+				))}
+			</RadioGroup>
+		</div>
 	);
 }

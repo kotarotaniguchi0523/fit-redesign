@@ -14,28 +14,30 @@ interface Props {
 export function ExamSection({ title, exam, selectedYear, onYearChange, availableYears }: Props) {
 	return (
 		<Card className="mt-4">
-			<CardHeader className="flex justify-between items-center bg-gray-100">
-				<h3 className="text-lg font-semibold">📝 {title}</h3>
-				{exam && (
-					<Button
-						as={Link}
-						href={exam.pdfPath}
-						target="_blank"
-						size="sm"
-						variant="flat"
-						color="primary"
-					>
-						PDF ↗
-					</Button>
-				)}
-			</CardHeader>
-			<CardBody>
+			<CardHeader className="flex flex-col gap-4 bg-gray-100">
+				<div className="flex justify-between items-center w-full">
+					<h3 className="text-lg font-semibold">📝 {title}</h3>
+					{exam && (
+						<Button
+							as={Link}
+							href={exam.pdfPath}
+							target="_blank"
+							size="sm"
+							variant="flat"
+							color="primary"
+						>
+							PDF ↗
+						</Button>
+					)}
+				</div>
 				<YearSelector
 					selectedYear={selectedYear}
 					onYearChange={onYearChange}
 					availableYears={availableYears}
 				/>
-				<div className="mt-4 border-t pt-4">
+			</CardHeader>
+			<CardBody>
+				<div>
 					{exam?.questions.map((q) => (
 						<QuestionCard key={q.id} question={q} />
 					))}

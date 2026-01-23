@@ -21,26 +21,31 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 	return (
 		<div className="w-full">
 			<Tabs aria-label="単元" color="primary" variant="underlined">
-				{tabs.map((tab) => (
-					<Tab key={tab.id} title={tab.name}>
-						<div className="p-4">
-							{/* 講義スライド */}
-							{isUnit(tab) && tab.slides.length > 0 && <SlideSection slides={tab.slides} />}
-							{/* 小テスト */}
-							<ExamSection
-								availableYears={exam1.availableYears}
-								exam={exam1.exams[selectedYear]}
-								onYearChange={onYearChange}
-								selectedYear={selectedYear}
-								title={`小テスト: ${tab.name}`}
-							/>
-						</div>
-					</Tab>
-				))}
+				{tabs.map((tab) => {
+					// TabGroupの場合は、含まれるunitsから講義スライドを集約
+					const slides = isUnit(tab) ? tab.slides : tab.units.flatMap((unit) => unit.slides);
+
+					return (
+						<Tab key={tab.id} title={tab.name}>
+							<div className="p-4">
+								{/* 講義スライド */}
+								{slides.length > 0 && <SlideSection slides={slides} />}
+								{/* 小テスト */}
+								<ExamSection
+									availableYears={exam1.availableYears}
+									exam={exam1.exams[selectedYear]}
+									onYearChange={onYearChange}
+									selectedYear={selectedYear}
+									title={`小テスト: ${tab.name}`}
+								/>
+							</div>
+						</Tab>
+					);
+				})}
 				{/* 講義資料のみタブ */}
 				<Tab key="slide-only" title="講義資料のみ">
 					<div className="p-4">
-						{slideOnlyUnits.map((unit) => (
+						{slideOnlyUnits.map((unit: Unit) => (
 							<SlideSection key={unit.id} slides={unit.slides} />
 						))}
 					</div>

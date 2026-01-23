@@ -7,16 +7,16 @@ interface Props {
 
 export function SlideSection({ slides }: Props) {
 	return (
-		<Card className="mb-4">
+		<Card className="mb-4 bg-blue-50/30">
 			<CardBody>
-				<h3 className="text-lg font-semibold mb-3">📖 講義スライド</h3>
+				<h3 className="text-lg font-semibold mb-4">📖 講義スライド</h3>
 				<div className="space-y-2">
 					{slides.map((slide) => (
 						<div
 							key={slide.id}
-							className="flex items-center justify-between p-2 bg-gray-50 rounded"
+							className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
 						>
-							<span>{slide.title}</span>
+							<span className="text-sm">{slide.title}</span>
 							<Button
 								as={Link}
 								href={slide.pdfPath}
