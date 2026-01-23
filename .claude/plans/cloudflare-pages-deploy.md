@@ -1,7 +1,14 @@
 ---
-status: 進行中
-started: 2025-01-24
+status: 完了
+completed: 2025-01-24
 ---
+
+## デプロイ情報
+
+| 項目 | URL |
+|------|-----|
+| 本番サイト | https://fit-redesign.pages.dev |
+| GitHubリポジトリ | https://github.com/kotarotaniguchi0523/fit-redesign |
 
 # Plan: Cloudflare Pages デプロイ
 
