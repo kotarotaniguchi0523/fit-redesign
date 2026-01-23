@@ -25,6 +25,8 @@ export interface Question {
 	options?: QuestionOption[];
 	answer: string;
 	explanation?: string;
+	hasFigure?: boolean; // 図が必要かどうか
+	figureDescription?: string; // 図の説明（状態遷移図、表、グラフなど）
 }
 
 // 小テスト
