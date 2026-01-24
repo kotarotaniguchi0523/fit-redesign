@@ -18,10 +18,8 @@ export function TruthTable({ columns, rows, ariaLabel = "Truth table" }: TruthTa
 				))}
 			</TableHeader>
 			<TableBody>
-				{rows.map((row) => {
-					const rowKey = columns
-						.map((column) => `${column.key}:${String(row[column.key])}`)
-						.join("|");
+				{rows.map((row, rowIndex) => {
+					const rowKey = `row-${rowIndex}`;
 
 					return (
 						<TableRow key={rowKey}>

@@ -96,7 +96,7 @@ export function BinaryTree({ root, width = 300, height = 200, nodeRadius = 20 }:
 		>
 			<title>Binary tree diagram</title>
 			{/* エッジを描画 */}
-			{edges.map((edge) => {
+			{edges.map((edge, edgeIndex) => {
 				// ノードの縁から線を引くための計算
 				const dx = edge.to.x - edge.from.x;
 				const dy = edge.to.y - edge.from.y;
@@ -109,7 +109,7 @@ export function BinaryTree({ root, width = 300, height = 200, nodeRadius = 20 }:
 
 				return (
 					<line
-						key={`edge-${edge.from.node.value}-${edge.to.node.value}`}
+						key={`edge-${edgeIndex}`}
 						x1={startX}
 						y1={startY}
 						x2={endX}
@@ -121,8 +121,8 @@ export function BinaryTree({ root, width = 300, height = 200, nodeRadius = 20 }:
 			})}
 
 			{/* ノードを描画 */}
-			{positions.map((pos) => (
-				<g key={`node-${pos.node.value}`}>
+			{positions.map((pos, nodeIndex) => (
+				<g key={`node-${nodeIndex}`}>
 					<circle
 						cx={pos.x}
 						cy={pos.y}

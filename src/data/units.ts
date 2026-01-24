@@ -85,7 +85,7 @@ export const unitBasedTabs: UnitBasedTab[] = [
 		examMapping: [
 			{ year: "2013", examNumbers: [3] },
 			// 2014年以降は負数表現と統合されているため、exam2に含まれる
-			{ year: "2015", examNumbers: [2] }, // 2015年は負数表現・浮動小数点として統合
+			{ year: "2015", examNumbers: [2], integratedTitle: "負数表現・浮動小数点" },
 		],
 	},
 	{
@@ -96,7 +96,7 @@ export const unitBasedTabs: UnitBasedTab[] = [
 		examMapping: [
 			{ year: "2013", examNumbers: [4] },
 			{ year: "2014", examNumbers: [4] },
-			{ year: "2015", examNumbers: [3, 4] }, // 集合・論理演算として分散
+			{ year: "2015", examNumbers: [3, 4], integratedTitle: "集合・論理演算" },
 		],
 	},
 	{
@@ -105,9 +105,9 @@ export const unitBasedTabs: UnitBasedTab[] = [
 		title: "単元5: 集合と確率",
 		slides: [getSlide("slide-3"), getSlide("slide-4")],
 		examMapping: [
-			{ year: "2013", examNumbers: [5, 6] }, // 集合(exam5), 確率(exam6)
-			{ year: "2014", examNumbers: [6] }, // 集合・確率・データ構造として統合
-			{ year: "2015", examNumbers: [3, 6] }, // 集合・論理(exam3), 確率(exam6)
+			{ year: "2013", examNumbers: [5, 6] },
+			{ year: "2014", examNumbers: [6], integratedTitle: "集合・確率・データ構造" },
+			{ year: "2015", examNumbers: [3, 6], integratedTitle: "集合・論理 / 確率" },
 		],
 	},
 	{
@@ -117,10 +117,10 @@ export const unitBasedTabs: UnitBasedTab[] = [
 		slides: [getSlide("slide-5")],
 		examMapping: [
 			{ year: "2013", examNumbers: [7] },
-			{ year: "2014", examNumbers: [6] },
-			{ year: "2015", examNumbers: [6] }, // FSM・確率として統合
-			{ year: "2016", examNumbers: [4, 6] }, // オートマトン・符号理論(exam4), FSM(exam6)
-			{ year: "2017", examNumbers: [4, 6] },
+			{ year: "2014", examNumbers: [6], integratedTitle: "FSM・確率・データ構造" },
+			{ year: "2015", examNumbers: [6], integratedTitle: "FSM・確率" },
+			{ year: "2016", examNumbers: [4, 6], integratedTitle: "オートマトン・符号理論" },
+			{ year: "2017", examNumbers: [4, 6], integratedTitle: "オートマトン・符号理論" },
 		],
 	},
 	{
@@ -131,9 +131,9 @@ export const unitBasedTabs: UnitBasedTab[] = [
 		examMapping: [
 			{ year: "2013", examNumbers: [8] },
 			{ year: "2014", examNumbers: [7] },
-			{ year: "2015", examNumbers: [5, 7] }, // 符号理論(exam5, exam7)
-			{ year: "2016", examNumbers: [4, 7] }, // オートマトン・符号理論(exam4), 符号理論(exam7)
-			{ year: "2017", examNumbers: [4, 7] },
+			{ year: "2015", examNumbers: [5, 7] },
+			{ year: "2016", examNumbers: [4, 7], integratedTitle: "オートマトン・符号理論" },
+			{ year: "2017", examNumbers: [4, 7], integratedTitle: "オートマトン・符号理論" },
 		],
 	},
 	{
@@ -143,9 +143,13 @@ export const unitBasedTabs: UnitBasedTab[] = [
 		slides: [getSlide("slide-8")],
 		examMapping: [
 			{ year: "2013", examNumbers: [9] },
-			{ year: "2014", examNumbers: [6, 8] }, // 集合・確率・データ構造(exam6), データ構造(exam8)
-			{ year: "2016", examNumbers: [5, 8] }, // データ構造・符号理論(exam5), データ構造(exam8)
-			{ year: "2017", examNumbers: [5, 6, 8] }, // データ構造・符号理論(exam5), FSM・確率・データ構造(exam6), データ構造(exam8)
+			{ year: "2014", examNumbers: [6, 8], integratedTitle: "集合・確率・データ構造" },
+			{ year: "2016", examNumbers: [5, 8], integratedTitle: "データ構造・符号理論" },
+			{
+				year: "2017",
+				examNumbers: [5, 6, 8],
+				integratedTitle: "データ構造・符号理論 / FSM・確率・データ構造",
+			},
 		],
 	},
 	{
@@ -154,8 +158,8 @@ export const unitBasedTabs: UnitBasedTab[] = [
 		title: "単元9: ソート・探索",
 		slides: [getSlide("slide-10")],
 		examMapping: [
-			{ year: "2013", examNumbers: [9] }, // 2013年はデータ構造に含まれる
-			{ year: "2014", examNumbers: [9] }, // ソート・探索として独立
+			{ year: "2013", examNumbers: [9], integratedTitle: "データ構造・ソート" },
+			{ year: "2014", examNumbers: [9] },
 		],
 	},
 ];

@@ -19,34 +19,6 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 		setSelectedKey(key);
 	};
 
-	/**
-	 * 2014年以降で統合試験になっているかをチェック
-	 * @param examNumbers 対象年度の試験番号配列
-	 * @param year 選択された年度
-	 * @returns 統合試験である場合は試験タイトル、そうでない場合はnull
-	 */
-	const getIntegratedExamNotice = (examNumbers: number[], year: Year): string | null => {
-		// 2013年は統合試験なし
-		if (year === "2013") return null;
-
-		// 2014年以降のみチェック
-		if (examNumbers.length === 0) return null;
-
-		// 最初の試験番号から試験タイトルを取得
-		const examData = getExamByNumber(examNumbers[0]);
-		if (!examData) return null;
-
-		// 試験タイトルに複数の単元名が含まれているか（統合試験の特徴）
-		const examTitle = examData.title;
-		const hasMultipleUnits = examTitle.includes("・") || examTitle.includes("+");
-
-		if (hasMultipleUnits) {
-			return examTitle;
-		}
-
-		return null;
-	};
-
 	return (
 		<div className="w-full">
 			<Tabs
@@ -84,29 +56,23 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 									/>
 								</div>
 
-								{/* 統合試験の注意表示 */}
-								{(() => {
-									const integratedExamTitle = getIntegratedExamNotice(examNumbers, selectedYear);
-									if (integratedExamTitle) {
-										return (
-											<Card className="mt-4 bg-blue-50 border border-blue-200 shadow-sm">
-												<div className="p-3">
-													<div className="flex items-start gap-2">
-														<div className="text-blue-600 font-medium mt-0.5">ℹ️</div>
-														<div className="flex-1">
-															<p className="text-sm text-blue-800">
-																<span className="font-semibold">注意:</span> 2014年以降、この単元は
-																<span className="font-semibold">「{integratedExamTitle}」</span>
-																として統合試験になっています。
-															</p>
-														</div>
-													</div>
+								{/* 統合試験の注意表示（メタデータベース） */}
+								{examMapping?.integratedTitle && (
+									<Card className="mt-4 bg-blue-50 border border-blue-200 shadow-sm">
+										<div className="p-3">
+											<div className="flex items-start gap-2">
+												<div className="text-blue-600 font-medium mt-0.5">ℹ️</div>
+												<div className="flex-1">
+													<p className="text-sm text-blue-800">
+														<span className="font-semibold">注意:</span> この年度では
+														<span className="font-semibold">「{examMapping.integratedTitle}」</span>
+														として統合試験になっています。
+													</p>
 												</div>
-											</Card>
-										);
-									}
-									return null;
-								})()}
+											</div>
+										</div>
+									</Card>
+								)}
 
 								{/* 小テスト（複数の試験番号がある場合、すべて表示） */}
 								{examNumbers.map((examNumber) => {

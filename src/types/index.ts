@@ -129,5 +129,6 @@ export interface UnitBasedTab {
 	examMapping: {
 		year: Year;
 		examNumbers: number[]; // この年度でこの単元に対応する試験番号
+		integratedTitle?: string; // 統合試験の場合のタイトル（例: "オートマトン・符号理論"）
 	}[];
 }
