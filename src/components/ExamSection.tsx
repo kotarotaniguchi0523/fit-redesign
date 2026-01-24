@@ -1,18 +1,13 @@
 import { Button, Card, CardBody, CardHeader, Link } from "@heroui/react";
-import type { Exam, Year } from "../types/index";
-import { PdfViewer } from "./PdfViewer";
+import type { Exam } from "../types/index";
 import { QuestionCard } from "./QuestionCard";
-import { YearSelector } from "./YearSelector";
 
 interface Props {
 	title: string;
 	exam: Exam | undefined;
-	selectedYear: Year;
-	onYearChange: (year: Year) => void;
-	availableYears: Year[];
 }
 
-export function ExamSection({ title, exam, selectedYear, onYearChange, availableYears }: Props) {
+export function ExamSection({ title, exam }: Props) {
 	return (
 		<Card className="mt-4 shadow-sm">
 			<CardHeader className="flex flex-col gap-4 bg-linear-to-r from-gray-50 to-slate-50 border-b border-gray-200">
@@ -37,17 +32,9 @@ export function ExamSection({ title, exam, selectedYear, onYearChange, available
 						</Button>
 					)}
 				</div>
-				<YearSelector
-					selectedYear={selectedYear}
-					onYearChange={onYearChange}
-					availableYears={availableYears}
-				/>
 			</CardHeader>
 			<CardBody className="p-5">
 				<div>
-					{/* PDF埋め込みビューワー */}
-					{exam?.pdfPath && <PdfViewer pdfPath={exam.pdfPath} title={exam.title} />}
-
 					{/* 問題カード */}
 					{exam?.questions.map((q) => (
 						<QuestionCard key={q.id} question={q} />

@@ -1,5 +1,4 @@
-import { Card, CardBody } from "@heroui/react";
-import { motion } from "framer-motion";
+import { Card } from "@heroui/react";
 import { useState } from "react";
 import { getExamByNumber } from "../data/exams";
 import { slideOnlyUnits, unitBasedTabs } from "../data/units";
@@ -13,12 +12,10 @@ interface Props {
 	onYearChange: (year: Year) => void;
 }
 
-// 講義資料のみカードのデータ
+// 講義資料のみタブのデータ
 const slideOnlyTab = {
 	id: "slide-only",
 	name: "講義資料のみ",
-	icon: "📚",
-	description: "スライドのみ提供",
 };
 
 // 全てのユニット（通常のユニット + 講義資料のみ）
@@ -52,38 +49,23 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 
 	return (
 		<div className="w-full">
-			{/* カードグリッド */}
-			<div
-				className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6"
-				role="tablist"
-				aria-label="単元選択"
-			>
+			{/* シンプルなボタングループ */}
+			<div className="flex flex-wrap gap-2 mb-6" role="tablist" aria-label="単元選択">
 				{allUnits.map((unit) => (
-					<motion.div
+					<button
 						key={unit.id}
+						type="button"
 						role="tab"
 						aria-selected={selectedKey === unit.id}
-						whileHover={{ scale: 1.05 }}
-						whileTap={{ scale: 0.95 }}
-						transition={{ duration: 0.2 }}
+						onClick={() => handleSelectionChange(unit.id)}
+						className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
+							selectedKey === unit.id
+								? "bg-[#1e3a5f] text-white border-[#1e3a5f] shadow-sm"
+								: "bg-white text-gray-700 border-gray-300 hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
+						}`}
 					>
-						<Card
-							isPressable
-							isHoverable
-							className={`border-2 transition-all cursor-pointer ${
-								selectedKey === unit.id
-									? "border-[#c9a227] bg-[#1e3a5f]/5 shadow-md"
-									: "border-gray-200 hover:border-gray-300"
-							}`}
-							onPress={() => handleSelectionChange(unit.id)}
-						>
-							<CardBody className="p-4 text-center">
-								<span className="text-3xl mb-2 block">{unit.icon}</span>
-								<h4 className="font-semibold text-[#1e3a5f] text-sm mb-1">{unit.name}</h4>
-								<p className="text-xs text-gray-500">{unit.description}</p>
-							</CardBody>
-						</Card>
-					</motion.div>
+						{unit.name}
+					</button>
 				))}
 			</div>
 
@@ -128,10 +110,7 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 						return (
 							<ExamSection
 								key={examNumber}
-								availableYears={examData.availableYears}
 								exam={examData.exams[selectedYear]}
-								onYearChange={onYearChange}
-								selectedYear={selectedYear}
 								title={examData.title}
 							/>
 						);

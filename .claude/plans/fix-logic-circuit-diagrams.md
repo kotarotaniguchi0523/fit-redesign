@@ -1,5 +1,7 @@
 # Plan: 論理回路図コンポーネントの実装
 
+## ステータス: ✅ 完了 (2026-01-25)
+
 ## 概要
 論理回路を描画するLogicCircuitコンポーネントを新規作成し、図が表示されていない問題に対応する。
 
@@ -55,3 +57,36 @@ exam4-logic-2013.ts等に回路データを追加
 ## 検証方法
 1. 小テスト4（2013年度）で論理回路図が表示されることを確認
 2. 各ゲート（AND, OR, NOT等）が正しく描画されることを確認
+
+## 実装時の仕様変更
+
+### LogicGate.inputs削除
+当初計画では`LogicGate.inputs`で接続情報を持つ設計だったが、`LogicWire`と重複するため削除：
+
+```typescript
+// 変更前
+export interface LogicGate {
+  id: string;
+  type: GateType;
+  x: number;
+  y: number;
+  inputs: string[]; // 削除
+}
+
+// 変更後
+export interface LogicGate {
+  id: string;
+  type: GateType;
+  x: number;
+  y: number;
+}
+```
+
+### レスポンシブ対応追加
+モバイル対応のため以下を追加：
+- `width="100%"`, `height="auto"`
+- `preserveAspectRatio="xMidYMid meet"`
+- `style={{ aspectRatio }}`
+
+### 対応ゲートタイプ
+AND, OR, NOT, NAND, NOR, XOR, XNOR（7種類）

@@ -1,5 +1,7 @@
 # Plan: 単元選択UIの改善
 
+## ステータス: ✅ 完了 (2026-01-25)
+
 ## 概要
 単元を選ぶタブUIを読みやすくリッチなカードグリッドに変更する。
 
@@ -82,3 +84,33 @@ export interface UnitBasedTab {
 1. 各単元カードのクリック動作確認
 2. 選択状態の視覚フィードバック確認
 3. レスポンシブ動作確認（モバイル/タブレット/PC）
+
+## 実装時の仕様変更
+
+### キーボード操作の削除
+当初実装したキーボードナビゲーション（矢印キー、Home/End）は不要とのことで削除：
+- `useCallback`, `useRef` 削除
+- `handleKeyDown`, `setCardRef` 削除
+- `tabIndex`, `onKeyDown` 属性削除
+
+### アクセシビリティ属性は維持
+以下は維持してスクリーンリーダー対応を確保：
+- `role="tablist"` / `role="tab"`
+- `aria-selected`
+- `aria-label`
+
+### 講義資料カードの統合
+別ブロックで重複定義されていた「講義資料のみ」カードをデータ統合：
+
+```tsx
+const slideOnlyTab = {
+  id: "slide-only",
+  name: "講義資料のみ",
+  icon: "📚",
+  description: "スライドのみ提供",
+};
+
+const allUnits = [...unitBasedTabs, slideOnlyTab];
+```
+
+これにより単一のmapでレンダリングし、コード重複を解消。

@@ -1,5 +1,7 @@
 # Plan: 章テストPDFの埋め込み
 
+## ステータス: ✅ 完了 (2026-01-25)
+
 ## 概要
 章テストの問題PDFを単元と年度ごとにページ内に埋め込み表示する。
 
@@ -57,3 +59,20 @@ PDF不存在時のフォールバック表示
 2. PDFがページ内に埋め込まれることを確認
 3. PDF欠落時のフォールバック確認
 4. モバイルでのレスポンシブ確認
+
+## 実装時の仕様変更
+
+### 遅延ロード対応
+当初の計画ではiframeを常時描画する想定だったが、パフォーマンス改善のため以下を追加：
+- `useState`でアコーディオン展開状態を管理
+- 展開時のみiframeを描画（DOM非存在でPDFロードを防止）
+- `loading="lazy"`属性も追加
+
+### 実装コード
+```tsx
+const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+<Accordion onExpandedChange={(keys) => setIsExpanded(keys.has("pdf-viewer"))}>
+  {isExpanded && <iframe loading="lazy" ... />}
+</Accordion>
+```
