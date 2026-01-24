@@ -1,4 +1,4 @@
-import type { Unit, UnitBasedTab, Year } from "../types/index";
+import type { Unit, UnitBasedTab } from "../types/index";
 import { getSlide } from "./slides";
 
 // 講義資料のみの単元
@@ -163,30 +163,3 @@ export const unitBasedTabs: UnitBasedTab[] = [
 		],
 	},
 ];
-
-// ===== ヘルパー関数 =====
-
-/**
- * 単元IDから単元を取得
- */
-export function getUnitBasedTab(unitId: string): UnitBasedTab | undefined {
-	return unitBasedTabs.find((unit) => unit.id === unitId);
-}
-
-/**
- * 指定した年度で利用可能な単元一覧を取得
- */
-export function getAvailableUnitsForYear(year: Year): UnitBasedTab[] {
-	return unitBasedTabs.filter((unit) => unit.examMapping.some((mapping) => mapping.year === year));
-}
-
-/**
- * 単元と年度から対応する試験番号を取得
- */
-export function getExamNumbersForUnit(unitId: string, year: Year): number[] {
-	const unit = getUnitBasedTab(unitId);
-	if (!unit) return [];
-
-	const mapping = unit.examMapping.find((m) => m.year === year);
-	return mapping?.examNumbers ?? [];
-}

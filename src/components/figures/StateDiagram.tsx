@@ -1,4 +1,4 @@
-import type { StateNode, Transition } from "../../types/figures";
+import type { StateNode, Transition } from "../../types/index";
 
 export interface StateDiagramProps {
 	nodes: StateNode[];

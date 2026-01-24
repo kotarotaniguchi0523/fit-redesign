@@ -101,24 +101,6 @@ export interface Unit {
 	is2013Only?: boolean; // 2013年度のみ独立した単元
 }
 
-// タブグループ（2014年以降の統合版）
-export interface TabGroup {
-	id: string;
-	name: string;
-	units: Unit[];
-	examNumber: number;
-	title: string;
-}
-
-// 統一されたタブアイテム（Unit と TabGroup の統合型）
-export interface TabItem {
-	id: string;
-	name: string;
-	title: string; // 小テストのタイトル
-	slides: Slide[]; // スライド一覧
-	examNumber?: number; // 試験番号（存在する場合）
-}
-
 // 単元ベースのタブ（トップレベルが単元、各単元内で年度選択）
 export interface UnitBasedTab {
 	id: string;

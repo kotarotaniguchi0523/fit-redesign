@@ -1,4 +1,4 @@
-import type { TreeNode } from "../../types/figures";
+import type { TreeNode } from "../../types/index";
 
 export interface BinaryTreeProps {
 	root: TreeNode;

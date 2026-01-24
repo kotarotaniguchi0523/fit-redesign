@@ -1,11 +1,11 @@
-// 図の型定義は src/types/figures から re-export
+// 図の型定義は src/types/index から re-export
 export type {
 	StateNode,
 	Transition,
 	TreeNode,
 	TruthTableColumn,
 	TruthTableRow,
-} from "../../types/figures";
+} from "../../types/index";
 export type { BinaryTreeProps } from "./BinaryTree";
 export { BinaryTree } from "./BinaryTree";
 export type { ParityCheckProps } from "./ParityCheck";

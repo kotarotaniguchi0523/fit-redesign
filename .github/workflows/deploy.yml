@@ -35,6 +35,9 @@ jobs:
       - name: Lint & Format Check
         run: pnpm format --check
 
+      - name: Check unused code
+        run: pnpm knip
+
       - name: Build
         run: pnpm build
 
