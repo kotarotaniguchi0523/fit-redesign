@@ -4,7 +4,7 @@ import { UnitTabs } from "./components/UnitTabs";
 import type { Year } from "./types/index";
 
 export default function App() {
-	const [selectedYear, setSelectedYear] = useState<Year>("2017");
+	const [selectedYear, setSelectedYear] = useState<Year>("2013");
 
 	return (
 		<div className="min-h-screen bg-[#faf9f7] bg-texture">

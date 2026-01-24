@@ -118,3 +118,16 @@ export interface TabItem {
 	slides: Slide[]; // スライド一覧
 	examNumber?: number; // 試験番号（存在する場合）
 }
+
+// 単元ベースのタブ（トップレベルが単元、各単元内で年度選択）
+export interface UnitBasedTab {
+	id: string;
+	name: string; // 単元名（例: "基数変換"）
+	title: string; // タイトル（例: "単元1: 基数変換"）
+	slides: Slide[]; // 講義スライド
+	// 年度別の試験マッピング
+	examMapping: {
+		year: Year;
+		examNumbers: number[]; // この年度でこの単元に対応する試験番号
+	}[];
+}

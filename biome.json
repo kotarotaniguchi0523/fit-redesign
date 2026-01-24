@@ -4,16 +4,16 @@
 		"includes": [
 			"src/**",
 			"docs/**",
-			"!!**/.claude/**",
-			"!!**/.serena/**",
-			"!!**/node_modules/**",
-			"!!**/.git/**",
-			"!!**/.vscode/**",
-			"!!**/.idea/**",
-			"!!**/screenshots/**",
-			"!!**/dist/**",
-			"!!**/dist-ssr/**",
-			"!!**/public/pdf/**"
+			"!!**/.claude",
+			"!!**/.serena",
+			"!!**/node_modules",
+			"!!**/.git",
+			"!!**/.vscode",
+			"!!**/.idea",
+			"!!**/screenshots",
+			"!!**/dist",
+			"!!**/dist-ssr",
+			"!!**/public/pdf"
 		]
 	},
 	"assist": {
