@@ -1,4 +1,4 @@
-import { type ExamByYear, type Year, YEARS } from "../../types/index";
+import { type ExamByYear, YEARS, type Year } from "../../types/index";
 // 2013年度
 import { exam1_2013 } from "./exam1-base-2013";
 // // 2014年度
@@ -40,7 +40,7 @@ const getAvailableYears = (exams: ExamByYear["exams"]): Year[] =>
 function createExamByYear(
 	examNumber: number,
 	title: string,
-	exams: ExamByYear["exams"]
+	exams: ExamByYear["exams"],
 ): ExamByYear {
 	return {
 		examNumber,
@@ -110,7 +110,7 @@ const exam2Exams: ExamByYear["exams"] = {
 		id: "exam2-2015",
 		number: 2,
 		title: "負数表現・浮動小数点 (2015)",
-		pdfPath: "/pdf/Exam2c-Negative.pdf",
+		pdfPath: "/pdf/Exam2b-Negative.pdf",
 		answerPdfPath: "/pdf/Exam2015-Ans.html",
 		questions: exam2_2015,
 	},
@@ -118,7 +118,7 @@ const exam2Exams: ExamByYear["exams"] = {
 		id: "exam2-2016",
 		number: 2,
 		title: "負数表現 (2016)",
-		pdfPath: "/pdf/Exam2d-Negative.pdf",
+		pdfPath: "/pdf/Exam2c-Negative.pdf",
 		answerPdfPath: "/pdf/Exam2016-Ans.html",
 		questions: exam2_2016,
 	},
@@ -126,7 +126,7 @@ const exam2Exams: ExamByYear["exams"] = {
 		id: "exam2-2017",
 		number: 2,
 		title: "負数表現 (2017)",
-		pdfPath: "/pdf/Exam2e-Negative.pdf", // 注: PDFファイルが不足
+		pdfPath: "/pdf/Exam2d-Negative.pdf",
 		answerPdfPath: "/pdf/Exam2017-Ans.html",
 		questions: exam2_2017,
 	},
@@ -177,8 +177,8 @@ const exam4Exams: ExamByYear["exams"] = {
 	"2015": {
 		id: "exam4-2015",
 		number: 4,
-		title: "オートマトン・確率・データ構造 (2015)",
-		pdfPath: "/pdf/Exam4c-FSM.pdf",
+		title: "論理演算・集合 (2015)",
+		pdfPath: "/pdf/Exam4c-logic.pdf",
 		answerPdfPath: "/pdf/Exam2015-Ans.html",
 		questions: exam4_2015,
 	},
@@ -217,7 +217,7 @@ const exam5Exams: ExamByYear["exams"] = {
 		id: "exam5-2015",
 		number: 5,
 		title: "符号理論 (2015)",
-		pdfPath: "/pdf/Exam5c-ECC.pdf",
+		pdfPath: "/pdf/Exam5c-ECC.pdf", // 注: PDFファイルが存在しない
 		answerPdfPath: "/pdf/Exam2015-Ans.html",
 		questions: exam5_2015,
 	},

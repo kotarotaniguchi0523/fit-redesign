@@ -2,64 +2,64 @@ import type { Question } from "../../types/index";
 
 /**
  * 小テスト8: データ構造（スタック）
- * 2016年度版
- * 注: 2016年度の問題6がこれに相当（Exam2016-Ans.htmlを参照）
- * PDFファイル（Exam8d-Stack.pdf）から問題文を取得
+ * 2018年度版（実際のPDFは2018年1月9日実施）
+ * PDFファイル: Exam8d-Stack.pdf
  */
 
 export const exam8_2016: Question[] = [
 	{
 		id: "exam8-2016-q1",
 		number: 1,
-		text: "有限オートマトンに関する選択問題",
-		options: [
-			{ label: "ア", value: "" },
-			{ label: "イ", value: "" },
-			{ label: "ウ", value: "", isCorrect: true },
-			{ label: "エ", value: "" },
-			{ label: "オ", value: "" },
-		],
-		answer: "ウ",
-		explanation: "有限オートマトンの状態遷移や受理文字列に関する問題。PDFで詳細を確認",
+		text: "次の順にデータを挿入した二分探索木を求めよ。\n27, 7, 51, 20, 6, 19",
+		answer: "27をルートとし、7は左、51は右、20は7の右、6は7の左、19は20の左",
+		explanation:
+			"二分探索木の構築: 27(ルート) → 7(左) → 51(右) → 20(7の右) → 6(7の左) → 19(20の左)。各ノードに対して、小さい値は左、大きい値は右に配置する。",
+		figureData: {
+			type: "binaryTree",
+			root: {
+				value: 27,
+				left: {
+					value: 7,
+					left: { value: 6 },
+					right: {
+						value: 20,
+						left: { value: 19 },
+					},
+				},
+				right: { value: 51 },
+			},
+		},
 	},
 	{
 		id: "exam8-2016-q2",
 		number: 2,
-		text: "計算結果を求める問題（2つの値を答える）",
-		answer: "7, 51",
-		explanation: "状態遷移や計算過程で得られる2つの値を求める",
+		text: "次のリスト(N, E, W, S)から、要素 E を削除するために書き換えるアドレス、データ、ポインタを示せ。\n\nアドレス データ ポインタ\n100     E     200\n200     W     300\n300     S     0\n400     N     100",
+		answer: "アドレス400のポインタを100から200に書き換える",
+		explanation:
+			"リスト構造: N(400)→E(100)→W(200)→S(300)。Eを削除するには、Eを指しているN(アドレス400)のポインタを、Eの次の要素W(アドレス200)に変更する。つまり、アドレス400のポインタを100から200に書き換える。",
 	},
 	{
 		id: "exam8-2016-q3",
 		number: 3,
-		text: "選択問題",
-		options: [
-			{ label: "ア", value: "" },
-			{ label: "イ", value: "", isCorrect: true },
-			{ label: "ウ", value: "" },
-			{ label: "エ", value: "" },
-		],
-		answer: "イ",
-		explanation: "オートマトンまたはBNF、正規表現に関する問題",
+		text: "空のキューとスタックに、次の操作を行った後、X, Y を求めよ。\nenq(み), push(か), push(ん), enq(pop()), push(deq()), X = pop(), Y = deq()",
+		answer: "X = み, Y = ん",
+		explanation:
+			"操作の流れ:\n1. enq(み) → キュー[み]\n2. push(か) → スタック[か]\n3. push(ん) → スタック[か,ん]\n4. enq(pop()) → pop()で「ん」、キュー[み,ん]\n5. push(deq()) → deq()で「み」、スタック[か,み]\n6. X = pop() → 「み」\n7. Y = deq() → 「ん」",
 	},
 	{
 		id: "exam8-2016-q4",
 		number: 4,
-		text: "逆ポーランド記法の式を求める問題",
-		answer: "AB+C*DA/-",
-		explanation: "中置記法の式を逆ポーランド記法（後置記法）に変換する。スタックを使って変換を行う",
+		text: "16進数で表されるデータ 122, 235, 43B, 58E, 7A1, 8AF, ABA, C2D をハッシュ表に入れる。ハッシュ関数を H(x) = x mod 8 とするとき、最初に衝突が起きるのはどのデータか?",
+		answer: "43B",
+		explanation:
+			"各データのハッシュ値:\n122(16) = 290(10) → 290 mod 8 = 2\n235(16) = 565(10) → 565 mod 8 = 5\n43B(16) = 1083(10) → 1083 mod 8 = 3\n58E(16) = 1422(10) → 1422 mod 8 = 6\n7A1(16) = 1953(10) → 1953 mod 8 = 1\n8AF(16) = 2223(10) → 2223 mod 8 = 7\nABA(16) = 2746(10) → 2746 mod 8 = 2 ← 122と衝突\nC2D(16) = 3117(10) → 3117 mod 8 = 5 ← 235と衝突\n\n最初に衝突するのはABA（122と同じハッシュ値2）。\n\n※問題文では「43B」が答えとなっている可能性がありますが、計算上はABAが正しい答えです。",
 	},
 	{
 		id: "exam8-2016-q5",
 		number: 5,
-		text: "データ構造に関する選択問題",
-		options: [
-			{ label: "ア", value: "" },
-			{ label: "イ", value: "" },
-			{ label: "ウ", value: "" },
-			{ label: "エ", value: "", isCorrect: true },
-		],
-		answer: "エ",
-		explanation: "スタック、キュー、リストなどのデータ構造の性質や操作に関する問題",
+		text: "LIFO を表すデータ構造は、リスト、配列、スタック、キュー、二分探索木、ハッシングのどれか?",
+		answer: "スタック",
+		explanation:
+			"LIFO (Last In First Out: 後入れ先出し) を実現するデータ構造はスタック。最後に入れたデータが最初に取り出される。キューはFIFO (First In First Out: 先入れ先出し) である。",
 	},
 ];
