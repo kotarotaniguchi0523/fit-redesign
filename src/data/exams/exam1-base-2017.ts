@@ -21,8 +21,7 @@ export const exam1_2017: Question[] = [
 		number: 2,
 		text: "45(10) を8進数で表せ",
 		answer: "55",
-		explanation:
-			"10進数45を8進数に変換: 45 ÷ 8 = 5 余り 5 → 55(8)",
+		explanation: "10進数45を8進数に変換: 45 ÷ 8 = 5 余り 5 → 55(8)",
 	},
 	{
 		id: "exam1-2017-q3",
@@ -37,8 +36,7 @@ export const exam1_2017: Question[] = [
 		number: 4,
 		text: "0.015625(10) を8進数で表せ",
 		answer: "0.02",
-		explanation:
-			"10進数0.015625を8進数に変換。0.015625 × 8 = 0.125, 0.125 × 8 = 1.0 → 0.02(8)",
+		explanation: "10進数0.015625を8進数に変換。0.015625 × 8 = 0.125, 0.125 × 8 = 1.0 → 0.02(8)",
 	},
 	{
 		id: "exam1-2017-q5",
@@ -48,7 +46,11 @@ export const exam1_2017: Question[] = [
 			{ label: "ア", value: "2進数の小数点以下は、各桁が1/2のべき乗を表す", isCorrect: true },
 			{ label: "イ", value: "8進数の各桁は0〜8の数字で表される" },
 			{ label: "ウ", value: "16進数では10〜15をA〜Fで表す" },
-			{ label: "エ", value: "n進数からm進数への変換は、一度10進数を経由すると計算しやすい", isCorrect: true },
+			{
+				label: "エ",
+				value: "n進数からm進数への変換は、一度10進数を経由すると計算しやすい",
+				isCorrect: true,
+			},
 			{ label: "オ", value: "2進小数は必ず有限小数で表される" },
 		],
 		answer: "ア，エ",

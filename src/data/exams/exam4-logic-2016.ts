@@ -26,7 +26,8 @@ export const exam4_2016: Question[] = [
 			{ label: "エ", value: "~X~Y ∨ ~XY ∨ X~Y", isCorrect: true },
 		],
 		answer: "ア，エ",
-		explanation: "~Y∨~XY = ~Y(1∨~X) ∨ ~XY = ~Y ∨ ~XY = ~Y ∨ ~X。アは~X∨~Yで同値。エは展開すると~X∨~Yに簡約される",
+		explanation:
+			"~Y∨~XY = ~Y(1∨~X) ∨ ~XY = ~Y ∨ ~XY = ~Y ∨ ~X。アは~X∨~Yで同値。エは展開すると~X∨~Yに簡約される",
 	},
 	{
 		id: "exam4-2016-q3",

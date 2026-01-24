@@ -11,7 +11,8 @@ export const exam8_2013: Question[] = [
 		number: 1,
 		text: "空のスタックとキューがある。次を実行した時のXを求めよ。\npush(A), enq(B), enq(pop()), push(deq()), enq(C), X=deq()",
 		answer: "A",
-		explanation: "push(A)→スタック[A]。enq(B)→キュー[B]。enq(pop())→pop()でA、キュー[B,A]。push(deq())→deq()でB、スタック[B]。enq(C)→キュー[A,C]。X=deq()→A",
+		explanation:
+			"push(A)→スタック[A]。enq(B)→キュー[B]。enq(pop())→pop()でA、キュー[B,A]。push(deq())→deq()でB、スタック[B]。enq(C)→キュー[A,C]。X=deq()→A",
 	},
 	{
 		id: "exam8-2013-q2",
@@ -31,7 +32,8 @@ export const exam8_2013: Question[] = [
 		number: 3,
 		text: "空の二分木に次の順でデータを追加した時、最も検索時間がかかるデータはどれか？\n10, 7, 6, 8, 5, 12",
 		answer: "5",
-		explanation: "二分探索木: 10をルートに、7は左、6は7の左、8は7の右、5は6の左、12は10の右。5は最も深い位置にあり検索に時間がかかる",
+		explanation:
+			"二分探索木: 10をルートに、7は左、6は7の左、8は7の右、5は6の左、12は10の右。5は最も深い位置にあり検索に時間がかかる",
 	},
 	{
 		id: "exam8-2013-q4",
@@ -45,6 +47,7 @@ export const exam8_2013: Question[] = [
 		number: 5,
 		text: "キーのハッシュ関数を h(x) = x mod 7 とする。次のデータを順にハッシュ表に入れる時、最初に衝突が起きるのはどのデータか？\n80, 15, 20, 30, 40, 50, 60, 70",
 		answer: "50",
-		explanation: "80 mod 7=3, 15 mod 7=1, 20 mod 7=6, 30 mod 7=2, 40 mod 7=5, 50 mod 7=1（15と衝突）",
+		explanation:
+			"80 mod 7=3, 15 mod 7=1, 20 mod 7=6, 30 mod 7=2, 40 mod 7=5, 50 mod 7=1（15と衝突）",
 	},
 ];

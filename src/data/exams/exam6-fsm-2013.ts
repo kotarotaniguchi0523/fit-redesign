@@ -37,7 +37,8 @@ export const exam6_2013: Question[] = [
 			{ label: "エ", value: "10101" },
 		],
 		answer: "イ，ウ",
-		explanation: "S0から始まり、11でS2に到達。S2は0,1どちらでも自己ループ。イとウは11を含み受理される",
+		explanation:
+			"S0から始まり、11でS2に到達。S2は0,1どちらでも自己ループ。イとウは11を含み受理される",
 		figureDescription: "状態遷移図: S0 --1--> S1 --1--> S2(受理), S1 --0--> S0, S2 --0,1--> S2",
 		figureData: {
 			type: "stateDiagram",
@@ -66,7 +67,8 @@ export const exam6_2013: Question[] = [
 			{ label: "エ", value: "+324" },
 		],
 		answer: "ア",
-		explanation: "[+−]*で符号0回以上、[0-9]+で数字1回以上、E、[0-9]+で数字1回以上。イはE後に符号があり不正、ウも同様、エはEがない",
+		explanation:
+			"[+−]*で符号0回以上、[0-9]+で数字1回以上、E、[0-9]+で数字1回以上。イはE後に符号があり不正、ウも同様、エはEがない",
 	},
 	{
 		id: "exam6-2013-q5",
@@ -79,6 +81,7 @@ export const exam6_2013: Question[] = [
 			{ label: "エ", value: "YAB+CD−E/*=", isCorrect: true },
 		],
 		answer: "エ",
-		explanation: "(A+B)→AB+、(C−D)→CD−、(C−D)/E→CD−E/、(A+B)*((C−D)/E)→AB+CD−E/*、Y=...→YAB+CD−E/*=",
+		explanation:
+			"(A+B)→AB+、(C−D)→CD−、(C−D)/E→CD−E/、(A+B)*((C−D)/E)→AB+CD−E/*、Y=...→YAB+CD−E/*=",
 	},
 ];

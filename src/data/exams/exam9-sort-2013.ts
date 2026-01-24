@@ -11,7 +11,8 @@ export const exam9_2013: Question[] = [
 		number: 1,
 		text: "データ列 2, 6, 8, 3 を右のアルゴリズム（挿入ソートの1パス）にかける。結果を示せ。\n\nアルゴリズム: k=A[3], i=3-1から、A[i]>kならA[i+1]=A[i], i=i-1を繰り返し、A[i+1]=kとする",
 		answer: "2, 3, 6, 8",
-		explanation: "k=3, i=2。A[2]=8>3なのでA[3]=8, i=1。A[1]=6>3なのでA[2]=6, i=0。A[0]=2<3なので終了、A[1]=3。結果: [2,3,6,8]",
+		explanation:
+			"k=3, i=2。A[2]=8>3なのでA[3]=8, i=1。A[1]=6>3なのでA[2]=6, i=0。A[0]=2<3なので終了、A[1]=3。結果: [2,3,6,8]",
 	},
 	{
 		id: "exam9-2013-q2",
@@ -24,14 +25,16 @@ export const exam9_2013: Question[] = [
 			{ label: "エ", value: "A. クイックソート, B. バブルソート" },
 		],
 		answer: "ア",
-		explanation: "クイックソートは基準値(ピボット)でデータを分割、基本挿入法は整列済み部分に挿入していく",
+		explanation:
+			"クイックソートは基準値(ピボット)でデータを分割、基本挿入法は整列済み部分に挿入していく",
 	},
 	{
 		id: "exam9-2013-q3",
 		number: 3,
 		text: "二分探索において、データの個数が8倍になると、最大探索回数はどうなるか？",
 		answer: "3回増える",
-		explanation: "二分探索の計算量はO(log n)。8倍→log₂(8n) = log₂8 + log₂n = 3 + log₂n。つまり3回増加",
+		explanation:
+			"二分探索の計算量はO(log n)。8倍→log₂(8n) = log₂8 + log₂n = 3 + log₂n。つまり3回増加",
 	},
 	{
 		id: "exam9-2013-q4",
@@ -45,6 +48,7 @@ export const exam9_2013: Question[] = [
 		number: 5,
 		text: "次の関数f(x, y)において、f(330, 231)を求めよ。\nf(x, y): if y = 0 then return x else return f(y, x mod y)",
 		answer: "33",
-		explanation: "ユークリッドの互除法: f(330,231)→f(231,99)→f(99,33)→f(33,0)=33。330と231の最大公約数は33",
+		explanation:
+			"ユークリッドの互除法: f(330,231)→f(231,99)→f(99,33)→f(33,0)=33。330と231の最大公約数は33",
 	},
 ];
