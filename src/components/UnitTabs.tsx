@@ -1,5 +1,5 @@
 import { Card } from "@heroui/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getExamByNumber } from "../data/exams";
 import { slideOnlyUnits, unitBasedTabs } from "../data/units";
 import type { Unit, Year } from "../types/index";
@@ -23,6 +23,7 @@ const allUnits = [...unitBasedTabs, slideOnlyTab];
 
 export function UnitTabs({ selectedYear, onYearChange }: Props) {
 	const [selectedKey, setSelectedKey] = useState<string | number>(unitBasedTabs[0]?.id ?? "");
+	const [activeExamNumber, setActiveExamNumber] = useState<number | null>(null);
 
 	const handleSelectionChange = (key: string | number) => {
 		setSelectedKey(key);
@@ -46,6 +47,22 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 	const availableYears = selectedUnit?.examMapping.map((m) => m.year) ?? [];
 	const examMapping = selectedUnit?.examMapping.find((m) => m.year === selectedYear);
 	const examNumbers = examMapping?.examNumbers ?? [];
+
+	useEffect(() => {
+		if (examNumbers.length === 0) {
+			setActiveExamNumber(null);
+			return;
+		}
+
+		setActiveExamNumber((prev) => (prev && examNumbers.includes(prev) ? prev : examNumbers[0]));
+	}, [examNumbers]);
+
+	const resolvedActiveExamNumber = activeExamNumber ?? examNumbers[0];
+	const activeExamData = resolvedActiveExamNumber
+		? getExamByNumber(resolvedActiveExamNumber)
+		: undefined;
+	const activeExam = activeExamData?.exams[selectedYear];
+	const activeExamTitle = activeExam?.title ?? activeExamData?.title ?? "";
 
 	return (
 		<div className="w-full">
@@ -102,19 +119,41 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 						</Card>
 					)}
 
-					{/* 小テスト */}
-					{examNumbers.map((examNumber) => {
-						const examData = getExamByNumber(examNumber);
-						if (!examData) return null;
+					{/* 小テスト切り替え */}
+					{examNumbers.length > 1 && (
+						<div className="mt-4">
+							<p className="text-sm font-medium text-gray-600 mb-2">小テストを切り替え</p>
+							<div className="flex flex-wrap gap-2" role="tablist" aria-label="小テスト選択">
+								{examNumbers.map((examNumber) => {
+									const examData = getExamByNumber(examNumber);
+									if (!examData) return null;
+									const examTitle = examData.exams[selectedYear]?.title ?? examData.title;
+									const isActive = resolvedActiveExamNumber === examNumber;
 
-						return (
-							<ExamSection
-								key={examNumber}
-								exam={examData.exams[selectedYear]}
-								title={examData.title}
-							/>
-						);
-					})}
+									return (
+										<button
+											key={examNumber}
+											type="button"
+											role="tab"
+											aria-selected={isActive}
+											onClick={() => setActiveExamNumber(examNumber)}
+											className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all flex flex-col text-left min-w-[10rem] ${
+												isActive
+													? "bg-[#1e3a5f] text-white border-[#1e3a5f] shadow-sm"
+													: "bg-white text-gray-700 border-gray-300 hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
+											}`}
+										>
+											<span className="text-[11px] opacity-80">小テスト{examNumber}</span>
+											<span className="text-sm leading-snug">{examTitle}</span>
+										</button>
+									);
+								})}
+							</div>
+						</div>
+					)}
+
+					{/* 小テスト */}
+					{activeExamData && <ExamSection exam={activeExam} title={activeExamTitle} />}
 				</div>
 			)}
 
