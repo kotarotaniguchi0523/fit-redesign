@@ -1,5 +1,6 @@
 import { Button, Card, CardBody, CardHeader, Link } from "@heroui/react";
 import type { Exam, Year } from "../types/index";
+import { PdfViewer } from "./PdfViewer";
 import { QuestionCard } from "./QuestionCard";
 import { YearSelector } from "./YearSelector";
 
@@ -15,7 +16,7 @@ export function ExamSection({ title, exam, selectedYear, onYearChange, available
 	return (
 		<Card className="mt-4 shadow-sm">
 			<CardHeader className="flex flex-col gap-4 bg-linear-to-r from-gray-50 to-slate-50 border-b border-gray-200">
-				<div className="flex justify-between items-center w-full">
+				<div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<h3 className="text-lg font-semibold flex items-center gap-2 text-[#1e3a5f]">
 						<span className="w-8 h-8 rounded-lg bg-[#c9a227]/20 flex items-center justify-center">
 							📝
@@ -44,13 +45,17 @@ export function ExamSection({ title, exam, selectedYear, onYearChange, available
 			</CardHeader>
 			<CardBody className="p-5">
 				<div>
+					{/* PDF埋め込みビューワー */}
+					{exam?.pdfPath && <PdfViewer pdfPath={exam.pdfPath} title={exam.title} />}
+
+					{/* 問題カード */}
 					{exam?.questions.map((q) => (
 						<QuestionCard key={q.id} question={q} />
 					))}
 					{(!exam || exam.questions.length === 0) && (
 						<p className="text-gray-500 italic">
 							この年度の問題データはまだ準備中です。
-							{exam && (
+							{exam?.pdfPath && (
 								<>
 									<br />
 									<Link

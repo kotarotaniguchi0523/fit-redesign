@@ -60,3 +60,34 @@ export interface NormalDistributionEntry {
 	u: number;
 	probability: number;
 }
+
+// 論理回路の型定義
+export type GateType = "AND" | "OR" | "NOT" | "NAND" | "NOR" | "XOR" | "XNOR";
+
+export interface LogicGate {
+	id: string;
+	type: GateType;
+	x: number;
+	y: number;
+}
+
+export interface LogicInput {
+	id: string;
+	label: string;
+	x: number;
+	y: number;
+}
+
+export interface LogicOutput {
+	id: string;
+	label: string;
+	x: number;
+	y: number;
+	input: string; // 接続元のID
+}
+
+export interface LogicWire {
+	from: string;
+	to: string;
+	points?: { x: number; y: number }[]; // 曲がり角の座標（オプション）
+}

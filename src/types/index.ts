@@ -2,8 +2,13 @@
 import type {
 	DataTableColumn,
 	DataTableRow,
+	GateType,
 	HuffmanTableData,
 	LinkedListEntry,
+	LogicGate,
+	LogicInput,
+	LogicOutput,
+	LogicWire,
 	NormalDistributionEntry,
 	StateNode,
 	Transition,
@@ -29,8 +34,13 @@ export interface QuestionOption {
 export type {
 	DataTableColumn,
 	DataTableRow,
+	GateType,
 	HuffmanTableData,
 	LinkedListEntry,
+	LogicGate,
+	LogicInput,
+	LogicOutput,
+	LogicWire,
 	NormalDistributionEntry,
 	StateNode,
 	Transition,
@@ -52,7 +62,14 @@ export type FigureData =
 	| { type: "dataTable"; columns: DataTableColumn[]; rows: DataTableRow[] }
 	| { type: "huffmanTable"; data: HuffmanTableData }
 	| { type: "linkedListTable"; entries: LinkedListEntry[] }
-	| { type: "normalDistributionTable"; entries: NormalDistributionEntry[] };
+	| { type: "normalDistributionTable"; entries: NormalDistributionEntry[] }
+	| {
+			type: "logicCircuit";
+			inputs: LogicInput[];
+			outputs: LogicOutput[];
+			gates: LogicGate[];
+			wires: LogicWire[];
+	  };
 
 // 問題
 export interface Question {
@@ -106,6 +123,8 @@ export interface UnitBasedTab {
 	id: string;
 	name: string; // 単元名（例: "基数変換"）
 	title: string; // タイトル（例: "単元1: 基数変換"）
+	icon: string; // 絵文字アイコン（例: "🔢"）
+	description: string; // 単元の説明（例: "2進数・8進数・16進数の変換"）
 	slides: Slide[]; // 講義スライド
 	// 年度別の試験マッピング
 	examMapping: {

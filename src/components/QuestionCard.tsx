@@ -1,6 +1,13 @@
 import { Accordion, AccordionItem, Card, CardBody } from "@heroui/react";
 import type { FigureData, Question } from "../types/index";
-import { BinaryTree, ParityCheck, StateDiagram, TableRenderer, TruthTable } from "./figures";
+import {
+	BinaryTree,
+	LogicCircuit,
+	ParityCheck,
+	StateDiagram,
+	TableRenderer,
+	TruthTable,
+} from "./figures";
 
 interface Props {
 	question: Question;
@@ -20,6 +27,15 @@ function renderFigure(figureData: FigureData) {
 			return <TruthTable columns={figureData.columns} rows={figureData.rows} />;
 		case "parityCheck":
 			return <ParityCheck data={figureData.data} />;
+		case "logicCircuit":
+			return (
+				<LogicCircuit
+					inputs={figureData.inputs}
+					outputs={figureData.outputs}
+					gates={figureData.gates}
+					wires={figureData.wires}
+				/>
+			);
 		case "dataTable":
 		case "huffmanTable":
 		case "linkedListTable":
@@ -78,7 +94,7 @@ export function QuestionCard({ question }: Props) {
 						aria-label="解答"
 						title={<span className="text-sm font-medium text-[#1e3a5f]">解答を表示</span>}
 					>
-						<div className="p-4 bg-linear-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
+						<div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
 							<div className="flex items-start gap-2">
 								<span className="text-emerald-600 font-bold">A.</span>
 								<span className="font-medium text-emerald-900">{question.answer}</span>

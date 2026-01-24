@@ -8,6 +8,8 @@ export type {
 } from "../../types/index";
 export type { BinaryTreeProps } from "./BinaryTree";
 export { BinaryTree } from "./BinaryTree";
+export type { LogicCircuitProps } from "./LogicCircuit";
+export { LogicCircuit } from "./LogicCircuit";
 export type { ParityCheckProps } from "./ParityCheck";
 export { ParityCheck } from "./ParityCheck";
 export type { StateDiagramProps } from "./StateDiagram";
