@@ -1,0 +1,27 @@
+{
+  "plansDirectory": "./.claude/plans",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "このコマンドが npm install, npm run, npm ci, npm add などの npm コマンドを含む場合は BLOCK と出力し、理由として「pnpm を使用してください」と説明してください。yarn コマンドも同様に BLOCK してください。pnpm コマンドまたは npm/yarn 以外のコマンドの場合は PASS と出力してください。"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/plan-version-manager.py"
+          }
+        ]
+      }
+    ]
+  }
+}

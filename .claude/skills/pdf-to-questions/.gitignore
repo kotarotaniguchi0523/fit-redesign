@@ -1,0 +1,13 @@
+# 仮想環境
+.venv/
+
+# 抽出結果（一時ファイル）
+extracted/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# uv
+uv.lock
