@@ -20,6 +20,58 @@ export const exam4_2013: Question[] = [
 		answer: "Z = XY ⊕ (X̅ + Y)",
 		explanation: "回路図から論理式を導出する。上段はXとYのAND、下段は(X̅+Y)、それらのXOR",
 		figureDescription: "論理回路図: XとYを入力とし、NANDゲートとORゲートを組み合わせた回路",
+		figureData: {
+			type: "logicCircuit",
+			inputs: [
+				{ id: "X", label: "X", x: 50, y: 80 },
+				{ id: "Y", label: "Y", x: 50, y: 140 },
+			],
+			gates: [
+				{ id: "AND1", type: "AND", x: 150, y: 80 },
+				{ id: "NOT1", type: "NOT", x: 150, y: 120 },
+				{ id: "OR1", type: "OR", x: 250, y: 130 },
+				{ id: "XOR1", type: "XOR", x: 350, y: 105 },
+			],
+			outputs: [{ id: "Z", label: "Z", x: 450, y: 105, input: "XOR1" }],
+			wires: [
+				{ from: "X", to: "AND1" },
+				{
+					from: "Y",
+					to: "AND1",
+					points: [
+						{ x: 80, y: 140 },
+						{ x: 80, y: 90 },
+					],
+				},
+				{
+					from: "X",
+					to: "NOT1",
+					points: [
+						{ x: 80, y: 80 },
+						{ x: 80, y: 120 },
+					],
+				},
+				{ from: "NOT1", to: "OR1" },
+				{ from: "Y", to: "OR1" },
+				{
+					from: "AND1",
+					to: "XOR1",
+					points: [
+						{ x: 280, y: 80 },
+						{ x: 280, y: 95 },
+					],
+				},
+				{
+					from: "OR1",
+					to: "XOR1",
+					points: [
+						{ x: 280, y: 130 },
+						{ x: 280, y: 115 },
+					],
+				},
+				{ from: "XOR1", to: "Z" },
+			],
+		},
 	},
 	{
 		id: "exam4-2013-q3",

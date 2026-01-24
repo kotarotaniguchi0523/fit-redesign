@@ -16,6 +16,8 @@ import { exam2_2016 } from "./exam2-negative-2016";
 import { exam2_2017 } from "./exam2-negative-2017";
 import { exam3_2013 } from "./exam3-float-2013";
 import { exam3_2015 } from "./exam3-logic-2015";
+import { exam3_2016 } from "./exam3-logic-2016";
+import { exam3_2017 } from "./exam3-logic-2017";
 import { exam4_2015 } from "./exam4-fsm-2015";
 import { exam4_2013 } from "./exam4-logic-2013";
 import { exam4_2014 } from "./exam4-logic-2014";
@@ -33,6 +35,7 @@ import { exam7_2016 } from "./exam7-ecc-2016";
 import { exam7_2017 } from "./exam7-ecc-2017";
 import { exam8_2013 } from "./exam8-stack-2013";
 import { exam8_2014 } from "./exam8-stack-2014";
+import { exam8_2015 } from "./exam8-stack-2015";
 import { exam8_2016 } from "./exam8-stack-2016";
 import { exam8_2017 } from "./exam8-stack-2017";
 import { exam9_2013 } from "./exam9-sort-2013";
@@ -164,6 +167,22 @@ const exam3Exams: ExamByYear["exams"] = {
 		answerPdfPath: "/pdf/Exam2015-Ans.html",
 		questions: exam3_2015,
 	},
+	"2016": {
+		id: "exam3-2016",
+		number: 3,
+		title: "集合・論理演算 (2016)",
+		pdfPath: "/pdf/Exam4d-logic.pdf",
+		answerPdfPath: "/pdf/Exam2016-Ans.html",
+		questions: exam3_2016,
+	},
+	"2017": {
+		id: "exam3-2017",
+		number: 3,
+		title: "集合・論理演算 (2017)",
+		pdfPath: "/pdf/Exam4e-logic.pdf",
+		answerPdfPath: "/pdf/Exam2017-Ans.html",
+		questions: exam3_2017,
+	},
 };
 
 export const exam3 = createExamByYear(3, "浮動小数点 / 集合・確率", exam3Exams);
@@ -174,7 +193,7 @@ const exam4Exams: ExamByYear["exams"] = {
 		id: "exam4-2013",
 		number: 4,
 		title: "集合と論理 (2013)",
-		pdfPath: "/pdf/Exam4-Logic.pdf",
+		pdfPath: "/pdf/Exam4-logic.pdf",
 		answerPdfPath: "/pdf/Exam2013-Ans.html",
 		questions: exam4_2013,
 	},
@@ -362,6 +381,14 @@ const exam8Exams: ExamByYear["exams"] = {
 		pdfPath: "/pdf/Exam8b-Stack.pdf",
 		answerPdfPath: "/pdf/Exam2014-Ans.html",
 		questions: exam8_2014,
+	},
+	"2015": {
+		id: "exam8-2015",
+		number: 8,
+		title: "データ構造 (2015)",
+		pdfPath: "/pdf/Exam8c-Stack.pdf",
+		answerPdfPath: "/pdf/Exam2015-Ans.html",
+		questions: exam8_2015,
 	},
 	"2016": {
 		id: "exam8-2016",
