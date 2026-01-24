@@ -1,6 +1,6 @@
 import { Accordion, AccordionItem, Card, CardBody } from "@heroui/react";
 import type { FigureData, Question } from "../types/index";
-import { BinaryTree, ParityCheck, StateDiagram, TruthTable } from "./figures";
+import { BinaryTree, ParityCheck, StateDiagram, TableRenderer, TruthTable } from "./figures";
 
 interface Props {
 	question: Question;
@@ -20,6 +20,11 @@ function renderFigure(figureData: FigureData) {
 			return <TruthTable columns={figureData.columns} rows={figureData.rows} />;
 		case "parityCheck":
 			return <ParityCheck data={figureData.data} />;
+		case "dataTable":
+		case "huffmanTable":
+		case "linkedListTable":
+		case "normalDistributionTable":
+			return <TableRenderer figureData={figureData} />;
 		default:
 			return assertNever(figureData);
 	}

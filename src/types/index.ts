@@ -1,5 +1,16 @@
 // 図コンポーネントの型をインポート
-import type { StateNode, Transition, TreeNode, TruthTableColumn, TruthTableRow } from "./figures";
+import type {
+	DataTableColumn,
+	DataTableRow,
+	HuffmanTableData,
+	LinkedListEntry,
+	NormalDistributionEntry,
+	StateNode,
+	Transition,
+	TreeNode,
+	TruthTableColumn,
+	TruthTableRow,
+} from "./figures";
 
 // 年度一覧
 export const YEARS = ["2013", "2014", "2015", "2016", "2017"] as const;
@@ -15,7 +26,18 @@ export interface QuestionOption {
 }
 
 // 図コンポーネントの型をre-export
-export type { StateNode, Transition, TreeNode, TruthTableColumn, TruthTableRow };
+export type {
+	DataTableColumn,
+	DataTableRow,
+	HuffmanTableData,
+	LinkedListEntry,
+	NormalDistributionEntry,
+	StateNode,
+	Transition,
+	TreeNode,
+	TruthTableColumn,
+	TruthTableRow,
+};
 
 // 図データの型定義
 export type FigureData =
@@ -26,7 +48,11 @@ export type FigureData =
 	  }
 	| { type: "binaryTree"; root: TreeNode }
 	| { type: "truthTable"; columns: TruthTableColumn[]; rows: TruthTableRow[] }
-	| { type: "parityCheck"; data: number[][] };
+	| { type: "parityCheck"; data: number[][] }
+	| { type: "dataTable"; columns: DataTableColumn[]; rows: DataTableRow[] }
+	| { type: "huffmanTable"; data: HuffmanTableData }
+	| { type: "linkedListTable"; entries: LinkedListEntry[] }
+	| { type: "normalDistributionTable"; entries: NormalDistributionEntry[] };
 
 // 問題
 export interface Question {

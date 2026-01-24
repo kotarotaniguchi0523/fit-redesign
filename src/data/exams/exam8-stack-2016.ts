@@ -33,10 +33,19 @@ export const exam8_2016: Question[] = [
 	{
 		id: "exam8-2016-q2",
 		number: 2,
-		text: "次のリスト(N, E, W, S)から、要素 E を削除するために書き換えるアドレス、データ、ポインタを示せ。\n\nアドレス データ ポインタ\n100     E     200\n200     W     300\n300     S     0\n400     N     100",
+		text: "次のリスト(N, E, W, S)から、要素 E を削除するために書き換えるアドレス、データ、ポインタを示せ。",
 		answer: "アドレス400のポインタを100から200に書き換える",
 		explanation:
 			"リスト構造: N(400)→E(100)→W(200)→S(300)。Eを削除するには、Eを指しているN(アドレス400)のポインタを、Eの次の要素W(アドレス200)に変更する。つまり、アドレス400のポインタを100から200に書き換える。",
+		figureData: {
+			type: "linkedListTable",
+			entries: [
+				{ address: 100, data: "E", pointer: 200 },
+				{ address: 200, data: "W", pointer: 300 },
+				{ address: 300, data: "S", pointer: 0 },
+				{ address: 400, data: "N", pointer: 100 },
+			],
+		},
 	},
 	{
 		id: "exam8-2016-q3",

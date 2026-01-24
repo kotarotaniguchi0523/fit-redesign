@@ -25,10 +25,19 @@ export const exam6_2014: Question[] = [
 	{
 		id: "exam6-2014-q3",
 		number: 3,
-		text: "平均70点で正規分布している100人分のテスト結果において、80点以上は16人だった。標準正規分布表が下の様に与えられている時、標準偏差σを求めよ\n\nU=(x-μ)/σ  0.0  1.0  2.0  3.0\nPr(U > u)  0.5  0.159  0.023  0.001",
+		text: "平均70点で正規分布している100人分のテスト結果において、80点以上は16人だった。標準正規分布表が下の様に与えられている時、標準偏差σを求めよ",
 		answer: "10",
 		explanation:
 			"80点以上が16人 = 16%。Pr(U > u) = 0.16 ≒ 0.159より u = 1.0。U = (80-70)/σ = 1.0より、σ = 10",
+		figureData: {
+			type: "normalDistributionTable",
+			entries: [
+				{ u: 0.0, probability: 0.5 },
+				{ u: 1.0, probability: 0.159 },
+				{ u: 2.0, probability: 0.023 },
+				{ u: 3.0, probability: 0.001 },
+			],
+		},
 	},
 	{
 		id: "exam6-2014-q4",
@@ -44,7 +53,6 @@ export const exam6_2014: Question[] = [
 		answer: "略",
 		explanation: "状態遷移表から状態遷移図を描く。S0, S1, S2の3状態があり、入力0と1で遷移する",
 		figureDescription: "状態遷移表: 入力0でS0→S0, S1→S1, S2→S0。入力1でS0→S1, S1→S0, S2→S1",
-		// TODO: 状態遷移表用の型定義を追加するまで、状態遷移図として表現
 		figureData: {
 			type: "stateDiagram",
 			nodes: [

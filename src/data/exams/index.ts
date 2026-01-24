@@ -10,6 +10,7 @@ import { exam1_2016 } from "./exam1-base-2016";
 // 2017年度
 import { exam1_2017 } from "./exam1-base-2017";
 import { exam2_2013 } from "./exam2-negative-2013";
+import { exam2_2014 } from "./exam2-negative-2014";
 import { exam2_2015 } from "./exam2-negative-2015";
 import { exam2_2016 } from "./exam2-negative-2016";
 import { exam2_2017 } from "./exam2-negative-2017";
@@ -22,13 +23,16 @@ import { exam5_2015 } from "./exam5-ecc-2015";
 import { exam5_2013 } from "./exam5-prob-2013";
 import { exam6_2013 } from "./exam6-fsm-2013";
 import { exam6_2014 } from "./exam6-fsm-2014";
+import { exam6_2015 } from "./exam6-fsm-2015";
 import { exam6_2016 } from "./exam6-fsm-2016";
 import { exam6_2017 } from "./exam6-fsm-2017";
 import { exam7_2013 } from "./exam7-ecc-2013";
 import { exam7_2014 } from "./exam7-ecc-2014";
+import { exam7_2015 } from "./exam7-ecc-2015";
 import { exam7_2016 } from "./exam7-ecc-2016";
 import { exam7_2017 } from "./exam7-ecc-2017";
 import { exam8_2013 } from "./exam8-stack-2013";
+import { exam8_2014 } from "./exam8-stack-2014";
 import { exam8_2016 } from "./exam8-stack-2016";
 import { exam8_2017 } from "./exam8-stack-2017";
 import { exam9_2013 } from "./exam9-sort-2013";
@@ -105,6 +109,14 @@ const exam2Exams: ExamByYear["exams"] = {
 		pdfPath: "/pdf/Exam2-Negative.pdf",
 		answerPdfPath: "/pdf/Exam2013-Ans.html",
 		questions: exam2_2013,
+	},
+	"2014": {
+		id: "exam2-2014",
+		number: 2,
+		title: "負数表現 (2014)",
+		pdfPath: "/pdf/Exam2b-Negative.pdf",
+		answerPdfPath: "/pdf/Exam2014-Ans.html",
+		questions: exam2_2014,
 	},
 	"2015": {
 		id: "exam2-2015",
@@ -259,6 +271,14 @@ const exam6Exams: ExamByYear["exams"] = {
 		answerPdfPath: "/pdf/Exam2014-Ans.html",
 		questions: exam6_2014,
 	},
+	"2015": {
+		id: "exam6-2015",
+		number: 6,
+		title: "FSM・確率 (2015)",
+		pdfPath: "/pdf/Exam6c-FSM.pdf",
+		answerPdfPath: "/pdf/Exam2015-Ans.html",
+		questions: exam6_2015,
+	},
 	"2016": {
 		id: "exam6-2016",
 		number: 6,
@@ -297,6 +317,14 @@ const exam7Exams: ExamByYear["exams"] = {
 		answerPdfPath: "/pdf/Exam2014-Ans.html",
 		questions: exam7_2014,
 	},
+	"2015": {
+		id: "exam7-2015",
+		number: 7,
+		title: "符号理論 (2015)",
+		pdfPath: "/pdf/Exam7c-ECC.pdf",
+		answerPdfPath: "/pdf/Exam2015-Ans.html",
+		questions: exam7_2015,
+	},
 	"2016": {
 		id: "exam7-2016",
 		number: 7,
@@ -326,6 +354,14 @@ const exam8Exams: ExamByYear["exams"] = {
 		pdfPath: "/pdf/Exam8-Stack.pdf",
 		answerPdfPath: "/pdf/Exam2013-Ans.html",
 		questions: exam8_2013,
+	},
+	"2014": {
+		id: "exam8-2014",
+		number: 8,
+		title: "データ構造 (2014)",
+		pdfPath: "/pdf/Exam8b-Stack.pdf",
+		answerPdfPath: "/pdf/Exam2014-Ans.html",
+		questions: exam8_2014,
 	},
 	"2016": {
 		id: "exam8-2016",

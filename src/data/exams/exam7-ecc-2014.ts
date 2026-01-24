@@ -9,7 +9,14 @@ export const exam7_2014: Question[] = [
 	{
 		id: "exam7-2014-q1",
 		number: 1,
-		text: "次の表で与えられる情報源をハフマン符号で符号化し、AとBの符号語を求めよ\n\n文字: A, B, C, D, E\n生起確率: 0.66, 0.12, 0.09, 0.08, 0.05",
+		text: "次の表で与えられる情報源をハフマン符号で符号化し、AとBの符号語を求めよ",
+		figureData: {
+			type: "huffmanTable",
+			data: {
+				characters: ["A", "B", "C", "D", "E"],
+				probabilities: [0.66, 0.12, 0.09, 0.08, 0.05],
+			},
+		},
 		answer: "A=1, B=011",
 		explanation:
 			"ハフマン符号化: 最も確率の低い2つを結合していく。A(0.66)が最も高いため短い符号1、B(0.12)は011となる",

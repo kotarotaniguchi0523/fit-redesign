@@ -31,3 +31,32 @@ export interface TruthTableColumn {
 export interface TruthTableRow {
 	[key: string]: string | number | boolean;
 }
+
+// 汎用テーブルの型定義
+export interface DataTableColumn {
+	key: string;
+	label: string;
+}
+
+export interface DataTableRow {
+	[key: string]: string | number;
+}
+
+// ハフマン符号表の型定義
+export interface HuffmanTableData {
+	characters: string[];
+	probabilities: number[];
+}
+
+// リンクリスト（ポインタ）表の型定義
+export interface LinkedListEntry {
+	address: string | number;
+	data: string;
+	pointer: string | number;
+}
+
+// 正規分布表の型定義
+export interface NormalDistributionEntry {
+	u: number;
+	probability: number;
+}

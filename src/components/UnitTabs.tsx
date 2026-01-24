@@ -1,4 +1,5 @@
 import { Tab, Tabs } from "@heroui/react";
+import { useEffect, useState } from "react";
 import { getExamByNumber } from "../data/exams";
 import { slideOnlyUnits, tabs2013, tabs2014 } from "../data/units";
 import type { Unit, Year } from "../types/index";
@@ -14,11 +15,24 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 	const is2013 = selectedYear === "2013";
 	const tabs = is2013 ? tabs2013 : tabs2014;
 
+	const [selectedKey, setSelectedKey] = useState<string | number>(tabs[0]?.id ?? "");
+
+	useEffect(() => {
+		// 年度が変わったら最初のタブにリセット
+		setSelectedKey(tabs[0]?.id ?? "");
+	}, [selectedYear, tabs]);
+
+	const handleSelectionChange = (key: string | number) => {
+		setSelectedKey(key);
+	};
+
 	return (
 		<div className="w-full">
 			<Tabs
 				aria-label="単元"
 				variant="light"
+				selectedKey={selectedKey}
+				onSelectionChange={handleSelectionChange}
 				classNames={{
 					tabList: "gap-2 p-1 bg-white rounded-xl shadow-sm border border-gray-200",
 					tab: "px-4 py-2 rounded-lg data-[hover=true]:bg-gray-100 transition-all",
