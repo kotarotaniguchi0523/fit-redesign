@@ -17,6 +17,16 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 
 	const handleSelectionChange = (key: string | number) => {
 		setSelectedKey(key);
+
+		// 新しいタブの有効年度を取得
+		const newUnit = unitBasedTabs.find((u) => u.id === key);
+		if (newUnit) {
+			const availableYears = newUnit.examMapping.map((m) => m.year);
+			// 現在の年度が無効なら、最初の有効年度へ補正
+			if (!availableYears.includes(selectedYear)) {
+				onYearChange(availableYears[0]);
+			}
+		}
 	};
 
 	return (

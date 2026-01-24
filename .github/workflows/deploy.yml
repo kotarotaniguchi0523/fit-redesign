@@ -32,8 +32,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Lint & Format Check
+        run: pnpm format --check
+
       - name: Build
         run: pnpm build
+
+      - name: Check for broken links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --offline --verbose './dist/**/*.html'
+          fail: true
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3

@@ -92,7 +92,7 @@ const exam1Exams: ExamByYear["exams"] = {
 		id: "exam1-2017",
 		number: 1,
 		title: "基数変換 (2017)",
-		pdfPath: "/pdf/Exam1e-Base.pdf", // 注: PDFファイルが不足
+		pdfPath: "", // PDFファイルが存在しません (Exam1e-Base.pdf)
 		answerPdfPath: "/pdf/Exam2017-Ans.html",
 		questions: exam1_2017,
 	},
@@ -160,7 +160,7 @@ const exam3Exams: ExamByYear["exams"] = {
 		id: "exam3-2015",
 		number: 3,
 		title: "集合・論理演算 (2015)",
-		pdfPath: "/pdf/Exam3c-logic.pdf",
+		pdfPath: "", // PDFファイルが存在しません (Exam3c-logic.pdf)
 		answerPdfPath: "/pdf/Exam2015-Ans.html",
 		questions: exam3_2015,
 	},
@@ -229,7 +229,7 @@ const exam5Exams: ExamByYear["exams"] = {
 		id: "exam5-2015",
 		number: 5,
 		title: "符号理論 (2015)",
-		pdfPath: "/pdf/Exam5c-ECC.pdf", // 注: PDFファイルが存在しない
+		pdfPath: "", // PDFファイルが存在しません (Exam5c-ECC.pdf)
 		answerPdfPath: "/pdf/Exam2015-Ans.html",
 		questions: exam5_2015,
 	},
@@ -374,8 +374,8 @@ const exam8Exams: ExamByYear["exams"] = {
 	"2017": {
 		id: "exam8-2017",
 		number: 8,
-		title: "データ構造 (2017)",
-		pdfPath: "/pdf/Exam8e-Stack.pdf", // 注: PDFファイルが不足
+		title: "データ構置 (2017)",
+		pdfPath: "", // PDFファイルが存在しません (Exam8e-Stack.pdf)
 		answerPdfPath: "/pdf/Exam2017-Ans.html",
 		questions: exam8_2017,
 	},
