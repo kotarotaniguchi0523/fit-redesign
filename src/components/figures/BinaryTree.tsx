@@ -88,10 +88,12 @@ export function BinaryTree({ root, width = 300, height = 200, nodeRadius = 20 }:
 
 	return (
 		<svg
-			width={width}
-			height={height}
+			width="100%"
+			height="auto"
 			viewBox={`0 0 ${width} ${height}`}
-			className="border border-gray-300 rounded"
+			preserveAspectRatio="xMidYMid meet"
+			className="border border-gray-300 rounded max-w-full h-auto"
+			style={{ aspectRatio: `${width}/${height}` }}
 			aria-label="Binary tree diagram"
 		>
 			<title>Binary tree diagram</title>

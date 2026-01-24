@@ -109,10 +109,12 @@ export function StateDiagram({ nodes, transitions, width = 400, height = 150 }: 
 
 	return (
 		<svg
-			width={width}
-			height={height}
+			width="100%"
+			height="auto"
 			viewBox={`0 0 ${width} ${height}`}
-			className="border border-gray-300 rounded"
+			preserveAspectRatio="xMidYMid meet"
+			className="border border-gray-300 rounded max-w-full h-auto"
+			style={{ aspectRatio: `${width}/${height}` }}
 			aria-label="State machine diagram"
 		>
 			<title>State machine diagram</title>

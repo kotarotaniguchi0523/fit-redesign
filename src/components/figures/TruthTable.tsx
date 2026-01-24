@@ -9,29 +9,31 @@ export interface TruthTableProps {
 
 export function TruthTable({ columns, rows, ariaLabel = "Truth table" }: TruthTableProps) {
 	return (
-		<Table aria-label={ariaLabel} className="max-w-2xl">
-			<TableHeader>
-				{columns.map((column) => (
-					<TableColumn key={column.key} className="text-center">
-						{column.label}
-					</TableColumn>
-				))}
-			</TableHeader>
-			<TableBody>
-				{rows.map((row, rowIndex) => {
-					const rowKey = `row-${rowIndex}`;
+		<div className="w-full overflow-x-auto">
+			<Table aria-label={ariaLabel} className="max-w-2xl min-w-max">
+				<TableHeader>
+					{columns.map((column) => (
+						<TableColumn key={column.key} className="text-center">
+							{column.label}
+						</TableColumn>
+					))}
+				</TableHeader>
+				<TableBody>
+					{rows.map((row, rowIndex) => {
+						const rowKey = `row-${rowIndex}`;
 
-					return (
-						<TableRow key={rowKey}>
-							{columns.map((column) => (
-								<TableCell key={`${rowKey}-${column.key}`} className="text-center">
-									{String(row[column.key])}
-								</TableCell>
-							))}
-						</TableRow>
-					);
-				})}
-			</TableBody>
-		</Table>
+						return (
+							<TableRow key={rowKey}>
+								{columns.map((column) => (
+									<TableCell key={`${rowKey}-${column.key}`} className="text-center">
+										{String(row[column.key])}
+									</TableCell>
+								))}
+							</TableRow>
+						);
+					})}
+				</TableBody>
+			</Table>
+		</div>
 	);
 }

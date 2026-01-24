@@ -1,4 +1,5 @@
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
+import type { ReactNode } from "react";
 import type {
 	DataTableColumn,
 	DataTableRow,
@@ -34,6 +35,10 @@ export function TableRenderer({ figureData }: TableRendererProps) {
 	}
 }
 
+function TableWrapper({ children }: { children: ReactNode }) {
+	return <div className="w-full overflow-x-auto">{children}</div>;
+}
+
 // 汎用データテーブル
 interface DataTableProps {
 	columns: DataTableColumn[];
@@ -42,29 +47,31 @@ interface DataTableProps {
 
 function DataTable({ columns, rows }: DataTableProps) {
 	return (
-		<Table aria-label="Data table" className="max-w-2xl">
-			<TableHeader>
-				{columns.map((column) => (
-					<TableColumn key={column.key} className="text-center">
-						{column.label}
-					</TableColumn>
-				))}
-			</TableHeader>
-			<TableBody>
-				{rows.map((row, index) => {
-					const rowKey = `row-${index}-${columns.map((col) => String(row[col.key])).join("-")}`;
-					return (
-						<TableRow key={rowKey}>
-							{columns.map((column) => (
-								<TableCell key={`${rowKey}-${column.key}`} className="text-center">
-									{String(row[column.key])}
-								</TableCell>
-							))}
-						</TableRow>
-					);
-				})}
-			</TableBody>
-		</Table>
+		<TableWrapper>
+			<Table aria-label="Data table" className="max-w-2xl min-w-max">
+				<TableHeader>
+					{columns.map((column) => (
+						<TableColumn key={column.key} className="text-center">
+							{column.label}
+						</TableColumn>
+					))}
+				</TableHeader>
+				<TableBody>
+					{rows.map((row, index) => {
+						const rowKey = `row-${index}-${columns.map((col) => String(row[col.key])).join("-")}`;
+						return (
+							<TableRow key={rowKey}>
+								{columns.map((column) => (
+									<TableCell key={`${rowKey}-${column.key}`} className="text-center">
+										{String(row[column.key])}
+									</TableCell>
+								))}
+							</TableRow>
+						);
+					})}
+				</TableBody>
+			</Table>
+		</TableWrapper>
 	);
 }
 
@@ -80,26 +87,28 @@ function HuffmanTable({ data }: HuffmanTableProps) {
 	];
 
 	return (
-		<Table aria-label="Huffman coding table" className="max-w-2xl">
-			<TableHeader>
-				{columns.map((column) => (
-					<TableColumn key={column.key} className="text-center">
-						{column.label}
-					</TableColumn>
-				))}
-			</TableHeader>
-			<TableBody>
-				{data.characters.map((character, index) => {
-					const rowKey = `huffman-${index}-${character}`;
-					return (
-						<TableRow key={rowKey}>
-							<TableCell className="text-center">{character}</TableCell>
-							<TableCell className="text-center">{data.probabilities[index]}</TableCell>
-						</TableRow>
-					);
-				})}
-			</TableBody>
-		</Table>
+		<TableWrapper>
+			<Table aria-label="Huffman coding table" className="max-w-2xl min-w-max">
+				<TableHeader>
+					{columns.map((column) => (
+						<TableColumn key={column.key} className="text-center">
+							{column.label}
+						</TableColumn>
+					))}
+				</TableHeader>
+				<TableBody>
+					{data.characters.map((character, index) => {
+						const rowKey = `huffman-${index}-${character}`;
+						return (
+							<TableRow key={rowKey}>
+								<TableCell className="text-center">{character}</TableCell>
+								<TableCell className="text-center">{data.probabilities[index]}</TableCell>
+							</TableRow>
+						);
+					})}
+				</TableBody>
+			</Table>
+		</TableWrapper>
 	);
 }
 
@@ -116,27 +125,29 @@ function LinkedListTable({ entries }: LinkedListTableProps) {
 	];
 
 	return (
-		<Table aria-label="Linked list table" className="max-w-2xl">
-			<TableHeader>
-				{columns.map((column) => (
-					<TableColumn key={column.key} className="text-center">
-						{column.label}
-					</TableColumn>
-				))}
-			</TableHeader>
-			<TableBody>
-				{entries.map((entry, index) => {
-					const rowKey = `linkedlist-${index}-${entry.address}`;
-					return (
-						<TableRow key={rowKey}>
-							<TableCell className="text-center">{String(entry.address)}</TableCell>
-							<TableCell className="text-center">{entry.data}</TableCell>
-							<TableCell className="text-center">{String(entry.pointer)}</TableCell>
-						</TableRow>
-					);
-				})}
-			</TableBody>
-		</Table>
+		<TableWrapper>
+			<Table aria-label="Linked list table" className="max-w-2xl min-w-max">
+				<TableHeader>
+					{columns.map((column) => (
+						<TableColumn key={column.key} className="text-center">
+							{column.label}
+						</TableColumn>
+					))}
+				</TableHeader>
+				<TableBody>
+					{entries.map((entry, index) => {
+						const rowKey = `linkedlist-${index}-${entry.address}`;
+						return (
+							<TableRow key={rowKey}>
+								<TableCell className="text-center">{String(entry.address)}</TableCell>
+								<TableCell className="text-center">{entry.data}</TableCell>
+								<TableCell className="text-center">{String(entry.pointer)}</TableCell>
+							</TableRow>
+						);
+					})}
+				</TableBody>
+			</Table>
+		</TableWrapper>
 	);
 }
 
@@ -152,25 +163,27 @@ function NormalDistributionTable({ entries }: NormalDistributionTableProps) {
 	];
 
 	return (
-		<Table aria-label="Normal distribution table" className="max-w-2xl">
-			<TableHeader>
-				{columns.map((column) => (
-					<TableColumn key={column.key} className="text-center">
-						{column.label}
-					</TableColumn>
-				))}
-			</TableHeader>
-			<TableBody>
-				{entries.map((entry, index) => {
-					const rowKey = `normal-${index}-${entry.u}`;
-					return (
-						<TableRow key={rowKey}>
-							<TableCell className="text-center">{entry.u}</TableCell>
-							<TableCell className="text-center">{entry.probability}</TableCell>
-						</TableRow>
-					);
-				})}
-			</TableBody>
-		</Table>
+		<TableWrapper>
+			<Table aria-label="Normal distribution table" className="max-w-2xl min-w-max">
+				<TableHeader>
+					{columns.map((column) => (
+						<TableColumn key={column.key} className="text-center">
+							{column.label}
+						</TableColumn>
+					))}
+				</TableHeader>
+				<TableBody>
+					{entries.map((entry, index) => {
+						const rowKey = `normal-${index}-${entry.u}`;
+						return (
+							<TableRow key={rowKey}>
+								<TableCell className="text-center">{entry.u}</TableCell>
+								<TableCell className="text-center">{entry.probability}</TableCell>
+							</TableRow>
+						);
+					})}
+				</TableBody>
+			</Table>
+		</TableWrapper>
 	);
 }

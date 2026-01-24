@@ -19,9 +19,9 @@ export function SlideSection({ slides }: Props) {
 					{slides.map((slide) => (
 						<div
 							key={slide.id}
-							className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100"
+							className="flex flex-col gap-2 p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100 sm:flex-row sm:items-center sm:justify-between"
 						>
-							<span className="text-sm text-gray-700">{slide.title}</span>
+							<span className="text-sm text-gray-700 break-words">{slide.title}</span>
 							<Button
 								as={Link}
 								href={slide.pdfPath}
@@ -29,7 +29,7 @@ export function SlideSection({ slides }: Props) {
 								rel="noopener noreferrer"
 								size="sm"
 								variant="flat"
-								className="bg-[#1e3a5f] text-white hover:bg-[#2d4a6f]"
+								className="w-full bg-[#1e3a5f] text-white hover:bg-[#2d4a6f] sm:w-auto"
 							>
 								開く ↗
 							</Button>
