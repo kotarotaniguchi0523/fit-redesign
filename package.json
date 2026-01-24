@@ -8,6 +8,7 @@
 		"build": "tsgo && vite build",
 		"preview": "vite preview",
 		"format": "biome format --write .",
+		"check": "biome ci .",
 		"typecheck": "tsgo --noEmit",
 		"knip": "knip"
 	},

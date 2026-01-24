@@ -26,7 +26,22 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true
+			"recommended": true,
+			"suspicious": {
+				"noArrayIndexKey": "warn"
+			},
+			"security": {
+				"noBlankTarget": {
+					"level": "error",
+					"options": {
+						"allowNoReferrer": false
+					}
+				},
+				"noDangerouslySetInnerHtml": "error",
+				"noDangerouslySetInnerHtmlWithChildren": "error",
+				"noGlobalEval": "error",
+				"noSecrets": "off"
+			}
 		}
 	},
 	"formatter": {
