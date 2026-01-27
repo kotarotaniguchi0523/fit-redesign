@@ -7,6 +7,8 @@ const USER_ID_KEY = "fit-exam-user-id";
 const STORAGE_KEY_PREFIX = "fit-exam-timer-records";
 const MAX_ATTEMPTS_PER_QUESTION = 50;
 
+const logger = createLogger("[TimerStorage]");
+
 /**
  * ユーザーIDを取得（なければ生成して保存）
  * ブラウザ/デバイス単位でユーザーを識別
@@ -33,8 +35,6 @@ function getUserId(): string {
 function getStorageKey(): string {
 	return `${STORAGE_KEY_PREFIX}-${getUserId()}`;
 }
-
-const logger = createLogger("[TimerStorage]");
 
 export type StorageErrorType = "PARSE_ERROR" | "VALIDATION_ERROR" | "STORAGE_UNAVAILABLE";
 

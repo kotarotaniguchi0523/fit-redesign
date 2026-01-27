@@ -144,3 +144,22 @@ export interface UnitBasedTab {
 		integratedTitle?: string; // 統合試験の場合のタイトル（例: "オートマトン・符号理論"）
 	}[];
 }
+
+// Timer types
+export type {
+	TimerMode,
+	AttemptRecord,
+	QuestionTimeRecord,
+	TimerStorageData,
+} from "./timer";
+export {
+	TimerModeSchema,
+	AttemptRecordSchema,
+	QuestionTimeRecordSchema,
+	TimerStorageDataSchema,
+	formatZodError,
+} from "./timer";
+
+// Result types
+export type { Result } from "./result";
+export { ok, err } from "./result";

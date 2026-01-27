@@ -1,4 +1,13 @@
-import type { FlowchartEdge, FlowchartNode } from "../../types/figures";
+import type { FlowchartEdge, FlowchartNode } from "../../types";
+
+const FLOWCHART_DEFAULTS = {
+	WIDTH: 300,
+	HEIGHT: 400,
+	NODE_WIDTH: 100,
+	NODE_WIDTH_DECISION: 80,
+	NODE_HEIGHT: 30,
+	NODE_HEIGHT_DECISION: 40,
+} as const;
 
 export interface FlowchartProps {
 	nodes: FlowchartNode[];
@@ -11,13 +20,22 @@ export interface FlowchartProps {
  * フローチャートコンポーネント
  * アルゴリズムの流れを視覚化するためのSVG描画
  */
-export function Flowchart({ nodes, edges, width = 300, height = 400 }: FlowchartProps) {
+export function Flowchart({
+	nodes,
+	edges,
+	width = FLOWCHART_DEFAULTS.WIDTH,
+	height = FLOWCHART_DEFAULTS.HEIGHT,
+}: FlowchartProps) {
 	const nodeMap = new Map(nodes.map((n) => [n.id, n]));
 
 	// ノードの描画
 	const renderNode = (node: FlowchartNode) => {
-		const defaultWidth = node.type === "decision" ? 80 : 100;
-		const defaultHeight = node.type === "decision" ? 40 : 30;
+		const defaultWidth =
+			node.type === "decision" ? FLOWCHART_DEFAULTS.NODE_WIDTH_DECISION : FLOWCHART_DEFAULTS.NODE_WIDTH;
+		const defaultHeight =
+			node.type === "decision"
+				? FLOWCHART_DEFAULTS.NODE_HEIGHT_DECISION
+				: FLOWCHART_DEFAULTS.NODE_HEIGHT;
 		const w = node.width ?? defaultWidth;
 		const h = node.height ?? defaultHeight;
 
@@ -118,8 +136,14 @@ export function Flowchart({ nodes, edges, width = 300, height = 400 }: Flowchart
 		node: FlowchartNode,
 		side: "top" | "bottom" | "left" | "right",
 	): { x: number; y: number } => {
-		const w = node.width ?? (node.type === "decision" ? 80 : 100);
-		const h = node.height ?? (node.type === "decision" ? 40 : 30);
+		const w =
+			node.width ??
+			(node.type === "decision" ? FLOWCHART_DEFAULTS.NODE_WIDTH_DECISION : FLOWCHART_DEFAULTS.NODE_WIDTH);
+		const h =
+			node.height ??
+			(node.type === "decision"
+				? FLOWCHART_DEFAULTS.NODE_HEIGHT_DECISION
+				: FLOWCHART_DEFAULTS.NODE_HEIGHT);
 
 		switch (side) {
 			case "top":

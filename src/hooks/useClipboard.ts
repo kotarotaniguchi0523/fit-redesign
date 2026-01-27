@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+const FEEDBACK_DISPLAY_DURATION = 2000;
+
 interface UseClipboardReturn {
 	copy: (text: string) => Promise<boolean>;
 	isCopied: boolean;
@@ -15,10 +17,13 @@ export function useClipboard(): UseClipboardReturn {
 	const [isCopied, setIsCopied] = useState(false);
 	const [error, setError] = useState(false);
 	const timeoutRef = useRef<number | null>(null);
+	const isMountedRef = useRef(true);
 
 	// クリーンアップ: アンマウント時にタイマーをキャンセル
 	useEffect(() => {
+		isMountedRef.current = true;
 		return () => {
+			isMountedRef.current = false;
 			if (timeoutRef.current !== null) {
 				clearTimeout(timeoutRef.current);
 			}
@@ -33,36 +38,50 @@ export function useClipboard(): UseClipboardReturn {
 		}
 
 		// 状態をリセット
-		setIsCopied(false);
-		setError(false);
+		if (isMountedRef.current) {
+			setIsCopied(false);
+			setError(false);
+		}
 
 		// Clipboard API が存在しない場合
 		if (!navigator.clipboard) {
-			setError(true);
+			if (isMountedRef.current) {
+				setError(true);
+			}
 			timeoutRef.current = window.setTimeout(() => {
-				setError(false);
-				timeoutRef.current = null;
-			}, 2000);
+				if (isMountedRef.current) {
+					setError(false);
+					timeoutRef.current = null;
+				}
+			}, FEEDBACK_DISPLAY_DURATION);
 			return false;
 		}
 
 		try {
 			await navigator.clipboard.writeText(text);
-			setIsCopied(true);
+			if (isMountedRef.current) {
+				setIsCopied(true);
+			}
 
 			timeoutRef.current = window.setTimeout(() => {
-				setIsCopied(false);
-				timeoutRef.current = null;
-			}, 2000);
+				if (isMountedRef.current) {
+					setIsCopied(false);
+					timeoutRef.current = null;
+				}
+			}, FEEDBACK_DISPLAY_DURATION);
 
 			return true;
 		} catch {
-			setError(true);
+			if (isMountedRef.current) {
+				setError(true);
+			}
 
 			timeoutRef.current = window.setTimeout(() => {
-				setError(false);
-				timeoutRef.current = null;
-			}, 2000);
+				if (isMountedRef.current) {
+					setError(false);
+					timeoutRef.current = null;
+				}
+			}, FEEDBACK_DISPLAY_DURATION);
 
 			return false;
 		}

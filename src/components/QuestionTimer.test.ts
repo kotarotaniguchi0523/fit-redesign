@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatTime } from "./QuestionTimer";
+import { formatTime } from "../utils/timeFormat";
 
 describe("formatTime", () => {
 	it("0秒を00:00に変換", () => {

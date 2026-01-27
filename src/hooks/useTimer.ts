@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { TimerMode } from "../types/timer";
 
+const TIMER_INTERVAL_MS = 1000;
+const ALERT_SOUND = {
+	FIRST_FREQUENCY: 800,
+	SECOND_FREQUENCY: 1000,
+	GAIN: 0.3,
+	DURATION: 0.3,
+	SECOND_DELAY: 350,
+} as const;
+
 interface UseTimerReturn {
 	elapsedSeconds: number;
 	isRunning: boolean;
@@ -70,12 +79,12 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 			oscillator.connect(gainNode);
 			gainNode.connect(audioContext.destination);
 
-			oscillator.frequency.value = 800;
+			oscillator.frequency.value = ALERT_SOUND.FIRST_FREQUENCY;
 			oscillator.type = "sine";
-			gainNode.gain.value = 0.3;
+			gainNode.gain.value = ALERT_SOUND.GAIN;
 
 			oscillator.start();
-			oscillator.stop(audioContext.currentTime + 0.3);
+			oscillator.stop(audioContext.currentTime + ALERT_SOUND.DURATION);
 
 			// 2回目のビープ
 			setTimeout(() => {
@@ -83,12 +92,12 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 				const gain2 = audioContext.createGain();
 				osc2.connect(gain2);
 				gain2.connect(audioContext.destination);
-				osc2.frequency.value = 1000;
+				osc2.frequency.value = ALERT_SOUND.SECOND_FREQUENCY;
 				osc2.type = "sine";
-				gain2.gain.value = 0.3;
+				gain2.gain.value = ALERT_SOUND.GAIN;
 				osc2.start();
-				osc2.stop(audioContext.currentTime + 0.3);
-			}, 350);
+				osc2.stop(audioContext.currentTime + ALERT_SOUND.DURATION);
+			}, ALERT_SOUND.SECOND_DELAY);
 		} catch {
 			// Audio API not supported
 		}
@@ -115,7 +124,7 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 				const next = prev - 1;
 				return next <= 0 ? 0 : next;
 			});
-		}, 1000);
+		}, TIMER_INTERVAL_MS);
 
 		return () => {
 			if (intervalRef.current) {

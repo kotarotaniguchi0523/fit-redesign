@@ -4,17 +4,14 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useQuestionTimeRecord } from "../hooks/useQuestionTimeRecord";
 import { useTimer } from "../hooks/useTimer";
 import type { TimerMode } from "../types/timer";
+import { formatTime } from "../utils/timeFormat";
+import { ChevronDownIcon, ClockIcon } from "./icons";
 
 interface Props {
 	questionId: string;
 }
 
-/** 秒数をMM:SS形式にフォーマット */
-export function formatTime(seconds: number): string {
-	const mins = Math.floor(seconds / 60);
-	const secs = seconds % 60;
-	return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-}
+const DEFAULT_TARGET_TIME = 60;
 
 /** 目標時間のプリセット（秒） */
 const TARGET_TIME_PRESETS = [
@@ -24,49 +21,11 @@ const TARGET_TIME_PRESETS = [
 	{ label: "5分", value: 300 },
 ];
 
-/** 時計アイコン */
-function ClockIcon({ className }: { className?: string }) {
-	return (
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth={1.5}
-			stroke="currentColor"
-			className={className}
-			aria-hidden="true"
-		>
-			<path
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-			/>
-		</svg>
-	);
-}
-
-/** 下矢印アイコン */
-function ChevronDownIcon({ className }: { className?: string }) {
-	return (
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			fill="none"
-			viewBox="0 0 24 24"
-			strokeWidth={2}
-			stroke="currentColor"
-			className={className}
-			aria-hidden="true"
-		>
-			<path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-		</svg>
-	);
-}
-
 export function QuestionTimer({ questionId }: Props) {
 	const [mode, setMode] = useState<TimerMode>("stopwatch");
 	const [isExpanded, setIsExpanded] = useState(false);
 
-	const timer = useTimer(mode, 60);
+	const timer = useTimer(mode, DEFAULT_TARGET_TIME);
 	const record = useQuestionTimeRecord(questionId);
 
 	// このセッションで既に保存したかを追跡（重複保存防止）

@@ -1,35 +1,38 @@
 import type { FigureData, Question } from "../types/index";
 
 /**
+ * テーブルデータを Markdown 文字列に変換するヘルパー関数
+ */
+function tableToMarkdown(
+	columns: Array<{ key: string; label: string }>,
+	rows: Record<string, unknown>[],
+): string {
+	const lines: string[] = [];
+	// ヘッダー行
+	lines.push(`| ${columns.map((c) => c.label).join(" | ")} |`);
+	// 区切り行
+	lines.push(`| ${columns.map(() => "---").join(" | ")} |`);
+	// データ行
+	for (const row of rows) {
+		const cells = columns.map((c) => String(row[c.key] ?? ""));
+		lines.push(`| ${cells.join(" | ")} |`);
+	}
+	return lines.join("\n");
+}
+
+/**
  * FigureData を Markdown 文字列に変換する
  */
 function figureDataToMarkdown(figureData: FigureData): string {
 	switch (figureData.type) {
 		case "truthTable": {
 			const { columns, rows } = figureData;
-			const lines: string[] = [];
-			// ヘッダー行
-			lines.push(`| ${columns.map((c) => c.label).join(" | ")} |`);
-			// 区切り行
-			lines.push(`| ${columns.map(() => "---").join(" | ")} |`);
-			// データ行
-			for (const row of rows) {
-				const cells = columns.map((c) => String(row[c.key] ?? ""));
-				lines.push(`| ${cells.join(" | ")} |`);
-			}
-			return lines.join("\n");
+			return tableToMarkdown(columns, rows);
 		}
 
 		case "dataTable": {
 			const { columns, rows } = figureData;
-			const lines: string[] = [];
-			lines.push(`| ${columns.map((c) => c.label).join(" | ")} |`);
-			lines.push(`| ${columns.map(() => "---").join(" | ")} |`);
-			for (const row of rows) {
-				const cells = columns.map((c) => String(row[c.key] ?? ""));
-				lines.push(`| ${cells.join(" | ")} |`);
-			}
-			return lines.join("\n");
+			return tableToMarkdown(columns, rows);
 		}
 
 		case "huffmanTable": {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { AttemptRecord, TimerMode } from "../types/timer";
 import { createLogger } from "../utils/logger";
 import { clearQuestionRecords, loadTimerData, saveAttempt } from "../utils/timerStorage";
@@ -89,19 +89,15 @@ export function useQuestionTimeRecord(questionId: string): UseQuestionTimeRecord
 		logger.info("Records cleared successfully");
 	}, [questionId]);
 
-	// 最新の記録（メモ化）
-	const lastAttemptDuration = useMemo<number | null>(() => {
-		if (attempts.length === 0) return null;
-		return attempts[attempts.length - 1].duration;
-	}, [attempts]);
+	// 最新の記録（O(1)操作なのでuseMemo不要）
+	const lastAttemptDuration =
+		attempts.length > 0 ? attempts[attempts.length - 1].duration : null;
 
-	// 平均時間（メモ化）
-	const averageDuration = useMemo<number | null>(() => {
-		if (attempts.length === 0) return null;
-
-		const total = attempts.reduce((sum, attempt) => sum + attempt.duration, 0);
-		return total / attempts.length;
-	}, [attempts]);
+	// 平均時間（最大50件のreduceなので計測で問題が出るまでuseMemo不要）
+	const averageDuration =
+		attempts.length > 0
+			? attempts.reduce((sum, attempt) => sum + attempt.duration, 0) / attempts.length
+			: null;
 
 	return {
 		attempts,
