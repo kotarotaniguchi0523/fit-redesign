@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { AttemptRecord, TimerMode } from "../types/timer";
 import { createLogger } from "../utils/logger";
 import { clearQuestionRecords, loadTimerData, saveAttempt } from "../utils/timerStorage";
@@ -40,7 +40,7 @@ export function useQuestionTimeRecord(questionId: string): UseQuestionTimeRecord
 	}, [questionId]);
 
 	// 新しい試行を追加
-	const addAttempt = useCallback(
+	const addAttempt = (
 		(duration: number, mode: TimerMode, completed: boolean, targetTime?: number) => {
 			logger.info(
 				`Adding new attempt (mode: ${mode}, completed: ${completed}, duration: ${duration}s)`,
@@ -68,12 +68,10 @@ export function useQuestionTimeRecord(questionId: string): UseQuestionTimeRecord
 				logger.info(`Attempt added successfully (total: ${updated.length})`);
 				return updated;
 			});
-		},
-		[questionId],
-	);
+	};
 
 	// 記録をクリア
-	const clearRecords = useCallback(() => {
+	const clearRecords = () => {
 		logger.info("Clearing all records for question");
 
 		const clearResult = clearQuestionRecords(questionId);
@@ -87,7 +85,7 @@ export function useQuestionTimeRecord(questionId: string): UseQuestionTimeRecord
 
 		setAttempts([]);
 		logger.info("Records cleared successfully");
-	}, [questionId]);
+	};
 
 	// 最新の記録（O(1)操作なのでuseMemo不要）
 	const lastAttemptDuration =

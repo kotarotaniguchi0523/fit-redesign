@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { TimerMode } from "../types/timer";
 
 const TIMER_INTERVAL_MS = 1000;
@@ -31,34 +31,28 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 	const [isCompleted, setIsCompleted] = useState(false);
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-	const start = useCallback(() => {
+	const start = () => {
 		setIsRunning(true);
 		setIsCompleted(false);
-	}, []);
+	};
 
-	const stop = useCallback(() => {
+	const stop = () => {
 		setIsRunning(false);
-	}, []);
+	};
 
-	const reset = useCallback(
-		(nextMode?: TimerMode) => {
-			const effectiveMode = nextMode ?? mode;
-			setIsRunning(false);
-			setIsCompleted(false);
-			setElapsedSeconds(effectiveMode === "countdown" ? targetTime : 0);
-		},
-		[mode, targetTime],
-	);
+	const reset = (nextMode?: TimerMode) => {
+		const effectiveMode = nextMode ?? mode;
+		setIsRunning(false);
+		setIsCompleted(false);
+		setElapsedSeconds(effectiveMode === "countdown" ? targetTime : 0);
+	};
 
-	const setTargetTime = useCallback(
-		(seconds: number) => {
-			setTargetTimeState(seconds);
-			if (mode === "countdown" && !isRunning) {
-				setElapsedSeconds(seconds);
-			}
-		},
-		[mode, isRunning],
-	);
+	const setTargetTime = (seconds: number) => {
+		setTargetTimeState(seconds);
+		if (mode === "countdown" && !isRunning) {
+			setElapsedSeconds(seconds);
+		}
+	};
 
 	// mode変更時に elapsedSeconds を適切にリセット
 	// QuestionTimerでsetMode後にtimer.reset()を呼んでも、modeの更新は非同期なので
@@ -70,7 +64,7 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 	}, [mode, targetTime, isRunning, isCompleted]);
 
 	// アラート音を鳴らす関数
-	const playAlertSound = useCallback(() => {
+	const playAlertSound = () => {
 		try {
 			const audioContext = new AudioContext();
 			const oscillator = audioContext.createOscillator();
@@ -101,7 +95,7 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 		} catch {
 			// Audio API not supported
 		}
-	}, []);
+	};
 
 	// Timer interval effect
 	// 外部システム（setInterval）との同期なのでuseEffectが必要
@@ -135,7 +129,6 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 	}, [isRunning, mode]);
 
 	// Countdown 完了検知
-	// biome-ignore lint/correctness/useExhaustiveDependencies: playAlertSound は useCallback で安定しており、依存配列に含めると無駄な再生成が発生する
 	useEffect(() => {
 		if (mode === "countdown" && isRunning && elapsedSeconds === 0) {
 			setIsRunning(false);
