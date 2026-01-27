@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { TimerMode } from "../types/timer";
 
 interface UseTimerReturn {
@@ -55,11 +55,10 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 	// QuestionTimerでsetMode後にtimer.reset()を呼んでも、modeの更新は非同期なので
 	// reset関数内のmodeは古い値のまま。このuseEffectで新しいmodeに基づいてリセットする
 	useEffect(() => {
-		if (!isRunning) {
+		if (!isRunning && !isCompleted) {
 			setElapsedSeconds(mode === "countdown" ? targetTime : 0);
-			setIsCompleted(false);
 		}
-	}, [mode, targetTime, isRunning]);
+	}, [mode, targetTime, isRunning, isCompleted]);
 
 	// アラート音を鳴らす関数
 	const playAlertSound = useCallback(() => {
@@ -95,15 +94,6 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 		}
 	}, []);
 
-	// useEffectEvent: カウントダウン完了時の処理
-	// - Effect内から呼び出せるが、依存配列には入れない
-	// - 常に最新の値を読める
-	const handleCountdownComplete = useEffectEvent(() => {
-		setIsCompleted(true);
-		setIsRunning(false);
-		playAlertSound();
-	});
-
 	// Timer interval effect
 	// 外部システム（setInterval）との同期なのでuseEffectが必要
 	useEffect(() => {
@@ -123,12 +113,7 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 
 				// Countdown
 				const next = prev - 1;
-				if (next <= 0) {
-					// useEffectEventで完了処理（refを介さずに直接呼び出し）
-					handleCountdownComplete();
-					return 0;
-				}
-				return next;
+				return next <= 0 ? 0 : next;
 			});
 		}, 1000);
 
@@ -139,6 +124,16 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 			}
 		};
 	}, [isRunning, mode]);
+
+	// Countdown 完了検知
+	// biome-ignore lint/correctness/useExhaustiveDependencies: playAlertSound は useCallback で安定しており、依存配列に含めると無駄な再生成が発生する
+	useEffect(() => {
+		if (mode === "countdown" && isRunning && elapsedSeconds === 0) {
+			setIsRunning(false);
+			setIsCompleted(true);
+			playAlertSound();
+		}
+	}, [mode, isRunning, elapsedSeconds]);
 
 	return {
 		elapsedSeconds,
