@@ -10,18 +10,25 @@
 		"format": "biome format --write .",
 		"check": "biome ci .",
 		"typecheck": "tsgo --noEmit",
-		"knip": "knip"
+		"knip": "knip",
+		"test": "vitest",
+		"test:run": "vitest run",
+		"test:coverage": "vitest run --coverage"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.11",
 		"@tailwindcss/vite": "^4.1.18",
+		"@testing-library/react": "^16.3.2",
 		"@types/react": "^19.2.9",
 		"@types/react-dom": "^19.2.3",
 		"@typescript/native-preview": "7.0.0-dev.20260122.4",
 		"@vitejs/plugin-react": "^5.1.2",
+		"@vitest/coverage-v8": "^4.0.18",
+		"jsdom": "^27.4.0",
 		"knip": "^5.82.1",
 		"tailwindcss": "^4.1.18",
-		"vite": "^7.2.4"
+		"vite": "^7.2.4",
+		"vitest": "^4.0.18"
 	},
 	"dependencies": {
 		"@heroui/react": "^2.8.7",
