@@ -8,17 +8,18 @@ interface UseTimerReturn {
 	targetTime: number;
 	start: () => void;
 	stop: () => void;
-	reset: () => void;
+	reset: (nextMode?: TimerMode) => void;
 	setTargetTime: (seconds: number) => void;
 }
 
 export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerReturn {
+	const initialTargetTime = targetTimeSeconds ?? 0;
+	const [targetTime, setTargetTimeState] = useState(initialTargetTime);
 	const [elapsedSeconds, setElapsedSeconds] = useState(
-		mode === "countdown" ? (targetTimeSeconds ?? 0) : 0,
+		mode === "countdown" ? initialTargetTime : 0,
 	);
 	const [isRunning, setIsRunning] = useState(false);
 	const [isCompleted, setIsCompleted] = useState(false);
-	const [targetTime, setTargetTimeState] = useState(targetTimeSeconds ?? 0);
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
 	const start = useCallback(() => {
@@ -30,15 +31,15 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 		setIsRunning(false);
 	}, []);
 
-	const reset = useCallback(() => {
-		setIsRunning(false);
-		setIsCompleted(false);
-		if (mode === "countdown") {
-			setElapsedSeconds(targetTime);
-		} else {
-			setElapsedSeconds(0);
-		}
-	}, [mode, targetTime]);
+	const reset = useCallback(
+		(nextMode?: TimerMode) => {
+			const effectiveMode = nextMode ?? mode;
+			setIsRunning(false);
+			setIsCompleted(false);
+			setElapsedSeconds(effectiveMode === "countdown" ? targetTime : 0);
+		},
+		[mode, targetTime],
+	);
 
 	const setTargetTime = useCallback(
 		(seconds: number) => {
@@ -55,14 +56,44 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 	// reset関数内のmodeは古い値のまま。このuseEffectで新しいmodeに基づいてリセットする
 	useEffect(() => {
 		if (!isRunning) {
-			if (mode === "countdown") {
-				setElapsedSeconds(targetTime);
-			} else {
-				setElapsedSeconds(0);
-			}
+			setElapsedSeconds(mode === "countdown" ? targetTime : 0);
 			setIsCompleted(false);
 		}
 	}, [mode, targetTime, isRunning]);
+
+	// アラート音を鳴らす関数
+	const playAlertSound = useCallback(() => {
+		try {
+			const audioContext = new AudioContext();
+			const oscillator = audioContext.createOscillator();
+			const gainNode = audioContext.createGain();
+
+			oscillator.connect(gainNode);
+			gainNode.connect(audioContext.destination);
+
+			oscillator.frequency.value = 800;
+			oscillator.type = "sine";
+			gainNode.gain.value = 0.3;
+
+			oscillator.start();
+			oscillator.stop(audioContext.currentTime + 0.3);
+
+			// 2回目のビープ
+			setTimeout(() => {
+				const osc2 = audioContext.createOscillator();
+				const gain2 = audioContext.createGain();
+				osc2.connect(gain2);
+				gain2.connect(audioContext.destination);
+				osc2.frequency.value = 1000;
+				osc2.type = "sine";
+				gain2.gain.value = 0.3;
+				osc2.start();
+				osc2.stop(audioContext.currentTime + 0.3);
+			}, 350);
+		} catch {
+			// Audio API not supported
+		}
+	}, []);
 
 	// useEffectEvent: カウントダウン完了時の処理
 	// - Effect内から呼び出せるが、依存配列には入れない
@@ -70,6 +101,7 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 	const handleCountdownComplete = useEffectEvent(() => {
 		setIsCompleted(true);
 		setIsRunning(false);
+		playAlertSound();
 	});
 
 	// Timer interval effect
