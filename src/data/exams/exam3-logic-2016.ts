@@ -48,9 +48,23 @@ export const exam3_2016: Question[] = [
 			],
 			outputs: [{ id: "X", label: "X", x: 300, y: 90, input: "OR1" }],
 			wires: [
-				{ from: "A", to: "OR1", points: [{ x: 100, y: 60 }, { x: 100, y: 80 }] },
+				{
+					from: "A",
+					to: "OR1",
+					points: [
+						{ x: 100, y: 60 },
+						{ x: 100, y: 80 },
+					],
+				},
 				{ from: "B", to: "NOT1" },
-				{ from: "NOT1", to: "OR1", points: [{ x: 160, y: 120 }, { x: 160, y: 100 }] },
+				{
+					from: "NOT1",
+					to: "OR1",
+					points: [
+						{ x: 160, y: 120 },
+						{ x: 160, y: 100 },
+					],
+				},
 				{ from: "OR1", to: "X" },
 			],
 		},

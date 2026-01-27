@@ -9,7 +9,15 @@ export const exam7_2013: Question[] = [
 	{
 		id: "exam7-2013-q1",
 		number: 1,
-		text: "次の表で与えられる情報源をハフマン符号で符号化した。文字と符号語の組み合わせとして正しいものを全て選べ。\n\n| 文字 | A | B | C | D |\n| 生起確率 | 0.4 | 0.1 | 0.3 | 0.2 |",
+		text: "次の表で与えられる情報源をハフマン符号で符号化した。文字と符号語の組み合わせとして正しいものを全て選べ。",
+		figureDescription: "文字と生起確率",
+		figureData: {
+			type: "huffmanTable",
+			data: {
+				characters: ["A", "B", "C", "D"],
+				probabilities: [0.4, 0.1, 0.3, 0.2],
+			},
+		},
 		options: [
 			{ label: "ア", value: "A=1, B=10" },
 			{ label: "イ", value: "A=1, B=01" },
@@ -52,7 +60,21 @@ export const exam7_2013: Question[] = [
 	{
 		id: "exam7-2013-q5",
 		number: 5,
-		text: "次の表の1,2,3に、ア検出可能、イ検出不能、ウ訂正可能、エ訂正不能のどれかを入れよ。\n\n| 符号 | 単一誤り | 二重誤り |\n| 偶数パリティ | | 1 |\n| 水平垂直パリティ | 2 | |\n| CRC | | 3 |",
+		text: "次の表の1,2,3に、ア検出可能、イ検出不能、ウ訂正可能、エ訂正不能のどれかを入れよ。",
+		figureDescription: "誤り検出・訂正の対応表",
+		figureData: {
+			type: "dataTable",
+			columns: [
+				{ key: "code", label: "符号" },
+				{ key: "single", label: "単一誤り" },
+				{ key: "double", label: "二重誤り" },
+			],
+			rows: [
+				{ code: "偶数パリティ", single: "", double: "1" },
+				{ code: "水平垂直パリティ", single: "2", double: "" },
+				{ code: "CRC", single: "", double: "3" },
+			],
+		},
 		answer: "1=イ, 2=ウ, 3=ア",
 		explanation:
 			"偶数パリティ: 単一誤り検出可能、二重誤り検出不能(イ)。水平垂直パリティ: 単一誤り訂正可能(ウ)。CRC: 二重誤り検出可能(ア)",

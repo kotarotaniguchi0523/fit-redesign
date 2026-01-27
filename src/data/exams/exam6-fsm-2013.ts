@@ -9,14 +9,37 @@ export const exam6_2013: Question[] = [
 	{
 		id: "exam6-2013-q1",
 		number: 1,
-		text: "テスト結果は平均60点、標準偏差10点であった。80点以下の人は全体の何割か？\n\n| u | 0.0 | 1.0 | 2.0 | 3.0 |\n| Pr(U>u) | 0.5 | 0.159 | 0.023 | 0.001 |",
+		text: "テスト結果は平均60点、標準偏差10点であった。80点以下の人は全体の何割か？",
+		figureDescription: "u と Pr(U>u) の正規分布表",
+		figureData: {
+			type: "normalDistributionTable",
+			entries: [
+				{ u: 0.0, probability: 0.5 },
+				{ u: 1.0, probability: 0.159 },
+				{ u: 2.0, probability: 0.023 },
+				{ u: 3.0, probability: 0.001 },
+			],
+		},
 		answer: "0.977",
 		explanation: "80点は平均+2σ。Pr(U>2.0)=0.023なので、80点以下は1-0.023=0.977（約97.7%）",
 	},
 	{
 		id: "exam6-2013-q2",
 		number: 2,
-		text: "次の表のデータがある。この相関係数は次のどれか？\n\n| x | 20 | 30 | 40 |\n| y | 0.4 | 0.1 | 0.1 |",
+		text: "次の表のデータがある。この相関係数は次のどれか？",
+		figureDescription: "x と y の対応表",
+		figureData: {
+			type: "dataTable",
+			columns: [
+				{ key: "x", label: "x" },
+				{ key: "y", label: "y" },
+			],
+			rows: [
+				{ x: 20, y: 0.4 },
+				{ x: 30, y: 0.1 },
+				{ x: 40, y: 0.1 },
+			],
+		},
 		options: [
 			{ label: "ア", value: "2.5" },
 			{ label: "イ", value: "0.86" },

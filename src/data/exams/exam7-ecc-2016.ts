@@ -10,7 +10,15 @@ export const exam7_2016: Question[] = [
 	{
 		id: "exam7-2016-q1",
 		number: 1,
-		text: "出現確率が次の表に従って生起する情報源がある。この情報源のハフマン符号化し、平均符号長Lを求めよ。\n\n| A | B | C | D | E |\n| 0.76 | 0.08 | 0.05 | 0.06 | 0.05 |",
+		text: "出現確率が次の表に従って生起する情報源がある。この情報源のハフマン符号化し、平均符号長Lを求めよ。",
+		figureDescription: "文字と生起確率",
+		figureData: {
+			type: "huffmanTable",
+			data: {
+				characters: ["A", "B", "C", "D", "E"],
+				probabilities: [0.76, 0.08, 0.05, 0.06, 0.05],
+			},
+		},
 		answer: "1.48 bit/symbol",
 		explanation:
 			"ハフマン符号化: A=1(1bit), B=01(2bit), D=001(3bit), C=0001(4bit), E=0000(4bit)。平均符号長 = 0.76×1 + 0.08×2 + 0.06×3 + 0.05×4 + 0.05×4 = 0.76 + 0.16 + 0.18 + 0.20 + 0.20 = 1.48 bit/symbol",

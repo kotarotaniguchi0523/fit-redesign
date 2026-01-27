@@ -134,7 +134,7 @@ export const unitBasedTabs: UnitBasedTab[] = [
 		description: "有限状態機械と状態遷移",
 		slides: [getSlide("slide-5")],
 		examMapping: [
-			{ year: "2013", examNumbers: [7] },
+			{ year: "2013", examNumbers: [6] },
 			{ year: "2014", examNumbers: [6], integratedTitle: "FSM・確率・データ構造" },
 			{ year: "2015", examNumbers: [6], integratedTitle: "FSM・確率" },
 			{ year: "2016", examNumbers: [4, 6], integratedTitle: "オートマトン・符号理論" },

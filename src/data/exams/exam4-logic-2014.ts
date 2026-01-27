@@ -66,13 +66,55 @@ export const exam4_2014: Question[] = [
 			],
 			outputs: [{ id: "F", label: "F", x: 380, y: 100, input: "NOR1" }],
 			wires: [
-				{ from: "X", to: "NAND1", points: [{ x: 80, y: 60 }, { x: 80, y: 65 }] },
-				{ from: "Y", to: "NAND1", points: [{ x: 100, y: 140 }, { x: 100, y: 75 }] },
-				{ from: "X", to: "NOT1", points: [{ x: 80, y: 60 }, { x: 80, y: 120 }] },
+				{
+					from: "X",
+					to: "NAND1",
+					points: [
+						{ x: 80, y: 60 },
+						{ x: 80, y: 65 },
+					],
+				},
+				{
+					from: "Y",
+					to: "NAND1",
+					points: [
+						{ x: 100, y: 140 },
+						{ x: 100, y: 75 },
+					],
+				},
+				{
+					from: "X",
+					to: "NOT1",
+					points: [
+						{ x: 80, y: 60 },
+						{ x: 80, y: 120 },
+					],
+				},
 				{ from: "NOT1", to: "NAND2" },
-				{ from: "Y", to: "NAND2", points: [{ x: 100, y: 140 }, { x: 100, y: 135 }] },
-				{ from: "NAND1", to: "NOR1", points: [{ x: 230, y: 70 }, { x: 230, y: 90 }] },
-				{ from: "NAND2", to: "NOR1", points: [{ x: 230, y: 130 }, { x: 230, y: 110 }] },
+				{
+					from: "Y",
+					to: "NAND2",
+					points: [
+						{ x: 100, y: 140 },
+						{ x: 100, y: 135 },
+					],
+				},
+				{
+					from: "NAND1",
+					to: "NOR1",
+					points: [
+						{ x: 230, y: 70 },
+						{ x: 230, y: 90 },
+					],
+				},
+				{
+					from: "NAND2",
+					to: "NOR1",
+					points: [
+						{ x: 230, y: 130 },
+						{ x: 230, y: 110 },
+					],
+				},
 				{ from: "NOR1", to: "F" },
 			],
 		},
