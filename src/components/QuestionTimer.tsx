@@ -81,7 +81,7 @@ export function QuestionTimer({ questionId }: Props) {
 
 	const handleModeChange = (value: string) => {
 		setMode(value as TimerMode);
-		timer.reset();
+		// timer.reset()は不要: useTimer内のuseEffectがmode変更時に自動リセットする
 		hasSavedRef.current = false;
 	};
 

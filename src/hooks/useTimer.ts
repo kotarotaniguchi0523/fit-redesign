@@ -50,6 +50,20 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 		[mode, isRunning],
 	);
 
+	// mode変更時に elapsedSeconds を適切にリセット
+	// QuestionTimerでsetMode後にtimer.reset()を呼んでも、modeの更新は非同期なので
+	// reset関数内のmodeは古い値のまま。このuseEffectで新しいmodeに基づいてリセットする
+	useEffect(() => {
+		if (!isRunning) {
+			if (mode === "countdown") {
+				setElapsedSeconds(targetTime);
+			} else {
+				setElapsedSeconds(0);
+			}
+			setIsCompleted(false);
+		}
+	}, [mode, targetTime, isRunning]);
+
 	// useEffectEvent: カウントダウン完了時の処理
 	// - Effect内から呼び出せるが、依存配列には入れない
 	// - 常に最新の値を読める
