@@ -2,6 +2,7 @@
  * Vitest 共通セットアップ
  * jsdom環境でのテスト用初期化処理
  */
+import { beforeEach } from "vitest";
 
 // 各テスト前にlocalStorageをクリア
 beforeEach(() => {
