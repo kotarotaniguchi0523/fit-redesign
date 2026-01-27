@@ -11,10 +11,32 @@ export const exam9_2014: Question[] = [
 	{
 		id: "exam9-2014-q1",
 		number: 1,
-		text: "配列 a[0]=6, a[1]=2, a[2]=8, a[3]=3 を次のアルゴリズムで処理する。行2-4が最初に終了した時の配列aを求めよ\n\n1. jを1から3まで増やし、行2-3を繰り返す\n2. k=a[j]とし、iをj-1から0まで減らしながら行3を繰り返す\n3. a[i]>kならば、a[i+1]=a[i]とし、成立しないならば4へ行く\n4. a[i]=kとする",
-		answer: "2, 6, 8, 3",
+		text: "データ列 2, 6, 8, 3 を右のアルゴリズムにかける。結果を示せ",
+		answer: "2, 3, 6, 8",
 		explanation:
-			"挿入ソートのアルゴリズム。j=1の時: k=a[1]=2, i=0, a[0]=6>2なのでa[1]=6, a[0]=2。結果: [2,6,8,3]",
+			"挿入ソートのアルゴリズム。A[3]=3をキーとし、3より大きい要素を後ろにシフトする。8>3なのでA[3]=8、6>3なのでA[2]=6、2<3なのでA[1]=3。結果: [2,3,6,8]",
+		figureData: {
+			type: "flowchart",
+			width: 200,
+			height: 320,
+			nodes: [
+				{ id: "start", type: "start", label: "start", x: 100, y: 20 },
+				{ id: "init", type: "process", label: "k=A[3], i=3-1", x: 100, y: 60, width: 110 },
+				{ id: "cmp", type: "decision", label: "A[i] > k", x: 100, y: 120, width: 70, height: 35 },
+				{ id: "shift", type: "process", label: "A[i+1]=A[i]\ni=i-1", x: 100, y: 185, width: 90, height: 40 },
+				{ id: "check", type: "decision", label: "i >= 0", x: 100, y: 245, width: 60, height: 35 },
+				{ id: "assign", type: "process", label: "A[i+1] = k", x: 100, y: 300, width: 90 },
+			],
+			edges: [
+				{ from: "start", to: "init" },
+				{ from: "init", to: "cmp" },
+				{ from: "cmp", to: "shift", label: "y" },
+				{ from: "cmp", to: "assign", label: "n", fromSide: "right", toSide: "right", points: [{ x: 160, y: 120 }, { x: 160, y: 300 }] },
+				{ from: "shift", to: "check" },
+				{ from: "check", to: "cmp", label: "y", fromSide: "left", toSide: "left", points: [{ x: 40, y: 245 }, { x: 40, y: 120 }] },
+				{ from: "check", to: "assign", label: "n" },
+			],
+		},
 	},
 	{
 		id: "exam9-2014-q2",

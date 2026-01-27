@@ -91,3 +91,25 @@ export interface LogicWire {
 	to: string;
 	points?: { x: number; y: number }[]; // 曲がり角の座標（オプション）
 }
+
+// フローチャートの型定義
+export type FlowchartNodeType = "start" | "end" | "process" | "decision" | "connector";
+
+export interface FlowchartNode {
+	id: string;
+	type: FlowchartNodeType;
+	label: string;
+	x: number;
+	y: number;
+	width?: number;
+	height?: number;
+}
+
+export interface FlowchartEdge {
+	from: string;
+	to: string;
+	label?: string; // "y" or "n" for decision branches
+	fromSide?: "bottom" | "right" | "left" | "top";
+	toSide?: "top" | "right" | "left" | "bottom";
+	points?: { x: number; y: number }[]; // 曲がり角の座標
+}

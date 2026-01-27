@@ -1,4 +1,3 @@
-import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
 import type { TruthTableColumn, TruthTableRow } from "../../types/index";
 
 export interface TruthTableProps {
@@ -7,33 +6,48 @@ export interface TruthTableProps {
 	ariaLabel?: string;
 }
 
+/**
+ * 真理値表コンポーネント
+ * PDFの試験問題と同様のマス目（枠線）付きテーブルを表示
+ */
 export function TruthTable({ columns, rows, ariaLabel = "Truth table" }: TruthTableProps) {
 	return (
-		<div className="w-full overflow-x-auto">
-			<Table aria-label={ariaLabel} className="max-w-2xl min-w-max">
-				<TableHeader>
-					{columns.map((column) => (
-						<TableColumn key={column.key} className="text-center">
-							{column.label}
-						</TableColumn>
-					))}
-				</TableHeader>
-				<TableBody>
+		<div className="overflow-x-auto">
+			<table
+				aria-label={ariaLabel}
+				className="border-collapse border-2 border-gray-800 text-center"
+			>
+				<thead>
+					<tr className="bg-gray-100">
+						{columns.map((column) => (
+							<th
+								key={column.key}
+								className="border border-gray-800 px-4 py-2 font-semibold min-w-[3rem]"
+							>
+								{column.label}
+							</th>
+						))}
+					</tr>
+				</thead>
+				<tbody>
 					{rows.map((row, rowIndex) => {
 						const rowKey = `row-${rowIndex}`;
 
 						return (
-							<TableRow key={rowKey}>
+							<tr key={rowKey}>
 								{columns.map((column) => (
-									<TableCell key={`${rowKey}-${column.key}`} className="text-center">
+									<td
+										key={`${rowKey}-${column.key}`}
+										className="border border-gray-800 px-4 py-2 font-mono"
+									>
 										{String(row[column.key])}
-									</TableCell>
+									</td>
 								))}
-							</TableRow>
+							</tr>
 						);
 					})}
-				</TableBody>
-			</Table>
+				</tbody>
+			</table>
 		</div>
 	);
 }

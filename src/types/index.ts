@@ -2,6 +2,8 @@
 import type {
 	DataTableColumn,
 	DataTableRow,
+	FlowchartEdge,
+	FlowchartNode,
 	GateType,
 	HuffmanTableData,
 	LinkedListEntry,
@@ -34,6 +36,8 @@ export interface QuestionOption {
 export type {
 	DataTableColumn,
 	DataTableRow,
+	FlowchartEdge,
+	FlowchartNode,
 	GateType,
 	HuffmanTableData,
 	LinkedListEntry,
@@ -69,6 +73,13 @@ export type FigureData =
 			outputs: LogicOutput[];
 			gates: LogicGate[];
 			wires: LogicWire[];
+	  }
+	| {
+			type: "flowchart";
+			nodes: FlowchartNode[];
+			edges: FlowchartEdge[];
+			width?: number;
+			height?: number;
 	  };
 
 // 問題
