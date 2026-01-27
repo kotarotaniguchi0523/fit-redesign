@@ -33,10 +33,27 @@ export const exam3_2016: Question[] = [
 		id: "exam3-2016-q3",
 		number: 3,
 		text: "次の回路の論理式を求めよ。",
-		answer: "x = AB ∨ ~B",
+		answer: "X = A ∨ B̅",
 		explanation:
-			"回路図から論理式を導出する問題。\n\nAB ∨ ~B を簡約化:\n= (A∨~B)∧(B∨~B)  （分配法則）\n= (A∨~B)∧1\n= A∨~B\n\n別表現: ~B → 1（Bが0なら出力1）、B=1のときAの値が出力となる。",
-		figureDescription: "NANDゲートとNOTゲートを含む論理回路",
+			"回路図から論理式を導出する問題。\n上段のAはそのままORゲートへ、下段のBはNOTを通ってORゲートへ入力。\n結果: X = A ∨ ~B",
+		figureData: {
+			type: "logicCircuit",
+			inputs: [
+				{ id: "A", label: "A", x: 50, y: 60 },
+				{ id: "B", label: "B", x: 50, y: 120 },
+			],
+			gates: [
+				{ id: "NOT1", type: "NOT", x: 120, y: 120 },
+				{ id: "OR1", type: "OR", x: 200, y: 90 },
+			],
+			outputs: [{ id: "X", label: "X", x: 300, y: 90, input: "OR1" }],
+			wires: [
+				{ from: "A", to: "OR1", points: [{ x: 100, y: 60 }, { x: 100, y: 80 }] },
+				{ from: "B", to: "NOT1" },
+				{ from: "NOT1", to: "OR1", points: [{ x: 160, y: 120 }, { x: 160, y: 100 }] },
+				{ from: "OR1", to: "X" },
+			],
+		},
 	},
 	{
 		id: "exam3-2016-q4",
