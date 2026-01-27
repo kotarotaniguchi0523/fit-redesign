@@ -31,7 +31,9 @@ export function Flowchart({
 	// ノードの描画
 	const renderNode = (node: FlowchartNode) => {
 		const defaultWidth =
-			node.type === "decision" ? FLOWCHART_DEFAULTS.NODE_WIDTH_DECISION : FLOWCHART_DEFAULTS.NODE_WIDTH;
+			node.type === "decision"
+				? FLOWCHART_DEFAULTS.NODE_WIDTH_DECISION
+				: FLOWCHART_DEFAULTS.NODE_WIDTH;
 		const defaultHeight =
 			node.type === "decision"
 				? FLOWCHART_DEFAULTS.NODE_HEIGHT_DECISION
@@ -138,7 +140,9 @@ export function Flowchart({
 	): { x: number; y: number } => {
 		const w =
 			node.width ??
-			(node.type === "decision" ? FLOWCHART_DEFAULTS.NODE_WIDTH_DECISION : FLOWCHART_DEFAULTS.NODE_WIDTH);
+			(node.type === "decision"
+				? FLOWCHART_DEFAULTS.NODE_WIDTH_DECISION
+				: FLOWCHART_DEFAULTS.NODE_WIDTH);
 		const h =
 			node.height ??
 			(node.type === "decision"
