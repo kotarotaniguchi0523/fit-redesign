@@ -10,7 +10,7 @@ interface Props {
 }
 
 /** 秒数をMM:SS形式にフォーマット */
-function formatTime(seconds: number): string {
+export function formatTime(seconds: number): string {
 	const mins = Math.floor(seconds / 60);
 	const secs = seconds % 60;
 	return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
@@ -73,6 +73,8 @@ export function QuestionTimer({ questionId }: Props) {
 	const hasSavedRef = useRef(false);
 	// 前回のisRunning値を追跡
 	const prevIsRunningRef = useRef(false);
+	// 展開パネルのref（外側クリック検知用）
+	const panelRef = useRef<HTMLDivElement>(null);
 
 	// useEffectEvent: タイマー停止時の保存処理
 	const saveAttempt = useEffectEvent(() => {
@@ -100,6 +102,31 @@ export function QuestionTimer({ questionId }: Props) {
 
 		prevIsRunningRef.current = timer.isRunning;
 	}, [timer.isRunning]);
+
+	// 外側クリックとEscキーの検知
+	useEffect(() => {
+		if (!isExpanded) return;
+
+		const handleClickOutside = (event: MouseEvent) => {
+			if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+				setIsExpanded(false);
+			}
+		};
+
+		const handleEscapeKey = (event: KeyboardEvent) => {
+			if (event.key === "Escape") {
+				setIsExpanded(false);
+			}
+		};
+
+		document.addEventListener("mousedown", handleClickOutside);
+		document.addEventListener("keydown", handleEscapeKey);
+
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+			document.removeEventListener("keydown", handleEscapeKey);
+		};
+	}, [isExpanded]);
 
 	const handleModeChange = (nextMode: TimerMode) => {
 		if (nextMode === mode) return;
@@ -182,6 +209,7 @@ export function QuestionTimer({ questionId }: Props) {
 			<AnimatePresence>
 				{isExpanded && (
 					<motion.div
+						ref={panelRef}
 						initial={{ height: 0, opacity: 0 }}
 						animate={{ height: "auto", opacity: 1 }}
 						exit={{ height: 0, opacity: 0 }}
@@ -226,7 +254,10 @@ export function QuestionTimer({ questionId }: Props) {
 												color={timer.targetTime === preset.value ? "success" : "default"}
 												variant={timer.targetTime === preset.value ? "solid" : "bordered"}
 												onPress={() => handleTargetTimeChange(preset.value)}
-												className={timer.targetTime === preset.value ? "bg-green-600 text-white" : ""}
+												isDisabled={timer.isRunning}
+												className={
+													timer.targetTime === preset.value ? "bg-green-600 text-white" : ""
+												}
 											>
 												{preset.label}
 											</Button>
