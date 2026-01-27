@@ -3,8 +3,36 @@ import type { AttemptRecord, QuestionTimeRecord, TimerStorageData } from "../typ
 import { formatZodError, TimerStorageDataSchema } from "../types/timer";
 import { createLogger } from "./logger";
 
-const STORAGE_KEY = "fit-exam-timer-records";
+const USER_ID_KEY = "fit-exam-user-id";
+const STORAGE_KEY_PREFIX = "fit-exam-timer-records";
 const MAX_ATTEMPTS_PER_QUESTION = 50;
+
+/**
+ * ユーザーIDを取得（なければ生成して保存）
+ * ブラウザ/デバイス単位でユーザーを識別
+ */
+function getUserId(): string {
+	try {
+		let userId = localStorage.getItem(USER_ID_KEY);
+		if (!userId) {
+			userId = crypto.randomUUID();
+			localStorage.setItem(USER_ID_KEY, userId);
+			logger.info("Generated new user ID");
+		}
+		return userId;
+	} catch {
+		// localStorageが使えない場合は一時的なIDを返す
+		logger.warn("Failed to access localStorage for user ID, using temporary ID");
+		return "anonymous";
+	}
+}
+
+/**
+ * ユーザー固有のストレージキーを取得
+ */
+function getStorageKey(): string {
+	return `${STORAGE_KEY_PREFIX}-${getUserId()}`;
+}
 
 const logger = createLogger("[TimerStorage]");
 
@@ -49,7 +77,7 @@ export function loadTimerData(): Result<TimerStorageData, StorageError> {
 	}
 
 	try {
-		const rawData = localStorage.getItem(STORAGE_KEY);
+		const rawData = localStorage.getItem(getStorageKey());
 
 		if (!rawData) {
 			logger.info("No existing data found, initializing with empty data");
@@ -88,7 +116,7 @@ export function saveTimerData(data: TimerStorageData): Result<void, StorageError
 	try {
 		const serialized = JSON.stringify(data);
 		const recordCount = Object.keys(data.records).length;
-		localStorage.setItem(STORAGE_KEY, serialized);
+		localStorage.setItem(getStorageKey(), serialized);
 		logger.info(`Saved timer data successfully (${recordCount} questions)`);
 		return ok(undefined);
 	} catch (error) {
