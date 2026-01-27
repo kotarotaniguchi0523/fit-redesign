@@ -2,12 +2,14 @@ import { Accordion, AccordionItem, Card, CardBody } from "@heroui/react";
 import type { FigureData, Question } from "../types/index";
 import {
 	BinaryTree,
+	Flowchart,
 	LogicCircuit,
 	ParityCheck,
 	StateDiagram,
 	TableRenderer,
 	TruthTable,
 } from "./figures";
+import { QuestionTimer } from "./QuestionTimer";
 
 interface Props {
 	question: Question;
@@ -36,6 +38,15 @@ function renderFigure(figureData: FigureData) {
 					wires={figureData.wires}
 				/>
 			);
+		case "flowchart":
+			return (
+				<Flowchart
+					nodes={figureData.nodes}
+					edges={figureData.edges}
+					width={figureData.width}
+					height={figureData.height}
+				/>
+			);
 		case "dataTable":
 		case "huffmanTable":
 		case "linkedListTable":
@@ -55,7 +66,14 @@ export function QuestionCard({ question }: Props) {
 						{question.number}
 					</span>
 					<div className="flex-1">
-						<p className="text-gray-800 leading-relaxed whitespace-pre-wrap">{question.text}</p>
+						<div className="flex items-start justify-between gap-2 mb-2">
+							<p className="text-gray-800 leading-relaxed whitespace-pre-wrap flex-1">
+								{question.text}
+							</p>
+							<div className="shrink-0">
+								<QuestionTimer questionId={question.id} />
+							</div>
+						</div>
 					</div>
 				</div>
 
@@ -94,7 +112,7 @@ export function QuestionCard({ question }: Props) {
 						aria-label="解答"
 						title={<span className="text-sm font-medium text-[#1e3a5f]">解答を表示</span>}
 					>
-						<div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
+						<div className="p-4 bg-linear-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
 							<div className="flex items-start gap-2">
 								<span className="text-emerald-600 font-bold">A.</span>
 								<span className="font-medium text-emerald-900">{question.answer}</span>
