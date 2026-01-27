@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TimerMode } from "../types/timer";
 
@@ -32,9 +32,12 @@ const mockAudioContext = {
 
 describe("useTimer", () => {
 	beforeAll(async () => {
-		vi.stubGlobal("AudioContext", vi.fn(function AudioContextMock() {
-			return mockAudioContext;
-		}));
+		vi.stubGlobal(
+			"AudioContext",
+			vi.fn(function AudioContextMock() {
+				return mockAudioContext;
+			}),
+		);
 
 		const module = await import("./useTimer");
 		useTimer = module.useTimer;
@@ -221,40 +224,40 @@ describe("useTimer", () => {
 		});
 	});
 
-		describe("countdown モード - 時間経過", () => {
-			it("1 秒経過で 9 秒になる", () => {
-				const { result } = renderHook(() => useTimer("countdown", 10));
-				act(() => {
-					result.current.start();
-				});
-				act(() => {
-					vi.advanceTimersByTime(1000);
-				});
-				expect(result.current.elapsedSeconds).toBe(9);
+	describe("countdown モード - 時間経過", () => {
+		it("1 秒経過で 9 秒になる", () => {
+			const { result } = renderHook(() => useTimer("countdown", 10));
+			act(() => {
+				result.current.start();
 			});
-
-			it("5 秒経過で 5 秒になる", () => {
-				const { result } = renderHook(() => useTimer("countdown", 10));
-				act(() => {
-					result.current.start();
-				});
-				act(() => {
-					vi.advanceTimersByTime(5000);
-				});
-				expect(result.current.elapsedSeconds).toBe(5);
+			act(() => {
+				vi.advanceTimersByTime(1000);
 			});
-
-			it("0 になると isCompleted が true", () => {
-				const { result } = renderHook(() => useTimer("countdown", 5));
-				act(() => {
-					result.current.start();
-				});
-				act(() => {
-					vi.advanceTimersByTime(5000);
-				});
-				expect(result.current.isCompleted).toBe(true);
-			});
+			expect(result.current.elapsedSeconds).toBe(9);
 		});
+
+		it("5 秒経過で 5 秒になる", () => {
+			const { result } = renderHook(() => useTimer("countdown", 10));
+			act(() => {
+				result.current.start();
+			});
+			act(() => {
+				vi.advanceTimersByTime(5000);
+			});
+			expect(result.current.elapsedSeconds).toBe(5);
+		});
+
+		it("0 になると isCompleted が true", () => {
+			const { result } = renderHook(() => useTimer("countdown", 5));
+			act(() => {
+				result.current.start();
+			});
+			act(() => {
+				vi.advanceTimersByTime(5000);
+			});
+			expect(result.current.isCompleted).toBe(true);
+		});
+	});
 
 	describe("mode 変更時の挙動", () => {
 		it("非実行時に countdown に切り替えると elapsedSeconds が targetTime", () => {

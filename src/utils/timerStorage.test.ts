@@ -92,7 +92,7 @@ describe("timerStorage", () => {
 				throw new Error("loadTimerData failed");
 			}
 
-			expect(loadResult.value.records["q1"].attempts).toEqual([
+			expect(loadResult.value.records.q1.attempts).toEqual([
 				expect.objectContaining({
 					duration: 60,
 					mode: "stopwatch",
@@ -124,7 +124,7 @@ describe("timerStorage", () => {
 				throw new Error("loadTimerData failed");
 			}
 
-			expect(result.value.records["q2"].attempts).toEqual([
+			expect(result.value.records.q2.attempts).toEqual([
 				expect.objectContaining({
 					duration: 60,
 					mode: "stopwatch",
@@ -163,7 +163,7 @@ describe("timerStorage", () => {
 				throw new Error("loadTimerData failed");
 			}
 
-			expect(loadResult.value.records["q3"]).toBeUndefined();
+			expect(loadResult.value.records.q3).toBeUndefined();
 		});
 
 		it("存在しない問題をクリアしてもエラーにならない", () => {
