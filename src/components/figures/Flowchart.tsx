@@ -178,13 +178,7 @@ export function Flowchart({ nodes, edges, width = 300, height = 400 }: Flowchart
 					markerEnd="url(#flowchart-arrow)"
 				/>
 				{edge.label && (
-					<text
-						x={labelX + 8}
-						y={labelY - 4}
-						fontSize="10"
-						fill="black"
-						fontWeight="bold"
-					>
+					<text x={labelX + 8} y={labelY - 4} fontSize="10" fill="black" fontWeight="bold">
 						{edge.label}
 					</text>
 				)}
