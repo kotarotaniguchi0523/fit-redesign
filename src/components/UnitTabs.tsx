@@ -1,5 +1,5 @@
 import { Card } from "@heroui/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { getExamByNumber } from "../data/exams";
 import { slideOnlyUnits, unitBasedTabs } from "../data/units";
 import type { Unit, Year } from "../types/index";
@@ -23,7 +23,8 @@ const allUnits = [...unitBasedTabs, slideOnlyTab];
 
 export function UnitTabs({ selectedYear, onYearChange }: Props) {
 	const [selectedKey, setSelectedKey] = useState<string | number>(unitBasedTabs[0]?.id ?? "");
-	const [activeExamNumber, setActiveExamNumber] = useState<number | null>(null);
+	// ユーザーが選択した小テスト番号（nullなら未選択）
+	const [selectedExamNumber, setSelectedExamNumber] = useState<number | null>(null);
 
 	const handleSelectionChange = (key: string | number) => {
 		setSelectedKey(key);
@@ -48,19 +49,14 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 	const examMapping = selectedUnit?.examMapping.find((m) => m.year === selectedYear);
 	const examNumbers = examMapping?.examNumbers ?? [];
 
-	useEffect(() => {
-		if (examNumbers.length === 0) {
-			setActiveExamNumber(null);
-			return;
-		}
+	// レンダリング中に計算（useEffect不要）
+	// selectedExamNumberが有効なら維持、無効なら最初の値にフォールバック
+	const activeExamNumber =
+		selectedExamNumber !== null && examNumbers.includes(selectedExamNumber)
+			? selectedExamNumber
+			: (examNumbers[0] ?? null);
 
-		setActiveExamNumber((prev) => (prev && examNumbers.includes(prev) ? prev : examNumbers[0]));
-	}, [examNumbers]);
-
-	const resolvedActiveExamNumber = activeExamNumber ?? examNumbers[0];
-	const activeExamData = resolvedActiveExamNumber
-		? getExamByNumber(resolvedActiveExamNumber)
-		: undefined;
+	const activeExamData = activeExamNumber ? getExamByNumber(activeExamNumber) : undefined;
 	const activeExam = activeExamData?.exams[selectedYear];
 	const activeExamTitle = activeExam?.title ?? activeExamData?.title ?? "";
 
@@ -128,7 +124,7 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 									const examData = getExamByNumber(examNumber);
 									if (!examData) return null;
 									const examTitle = examData.exams[selectedYear]?.title ?? examData.title;
-									const isActive = resolvedActiveExamNumber === examNumber;
+									const isActive = activeExamNumber === examNumber;
 
 									return (
 										<button
@@ -136,8 +132,8 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 											type="button"
 											role="tab"
 											aria-selected={isActive}
-											onClick={() => setActiveExamNumber(examNumber)}
-											className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all flex flex-col text-left min-w-[10rem] ${
+											onClick={() => setSelectedExamNumber(examNumber)}
+											className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all flex flex-col text-left min-w-40 ${
 												isActive
 													? "bg-[#1e3a5f] text-white border-[#1e3a5f] shadow-sm"
 													: "bg-white text-gray-700 border-gray-300 hover:border-[#1e3a5f] hover:text-[#1e3a5f]"

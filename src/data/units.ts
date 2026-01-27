@@ -91,7 +91,9 @@ export const unitBasedTabs: UnitBasedTab[] = [
 		examMapping: [
 			{ year: "2013", examNumbers: [3] },
 			// 2014年以降は負数表現と統合されているため、exam2に含まれる
+			// 2014年、2016年: 浮動小数点問題なし（PDFで確認済み）
 			{ year: "2015", examNumbers: [2], integratedTitle: "負数表現・浮動小数点" },
+			{ year: "2017", examNumbers: [2], integratedTitle: "負数表現・浮動小数点" },
 		],
 	},
 	{

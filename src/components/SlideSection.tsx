@@ -21,7 +21,7 @@ export function SlideSection({ slides }: Props) {
 							key={slide.id}
 							className="flex flex-col gap-2 p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100 sm:flex-row sm:items-center sm:justify-between"
 						>
-							<span className="text-sm text-gray-700 break-words">{slide.title}</span>
+							<span className="text-sm text-gray-700 wrap-break-words">{slide.title}</span>
 							<Button
 								as={Link}
 								href={slide.pdfPath}
