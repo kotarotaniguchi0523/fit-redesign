@@ -27,7 +27,8 @@ const mockAudioContext = {
 	createGain: vi.fn(function createGain() {
 		return mockGainNode;
 	}),
-	resume: vi.fn(function resume() {}),
+	resume: vi.fn(async function resume() {}),
+	close: vi.fn(async function close() {}),
 };
 
 describe("useTimer", () => {
@@ -294,6 +295,31 @@ describe("useTimer", () => {
 			});
 			unmount();
 			expect(() => vi.advanceTimersByTime(5000)).not.toThrow();
+		});
+
+		it("アラート再生中にアンマウントしてもエラーにならない (タイムアウトのクリーンアップ)", () => {
+			const { result, unmount } = renderHook(() => useTimer("countdown", 1));
+
+			// 完了させる
+			act(() => {
+				result.current.start();
+			});
+			act(() => {
+				vi.advanceTimersByTime(1000); // 0sになる
+			});
+
+			expect(result.current.isCompleted).toBe(true);
+
+			// アラートの1回目が鳴った直後、2回目のためのsetTimeoutが走っている状態でアンマウント
+			unmount();
+
+			// 2回目のアラートの時間まで進める
+			// もしクリーンアップされていない場合、ここで閉じたAudioContextにアクセスしてエラーになる可能性がある
+			expect(() => {
+				act(() => {
+					vi.advanceTimersByTime(500);
+				});
+			}).not.toThrow();
 		});
 	});
 });
