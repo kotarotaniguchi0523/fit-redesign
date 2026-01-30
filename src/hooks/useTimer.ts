@@ -30,6 +30,7 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 	const [isRunning, setIsRunning] = useState(false);
 	const [isCompleted, setIsCompleted] = useState(false);
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+	const audioContextRef = useRef<AudioContext | null>(null);
 
 	const start = () => {
 		setIsRunning(true);
@@ -66,7 +67,15 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 	// アラート音を鳴らす関数
 	const playAlertSound = useCallback(() => {
 		try {
-			const audioContext = new AudioContext();
+			if (!audioContextRef.current) {
+				audioContextRef.current = new AudioContext();
+			}
+			const audioContext = audioContextRef.current;
+
+			if (audioContext.state === "suspended") {
+				audioContext.resume().catch(() => {});
+			}
+
 			const oscillator = audioContext.createOscillator();
 			const gainNode = audioContext.createGain();
 
@@ -92,9 +101,20 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 				osc2.start();
 				osc2.stop(audioContext.currentTime + ALERT_SOUND.DURATION);
 			}, ALERT_SOUND.SECOND_DELAY);
-		} catch {
+		} catch (e) {
+			console.log("AudioContext error", e);
 			// Audio API not supported
 		}
+	}, []);
+
+	// Cleanup AudioContext
+	useEffect(() => {
+		return () => {
+			if (audioContextRef.current) {
+				audioContextRef.current.close().catch(() => {});
+				audioContextRef.current = null;
+			}
+		};
 	}, []);
 
 	// Timer interval effect

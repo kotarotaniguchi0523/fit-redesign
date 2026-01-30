@@ -27,7 +27,8 @@ const mockAudioContext = {
 	createGain: vi.fn(function createGain() {
 		return mockGainNode;
 	}),
-	resume: vi.fn(function resume() {}),
+	resume: vi.fn(async function resume() {}),
+	close: vi.fn(async function close() {}),
 };
 
 describe("useTimer", () => {
