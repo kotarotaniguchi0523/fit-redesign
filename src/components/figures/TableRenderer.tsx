@@ -1,4 +1,11 @@
-import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableColumn,
+	TableHeader,
+	TableRow,
+} from "@heroui/react";
 import type { ReactNode } from "react";
 import type {
 	DataTableColumn,
@@ -39,6 +46,21 @@ function TableWrapper({ children }: { children: ReactNode }) {
 	return <div className="w-full overflow-x-auto">{children}</div>;
 }
 
+// 共通のテーブルスタイル定義
+const commonTableProps = {
+	shadow: "none" as const,
+	radius: "none" as const,
+	classNames: {
+		wrapper: "p-0",
+		table: "border-2 border-gray-800 border-collapse",
+		thead: "rounded-none",
+		tbody: "rounded-none",
+		tr: "rounded-none border-none shadow-none",
+		th: "border border-gray-800 bg-gray-100 text-black font-bold text-center rounded-none",
+		td: "border border-gray-800 text-black font-mono text-center rounded-none",
+	},
+};
+
 // 汎用データテーブル
 interface DataTableProps {
 	columns: DataTableColumn[];
@@ -48,12 +70,14 @@ interface DataTableProps {
 function DataTable({ columns, rows }: DataTableProps) {
 	return (
 		<TableWrapper>
-			<Table aria-label="Data table" className="max-w-2xl min-w-max">
+			<Table
+				aria-label="Data table"
+				className="max-w-2xl min-w-max"
+				{...commonTableProps}
+			>
 				<TableHeader>
 					{columns.map((column) => (
-						<TableColumn key={column.key} className="text-center">
-							{column.label}
-						</TableColumn>
+						<TableColumn key={column.key}>{column.label}</TableColumn>
 					))}
 				</TableHeader>
 				<TableBody>
@@ -62,7 +86,7 @@ function DataTable({ columns, rows }: DataTableProps) {
 						return (
 							<TableRow key={rowKey}>
 								{columns.map((column) => (
-									<TableCell key={`${rowKey}-${column.key}`} className="text-center">
+									<TableCell key={`${rowKey}-${column.key}`}>
 										{String(row[column.key])}
 									</TableCell>
 								))}
@@ -88,12 +112,14 @@ function HuffmanTable({ data }: HuffmanTableProps) {
 
 	return (
 		<TableWrapper>
-			<Table aria-label="Huffman coding table" className="max-w-2xl min-w-max">
+			<Table
+				aria-label="Huffman coding table"
+				className="max-w-2xl min-w-max"
+				{...commonTableProps}
+			>
 				<TableHeader>
 					{columns.map((column) => (
-						<TableColumn key={column.key} className="text-center">
-							{column.label}
-						</TableColumn>
+						<TableColumn key={column.key}>{column.label}</TableColumn>
 					))}
 				</TableHeader>
 				<TableBody>
@@ -101,8 +127,8 @@ function HuffmanTable({ data }: HuffmanTableProps) {
 						const rowKey = `huffman-${index}-${character}`;
 						return (
 							<TableRow key={rowKey}>
-								<TableCell className="text-center">{character}</TableCell>
-								<TableCell className="text-center">{data.probabilities[index]}</TableCell>
+								<TableCell>{character}</TableCell>
+								<TableCell>{data.probabilities[index]}</TableCell>
 							</TableRow>
 						);
 					})}
@@ -126,12 +152,14 @@ function LinkedListTable({ entries }: LinkedListTableProps) {
 
 	return (
 		<TableWrapper>
-			<Table aria-label="Linked list table" className="max-w-2xl min-w-max">
+			<Table
+				aria-label="Linked list table"
+				className="max-w-2xl min-w-max"
+				{...commonTableProps}
+			>
 				<TableHeader>
 					{columns.map((column) => (
-						<TableColumn key={column.key} className="text-center">
-							{column.label}
-						</TableColumn>
+						<TableColumn key={column.key}>{column.label}</TableColumn>
 					))}
 				</TableHeader>
 				<TableBody>
@@ -139,9 +167,9 @@ function LinkedListTable({ entries }: LinkedListTableProps) {
 						const rowKey = `linkedlist-${index}-${entry.address}`;
 						return (
 							<TableRow key={rowKey}>
-								<TableCell className="text-center">{String(entry.address)}</TableCell>
-								<TableCell className="text-center">{entry.data}</TableCell>
-								<TableCell className="text-center">{String(entry.pointer)}</TableCell>
+								<TableCell>{String(entry.address)}</TableCell>
+								<TableCell>{entry.data}</TableCell>
+								<TableCell>{String(entry.pointer)}</TableCell>
 							</TableRow>
 						);
 					})}
@@ -164,12 +192,14 @@ function NormalDistributionTable({ entries }: NormalDistributionTableProps) {
 
 	return (
 		<TableWrapper>
-			<Table aria-label="Normal distribution table" className="max-w-2xl min-w-max">
+			<Table
+				aria-label="Normal distribution table"
+				className="max-w-2xl min-w-max"
+				{...commonTableProps}
+			>
 				<TableHeader>
 					{columns.map((column) => (
-						<TableColumn key={column.key} className="text-center">
-							{column.label}
-						</TableColumn>
+						<TableColumn key={column.key}>{column.label}</TableColumn>
 					))}
 				</TableHeader>
 				<TableBody>
@@ -177,8 +207,8 @@ function NormalDistributionTable({ entries }: NormalDistributionTableProps) {
 						const rowKey = `normal-${index}-${entry.u}`;
 						return (
 							<TableRow key={rowKey}>
-								<TableCell className="text-center">{entry.u}</TableCell>
-								<TableCell className="text-center">{entry.probability}</TableCell>
+								<TableCell>{entry.u}</TableCell>
+								<TableCell>{entry.probability}</TableCell>
 							</TableRow>
 						);
 					})}

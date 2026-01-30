@@ -1,3 +1,11 @@
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableColumn,
+	TableHeader,
+	TableRow,
+} from "@heroui/react";
 import type { TruthTableColumn, TruthTableRow } from "../../types/index";
 
 export interface TruthTableProps {
@@ -8,46 +16,48 @@ export interface TruthTableProps {
 
 /**
  * 真理値表コンポーネント
- * PDFの試験問題と同様のマス目（枠線）付きテーブルを表示
+ * HeroUIのTableを使用して実装
+ * PDFのようなグリッド表示にするため、デフォルトのスタイルを上書き
  */
 export function TruthTable({ columns, rows, ariaLabel = "Truth table" }: TruthTableProps) {
 	return (
-		<div className="overflow-x-auto">
-			<table
+		<div className="w-full overflow-x-auto">
+			<Table
 				aria-label={ariaLabel}
-				className="border-collapse border-2 border-gray-800 text-center"
+				className="max-w-2xl min-w-max"
+				shadow="none"
+				radius="none"
+				classNames={{
+					wrapper: "p-0",
+					table: "border-2 border-gray-800 border-collapse",
+					thead: "rounded-none",
+					tbody: "rounded-none",
+					tr: "rounded-none border-none shadow-none",
+					th: "border border-gray-800 bg-gray-100 text-black font-bold text-center rounded-none",
+					td: "border border-gray-800 text-black font-mono text-center rounded-none",
+				}}
 			>
-				<thead>
-					<tr className="bg-gray-100">
-						{columns.map((column) => (
-							<th
-								key={column.key}
-								className="border border-gray-800 px-4 py-2 font-semibold min-w-[3rem]"
-							>
-								{column.label}
-							</th>
-						))}
-					</tr>
-				</thead>
-				<tbody>
+				<TableHeader>
+					{columns.map((column) => (
+						<TableColumn key={column.key}>{column.label}</TableColumn>
+					))}
+				</TableHeader>
+				<TableBody>
 					{rows.map((row, rowIndex) => {
 						const rowKey = `row-${rowIndex}`;
 
 						return (
-							<tr key={rowKey}>
+							<TableRow key={rowKey}>
 								{columns.map((column) => (
-									<td
-										key={`${rowKey}-${column.key}`}
-										className="border border-gray-800 px-4 py-2 font-mono"
-									>
+									<TableCell key={`${rowKey}-${column.key}`}>
 										{String(row[column.key])}
-									</td>
+									</TableCell>
 								))}
-							</tr>
+							</TableRow>
 						);
 					})}
-				</tbody>
-			</table>
+				</TableBody>
+			</Table>
 		</div>
 	);
 }
