@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { LogicGate, LogicInput, LogicOutput, LogicWire } from "../../types/index";
 
 export interface LogicCircuitProps {
@@ -22,10 +23,9 @@ export function LogicCircuit({
 	const gateHeight = 40;
 
 	// 要素の検索用マップを作成 (O(1) lookup)
-	const elementMap = new Map<string, LogicInput | LogicGate | LogicOutput>();
-	for (const input of inputs) elementMap.set(input.id, input);
-	for (const gate of gates) elementMap.set(gate.id, gate);
-	for (const output of outputs) elementMap.set(output.id, output);
+	const elementMap = useMemo(() => {
+		return new Map([...inputs, ...gates, ...outputs].map((el) => [el.id, el]));
+	}, [inputs, gates, outputs]);
 
 	// ゲートのシンボルを描画する関数
 	const renderGateSymbol = (gate: LogicGate) => {
