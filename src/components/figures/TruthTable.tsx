@@ -1,11 +1,4 @@
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableColumn,
-	TableHeader,
-	TableRow,
-} from "@heroui/react";
+import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
 import type { TruthTableColumn, TruthTableRow } from "../../types/index";
 
 export interface TruthTableProps {
@@ -49,9 +42,7 @@ export function TruthTable({ columns, rows, ariaLabel = "Truth table" }: TruthTa
 						return (
 							<TableRow key={rowKey}>
 								{columns.map((column) => (
-									<TableCell key={`${rowKey}-${column.key}`}>
-										{String(row[column.key])}
-									</TableCell>
+									<TableCell key={`${rowKey}-${column.key}`}>{String(row[column.key])}</TableCell>
 								))}
 							</TableRow>
 						);

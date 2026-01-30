@@ -1,11 +1,4 @@
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableColumn,
-	TableHeader,
-	TableRow,
-} from "@heroui/react";
+import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
 import type { ReactNode } from "react";
 import type {
 	DataTableColumn,
@@ -70,11 +63,7 @@ interface DataTableProps {
 function DataTable({ columns, rows }: DataTableProps) {
 	return (
 		<TableWrapper>
-			<Table
-				aria-label="Data table"
-				className="max-w-2xl min-w-max"
-				{...commonTableProps}
-			>
+			<Table aria-label="Data table" className="max-w-2xl min-w-max" {...commonTableProps}>
 				<TableHeader>
 					{columns.map((column) => (
 						<TableColumn key={column.key}>{column.label}</TableColumn>
@@ -86,9 +75,7 @@ function DataTable({ columns, rows }: DataTableProps) {
 						return (
 							<TableRow key={rowKey}>
 								{columns.map((column) => (
-									<TableCell key={`${rowKey}-${column.key}`}>
-										{String(row[column.key])}
-									</TableCell>
+									<TableCell key={`${rowKey}-${column.key}`}>{String(row[column.key])}</TableCell>
 								))}
 							</TableRow>
 						);
@@ -152,11 +139,7 @@ function LinkedListTable({ entries }: LinkedListTableProps) {
 
 	return (
 		<TableWrapper>
-			<Table
-				aria-label="Linked list table"
-				className="max-w-2xl min-w-max"
-				{...commonTableProps}
-			>
+			<Table aria-label="Linked list table" className="max-w-2xl min-w-max" {...commonTableProps}>
 				<TableHeader>
 					{columns.map((column) => (
 						<TableColumn key={column.key}>{column.label}</TableColumn>

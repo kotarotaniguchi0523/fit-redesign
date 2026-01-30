@@ -47,31 +47,31 @@ export function useQuestionTimeRecord(questionId: string): UseQuestionTimeRecord
 		targetTime?: number,
 	) => {
 		logger.info(
-				`Adding new attempt (mode: ${mode}, completed: ${completed}, duration: ${duration}s)`,
-			);
+			`Adding new attempt (mode: ${mode}, completed: ${completed}, duration: ${duration}s)`,
+		);
 
-			const newAttempt: AttemptRecord = {
-				timestamp: Date.now(),
-				duration,
-				mode,
-				completed,
-				targetTime,
-			};
+		const newAttempt: AttemptRecord = {
+			timestamp: Date.now(),
+			duration,
+			mode,
+			completed,
+			targetTime,
+		};
 
-			const saveResult = saveAttempt(questionId, newAttempt);
+		const saveResult = saveAttempt(questionId, newAttempt);
 
-			if (!saveResult.ok) {
-				logger.warn(`Failed to save attempt: ${saveResult.error.type}`, {
-					message: saveResult.error.message,
-				});
-				return;
-			}
-
-			setAttempts((prev) => {
-				const updated = [...prev, newAttempt];
-				logger.info(`Attempt added successfully (total: ${updated.length})`);
-				return updated;
+		if (!saveResult.ok) {
+			logger.warn(`Failed to save attempt: ${saveResult.error.type}`, {
+				message: saveResult.error.message,
 			});
+			return;
+		}
+
+		setAttempts((prev) => {
+			const updated = [...prev, newAttempt];
+			logger.info(`Attempt added successfully (total: ${updated.length})`);
+			return updated;
+		});
 	};
 
 	// 記録をクリア
@@ -92,8 +92,7 @@ export function useQuestionTimeRecord(questionId: string): UseQuestionTimeRecord
 	};
 
 	// 最新の記録（O(1)操作なのでuseMemo不要）
-	const lastAttemptDuration =
-		attempts.length > 0 ? attempts[attempts.length - 1].duration : null;
+	const lastAttemptDuration = attempts.length > 0 ? attempts[attempts.length - 1].duration : null;
 
 	// 平均時間（最大50件のreduceなので計測で問題が出るまでuseMemo不要）
 	const averageDuration =
