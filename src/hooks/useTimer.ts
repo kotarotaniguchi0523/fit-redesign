@@ -31,6 +31,7 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 	const [isCompleted, setIsCompleted] = useState(false);
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 	const audioContextRef = useRef<AudioContext | null>(null);
+	const alertTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const start = () => {
 		setIsRunning(true);
@@ -90,7 +91,7 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 			oscillator.stop(audioContext.currentTime + ALERT_SOUND.DURATION);
 
 			// 2回目のビープ
-			setTimeout(() => {
+			alertTimeoutRef.current = setTimeout(() => {
 				const osc2 = audioContext.createOscillator();
 				const gain2 = audioContext.createGain();
 				osc2.connect(gain2);
@@ -110,8 +111,12 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 	// Cleanup AudioContext
 	useEffect(() => {
 		return () => {
+			if (alertTimeoutRef.current) {
+				clearTimeout(alertTimeoutRef.current);
+				alertTimeoutRef.current = null;
+			}
 			if (audioContextRef.current) {
-                audioContextRef.current.close().catch((e) => console.log("AudioContext close error", e));
+				audioContextRef.current.close().catch(() => {});
 				audioContextRef.current = null;
 			}
 		};
