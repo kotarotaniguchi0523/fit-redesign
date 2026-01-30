@@ -21,6 +21,12 @@ export function LogicCircuit({
 	const gateWidth = 50;
 	const gateHeight = 40;
 
+	// 要素の検索用マップを作成 (O(1) lookup)
+	const elementMap = new Map<string, LogicInput | LogicGate | LogicOutput>();
+	for (const input of inputs) elementMap.set(input.id, input);
+	for (const gate of gates) elementMap.set(gate.id, gate);
+	for (const output of outputs) elementMap.set(output.id, output);
+
 	// ゲートのシンボルを描画する関数
 	const renderGateSymbol = (gate: LogicGate) => {
 		const { x, y, type } = gate;
@@ -192,8 +198,8 @@ export function LogicCircuit({
 	// ワイヤーを描画する関数
 	const renderWire = (wire: LogicWire) => {
 		// 開始点と終了点の座標を取得
-		const fromElement = [...inputs, ...gates].find((el) => el.id === wire.from);
-		const toElement = [...gates, ...outputs].find((el) => el.id === wire.to);
+		const fromElement = elementMap.get(wire.from);
+		const toElement = elementMap.get(wire.to);
 
 		if (!fromElement || !toElement) return null;
 
