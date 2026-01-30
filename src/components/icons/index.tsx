@@ -99,4 +99,3 @@ export function ClockIcon({ className }: { className?: string }) {
 		</svg>
 	);
 }
-
