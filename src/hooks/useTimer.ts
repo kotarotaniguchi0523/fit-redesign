@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { TimerMode } from "../types/timer";
 
 const TIMER_INTERVAL_MS = 1000;
@@ -64,7 +64,7 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 	}, [mode, targetTime, isRunning, isCompleted]);
 
 	// アラート音を鳴らす関数
-	const playAlertSound = () => {
+	const playAlertSound = useCallback(() => {
 		try {
 			const audioContext = new AudioContext();
 			const oscillator = audioContext.createOscillator();
@@ -95,7 +95,7 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 		} catch {
 			// Audio API not supported
 		}
-	};
+	}, []);
 
 	// Timer interval effect
 	// 外部システム（setInterval）との同期なのでuseEffectが必要
@@ -135,7 +135,7 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 			setIsCompleted(true);
 			playAlertSound();
 		}
-	}, [mode, isRunning, elapsedSeconds]);
+	}, [mode, isRunning, elapsedSeconds, playAlertSound]);
 
 	return {
 		elapsedSeconds,
