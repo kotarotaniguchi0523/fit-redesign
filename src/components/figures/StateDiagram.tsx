@@ -127,8 +127,9 @@ export function StateDiagram({ nodes, transitions, width = 400, height = 150 }: 
 
 				// 自己ループの処理
 				if (transition.from === transition.to) {
+					const radius = fromNode.isAccepting ? acceptingNodeRadius : nodeRadius;
 					const cx = fromNode.x;
-					const cy = fromNode.y - nodeRadius - 15;
+					const cy = fromNode.y - radius - 15;
 					const r = 15;
 
 					return (
