@@ -21,6 +21,40 @@ interface UseTimerReturn {
 	setTargetTime: (seconds: number) => void;
 }
 
+// アラート音を鳴らす関数
+const playAlertSound = () => {
+	try {
+		const audioContext = new AudioContext();
+		const oscillator = audioContext.createOscillator();
+		const gainNode = audioContext.createGain();
+
+		oscillator.connect(gainNode);
+		gainNode.connect(audioContext.destination);
+
+		oscillator.frequency.value = ALERT_SOUND.FIRST_FREQUENCY;
+		oscillator.type = "sine";
+		gainNode.gain.value = ALERT_SOUND.GAIN;
+
+		oscillator.start();
+		oscillator.stop(audioContext.currentTime + ALERT_SOUND.DURATION);
+
+		// 2回目のビープ
+		setTimeout(() => {
+			const osc2 = audioContext.createOscillator();
+			const gain2 = audioContext.createGain();
+			osc2.connect(gain2);
+			gain2.connect(audioContext.destination);
+			osc2.frequency.value = ALERT_SOUND.SECOND_FREQUENCY;
+			osc2.type = "sine";
+			gain2.gain.value = ALERT_SOUND.GAIN;
+			osc2.start();
+			osc2.stop(audioContext.currentTime + ALERT_SOUND.DURATION);
+		}, ALERT_SOUND.SECOND_DELAY);
+	} catch {
+		// Audio API not supported
+	}
+};
+
 export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerReturn {
 	const initialTargetTime = targetTimeSeconds ?? 0;
 	const [targetTime, setTargetTimeState] = useState(initialTargetTime);
@@ -62,40 +96,6 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 			setElapsedSeconds(mode === "countdown" ? targetTime : 0);
 		}
 	}, [mode, targetTime, isRunning, isCompleted]);
-
-	// アラート音を鳴らす関数
-	const playAlertSound = () => {
-		try {
-			const audioContext = new AudioContext();
-			const oscillator = audioContext.createOscillator();
-			const gainNode = audioContext.createGain();
-
-			oscillator.connect(gainNode);
-			gainNode.connect(audioContext.destination);
-
-			oscillator.frequency.value = ALERT_SOUND.FIRST_FREQUENCY;
-			oscillator.type = "sine";
-			gainNode.gain.value = ALERT_SOUND.GAIN;
-
-			oscillator.start();
-			oscillator.stop(audioContext.currentTime + ALERT_SOUND.DURATION);
-
-			// 2回目のビープ
-			setTimeout(() => {
-				const osc2 = audioContext.createOscillator();
-				const gain2 = audioContext.createGain();
-				osc2.connect(gain2);
-				gain2.connect(audioContext.destination);
-				osc2.frequency.value = ALERT_SOUND.SECOND_FREQUENCY;
-				osc2.type = "sine";
-				gain2.gain.value = ALERT_SOUND.GAIN;
-				osc2.start();
-				osc2.stop(audioContext.currentTime + ALERT_SOUND.DURATION);
-			}, ALERT_SOUND.SECOND_DELAY);
-		} catch {
-			// Audio API not supported
-		}
-	};
 
 	// Timer interval effect
 	// 外部システム（setInterval）との同期なのでuseEffectが必要

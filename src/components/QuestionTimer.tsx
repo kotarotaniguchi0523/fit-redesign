@@ -122,12 +122,7 @@ export function QuestionTimer({ questionId }: Props) {
 				{/* 設定（ポップオーバー） */}
 				<Popover placement="bottom-end">
 					<PopoverTrigger>
-						<Button
-							size="sm"
-							variant="light"
-							isIconOnly
-							aria-label="設定"
-						>
+						<Button size="sm" variant="light" isIconOnly aria-label="設定">
 							<SettingsIcon className="w-5 h-5 text-slate-500" />
 						</Button>
 					</PopoverTrigger>
