@@ -60,7 +60,7 @@ export type FigureData =
 			nodes: StateNode[];
 			transitions: Transition[];
 	  }
-	| { type: "binaryTree"; root: TreeNode }
+	| { type: "binaryTree"; root: TreeNode; width?: number; height?: number }
 	| { type: "truthTable"; columns: TruthTableColumn[]; rows: TruthTableRow[] }
 	| { type: "parityCheck"; data: number[][] }
 	| { type: "dataTable"; columns: DataTableColumn[]; rows: DataTableRow[] }

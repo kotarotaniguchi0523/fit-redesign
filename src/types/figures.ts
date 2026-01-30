@@ -20,6 +20,8 @@ export interface TreeNode {
 	value: string | number;
 	left?: TreeNode;
 	right?: TreeNode;
+	x?: number;
+	y?: number;
 }
 
 // 真理値表の型定義

@@ -74,7 +74,7 @@ export const exam6_2013: Question[] = [
 				{ from: "s0", to: "s0", label: "0" },
 				{ from: "s0", to: "s1", label: "1" },
 				{ from: "s1", to: "s2", label: "1" },
-				{ from: "s1", to: "s0", label: "0" },
+				{ from: "s1", to: "s0", label: "0", curveOffset: -40 },
 				{ from: "s2", to: "s2", label: "0,1" },
 			],
 		},
