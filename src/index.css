@@ -27,3 +27,35 @@ body {
 	background-image: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.03) 1px, transparent 0);
 	background-size: 24px 24px;
 }
+
+/* Hide Radio Control */
+.hidden-radio-control {
+	/* biome-ignore lint/complexity/noImportantStyles: Override HeroUI default styles */
+	display: none !important;
+	/* biome-ignore lint/complexity/noImportantStyles: Override HeroUI default styles */
+	width: 0 !important;
+	/* biome-ignore lint/complexity/noImportantStyles: Override HeroUI default styles */
+	height: 0 !important;
+	/* biome-ignore lint/complexity/noImportantStyles: Override HeroUI default styles */
+	opacity: 0 !important;
+	/* biome-ignore lint/complexity/noImportantStyles: Override HeroUI default styles */
+	border: none !important;
+	/* biome-ignore lint/complexity/noImportantStyles: Override HeroUI default styles */
+	margin: 0 !important;
+	/* biome-ignore lint/complexity/noImportantStyles: Override HeroUI default styles */
+	padding: 0 !important;
+	/* biome-ignore lint/complexity/noImportantStyles: Override HeroUI default styles */
+	overflow: hidden !important;
+}
+
+/* Hide Native Input in YearSelector */
+.year-selector-radio input {
+	/* biome-ignore lint/complexity/noImportantStyles: Override HeroUI default styles */
+	display: none !important;
+	/* biome-ignore lint/complexity/noImportantStyles: Override HeroUI default styles */
+	opacity: 0 !important;
+	/* biome-ignore lint/complexity/noImportantStyles: Override HeroUI default styles */
+	width: 0 !important;
+	/* biome-ignore lint/complexity/noImportantStyles: Override HeroUI default styles */
+	height: 0 !important;
+}
