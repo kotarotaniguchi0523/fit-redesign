@@ -28,11 +28,7 @@ function renderFigure(figureData: FigureData) {
 			return <StateDiagram nodes={figureData.nodes} transitions={figureData.transitions} />;
 		case "binaryTree":
 			return (
-				<BinaryTree
-					root={figureData.root}
-					width={figureData.width}
-					height={figureData.height}
-				/>
+				<BinaryTree root={figureData.root} width={figureData.width} height={figureData.height} />
 			);
 		case "truthTable":
 			return <TruthTable columns={figureData.columns} rows={figureData.rows} />;
