@@ -27,3 +27,23 @@ body {
 	background-image: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.03) 1px, transparent 0);
 	background-size: 24px 24px;
 }
+
+/* Hide Radio Control */
+.hidden-radio-control {
+	display: none !important;
+	width: 0 !important;
+	height: 0 !important;
+	opacity: 0 !important;
+	border: none !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	overflow: hidden !important;
+}
+
+/* Hide Native Input in YearSelector */
+.year-selector-radio input {
+	display: none !important;
+	opacity: 0 !important;
+	width: 0 !important;
+	height: 0 !important;
+}

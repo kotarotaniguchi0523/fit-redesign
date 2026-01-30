@@ -40,11 +40,10 @@ export function useQuestionTimeRecord(questionId: string): UseQuestionTimeRecord
 	}, [questionId]);
 
 	// 新しい試行を追加
-	const addAttempt = (
-		(duration: number, mode: TimerMode, completed: boolean, targetTime?: number) => {
-			logger.info(
-				`Adding new attempt (mode: ${mode}, completed: ${completed}, duration: ${duration}s)`,
-			);
+	const addAttempt = (duration: number, mode: TimerMode, completed: boolean, targetTime?: number) => {
+		logger.info(
+			`Adding new attempt (mode: ${mode}, completed: ${completed}, duration: ${duration}s)`,
+		);
 
 			const newAttempt: AttemptRecord = {
 				timestamp: Date.now(),
