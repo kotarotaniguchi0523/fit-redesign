@@ -23,50 +23,65 @@ export const exam4_2013: Question[] = [
 		figureData: {
 			type: "logicCircuit",
 			inputs: [
-				{ id: "X", label: "X", x: 50, y: 80 },
-				{ id: "Y", label: "Y", x: 50, y: 140 },
+				{ id: "X", label: "X", x: 50, y: 60 },
+				{ id: "Y", label: "Y", x: 50, y: 200 },
 			],
 			gates: [
-				{ id: "AND1", type: "AND", x: 150, y: 80 },
-				{ id: "NOT1", type: "NOT", x: 150, y: 120 },
-				{ id: "OR1", type: "OR", x: 250, y: 130 },
-				{ id: "XOR1", type: "XOR", x: 350, y: 105 },
+				{ id: "AND1", type: "AND", x: 150, y: 60 },
+				{ id: "NOT1", type: "NOT", x: 150, y: 140 },
+				{ id: "OR1", type: "OR", x: 250, y: 170 },
+				{ id: "XOR1", type: "XOR", x: 350, y: 115 },
 			],
-			outputs: [{ id: "Z", label: "Z", x: 450, y: 105, input: "XOR1" }],
+			outputs: [{ id: "Z", label: "Z", x: 450, y: 115, input: "XOR1" }],
 			wires: [
 				{ from: "X", to: "AND1" },
 				{
 					from: "Y",
 					to: "AND1",
 					points: [
-						{ x: 80, y: 140 },
-						{ x: 80, y: 90 },
+						{ x: 80, y: 200 },
+						{ x: 80, y: 70 },
 					],
 				},
 				{
 					from: "X",
 					to: "NOT1",
 					points: [
-						{ x: 80, y: 80 },
-						{ x: 80, y: 120 },
+						{ x: 70, y: 60 },
+						{ x: 70, y: 140 },
 					],
 				},
-				{ from: "NOT1", to: "OR1" },
-				{ from: "Y", to: "OR1" },
+				{
+					from: "NOT1",
+					to: "OR1",
+					points: [
+						{ x: 190, y: 140 },
+						{ x: 190, y: 160 },
+					],
+				},
+				{
+					from: "Y",
+					to: "OR1",
+					points: [
+						{ x: 80, y: 200 },
+						{ x: 200, y: 200 },
+						{ x: 200, y: 170 },
+					],
+				},
 				{
 					from: "AND1",
 					to: "XOR1",
 					points: [
-						{ x: 280, y: 80 },
-						{ x: 280, y: 95 },
+						{ x: 280, y: 60 },
+						{ x: 280, y: 105 },
 					],
 				},
 				{
 					from: "OR1",
 					to: "XOR1",
 					points: [
-						{ x: 280, y: 130 },
-						{ x: 280, y: 115 },
+						{ x: 280, y: 170 },
+						{ x: 280, y: 125 },
 					],
 				},
 				{ from: "XOR1", to: "Z" },
