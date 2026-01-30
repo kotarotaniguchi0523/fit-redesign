@@ -16,17 +16,24 @@ export const exam8_2016: Question[] = [
 			"二分探索木の構築: 27(ルート) → 7(左) → 51(右) → 20(7の右) → 6(7の左) → 19(20の左)。各ノードに対して、小さい値は左、大きい値は右に配置する。",
 		figureData: {
 			type: "binaryTree",
+			height: 250,
 			root: {
 				value: 27,
+				x: 150,
+				y: 40,
 				left: {
 					value: 7,
-					left: { value: 6 },
+					x: 75,
+					y: 90,
+					left: { value: 6, x: 35, y: 140 },
 					right: {
 						value: 20,
-						left: { value: 19 },
+						x: 115,
+						y: 140,
+						left: { value: 19, x: 95, y: 190 },
 					},
 				},
-				right: { value: 51 },
+				right: { value: 51, x: 225, y: 90 },
 			},
 		},
 	},

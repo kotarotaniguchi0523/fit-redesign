@@ -57,16 +57,16 @@ export const exam6_2014: Question[] = [
 			type: "stateDiagram",
 			nodes: [
 				{ id: "s0", label: "S0", x: 50, y: 75, isInitial: true },
-				{ id: "s1", label: "S1", x: 150, y: 75 },
-				{ id: "s2", label: "S2", x: 250, y: 75 },
+				{ id: "s1", label: "S1", x: 200, y: 75 },
+				{ id: "s2", label: "S2", x: 350, y: 75 },
 			],
 			transitions: [
-				{ from: "s0", to: "s0", label: "0" },
-				{ from: "s0", to: "s1", label: "1" },
-				{ from: "s1", to: "s1", label: "0" },
-				{ from: "s1", to: "s0", label: "1" },
-				{ from: "s2", to: "s0", label: "0" },
-				{ from: "s2", to: "s1", label: "1" },
+				{ from: "s0", to: "s0", label: "0" }, // Self loop
+				{ from: "s0", to: "s1", label: "1", curveOffset: -40 }, // Curve Up
+				{ from: "s1", to: "s1", label: "0" }, // Self loop
+				{ from: "s1", to: "s0", label: "1", curveOffset: -40 }, // Curve Down (relative to direction)
+				{ from: "s2", to: "s0", label: "0", curveOffset: -80 }, // Curve Down (Big)
+				{ from: "s2", to: "s1", label: "1", curveOffset: 0 }, // Straight
 			],
 		},
 	},

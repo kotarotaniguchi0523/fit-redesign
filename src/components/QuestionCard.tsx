@@ -27,7 +27,13 @@ function renderFigure(figureData: FigureData) {
 		case "stateDiagram":
 			return <StateDiagram nodes={figureData.nodes} transitions={figureData.transitions} />;
 		case "binaryTree":
-			return <BinaryTree root={figureData.root} />;
+			return (
+				<BinaryTree
+					root={figureData.root}
+					width={figureData.width}
+					height={figureData.height}
+				/>
+			);
 		case "truthTable":
 			return <TruthTable columns={figureData.columns} rows={figureData.rows} />;
 		case "parityCheck":

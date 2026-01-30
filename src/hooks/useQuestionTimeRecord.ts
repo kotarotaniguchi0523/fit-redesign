@@ -41,33 +41,37 @@ export function useQuestionTimeRecord(questionId: string): UseQuestionTimeRecord
 
 	// 新しい試行を追加
 	const addAttempt = (
-		(duration: number, mode: TimerMode, completed: boolean, targetTime?: number) => {
-			logger.info(
-				`Adding new attempt (mode: ${mode}, completed: ${completed}, duration: ${duration}s)`,
-			);
+		duration: number,
+		mode: TimerMode,
+		completed: boolean,
+		targetTime?: number,
+	) => {
+		logger.info(
+			`Adding new attempt (mode: ${mode}, completed: ${completed}, duration: ${duration}s)`,
+		);
 
-			const newAttempt: AttemptRecord = {
-				timestamp: Date.now(),
-				duration,
-				mode,
-				completed,
-				targetTime,
-			};
+		const newAttempt: AttemptRecord = {
+			timestamp: Date.now(),
+			duration,
+			mode,
+			completed,
+			targetTime,
+		};
 
-			const saveResult = saveAttempt(questionId, newAttempt);
+		const saveResult = saveAttempt(questionId, newAttempt);
 
-			if (!saveResult.ok) {
-				logger.warn(`Failed to save attempt: ${saveResult.error.type}`, {
-					message: saveResult.error.message,
-				});
-				return;
-			}
-
-			setAttempts((prev) => {
-				const updated = [...prev, newAttempt];
-				logger.info(`Attempt added successfully (total: ${updated.length})`);
-				return updated;
+		if (!saveResult.ok) {
+			logger.warn(`Failed to save attempt: ${saveResult.error.type}`, {
+				message: saveResult.error.message,
 			});
+			return;
+		}
+
+		setAttempts((prev) => {
+			const updated = [...prev, newAttempt];
+			logger.info(`Attempt added successfully (total: ${updated.length})`);
+			return updated;
+		});
 	};
 
 	// 記録をクリア
