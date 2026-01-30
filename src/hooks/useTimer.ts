@@ -111,7 +111,7 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 	useEffect(() => {
 		return () => {
 			if (audioContextRef.current) {
-				audioContextRef.current.close().catch(() => {});
+                audioContextRef.current.close().catch((e) => console.log("AudioContext close error", e));
 				audioContextRef.current = null;
 			}
 		};
