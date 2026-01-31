@@ -17,74 +17,99 @@ export const exam4_2013: Question[] = [
 		id: "exam4-2013-q2",
 		number: 2,
 		text: "次の回路図のZを式で表せ（X,Yを入力とするNAND/AND/OR回路）",
-		answer: "Z = XY ⊕ (X̅ + Y)",
-		explanation: "回路図から論理式を導出する。上段はXとYのAND、下段は(X̅+Y)、それらのXOR",
-		figureDescription: "論理回路図: XとYを入力とし、NANDゲートとORゲートを組み合わせた回路",
+		answer: "Z = X ⊕ Y (= X̅Y + XY̅)",
+		explanation:
+			"上段: NOR(X, Y) = (X+Y)̅\n下段: NOR(X̅, Y̅) = XY\nZ = NOR((X+Y)̅, XY) = ((X+Y)̅ + XY)̅ = (X+Y)(XY)̅ = (X+Y)(X̅+Y̅) = XY̅ + X̅Y = X ⊕ Y",
+		figureDescription: "論理回路図",
 		figureData: {
 			type: "logicCircuit",
 			inputs: [
 				{ id: "X", label: "X", x: 50, y: 60 },
-				{ id: "Y", label: "Y", x: 50, y: 200 },
+				{ id: "Y", label: "Y", x: 50, y: 100 },
 			],
 			gates: [
-				{ id: "AND1", type: "AND", x: 150, y: 60 },
-				{ id: "NOT1", type: "NOT", x: 150, y: 140 },
-				{ id: "OR1", type: "OR", x: 250, y: 170 },
-				{ id: "XOR1", type: "XOR", x: 350, y: 115 },
+				{ id: "NOR1", type: "NOR", x: 200, y: 80 },
+				{ id: "NOT1", type: "NOT", x: 160, y: 160 },
+				{ id: "NOT2", type: "NOT", x: 160, y: 210 },
+				{ id: "NOR2", type: "NOR", x: 280, y: 185 },
+				{ id: "NOR3", type: "NOR", x: 400, y: 130 },
 			],
-			outputs: [{ id: "Z", label: "Z", x: 450, y: 115, input: "XOR1" }],
+			outputs: [{ id: "Z", label: "Z", x: 480, y: 130, input: "NOR3" }],
 			wires: [
-				{ from: "X", to: "AND1" },
+				// X to NOR1
 				{
-					from: "Y",
-					to: "AND1",
+					from: "X",
+					to: "NOR1",
 					points: [
-						{ x: 80, y: 200 },
-						{ x: 80, y: 70 },
+						{ x: 160, y: 60 },
+						{ x: 160, y: 80 },
 					],
 				},
+				// Y to NOR1
+				{
+					from: "Y",
+					to: "NOR1",
+					points: [
+						{ x: 160, y: 100 },
+						{ x: 160, y: 80 },
+					],
+				},
+				// X to NOT1 (branch down)
 				{
 					from: "X",
 					to: "NOT1",
 					points: [
 						{ x: 70, y: 60 },
-						{ x: 70, y: 140 },
+						{ x: 70, y: 160 },
 					],
 				},
-				{
-					from: "NOT1",
-					to: "OR1",
-					points: [
-						{ x: 190, y: 140 },
-						{ x: 190, y: 160 },
-					],
-				},
+				// Y to NOT2 (branch down)
 				{
 					from: "Y",
-					to: "OR1",
+					to: "NOT2",
 					points: [
-						{ x: 80, y: 200 },
-						{ x: 200, y: 200 },
-						{ x: 200, y: 170 },
+						{ x: 90, y: 100 },
+						{ x: 90, y: 210 },
 					],
 				},
+				// NOT1 to NOR2
 				{
-					from: "AND1",
-					to: "XOR1",
+					from: "NOT1",
+					to: "NOR2",
 					points: [
-						{ x: 280, y: 60 },
-						{ x: 280, y: 105 },
+						{ x: 240, y: 160 },
+						{ x: 240, y: 185 },
 					],
 				},
+				// NOT2 to NOR2
 				{
-					from: "OR1",
-					to: "XOR1",
+					from: "NOT2",
+					to: "NOR2",
 					points: [
-						{ x: 280, y: 170 },
-						{ x: 280, y: 125 },
+						{ x: 240, y: 210 },
+						{ x: 240, y: 185 },
 					],
 				},
-				{ from: "XOR1", to: "Z" },
+				// NOR1 to NOR3
+				{
+					from: "NOR1",
+					to: "NOR3",
+					points: [
+						{ x: 340, y: 80 },
+						{ x: 340, y: 130 },
+					],
+				},
+				// NOR2 to NOR3
+				{
+					from: "NOR2",
+					to: "NOR3",
+					points: [
+						{ x: 340, y: 185 },
+						{ x: 340, y: 130 },
+					],
+				},
+				// NOR3 to Z
+				{ from: "NOR3", to: "Z" },
 			],
 		},
 	},
