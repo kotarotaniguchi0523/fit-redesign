@@ -18,17 +18,25 @@ export const exam8_2017: Question[] = [
 			"二分探索木（27がルート、7が左子、51が右子、7の左に6、7の右に20、20の左に19）",
 		figureData: {
 			type: "binaryTree",
+			width: 400,
+			height: 300,
 			root: {
 				value: 27,
+				x: 200,
+				y: 40,
 				left: {
 					value: 7,
-					left: { value: 6 },
+					x: 100,
+					y: 100,
+					left: { value: 6, x: 50, y: 160 },
 					right: {
 						value: 20,
-						left: { value: 19 },
+						x: 150,
+						y: 160,
+						left: { value: 19, x: 120, y: 220 },
 					},
 				},
-				right: { value: 51 },
+				right: { value: 51, x: 300, y: 100 },
 			},
 		},
 	},

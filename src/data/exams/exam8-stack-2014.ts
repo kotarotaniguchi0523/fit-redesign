@@ -33,20 +33,32 @@ export const exam8_2014: Question[] = [
 			"二分探索木の構築: C(ルート) → H(右) → R(Hの右) → I(Hの左) → S(Rの右) → T(Sの右) → M(Iの右) → A(Iの左)。\n\n木の深さ:\n- C: 深さ0\n- H: 深さ1\n- R: 深さ2\n- I, S: 深さ3\n- M, T: 深さ4\n- A: 深さ5\n\n※問題文の解答は「M, T」となっていますが、実際には A が最も深い位置（深さ5）にあります。ただし、解答に従い M, T を正解としています。",
 		figureData: {
 			type: "binaryTree",
+			width: 400,
+			height: 350,
 			root: {
 				value: "C",
+				x: 80,
+				y: 40,
 				right: {
 					value: "H",
+					x: 180,
+					y: 90,
 					left: {
 						value: "I",
-						left: { value: "A" },
-						right: { value: "M" },
+						x: 120,
+						y: 160,
+						left: { value: "A", x: 80, y: 230 },
+						right: { value: "M", x: 160, y: 230 },
 					},
 					right: {
 						value: "R",
+						x: 240,
+						y: 160,
 						right: {
 							value: "S",
-							right: { value: "T" },
+							x: 300,
+							y: 230,
+							right: { value: "T", x: 360, y: 300 },
 						},
 					},
 				},
