@@ -66,15 +66,15 @@ export const exam6_2013: Question[] = [
 		figureData: {
 			type: "stateDiagram",
 			nodes: [
-				{ id: "s0", label: "S0", x: 50, y: 75, isInitial: true },
-				{ id: "s1", label: "S1", x: 150, y: 75 },
-				{ id: "s2", label: "S2", x: 250, y: 75, isAccepting: true },
+				{ id: "s0", label: "S0", x: 60, y: 75, isInitial: true },
+				{ id: "s1", label: "S1", x: 180, y: 75 },
+				{ id: "s2", label: "S2", x: 300, y: 75, isAccepting: true },
 			],
 			transitions: [
 				{ from: "s0", to: "s0", label: "0" },
 				{ from: "s0", to: "s1", label: "1" },
 				{ from: "s1", to: "s2", label: "1" },
-				{ from: "s1", to: "s0", label: "0", curveOffset: -40 },
+				{ from: "s1", to: "s0", label: "0", curveOffset: -50 },
 				{ from: "s2", to: "s2", label: "0,1" },
 			],
 		},
