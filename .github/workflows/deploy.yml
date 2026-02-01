@@ -62,10 +62,9 @@ jobs:
         timeout-minutes: 2
 
       - name: Deploy to Cloudflare Pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: cloudflare/wrangler-action@9681c2997648301493e78cacbfb790a9f19c833f # v3.9.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=fit-redesign
+          command: pages deploy dist --project-name=fit-redesign --branch=${{ github.head_ref || 'main' }}
         timeout-minutes: 3
