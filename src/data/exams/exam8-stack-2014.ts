@@ -37,18 +37,18 @@ export const exam8_2014: Question[] = [
 			height: 350,
 			root: {
 				value: "C",
-				x: 80,
+				x: 100,
 				y: 40,
 				right: {
 					value: "H",
 					x: 180,
-					y: 90,
+					y: 100,
 					left: {
 						value: "I",
 						x: 120,
 						y: 160,
-						left: { value: "A", x: 80, y: 230 },
-						right: { value: "M", x: 160, y: 230 },
+						left: { value: "A", x: 70, y: 220 },
+						right: { value: "M", x: 170, y: 220 },
 					},
 					right: {
 						value: "R",
@@ -56,9 +56,9 @@ export const exam8_2014: Question[] = [
 						y: 160,
 						right: {
 							value: "S",
-							x: 300,
-							y: 230,
-							right: { value: "T", x: 360, y: 300 },
+							x: 290,
+							y: 220,
+							right: { value: "T", x: 340, y: 280 },
 						},
 					},
 				},
