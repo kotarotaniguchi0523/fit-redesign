@@ -33,7 +33,7 @@ export const exam8_2017: Question[] = [
 						value: 20,
 						x: 150,
 						y: 160,
-						left: { value: 19, x: 120, y: 220 },
+						left: { value: 19, x: 125, y: 220 },
 					},
 				},
 				right: { value: 51, x: 300, y: 100 },

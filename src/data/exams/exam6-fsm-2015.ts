@@ -27,6 +27,19 @@ export const exam6_2015: Question[] = [
 		id: "exam6-2015-q3",
 		number: 3,
 		text: "以下の状態遷移図は、奇数個のビットを受理するオートマトンである。下線を埋めよ。\n初期状態: S0\n偏数状態: ウ\n0と1の遷移があり、S0からS1へ、S1から自己ループと戻りがある",
+		figureData: {
+			type: "stateDiagram",
+			nodes: [
+				{ id: "s0", label: "S0", x: 100, y: 75, isInitial: true },
+				{ id: "s1", label: "S1", x: 300, y: 75, isAccepting: true },
+			],
+			transitions: [
+				{ from: "s0", to: "s0", label: "0" },
+				{ from: "s0", to: "s1", label: "ア" },
+				{ from: "s1", to: "s1", label: "1" },
+				{ from: "s1", to: "s0", label: "イ", curveOffset: 50 },
+			],
+		},
 		answer: "ア 1, イ 0, ウ S0",
 		explanation:
 			"奇数個のビットを受理するには、S0(偶数状態)とS1(奇数状態)を交互に遷移する。ア=1でS1へ、イ=0でS0へ戻る。偶数状態はウ=S0",
