@@ -80,22 +80,22 @@ export function QuestionCard({ question }: Props) {
 	return (
 		<Card className="mb-4 border-l-4 border-l-[#1e3a5f] shadow-sm hover:shadow-md transition-shadow">
 			<CardBody className="p-5">
-				<div className="flex gap-3 mb-4">
-					<div className="shrink-0">
-						<span className="w-8 h-8 rounded-full bg-[#1e3a5f] text-white flex items-center justify-center text-sm font-bold">
-							{question.number}
-						</span>
-					</div>
-					<div className="flex-1">
-						<div className="mb-2">
-							<p className="text-gray-800 leading-relaxed whitespace-pre-wrap break-words w-full">
-								{question.text}
-							</p>
-						</div>
-					</div>
+				{/* 1. 問題番号 */}
+				<div className="mb-2">
+					<span className="w-8 h-8 rounded-full bg-[#1e3a5f] text-white flex items-center justify-center text-sm font-bold">
+						{question.number}
+					</span>
 				</div>
 
-				<div className="flex items-center gap-4 mb-4 pl-0 sm:pl-11">
+				{/* 2. 問題文 */}
+				<div className="mb-4">
+					<p className="text-gray-800 leading-relaxed whitespace-pre-wrap break-words w-full">
+						{question.text}
+					</p>
+				</div>
+
+				{/* 3. アイコン（コピーボタン・タイマー） */}
+				<div className="flex items-center gap-4 mb-4">
 					<Tooltip content={tooltipContent}>
 						<Button
 							size="sm"
@@ -118,6 +118,7 @@ export function QuestionCard({ question }: Props) {
 					</div>
 				</div>
 
+				{/* 4. 図表 */}
 				{question.figureData && (
 					<div className="my-4 flex justify-center w-full overflow-x-auto">
 						{renderFigure(question.figureData)}
@@ -132,7 +133,7 @@ export function QuestionCard({ question }: Props) {
 					</div>
 				)}
 
-				{/* 選択肢 */}
+				{/* 5. 選択肢 */}
 				{question.options && question.options.length > 0 && (
 					<div className="mt-4 space-y-2">
 						{question.options.map((option) => (
@@ -151,6 +152,7 @@ export function QuestionCard({ question }: Props) {
 					</div>
 				)}
 
+				{/* 6. 解答 */}
 				<Accordion variant="light" className="mt-4">
 					<AccordionItem
 						key="answer"
