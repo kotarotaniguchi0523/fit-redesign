@@ -109,6 +109,7 @@ export function QuestionTimer({ questionId }: Props) {
 					size="sm"
 					color={timer.isRunning ? "danger" : "primary"}
 					variant="solid"
+					className="min-w-max whitespace-nowrap px-4"
 					onPress={timer.isRunning ? timer.stop : timer.start}
 				>
 					{timer.isRunning ? "停止" : "開始"}

@@ -85,11 +85,11 @@ export function QuestionCard({ question }: Props) {
 						{question.number}
 					</span>
 					<div className="flex-1">
-						<div className="flex items-start justify-between gap-2 mb-2">
-							<p className="text-gray-800 leading-relaxed whitespace-pre-wrap flex-1">
+						<div className="flex flex-col sm:flex-row items-start justify-between gap-2 mb-2">
+							<p className="text-gray-800 leading-relaxed whitespace-pre-wrap flex-1 w-full sm:w-auto">
 								{question.text}
 							</p>
-							<div className="shrink-0 flex items-center gap-2">
+							<div className="shrink-0 flex items-center gap-2 self-end sm:self-auto mt-2 sm:mt-0">
 								<Tooltip content={tooltipContent}>
 									<Button
 										size="sm"
