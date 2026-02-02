@@ -80,35 +80,11 @@ export function QuestionCard({ question }: Props) {
 	return (
 		<Card className="mb-4 border-l-4 border-l-[#1e3a5f] shadow-sm hover:shadow-md transition-shadow">
 			<CardBody className="p-5">
-				<div className="flex gap-3">
-					<div className="flex flex-col items-center gap-4 shrink-0">
+				<div className="flex gap-3 mb-4">
+					<div className="shrink-0">
 						<span className="w-8 h-8 rounded-full bg-[#1e3a5f] text-white flex items-center justify-center text-sm font-bold">
 							{question.number}
 						</span>
-						{/* 操作ボタン類を左カラムの数字の下に移動 */}
-						<div className="flex flex-col items-center gap-2">
-							<Tooltip content={tooltipContent}>
-								<Button
-									size="sm"
-									variant="light"
-									isIconOnly
-									onPress={handleCopy}
-									className="text-slate-500 hover:text-[#1e3a5f]"
-								>
-									{error ? (
-										<ErrorIcon className="w-4 h-4 text-red-500" />
-									) : isCopied ? (
-										<CheckIcon className="w-4 h-4 text-green-600" />
-									) : (
-										<ClipboardIcon className="w-4 h-4" />
-									)}
-								</Button>
-							</Tooltip>
-							{/* Timerコンポーネントは内部に独自のデザインを持つため、必要に応じて調整 */}
-							<div className="scale-90 origin-top">
-								<QuestionTimer questionId={question.id} />
-							</div>
-						</div>
 					</div>
 					<div className="flex-1">
 						<div className="mb-2">
@@ -116,6 +92,29 @@ export function QuestionCard({ question }: Props) {
 								{question.text}
 							</p>
 						</div>
+					</div>
+				</div>
+
+				<div className="flex items-center gap-4 mb-4 pl-0 sm:pl-11">
+					<Tooltip content={tooltipContent}>
+						<Button
+							size="sm"
+							variant="light"
+							isIconOnly
+							onPress={handleCopy}
+							className="text-slate-500 hover:text-[#1e3a5f]"
+						>
+							{error ? (
+								<ErrorIcon className="w-4 h-4 text-red-500" />
+							) : isCopied ? (
+								<CheckIcon className="w-4 h-4 text-green-600" />
+							) : (
+								<ClipboardIcon className="w-4 h-4" />
+							)}
+						</Button>
+					</Tooltip>
+					<div className="scale-90 origin-left">
+						<QuestionTimer questionId={question.id} />
 					</div>
 				</div>
 
