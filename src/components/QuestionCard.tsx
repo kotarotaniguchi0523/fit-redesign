@@ -86,7 +86,7 @@ export function QuestionCard({ question }: Props) {
 					</span>
 					<div className="flex-1">
 						<div className="flex flex-col sm:flex-row items-start justify-between gap-2 mb-2">
-							<p className="text-gray-800 leading-relaxed whitespace-pre-wrap flex-1 w-full sm:w-auto">
+							<p className="text-gray-800 leading-relaxed whitespace-pre-wrap break-words flex-1 w-full sm:w-auto">
 								{question.text}
 							</p>
 							<div className="shrink-0 flex items-center gap-2 self-end sm:self-auto mt-2 sm:mt-0">
@@ -114,7 +114,9 @@ export function QuestionCard({ question }: Props) {
 				</div>
 
 				{question.figureData && (
-					<div className="my-4 flex justify-center">{renderFigure(question.figureData)}</div>
+					<div className="my-4 flex justify-center w-full overflow-x-auto">
+						{renderFigure(question.figureData)}
+					</div>
 				)}
 
 				{!question.figureData && question.figureDescription && (
@@ -136,7 +138,9 @@ export function QuestionCard({ question }: Props) {
 								<span className="shrink-0 w-6 h-6 rounded bg-[#1e3a5f] text-white flex items-center justify-center text-xs font-bold">
 									{option.label}
 								</span>
-								<span className="text-gray-800">{option.value || "(選択肢未入力)"}</span>
+								<span className="text-gray-800 break-words w-full">
+									{option.value || "(選択肢未入力)"}
+								</span>
 							</div>
 						))}
 					</div>
