@@ -81,34 +81,40 @@ export function QuestionCard({ question }: Props) {
 		<Card className="mb-4 border-l-4 border-l-[#1e3a5f] shadow-sm hover:shadow-md transition-shadow">
 			<CardBody className="p-5">
 				<div className="flex gap-3">
-					<span className="shrink-0 w-8 h-8 rounded-full bg-[#1e3a5f] text-white flex items-center justify-center text-sm font-bold">
-						{question.number}
-					</span>
-					<div className="flex-1">
-						<div className="flex flex-col sm:flex-row items-start justify-between gap-2 mb-2">
-							<p className="text-gray-800 leading-relaxed whitespace-pre-wrap break-words flex-1 w-full sm:w-auto">
-								{question.text}
-							</p>
-							<div className="shrink-0 flex items-center gap-2 self-end sm:self-auto mt-2 sm:mt-0">
-								<Tooltip content={tooltipContent}>
-									<Button
-										size="sm"
-										variant="light"
-										isIconOnly
-										onPress={handleCopy}
-										className="text-slate-500 hover:text-[#1e3a5f]"
-									>
-										{error ? (
-											<ErrorIcon className="w-4 h-4 text-red-500" />
-										) : isCopied ? (
-											<CheckIcon className="w-4 h-4 text-green-600" />
-										) : (
-											<ClipboardIcon className="w-4 h-4" />
-										)}
-									</Button>
-								</Tooltip>
+					<div className="flex flex-col items-center gap-4 shrink-0">
+						<span className="w-8 h-8 rounded-full bg-[#1e3a5f] text-white flex items-center justify-center text-sm font-bold">
+							{question.number}
+						</span>
+						{/* 操作ボタン類を左カラムの数字の下に移動 */}
+						<div className="flex flex-col items-center gap-2">
+							<Tooltip content={tooltipContent}>
+								<Button
+									size="sm"
+									variant="light"
+									isIconOnly
+									onPress={handleCopy}
+									className="text-slate-500 hover:text-[#1e3a5f]"
+								>
+									{error ? (
+										<ErrorIcon className="w-4 h-4 text-red-500" />
+									) : isCopied ? (
+										<CheckIcon className="w-4 h-4 text-green-600" />
+									) : (
+										<ClipboardIcon className="w-4 h-4" />
+									)}
+								</Button>
+							</Tooltip>
+							{/* Timerコンポーネントは内部に独自のデザインを持つため、必要に応じて調整 */}
+							<div className="scale-90 origin-top">
 								<QuestionTimer questionId={question.id} />
 							</div>
+						</div>
+					</div>
+					<div className="flex-1">
+						<div className="mb-2">
+							<p className="text-gray-800 leading-relaxed whitespace-pre-wrap break-words w-full">
+								{question.text}
+							</p>
 						</div>
 					</div>
 				</div>
