@@ -119,7 +119,11 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 					{examNumbers.length > 1 && (
 						<div className="mt-4">
 							<p className="text-sm font-medium text-gray-600 mb-2">小テストを切り替え</p>
-							<div className="flex flex-wrap gap-2" role="tablist" aria-label="小テスト選択">
+							<div
+								className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+								role="tablist"
+								aria-label="小テスト選択"
+							>
 								{examNumbers.map((examNumber) => {
 									const examData = getExamByNumber(examNumber);
 									if (!examData) return null;
@@ -133,7 +137,7 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 											role="tab"
 											aria-selected={isActive}
 											onClick={() => setSelectedExamNumber(examNumber)}
-											className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all flex flex-col text-left min-w-40 ${
+											className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all flex flex-col text-left w-full ${
 												isActive
 													? "bg-[#1e3a5f] text-white border-[#1e3a5f] shadow-sm"
 													: "bg-white text-gray-700 border-gray-300 hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
