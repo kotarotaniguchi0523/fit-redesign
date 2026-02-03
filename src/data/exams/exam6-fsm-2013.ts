@@ -72,9 +72,9 @@ export const exam6_2013: Question[] = [
 			],
 			transitions: [
 				{ from: "s0", to: "s0", label: "0" },
-				{ from: "s0", to: "s1", label: "1" },
+				{ from: "s0", to: "s1", label: "1", curveOffset: 30 },
 				{ from: "s1", to: "s2", label: "1" },
-				{ from: "s1", to: "s0", label: "0", curveOffset: -50 },
+				{ from: "s1", to: "s0", label: "0", curveOffset: 30 },
 				{ from: "s2", to: "s2", label: "0,1" },
 			],
 		},

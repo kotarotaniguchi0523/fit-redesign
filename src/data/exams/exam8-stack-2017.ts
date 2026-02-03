@@ -19,7 +19,7 @@ export const exam8_2017: Question[] = [
 		figureData: {
 			type: "binaryTree",
 			width: 400,
-			height: 300,
+			height: 280,
 			root: {
 				value: 27,
 				x: 200,
