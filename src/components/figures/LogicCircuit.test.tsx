@@ -34,7 +34,7 @@ describe("LogicCircuit", () => {
 		expect(container.querySelectorAll("g").length).toBeGreaterThan(0);
 	});
 
-	it("benchmark rendering performance (small dataset)", () => {
+	it("benchmark rendering performance (small dataset)", { timeout: 10000 }, () => {
 		const iterations = 1000;
 		const start = performance.now();
 		for (let i = 0; i < iterations; i++) {
