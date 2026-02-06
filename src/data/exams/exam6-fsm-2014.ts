@@ -55,6 +55,8 @@ export const exam6_2014: Question[] = [
 		figureDescription: "状態遷移表: 入力0でS0→S0, S1→S1, S2→S0。入力1でS0→S1, S1→S0, S2→S1",
 		figureData: {
 			type: "stateDiagram",
+			width: 400,
+			height: 200, // 高さを増やして下側の曲線を収める
 			nodes: [
 				{ id: "s0", label: "S0", x: 50, y: 75, isInitial: true },
 				{ id: "s1", label: "S1", x: 150, y: 75 },
@@ -62,10 +64,17 @@ export const exam6_2014: Question[] = [
 			],
 			transitions: [
 				{ from: "s0", to: "s0", label: "0" },
-				{ from: "s0", to: "s1", label: "1", curveOffset: 20 },
+				// S0 <-> S1 を対称な「目」の形にする（上と下）
+				// 上側を通す (Offset -30)
+				{ from: "s0", to: "s1", label: "1", curveOffset: -30 },
+				// 下側を通す (Offset -30 for right-to-left is "Down")
+				{ from: "s1", to: "s0", label: "1", curveOffset: -30 },
+
 				{ from: "s1", to: "s1", label: "0" },
-				{ from: "s1", to: "s0", label: "1", curveOffset: 20 },
-				{ from: "s2", to: "s0", label: "0", curveOffset: 50 },
+
+				// S2 -> S0 を大きく下側に回す
+				{ from: "s2", to: "s0", label: "0", curveOffset: -60 },
+
 				{ from: "s2", to: "s1", label: "1" },
 			],
 		},

@@ -15,6 +15,28 @@ export function StateDiagram({ nodes, transitions, width = 400, height = 150 }: 
 	const nodeMap = new Map(nodes.map((n) => [n.id, n]));
 	const getNode = (id: string) => nodeMap.get(id);
 
+	// 制御点を計算するヘルパー
+	const getControlPoint = (
+		fromX: number,
+		fromY: number,
+		toX: number,
+		toY: number,
+		offset: number,
+	) => {
+		const midX = (fromX + toX) / 2;
+		const midY = (fromY + toY) / 2;
+		const dx = toX - fromX;
+		const dy = toY - fromY;
+		const perpX = -dy;
+		const perpY = dx;
+		const length = Math.sqrt(perpX * perpX + perpY * perpY);
+		if (length === 0) return { x: midX, y: midY };
+		return {
+			x: midX + (perpX / length) * offset,
+			y: midY + (perpY / length) * offset,
+		};
+	};
+
 	// 2点間の矢印を描画するパスを生成
 	const getArrowPath = (
 		fromX: number,
@@ -24,20 +46,13 @@ export function StateDiagram({ nodes, transitions, width = 400, height = 150 }: 
 		curveOffset = 0,
 	): string => {
 		if (curveOffset === 0) {
-			// 直線の場合
 			return `M ${fromX} ${fromY} L ${toX} ${toY}`;
 		}
-		// 曲線の場合（二次ベジェ曲線）
-		const midX = (fromX + toX) / 2;
-		const midY = (fromY + toY) / 2;
-		const dx = toX - fromX;
-		const dy = toY - fromY;
-		const perpX = -dy;
-		const perpY = dx;
-		const length = Math.sqrt(perpX * perpX + perpY * perpY);
-		const controlX = midX + (perpX / length) * curveOffset;
-		const controlY = midY + (perpY / length) * curveOffset;
-		return `M ${fromX} ${fromY} Q ${controlX} ${controlY} ${toX} ${toY}`;
+		// 曲線の場合、渡された始点・終点を使って新しい制御点を計算する
+		// ここでのcurveOffsetは、始点・終点間の距離に対する比率が変わるため、
+		// 見た目を維持するために元のoffsetを使う（厳密には再計算が必要だが近似で良い）
+		const cp = getControlPoint(fromX, fromY, toX, toY, curveOffset);
+		return `M ${fromX} ${fromY} Q ${cp.x} ${cp.y} ${toX} ${toY}`;
 	};
 
 	// 矢印の先端を描画
@@ -52,25 +67,17 @@ export function StateDiagram({ nodes, transitions, width = 400, height = 150 }: 
 		let angle: number;
 
 		if (curveOffset === 0) {
-			// 直線の場合
 			angle = Math.atan2(toY - fromY, toX - fromX);
 		} else {
-			// 曲線の場合は終点付近の接線を計算
-			const midX = (fromX + toX) / 2;
-			const midY = (fromY + toY) / 2;
-			const dx = toX - fromX;
-			const dy = toY - fromY;
-			const perpX = -dy;
-			const perpY = dx;
-			const length = Math.sqrt(perpX * perpX + perpY * perpY);
-			const controlX = midX + (perpX / length) * curveOffset;
-			const controlY = midY + (perpY / length) * curveOffset;
-			angle = Math.atan2(toY - controlY, toX - controlX);
+			// 曲線の場合は、終点直前の接線方向を計算する
+			// Q (cp) -> to のベクトルが接線に近い
+			const cp = getControlPoint(fromX, fromY, toX, toY, curveOffset);
+			angle = Math.atan2(toY - cp.y, toX - cp.x);
 		}
 
-		// ノードの縁で矢印を終わらせるための調整
-		const endX = toX - nodeRadius * Math.cos(angle);
-		const endY = toY - nodeRadius * Math.sin(angle);
+		// 既にエッジまで計算されているので、toX/toYが先端
+		const endX = toX;
+		const endY = toY;
 
 		const x1 = endX - arrowSize * Math.cos(angle - Math.PI / 6);
 		const y1 = endY - arrowSize * Math.sin(angle - Math.PI / 6);
@@ -94,16 +101,18 @@ export function StateDiagram({ nodes, transitions, width = 400, height = 150 }: 
 				y: (fromY + toY) / 2 - 5,
 			};
 		}
+		const cp = getControlPoint(fromX, fromY, toX, toY, curveOffset);
+		// ベジェ曲線の頂点（t=0.5）は、中点と制御点の中点
+		// Q(t) = (1-t)^2 P0 + 2(1-t)t P1 + t^2 P2
+		// t=0.5 => 0.25 P0 + 0.5 P1 + 0.25 P2
+		// Mid(P0, P2) = 0.5 P0 + 0.5 P2
+		// CurveMid = 0.5 * Mid(P0, P2) + 0.5 * P1
 		const midX = (fromX + toX) / 2;
 		const midY = (fromY + toY) / 2;
-		const dx = toX - fromX;
-		const dy = toY - fromY;
-		const perpX = -dy;
-		const perpY = dx;
-		const length = Math.sqrt(perpX * perpX + perpY * perpY);
+
 		return {
-			x: midX + (perpX / length) * curveOffset,
-			y: midY + (perpY / length) * curveOffset - 5,
+			x: (midX + cp.x) / 2,
+			y: (midY + cp.y) / 2 - 5,
 		};
 	};
 
@@ -152,27 +161,35 @@ export function StateDiagram({ nodes, transitions, width = 400, height = 150 }: 
 				}
 
 				const curveOffset = transition.curveOffset || 0;
-				const labelPos = getLabelPosition(fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset);
 
-				// ノードの縁から矢印を開始/終了するための調整
-				const angle = Math.atan2(toNode.y - fromNode.y, toNode.x - fromNode.x);
 				let startX: number;
 				let startY: number;
 				let endX: number;
 				let endY: number;
 
 				if (curveOffset === 0) {
+					const angle = Math.atan2(toNode.y - fromNode.y, toNode.x - fromNode.x);
 					startX = fromNode.x + nodeRadius * Math.cos(angle);
 					startY = fromNode.y + nodeRadius * Math.sin(angle);
 					endX = toNode.x - nodeRadius * Math.cos(angle);
 					endY = toNode.y - nodeRadius * Math.sin(angle);
 				} else {
-					// 曲線の場合は始点と終点を調整
-					startX = fromNode.x;
-					startY = fromNode.y;
-					endX = toNode.x;
-					endY = toNode.y;
+					// ノード中心間の制御点を計算
+					const cp = getControlPoint(fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset);
+
+					// 始点：中心から制御点方向へ半径分移動
+					const startAngle = Math.atan2(cp.y - fromNode.y, cp.x - fromNode.x);
+					startX = fromNode.x + nodeRadius * Math.cos(startAngle);
+					startY = fromNode.y + nodeRadius * Math.sin(startAngle);
+
+					// 終点：中心から制御点方向へ半径分移動
+					const endAngle = Math.atan2(cp.y - toNode.y, cp.x - toNode.x);
+					endX = toNode.x + nodeRadius * Math.cos(endAngle);
+					endY = toNode.y + nodeRadius * Math.sin(endAngle);
 				}
+
+				// ラベル位置（計算済みのエッジ座標を使うとより正確）
+				const labelPos = getLabelPosition(startX, startY, endX, endY, curveOffset);
 
 				return (
 					<g key={`transition-${transition.from}-${transition.to}-${transition.label}`}>
