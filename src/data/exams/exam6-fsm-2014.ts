@@ -55,17 +55,19 @@ export const exam6_2014: Question[] = [
 		figureDescription: "状態遷移表: 入力0でS0→S0, S1→S1, S2→S0。入力1でS0→S1, S1→S0, S2→S1",
 		figureData: {
 			type: "stateDiagram",
+			width: 400,
+			height: 250,
 			nodes: [
-				{ id: "s0", label: "S0", x: 50, y: 75, isInitial: true },
-				{ id: "s1", label: "S1", x: 150, y: 75 },
-				{ id: "s2", label: "S2", x: 250, y: 75 },
+				{ id: "s0", label: "S0", x: 80, y: 80, isInitial: true },
+				{ id: "s1", label: "S1", x: 320, y: 80 },
+				{ id: "s2", label: "S2", x: 200, y: 200 },
 			],
 			transitions: [
 				{ from: "s0", to: "s0", label: "0" },
 				{ from: "s0", to: "s1", label: "1", curveOffset: 20 },
 				{ from: "s1", to: "s1", label: "0" },
 				{ from: "s1", to: "s0", label: "1", curveOffset: 20 },
-				{ from: "s2", to: "s0", label: "0", curveOffset: 50 },
+				{ from: "s2", to: "s0", label: "0" },
 				{ from: "s2", to: "s1", label: "1" },
 			],
 		},

@@ -25,7 +25,14 @@ function assertNever(value: never): never {
 function renderFigure(figureData: FigureData) {
 	switch (figureData.type) {
 		case "stateDiagram":
-			return <StateDiagram nodes={figureData.nodes} transitions={figureData.transitions} />;
+			return (
+				<StateDiagram
+					nodes={figureData.nodes}
+					transitions={figureData.transitions}
+					width={figureData.width}
+					height={figureData.height}
+				/>
+			);
 		case "binaryTree":
 			return (
 				<BinaryTree root={figureData.root} width={figureData.width} height={figureData.height} />

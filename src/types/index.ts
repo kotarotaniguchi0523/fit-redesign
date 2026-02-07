@@ -59,6 +59,8 @@ export type FigureData =
 			type: "stateDiagram";
 			nodes: StateNode[];
 			transitions: Transition[];
+			width?: number;
+			height?: number;
 	  }
 	| { type: "binaryTree"; root: TreeNode; width?: number; height?: number }
 	| { type: "truthTable"; columns: TruthTableColumn[]; rows: TruthTableRow[] }
