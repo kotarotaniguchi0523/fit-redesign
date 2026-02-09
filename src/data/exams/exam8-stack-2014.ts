@@ -30,7 +30,7 @@ export const exam8_2014: Question[] = [
 		text: "空の二分木に次の順でデータを追加した時、最も検索時間がかかるデータを求めよ。複数ある場合は全て挙げよ。\nC, H, R, I, S, T, M, A",
 		answer: "M, T",
 		explanation:
-			"二分探索木の構築: C(ルート) → H(右) → R(Hの右) → I(Hの左) → S(Rの右) → T(Sの右) → M(Iの右) → A(Iの左)。\n\n木の深さ:\n- C: 深さ0\n- H: 深さ1\n- R: 深さ2\n- I, S: 深さ3\n- M, T: 深さ4\n- A: 深さ5\n\n※問題文の解答は「M, T」となっていますが、実際には A が最も深い位置（深さ5）にあります。ただし、解答に従い M, T を正解としています。",
+			"二分探索木の構築: C(ルート) → H(Cの右) → R(Hの右) → I(Rの左) → S(Rの右) → T(Sの右) → M(Iの右) → A(Cの左)。\n\n木の深さ:\n- C: 深さ0\n- A, H: 深さ1\n- R: 深さ2\n- I, S: 深さ3\n- M, T: 深さ4\n\n最も深いのは深さ4の M と T です。",
 		figureData: {
 			type: "binaryTree",
 			width: 400,
@@ -39,26 +39,26 @@ export const exam8_2014: Question[] = [
 				value: "C",
 				x: 100,
 				y: 40,
+				left: { value: "A", x: 50, y: 100 },
 				right: {
 					value: "H",
-					x: 180,
+					x: 200,
 					y: 100,
-					left: {
-						value: "I",
-						x: 120,
-						y: 160,
-						left: { value: "A", x: 70, y: 220 },
-						right: { value: "M", x: 170, y: 220 },
-					},
 					right: {
 						value: "R",
-						x: 240,
+						x: 300,
 						y: 160,
+						left: {
+							value: "I",
+							x: 250,
+							y: 220,
+							right: { value: "M", x: 280, y: 280 },
+						},
 						right: {
 							value: "S",
-							x: 290,
+							x: 350,
 							y: 220,
-							right: { value: "T", x: 340, y: 280 },
+							right: { value: "T", x: 380, y: 280 },
 						},
 					},
 				},

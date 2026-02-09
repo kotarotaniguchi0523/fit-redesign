@@ -15,98 +15,6 @@ export function StateDiagram({ nodes, transitions, width = 400, height = 150 }: 
 	const nodeMap = new Map(nodes.map((n) => [n.id, n]));
 	const getNode = (id: string) => nodeMap.get(id);
 
-	// 2点間の矢印を描画するパスを生成
-	const getArrowPath = (
-		fromX: number,
-		fromY: number,
-		toX: number,
-		toY: number,
-		curveOffset = 0,
-	): string => {
-		if (curveOffset === 0) {
-			// 直線の場合
-			return `M ${fromX} ${fromY} L ${toX} ${toY}`;
-		}
-		// 曲線の場合（二次ベジェ曲線）
-		const midX = (fromX + toX) / 2;
-		const midY = (fromY + toY) / 2;
-		const dx = toX - fromX;
-		const dy = toY - fromY;
-		const perpX = -dy;
-		const perpY = dx;
-		const length = Math.sqrt(perpX * perpX + perpY * perpY);
-		const controlX = midX + (perpX / length) * curveOffset;
-		const controlY = midY + (perpY / length) * curveOffset;
-		return `M ${fromX} ${fromY} Q ${controlX} ${controlY} ${toX} ${toY}`;
-	};
-
-	// 矢印の先端を描画
-	const getArrowHead = (
-		fromX: number,
-		fromY: number,
-		toX: number,
-		toY: number,
-		curveOffset = 0,
-	): string => {
-		const arrowSize = 6;
-		let angle: number;
-
-		if (curveOffset === 0) {
-			// 直線の場合
-			angle = Math.atan2(toY - fromY, toX - fromX);
-		} else {
-			// 曲線の場合は終点付近の接線を計算
-			const midX = (fromX + toX) / 2;
-			const midY = (fromY + toY) / 2;
-			const dx = toX - fromX;
-			const dy = toY - fromY;
-			const perpX = -dy;
-			const perpY = dx;
-			const length = Math.sqrt(perpX * perpX + perpY * perpY);
-			const controlX = midX + (perpX / length) * curveOffset;
-			const controlY = midY + (perpY / length) * curveOffset;
-			angle = Math.atan2(toY - controlY, toX - controlX);
-		}
-
-		// ノードの縁で矢印を終わらせるための調整
-		const endX = toX - nodeRadius * Math.cos(angle);
-		const endY = toY - nodeRadius * Math.sin(angle);
-
-		const x1 = endX - arrowSize * Math.cos(angle - Math.PI / 6);
-		const y1 = endY - arrowSize * Math.sin(angle - Math.PI / 6);
-		const x2 = endX - arrowSize * Math.cos(angle + Math.PI / 6);
-		const y2 = endY - arrowSize * Math.sin(angle + Math.PI / 6);
-
-		return `M ${endX} ${endY} L ${x1} ${y1} M ${endX} ${endY} L ${x2} ${y2}`;
-	};
-
-	// ラベル位置を計算
-	const getLabelPosition = (
-		fromX: number,
-		fromY: number,
-		toX: number,
-		toY: number,
-		curveOffset = 0,
-	): { x: number; y: number } => {
-		if (curveOffset === 0) {
-			return {
-				x: (fromX + toX) / 2,
-				y: (fromY + toY) / 2 - 5,
-			};
-		}
-		const midX = (fromX + toX) / 2;
-		const midY = (fromY + toY) / 2;
-		const dx = toX - fromX;
-		const dy = toY - fromY;
-		const perpX = -dy;
-		const perpY = dx;
-		const length = Math.sqrt(perpX * perpX + perpY * perpY);
-		return {
-			x: midX + (perpX / length) * curveOffset,
-			y: midY + (perpY / length) * curveOffset - 5,
-		};
-	};
-
 	return (
 		<svg
 			width="100%"
@@ -118,6 +26,13 @@ export function StateDiagram({ nodes, transitions, width = 400, height = 150 }: 
 			aria-label="State machine diagram"
 		>
 			<title>State machine diagram</title>
+			{/* 矢印マーカーの定義 (Used for initial state arrow) */}
+			<defs>
+				<marker id="arrowhead" markerWidth="10" markerHeight="10" refX="5" refY="3" orient="auto">
+					<polygon points="0 0, 6 3, 0 6" fill="black" />
+				</marker>
+			</defs>
+
 			{/* 遷移を描画 */}
 			{transitions.map((transition) => {
 				const fromNode = getNode(transition.from);
@@ -125,11 +40,13 @@ export function StateDiagram({ nodes, transitions, width = 400, height = 150 }: 
 
 				if (!fromNode || !toNode) return null;
 
+				const fromR = fromNode.isAccepting ? acceptingNodeRadius : nodeRadius;
+				const toR = toNode.isAccepting ? acceptingNodeRadius : nodeRadius;
+
 				// 自己ループの処理
 				if (transition.from === transition.to) {
-					const radius = fromNode.isAccepting ? acceptingNodeRadius : nodeRadius;
 					const cx = fromNode.x;
-					const cy = fromNode.y - radius - 15;
+					const cy = fromNode.y - fromR - 15;
 					const r = 15;
 
 					return (
@@ -152,46 +69,90 @@ export function StateDiagram({ nodes, transitions, width = 400, height = 150 }: 
 				}
 
 				const curveOffset = transition.curveOffset || 0;
-				const labelPos = getLabelPosition(fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset);
-
-				// ノードの縁から矢印を開始/終了するための調整
-				const angle = Math.atan2(toNode.y - fromNode.y, toNode.x - fromNode.x);
 				let startX: number;
 				let startY: number;
 				let endX: number;
 				let endY: number;
+				let controlX: number;
+				let controlY: number;
+				let arrowAngle: number;
 
 				if (curveOffset === 0) {
-					startX = fromNode.x + nodeRadius * Math.cos(angle);
-					startY = fromNode.y + nodeRadius * Math.sin(angle);
-					endX = toNode.x - nodeRadius * Math.cos(angle);
-					endY = toNode.y - nodeRadius * Math.sin(angle);
+					const angle = Math.atan2(toNode.y - fromNode.y, toNode.x - fromNode.x);
+					startX = fromNode.x + fromR * Math.cos(angle);
+					startY = fromNode.y + fromR * Math.sin(angle);
+					endX = toNode.x - toR * Math.cos(angle);
+					endY = toNode.y - toR * Math.sin(angle);
+
+					// Linear path
+					controlX = (startX + endX) / 2;
+					controlY = (startY + endY) / 2;
+					arrowAngle = angle;
 				} else {
-					// 曲線の場合は始点と終点を調整
-					startX = fromNode.x;
-					startY = fromNode.y;
-					endX = toNode.x;
-					endY = toNode.y;
+					// Quadratic Bezier Curve
+					// Calculate Control Point based on node CENTERS
+					const midX = (fromNode.x + toNode.x) / 2;
+					const midY = (fromNode.y + toNode.y) / 2;
+					const dx = toNode.x - fromNode.x;
+					const dy = toNode.y - fromNode.y;
+					const dist = Math.sqrt(dx * dx + dy * dy);
+					const perpX = -dy / dist;
+					const perpY = dx / dist;
+
+					controlX = midX + perpX * curveOffset;
+					controlY = midY + perpY * curveOffset;
+
+					// Calculate Intersection with From Node (towards Control Point)
+					const angleFrom = Math.atan2(controlY - fromNode.y, controlX - fromNode.x);
+					startX = fromNode.x + fromR * Math.cos(angleFrom);
+					startY = fromNode.y + fromR * Math.sin(angleFrom);
+
+					// Calculate Intersection with To Node (from Control Point direction)
+					const angleTo = Math.atan2(controlY - toNode.y, controlX - toNode.x);
+					endX = toNode.x + toR * Math.cos(angleTo);
+					endY = toNode.y + toR * Math.sin(angleTo);
+
+					// Arrow angle is tangent of curve at end point (Vector: Control -> End)
+					arrowAngle = Math.atan2(endY - controlY, endX - controlX);
 				}
+
+				// Label Position
+				// For Bezier, t=0.5 is usually good
+				// P(t) = (1-t)^2 P0 + 2(1-t)t P1 + t^2 P2
+				// t=0.5 => 0.25 P0 + 0.5 P1 + 0.25 P2
+				const t = 0.5;
+				const labelX = (1 - t) * (1 - t) * startX + 2 * (1 - t) * t * controlX + t * t * endX;
+				const labelY = (1 - t) * (1 - t) * startY + 2 * (1 - t) * t * controlY + t * t * endY - 5;
+
+				// Arrow Head
+				const arrowSize = 6;
+				const x1 = endX - arrowSize * Math.cos(arrowAngle - Math.PI / 6);
+				const y1 = endY - arrowSize * Math.sin(arrowAngle - Math.PI / 6);
+				const x2 = endX - arrowSize * Math.cos(arrowAngle + Math.PI / 6);
+				const y2 = endY - arrowSize * Math.sin(arrowAngle + Math.PI / 6);
 
 				return (
 					<g key={`transition-${transition.from}-${transition.to}-${transition.label}`}>
 						{/* 遷移パス */}
 						<path
-							d={getArrowPath(startX, startY, endX, endY, curveOffset)}
+							d={
+								curveOffset === 0
+									? `M ${startX} ${startY} L ${endX} ${endY}`
+									: `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`
+							}
 							stroke="black"
 							strokeWidth="1.5"
 							fill="none"
 						/>
 						{/* 矢印の先端 */}
 						<path
-							d={getArrowHead(startX, startY, endX, endY, curveOffset)}
+							d={`M ${endX} ${endY} L ${x1} ${y1} M ${endX} ${endY} L ${x2} ${y2}`}
 							stroke="black"
 							strokeWidth="1.5"
 							fill="none"
 						/>
 						{/* ラベル */}
-						<text x={labelPos.x} y={labelPos.y} fontSize="12" textAnchor="middle" fill="black">
+						<text x={labelX} y={labelY} fontSize="12" textAnchor="middle" fill="black">
 							{transition.label}
 						</text>
 					</g>
@@ -244,13 +205,6 @@ export function StateDiagram({ nodes, transitions, width = 400, height = 150 }: 
 					)}
 				</g>
 			))}
-
-			{/* 矢印マーカーの定義 */}
-			<defs>
-				<marker id="arrowhead" markerWidth="10" markerHeight="10" refX="5" refY="3" orient="auto">
-					<polygon points="0 0, 6 3, 0 6" fill="black" />
-				</marker>
-			</defs>
 		</svg>
 	);
 }
