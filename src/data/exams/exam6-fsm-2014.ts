@@ -62,10 +62,10 @@ export const exam6_2014: Question[] = [
 			],
 			transitions: [
 				{ from: "s0", to: "s0", label: "0" },
-				{ from: "s0", to: "s1", label: "1", curveOffset: 20 },
+				{ from: "s0", to: "s1", label: "1", curveOffset: -30 },
 				{ from: "s1", to: "s1", label: "0" },
-				{ from: "s1", to: "s0", label: "1", curveOffset: 20 },
-				{ from: "s2", to: "s0", label: "0", curveOffset: 50 },
+				{ from: "s1", to: "s0", label: "1", curveOffset: 30 },
+				{ from: "s2", to: "s0", label: "0", curveOffset: -60 },
 				{ from: "s2", to: "s1", label: "1" },
 			],
 		},
