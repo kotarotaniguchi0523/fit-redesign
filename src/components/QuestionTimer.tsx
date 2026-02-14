@@ -133,7 +133,7 @@ export function QuestionTimer({ questionId }: Props) {
 							/>
 						</Button>
 					</PopoverTrigger>
-					<PopoverContent className="w-80 p-0">
+					<PopoverContent className="timer-popover w-80 p-0 border border-slate-200 shadow-lg">
 						<div className="p-3 space-y-3">
 							{/* モード切替 */}
 							<div>

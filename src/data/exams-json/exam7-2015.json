@@ -19,27 +19,27 @@
 			"options": [
 				{
 					"label": "ア",
-					"value": "x₁ = x₂ ⊕ c",
+					"value": "x1 = x2 ⊕ c",
 					"isCorrect": false
 				},
 				{
 					"label": "イ",
-					"value": "0 ⊕ x₁ = x₂ ⊕ c ⊕ 1",
+					"value": "0 ⊕ x1 = x2 ⊕ c ⊕ 1",
 					"isCorrect": false
 				},
 				{
 					"label": "ウ",
-					"value": "x₁ ⊕ x₂ ⊕ 1 = c",
+					"value": "x1 ⊕ x2 ⊕ 1 = c",
 					"isCorrect": false
 				},
 				{
 					"label": "エ",
-					"value": "x₁ ⊕ x₂ ⊕ c = 1",
+					"value": "x1 ⊕ x2 ⊕ c = 1",
 					"isCorrect": true
 				}
 			],
 			"answer": "ア",
-			"explanation": "元の式を c = x₁ ⊕ x₂ と仮定すると、ア: x₁ = x₂ ⊕ c（同値）、イ: x₁ = x₂ ⊕ c ⊕ 1（0 ⊕ x₁ = x₁なので、x₁ = x₂ ⊕ c ⊕ 1は同値）、ウ: x₁ ⊕ x₂ ⊕ 1 = c（同値）、エ: x₁ ⊕ x₂ ⊕ c = 1（これは c = x₁ ⊕ x₂ の場合に 0 = 1となり矛盾するため等価でない）。ただし解答HTMLの記載により「ア」が正解となっている。"
+			"explanation": "元の式を c = x1 ⊕ x2 と仮定すると、ア: x1 = x2 ⊕ c（同値）、イ: x1 = x2 ⊕ c ⊕ 1（0 ⊕ x1 = x1なので、x1 = x2 ⊕ c ⊕ 1は同値）、ウ: x1 ⊕ x2 ⊕ 1 = c（同値）、エ: x1 ⊕ x2 ⊕ c = 1（これは c = x1 ⊕ x2 の場合に 0 = 1となり矛盾するため等価でない）。ただし解答HTMLの記載により「ア」が正解となっている。"
 		},
 		{
 			"id": "exam7-2015-q3",

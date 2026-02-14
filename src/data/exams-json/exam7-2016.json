@@ -30,36 +30,36 @@
 		{
 			"id": "exam7-2016-q3",
 			"number": 3,
-			"text": "式 c = x₁⊕x₂ と同値なものを全て選べ",
+			"text": "式 c = x1⊕x2 と同値なものを全て選べ",
 			"options": [
 				{
 					"label": "ア",
-					"value": "x₁ = x₂ ⊕ c",
+					"value": "x1 = x2 ⊕ c",
 					"isCorrect": true
 				},
 				{
 					"label": "イ",
-					"value": "0 = x₁⊕x₂⊕c",
+					"value": "0 = x1⊕x2⊕c",
 					"isCorrect": true
 				},
 				{
 					"label": "ウ",
-					"value": "x₁⊕x₂⊕1 = c"
+					"value": "x1⊕x2⊕1 = c"
 				},
 				{
 					"label": "エ",
-					"value": "x₁⊕x₂⊕c = c"
+					"value": "x1⊕x2⊕c = c"
 				}
 			],
 			"answer": "ア，イ",
-			"explanation": "XOR演算の性質: c = x₁⊕x₂ ⟺ x₁ = x₂⊕c（アは同値）。また c⊕c = 0 なので x₁⊕x₂⊕c = 0（イも同値）"
+			"explanation": "XOR演算の性質: c = x1⊕x2 ⟺ x1 = x2⊕c（アは同値）。また c⊕c = 0 なので x1⊕x2⊕c = 0（イも同値）"
 		},
 		{
 			"id": "exam7-2016-q4",
 			"number": 4,
-			"text": "7ビットの値 4A₍₁₆₎の8ビット目に偶数パリティビットを追加した値を16進数で求めよ",
+			"text": "7ビットの値 4A(16)の8ビット目に偶数パリティビットを追加した値を16進数で求めよ",
 			"answer": "CA",
-			"explanation": "4A₍₁₆₎ = 1001010₍₂₎（1が3個で奇数）。偶数パリティにするためパリティビット1を追加: 11001010₍₂₎ = CA₍₁₆₎"
+			"explanation": "4A(16) = 1001010(2)（1が3個で奇数）。偶数パリティにするためパリティビット1を追加: 11001010(2) = CA(16)"
 		},
 		{
 			"id": "exam7-2016-q5",
