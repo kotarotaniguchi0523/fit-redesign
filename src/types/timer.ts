@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { formatZodError as formatSharedZodError } from "../utils/zod";
+import type { QuestionId } from "./index";
 
 export const TimerModeSchema = z.enum(["stopwatch", "countdown"], {
 	error: "タイマーモードは 'stopwatch' または 'countdown' である必要があります",
@@ -16,30 +18,45 @@ export const AttemptRecordSchema = z.object({
 });
 export type AttemptRecord = z.infer<typeof AttemptRecordSchema>;
 
+const QuestionIdSchema = z
+	.string({ error: "questionId は文字列である必要があります" })
+	.regex(/^exam[1-9]-\d{4}-q\d+$/, {
+		error: "questionId は exam{1-9}-{year}-q{n} 形式である必要があります",
+	});
+
 export const QuestionTimeRecordSchema = z.object({
-	questionId: z
-		.string({ error: "questionId は文字列である必要があります" })
-		.min(1, { error: "questionId は空にできません" }),
+	questionId: QuestionIdSchema,
 	attempts: z.array(AttemptRecordSchema, {
 		error: "attempts は配列である必要があります",
 	}),
 });
-export type QuestionTimeRecord = z.infer<typeof QuestionTimeRecordSchema>;
+export type QuestionTimeRecord = Omit<z.infer<typeof QuestionTimeRecordSchema>, "questionId"> & {
+	questionId: QuestionId;
+};
 
 export const TimerStorageDataSchema = z.object({
 	version: z.literal(1, { error: "version は 1 である必要があります" }),
-	records: z.record(z.string(), QuestionTimeRecordSchema, {
-		error: "records はオブジェクトである必要があります",
-	}),
+	records: z
+		.record(QuestionIdSchema, QuestionTimeRecordSchema, {
+			error: "records はオブジェクトである必要があります",
+		})
+		.superRefine((records, ctx) => {
+			for (const [key, record] of Object.entries(records)) {
+				if (key !== record.questionId) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						path: [key, "questionId"],
+						message: "records のキーと questionId は一致している必要があります",
+					});
+				}
+			}
+		}),
 });
-export type TimerStorageData = z.infer<typeof TimerStorageDataSchema>;
+export type TimerStorageData = Omit<z.infer<typeof TimerStorageDataSchema>, "records"> & {
+	records: Partial<Record<QuestionId, QuestionTimeRecord>>;
+};
 
 /** Zodエラーを読みやすい文字列にフォーマット */
 export function formatZodError(error: z.ZodError): string {
-	return error.issues
-		.map((issue) => {
-			const path = issue.path.length > 0 ? `[${issue.path.join(".")}] ` : "";
-			return `${path}${issue.message}`;
-		})
-		.join("; ");
+	return formatSharedZodError(error);
 }

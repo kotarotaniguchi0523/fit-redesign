@@ -2,9 +2,17 @@ import { Card } from "@heroui/react";
 import { useState } from "react";
 import { getExamByNumber } from "../data/exams";
 import { slideOnlyUnits, unitBasedTabs } from "../data/units";
-import type { Unit, Year } from "../types/index";
+import type { ExamNumber, Unit, UnitTabId, Year } from "../types/index";
 import { ExamSection } from "./ExamSection";
 import { SlideSection } from "./SlideSection";
+import {
+	selectActiveExamNumber,
+	selectAvailableYears,
+	selectExamNumbers,
+	selectExamSwitchItems,
+	selectFallbackYear,
+	selectUnitByKey,
+} from "./unitTabsSelectors";
 import { YearSelector } from "./YearSelector";
 
 interface Props {
@@ -16,45 +24,47 @@ interface Props {
 const slideOnlyTab = {
 	id: "slide-only",
 	name: "講義資料のみ",
-};
+} as const;
+
+type UnitSelectionKey = UnitTabId | "slide-only";
 
 // 全てのユニット（通常のユニット + 講義資料のみ）
 const allUnits = [...unitBasedTabs, slideOnlyTab];
 
 export function UnitTabs({ selectedYear, onYearChange }: Props) {
-	const [selectedKey, setSelectedKey] = useState<string | number>(unitBasedTabs[0]?.id ?? "");
+	const [selectedKey, setSelectedKey] = useState<UnitSelectionKey>(
+		unitBasedTabs[0]?.id ?? "slide-only",
+	);
 	// ユーザーが選択した小テスト番号（nullなら未選択）
-	const [selectedExamNumber, setSelectedExamNumber] = useState<number | null>(null);
+	const [selectedExamNumber, setSelectedExamNumber] = useState<ExamNumber | null>(null);
 
-	const handleSelectionChange = (key: string | number) => {
+	const handleSelectionChange = (key: UnitSelectionKey) => {
 		setSelectedKey(key);
 
-		// 新しいタブの有効年度を取得
-		const newUnit = unitBasedTabs.find((u) => u.id === key);
-		if (newUnit) {
-			const availableYears = newUnit.examMapping.map((m) => m.year);
-			// 現在の年度が無効なら、最初の有効年度へ補正
-			if (!availableYears.includes(selectedYear)) {
-				onYearChange(availableYears[0]);
-			}
+		if (key === "slide-only") {
+			return;
+		}
+		const newUnit = selectUnitByKey(unitBasedTabs, key);
+		const fallbackYear = selectFallbackYear(newUnit, selectedYear);
+		if (fallbackYear) {
+			onYearChange(fallbackYear);
 		}
 	};
 
 	// 選択された単元の情報を取得
-	const selectedUnit = unitBasedTabs.find((unit) => unit.id === selectedKey);
+	const selectedUnit =
+		selectedKey === "slide-only" ? undefined : selectUnitByKey(unitBasedTabs, selectedKey);
 	const isSlideOnly = selectedKey === "slide-only";
 
 	// 選択された単元の利用可能な年度と試験情報を取得
-	const availableYears = selectedUnit?.examMapping.map((m) => m.year) ?? [];
+	const availableYears = selectAvailableYears(selectedUnit);
 	const examMapping = selectedUnit?.examMapping.find((m) => m.year === selectedYear);
-	const examNumbers = examMapping?.examNumbers ?? [];
+	const examNumbers = selectExamNumbers(selectedUnit, selectedYear);
+	const examSwitchItems = selectExamSwitchItems(examNumbers, selectedYear);
 
 	// レンダリング中に計算（useEffect不要）
 	// selectedExamNumberが有効なら維持、無効なら最初の値にフォールバック
-	const activeExamNumber =
-		selectedExamNumber !== null && examNumbers.includes(selectedExamNumber)
-			? selectedExamNumber
-			: (examNumbers[0] ?? null);
+	const activeExamNumber = selectActiveExamNumber(examNumbers, selectedExamNumber);
 
 	const activeExamData = activeExamNumber ? getExamByNumber(activeExamNumber) : undefined;
 	const activeExam = activeExamData?.exams[selectedYear];
@@ -120,27 +130,24 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 						<div className="mt-4">
 							<p className="text-sm font-medium text-gray-600 mb-2">小テストを切り替え</p>
 							<div className="flex flex-wrap gap-2" role="tablist" aria-label="小テスト選択">
-								{examNumbers.map((examNumber) => {
-									const examData = getExamByNumber(examNumber);
-									if (!examData) return null;
-									const examTitle = examData.exams[selectedYear]?.title ?? examData.title;
-									const isActive = activeExamNumber === examNumber;
+								{examSwitchItems.map((item) => {
+									const isActive = activeExamNumber === item.examNumber;
 
 									return (
 										<button
-											key={examNumber}
+											key={item.examNumber}
 											type="button"
 											role="tab"
 											aria-selected={isActive}
-											onClick={() => setSelectedExamNumber(examNumber)}
+											onClick={() => setSelectedExamNumber(item.examNumber)}
 											className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all flex flex-col text-left min-w-40 ${
 												isActive
 													? "bg-[#1e3a5f] text-white border-[#1e3a5f] shadow-sm"
 													: "bg-white text-gray-700 border-gray-300 hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
 											}`}
 										>
-											<span className="text-[11px] opacity-80">小テスト{examNumber}</span>
-											<span className="text-sm leading-snug">{examTitle}</span>
+											<span className="text-[11px] opacity-80">小テスト{item.examNumber}</span>
+											<span className="text-sm leading-snug">{item.title}</span>
 										</button>
 									);
 								})}

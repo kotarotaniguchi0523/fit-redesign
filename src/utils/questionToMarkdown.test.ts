@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import type { Question } from "../types/index";
 import { questionToMarkdown } from "./questionToMarkdown";
 
@@ -8,7 +8,7 @@ describe("questionToMarkdown", () => {
 
 		beforeEach(() => {
 			const question: Question = {
-				id: "test-1",
+				id: "exam1-2013-q1",
 				number: 1,
 				text: "これはテスト問題です",
 				answer: "ア",
@@ -39,7 +39,7 @@ describe("questionToMarkdown", () => {
 
 		beforeEach(() => {
 			const question: Question = {
-				id: "test-2",
+				id: "exam1-2013-q2",
 				number: 2,
 				text: "選択肢問題です",
 				answer: "イ",
@@ -72,7 +72,7 @@ describe("questionToMarkdown", () => {
 
 		beforeEach(() => {
 			const question: Question = {
-				id: "test-3",
+				id: "exam1-2013-q3",
 				number: 3,
 				text: "解説付き問題",
 				answer: "ウ",
@@ -96,7 +96,7 @@ describe("questionToMarkdown", () => {
 
 		beforeEach(() => {
 			const question: Question = {
-				id: "test-4",
+				id: "exam1-2013-q4",
 				number: 4,
 				text: "図付き問題",
 				answer: "エ",
@@ -116,7 +116,7 @@ describe("questionToMarkdown", () => {
 
 		beforeEach(() => {
 			const question: Question = {
-				id: "test-5",
+				id: "exam1-2013-q5",
 				number: 5,
 				text: "真理値表問題",
 				answer: "ア",
@@ -161,7 +161,7 @@ describe("questionToMarkdown", () => {
 
 		beforeEach(() => {
 			const question: Question = {
-				id: "test-6",
+				id: "exam2-2013-q1",
 				number: 6,
 				text: "状態遷移図問題",
 				answer: "イ",

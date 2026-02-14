@@ -1,8 +1,79 @@
-import type { Unit, UnitBasedTab } from "../types/index";
+import { z } from "zod";
+import {
+	isExamNumber,
+	type Unit,
+	type UnitBasedTab,
+	type UnitTabId,
+	YEARS,
+	type Year,
+} from "../types/index";
+import { safeParseOrThrow } from "../utils/zod";
 import { getSlide } from "./slides";
 
+const YearSchema = z.enum(YEARS);
+const ExamNumberSchema = z
+	.number()
+	.int()
+	.refine((value) => isExamNumber(value), {
+		error: "exam number must be between 1 and 9",
+	});
+const UnitTabIdSchema = z.custom<UnitTabId>(
+	(value) => typeof value === "string" && /^unit-[a-z0-9-]+$/.test(value),
+	{ error: "unit tab id must match unit-*" },
+);
+
+const SlideOnlyUnitSchema = z.object({
+	id: z
+		.string()
+		.regex(/^slide-only-\d+$/, { error: "slide-only unit id must match slide-only-{n}" }),
+	number: z.number().int().nonnegative(),
+	name: z.string().min(1),
+	slides: z.array(z.unknown()).min(1),
+});
+const SlideOnlyUnitsSchema = z.array(SlideOnlyUnitSchema);
+
+const UnitExamMappingSchema = z.object({
+	year: YearSchema,
+	examNumbers: z.array(ExamNumberSchema).min(1),
+	integratedTitle: z.string().min(1).optional(),
+});
+
+const UnitBasedTabSchema = z
+	.object({
+		id: UnitTabIdSchema,
+		name: z.string().min(1),
+		title: z.string().min(1),
+		icon: z.string().min(1),
+		description: z.string().min(1),
+		slides: z.array(z.unknown()).min(1),
+		examMapping: z.array(UnitExamMappingSchema).min(1),
+	})
+	.superRefine((tab, ctx) => {
+		const years = tab.examMapping.map((mapping) => mapping.year);
+		const uniqueYears = new Set<Year>(years);
+		if (uniqueYears.size !== years.length) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["examMapping"],
+				message: "examMapping years must be unique within each unit tab",
+			});
+		}
+	});
+
+const UnitBasedTabsSchema = z.array(UnitBasedTabSchema).superRefine((tabs, ctx) => {
+	const ids = tabs.map((tab) => tab.id);
+	const uniqueIds = new Set<UnitTabId>(ids);
+	if (uniqueIds.size !== ids.length) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			path: [],
+			message: "unit tab ids must be unique",
+		});
+	}
+});
+
 // 講義資料のみの単元
-export const slideOnlyUnits: Unit[] = [
+const slideOnlyUnitsData: Unit[] = [
 	{
 		id: "slide-only-0",
 		number: 0,
@@ -35,6 +106,12 @@ export const slideOnlyUnits: Unit[] = [
 	},
 ];
 
+export const slideOnlyUnits: Unit[] = safeParseOrThrow(
+	SlideOnlyUnitsSchema,
+	slideOnlyUnitsData,
+	"Invalid slideOnlyUnits",
+) as Unit[];
+
 // ===== 単元ベースのタブ構造 =====
 
 /**
@@ -50,7 +127,7 @@ export const slideOnlyUnits: Unit[] = [
  *   - オートマトン+符号理論 → exam6, exam7 (2016-2017はexam4)
  *   - データ構造+ソート → exam8, exam9 (2016-2017はexam5)
  */
-export const unitBasedTabs: UnitBasedTab[] = [
+const unitBasedTabsData: UnitBasedTab[] = [
 	{
 		id: "unit-base-conversion",
 		name: "基数変換",
@@ -188,3 +265,9 @@ export const unitBasedTabs: UnitBasedTab[] = [
 		],
 	},
 ];
+
+export const unitBasedTabs: UnitBasedTab[] = safeParseOrThrow(
+	UnitBasedTabsSchema,
+	unitBasedTabsData,
+	"Invalid unitBasedTabs",
+) as UnitBasedTab[];

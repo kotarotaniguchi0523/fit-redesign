@@ -1,5 +1,5 @@
 import { Radio, RadioGroup } from "@heroui/react";
-import { YEARS, type Year } from "../types/index";
+import { isYear, YEARS, type Year } from "../types/index";
 
 interface Props {
 	selectedYear: Year;
@@ -14,7 +14,11 @@ export function YearSelector({ selectedYear, onYearChange, availableYears = YEAR
 				label="年度を選択"
 				orientation="horizontal"
 				value={selectedYear}
-				onValueChange={(value) => onYearChange(value as Year)}
+				onValueChange={(value) => {
+					if (isYear(value)) {
+						onYearChange(value);
+					}
+				}}
 				classNames={{
 					label: "text-sm font-medium text-gray-600 mb-2",
 					wrapper: "flex flex-row flex-wrap gap-3",

@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { clearQuestionRecords, loadTimerData, saveAttempt, saveTimerData } from "./timerStorage";
 
+const TEST_QUESTION_ID_1 = "exam1-2013-q1" as const;
+const TEST_QUESTION_ID_2 = "exam2-2014-q2" as const;
+const TEST_QUESTION_ID_3 = "exam3-2015-q3" as const;
+
 describe("timerStorage", () => {
 	beforeEach(() => {
 		localStorage.clear();
@@ -23,8 +27,8 @@ describe("timerStorage", () => {
 			const testData = {
 				version: 1 as const,
 				records: {
-					q1: {
-						questionId: "q1",
+					[TEST_QUESTION_ID_1]: {
+						questionId: TEST_QUESTION_ID_1,
 						attempts: [
 							{
 								duration: 120,
@@ -44,8 +48,8 @@ describe("timerStorage", () => {
 				ok: true,
 				value: {
 					records: {
-						q1: {
-							questionId: "q1",
+						[TEST_QUESTION_ID_1]: {
+							questionId: TEST_QUESTION_ID_1,
 							attempts: [
 								expect.objectContaining({
 									duration: 120,
@@ -82,7 +86,7 @@ describe("timerStorage", () => {
 				timestamp: Date.now(),
 			};
 
-			const saveResult = saveAttempt("q1", attempt);
+			const saveResult = saveAttempt(TEST_QUESTION_ID_1, attempt);
 			if (!saveResult.ok) {
 				throw new Error("saveAttempt failed");
 			}
@@ -92,7 +96,9 @@ describe("timerStorage", () => {
 				throw new Error("loadTimerData failed");
 			}
 
-			expect(loadResult.value.records.q1.attempts).toEqual([
+			const record = loadResult.value.records[TEST_QUESTION_ID_1];
+			expect(record).toBeDefined();
+			expect(record?.attempts).toEqual([
 				expect.objectContaining({
 					duration: 60,
 					mode: "stopwatch",
@@ -116,15 +122,17 @@ describe("timerStorage", () => {
 				targetTime: 120,
 			};
 
-			saveAttempt("q2", attempt1);
-			saveAttempt("q2", attempt2);
+			saveAttempt(TEST_QUESTION_ID_2, attempt1);
+			saveAttempt(TEST_QUESTION_ID_2, attempt2);
 
 			const result = loadTimerData();
 			if (!result.ok) {
 				throw new Error("loadTimerData failed");
 			}
 
-			expect(result.value.records.q2.attempts).toEqual([
+			const record = result.value.records[TEST_QUESTION_ID_2];
+			expect(record).toBeDefined();
+			expect(record?.attempts).toEqual([
 				expect.objectContaining({
 					duration: 60,
 					mode: "stopwatch",
@@ -148,12 +156,12 @@ describe("timerStorage", () => {
 				completed: false,
 				timestamp: Date.now(),
 			};
-			const attemptResult = saveAttempt("q3", attempt);
+			const attemptResult = saveAttempt(TEST_QUESTION_ID_3, attempt);
 			if (!attemptResult.ok) {
 				throw new Error("saveAttempt failed");
 			}
 
-			const clearResult = clearQuestionRecords("q3");
+			const clearResult = clearQuestionRecords(TEST_QUESTION_ID_3);
 			if (!clearResult.ok) {
 				throw new Error("clearQuestionRecords failed");
 			}
@@ -163,11 +171,11 @@ describe("timerStorage", () => {
 				throw new Error("loadTimerData failed");
 			}
 
-			expect(loadResult.value.records.q3).toBeUndefined();
+			expect(loadResult.value.records[TEST_QUESTION_ID_3]).toBeUndefined();
 		});
 
 		it("存在しない問題をクリアしてもエラーにならない", () => {
-			const result = clearQuestionRecords("nonexistent");
+			const result = clearQuestionRecords(TEST_QUESTION_ID_3);
 			expect(result.ok).toBe(true);
 		});
 	});

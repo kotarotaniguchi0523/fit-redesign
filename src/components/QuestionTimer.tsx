@@ -3,12 +3,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useQuestionTimeRecord } from "../hooks/useQuestionTimeRecord";
 import { useTimer } from "../hooks/useTimer";
+import type { QuestionId } from "../types";
 import type { TimerMode } from "../types/timer";
 import { formatTime } from "../utils/timeFormat";
 import { ChevronDownIcon, ClockIcon } from "./icons";
 
 interface Props {
-	questionId: string;
+	questionId: QuestionId;
 }
 
 const DEFAULT_TARGET_TIME = 60;

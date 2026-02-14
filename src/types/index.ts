@@ -21,9 +21,24 @@ import type {
 
 // 年度一覧
 export const YEARS = ["2013", "2014", "2015", "2016", "2017"] as const;
+export const EXAM_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
 // 年度の型
 export type Year = (typeof YEARS)[number];
+export type ExamNumber = (typeof EXAM_NUMBERS)[number];
+export type PdfPath = `/pdf/${string}`;
+export type ExamId = `exam${ExamNumber}-${Year}`;
+export type QuestionId = `${ExamId}-q${number}`;
+export type SlideId = `slide-${number}`;
+export type UnitTabId = `unit-${string}`;
+
+export function isYear(value: string): value is Year {
+	return YEARS.includes(value as Year);
+}
+
+export function isExamNumber(value: number): value is ExamNumber {
+	return EXAM_NUMBERS.includes(value as ExamNumber);
+}
 
 // 問題の選択肢
 export interface QuestionOption {
@@ -84,7 +99,7 @@ export type FigureData =
 
 // 問題
 export interface Question {
-	id: string;
+	id: QuestionId;
 	number: number;
 	text: string;
 	options?: QuestionOption[];
@@ -96,17 +111,17 @@ export interface Question {
 
 // 小テスト
 export interface Exam {
-	id: string;
-	number: number;
+	id: ExamId;
+	number: ExamNumber;
 	title: string;
-	pdfPath: string;
-	answerPdfPath: string;
+	pdfPath: PdfPath;
+	answerPdfPath: PdfPath;
 	questions: Question[];
 }
 
 // 小テスト（年度別）
 export interface ExamByYear {
-	examNumber: number;
+	examNumber: ExamNumber;
 	title: string;
 	availableYears: Year[];
 	exams: Partial<Record<Year, Exam>>;
@@ -114,9 +129,9 @@ export interface ExamByYear {
 
 // 講義スライド
 export interface Slide {
-	id: string;
+	id: SlideId;
 	title: string;
-	pdfPath: string;
+	pdfPath: PdfPath;
 }
 
 // 単元
@@ -131,7 +146,7 @@ export interface Unit {
 
 // 単元ベースのタブ（トップレベルが単元、各単元内で年度選択）
 export interface UnitBasedTab {
-	id: string;
+	id: UnitTabId;
 	name: string; // 単元名（例: "基数変換"）
 	title: string; // タイトル（例: "単元1: 基数変換"）
 	icon: string; // 絵文字アイコン（例: "🔢"）
@@ -140,7 +155,7 @@ export interface UnitBasedTab {
 	// 年度別の試験マッピング
 	examMapping: {
 		year: Year;
-		examNumbers: number[]; // この年度でこの単元に対応する試験番号
+		examNumbers: ExamNumber[]; // この年度でこの単元に対応する試験番号
 		integratedTitle?: string; // 統合試験の場合のタイトル（例: "オートマトン・符号理論"）
 	}[];
 }

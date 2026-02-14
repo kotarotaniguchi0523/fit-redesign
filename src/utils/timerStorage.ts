@@ -1,3 +1,4 @@
+import type { QuestionId } from "../types";
 import { err, ok, type Result } from "../types/result";
 import type { AttemptRecord, QuestionTimeRecord, TimerStorageData } from "../types/timer";
 import { formatZodError, TimerStorageDataSchema } from "../types/timer";
@@ -70,12 +71,7 @@ function getInitialData(): TimerStorageData {
 	};
 }
 
-export function loadTimerData(): Result<TimerStorageData, StorageError> {
-	if (!isLocalStorageAvailable()) {
-		logger.error("LocalStorage is not available");
-		return err(createStorageError("STORAGE_UNAVAILABLE", "LocalStorage is not available"));
-	}
-
+function loadTimerDataUnsafe(): Result<TimerStorageData, StorageError> {
 	try {
 		const rawData = localStorage.getItem(getStorageKey());
 
@@ -100,19 +96,14 @@ export function loadTimerData(): Result<TimerStorageData, StorageError> {
 
 		const recordCount = Object.keys(validated.data.records).length;
 		logger.info(`Loaded timer data successfully (${recordCount} questions)`);
-		return ok(validated.data);
+		return ok(validated.data as TimerStorageData);
 	} catch (error) {
 		logger.error("Failed to parse stored data", { error });
 		return err(createStorageError("PARSE_ERROR", "Failed to parse stored data", error));
 	}
 }
 
-export function saveTimerData(data: TimerStorageData): Result<void, StorageError> {
-	if (!isLocalStorageAvailable()) {
-		logger.error("LocalStorage is not available");
-		return err(createStorageError("STORAGE_UNAVAILABLE", "LocalStorage is not available"));
-	}
-
+function saveTimerDataUnsafe(data: TimerStorageData): Result<void, StorageError> {
 	try {
 		const serialized = JSON.stringify(data);
 		const recordCount = Object.keys(data.records).length;
@@ -127,66 +118,103 @@ export function saveTimerData(data: TimerStorageData): Result<void, StorageError
 	}
 }
 
+function requireStorage(): Result<void, StorageError> {
+	if (isLocalStorageAvailable()) {
+		return ok(undefined);
+	}
+	logger.error("LocalStorage is not available");
+	return err(createStorageError("STORAGE_UNAVAILABLE", "LocalStorage is not available"));
+}
+
+export function loadTimerData(): Result<TimerStorageData, StorageError> {
+	const storageCheck = requireStorage();
+	if (!storageCheck.ok) {
+		return storageCheck;
+	}
+	return loadTimerDataUnsafe();
+}
+
+export function saveTimerData(data: TimerStorageData): Result<void, StorageError> {
+	const storageCheck = requireStorage();
+	if (!storageCheck.ok) {
+		return storageCheck;
+	}
+	return saveTimerDataUnsafe(data);
+}
+
+function mutateTimerData(
+	mutator: (data: TimerStorageData) => void,
+): Result<TimerStorageData, StorageError> {
+	const storageCheck = requireStorage();
+	if (!storageCheck.ok) {
+		return storageCheck;
+	}
+
+	const loadResult = loadTimerDataUnsafe();
+	if (!loadResult.ok) {
+		return loadResult;
+	}
+
+	mutator(loadResult.value);
+
+	const saveResult = saveTimerDataUnsafe(loadResult.value);
+	if (!saveResult.ok) {
+		return err(saveResult.error);
+	}
+
+	return ok(loadResult.value);
+}
+
 export function saveAttempt(
-	questionId: string,
+	questionId: QuestionId,
 	attempt: AttemptRecord,
 ): Result<void, StorageError> {
 	logger.info(
 		`Saving attempt for question (mode: ${attempt.mode}, completed: ${attempt.completed})`,
 	);
 
-	const loadResult = loadTimerData();
-	if (!loadResult.ok) {
+	const mutateResult = mutateTimerData((data) => {
+		const existingRecord = data.records[questionId];
+		const currentAttempts = existingRecord?.attempts || [];
+		const updatedAttempts = [...currentAttempts, attempt];
+
+		if (updatedAttempts.length > MAX_ATTEMPTS_PER_QUESTION) {
+			const removedCount = updatedAttempts.length - MAX_ATTEMPTS_PER_QUESTION;
+			updatedAttempts.splice(0, updatedAttempts.length - MAX_ATTEMPTS_PER_QUESTION);
+			logger.info(`Trimmed ${removedCount} old attempts (max: ${MAX_ATTEMPTS_PER_QUESTION})`);
+		}
+
+		const updatedRecord: QuestionTimeRecord = {
+			questionId,
+			attempts: updatedAttempts,
+		};
+
+		data.records[questionId] = updatedRecord;
+	});
+
+	if (!mutateResult.ok) {
 		logger.warn("Failed to load existing data before saving attempt");
-		return err(loadResult.error);
+		return err(mutateResult.error);
 	}
 
-	const data = loadResult.value;
-
-	const existingRecord = data.records[questionId];
-	const currentAttempts = existingRecord?.attempts || [];
-
-	const updatedAttempts = [...currentAttempts, attempt];
-
-	if (updatedAttempts.length > MAX_ATTEMPTS_PER_QUESTION) {
-		const removedCount = updatedAttempts.length - MAX_ATTEMPTS_PER_QUESTION;
-		updatedAttempts.splice(0, updatedAttempts.length - MAX_ATTEMPTS_PER_QUESTION);
-		logger.info(`Trimmed ${removedCount} old attempts (max: ${MAX_ATTEMPTS_PER_QUESTION})`);
-	}
-
-	const updatedRecord: QuestionTimeRecord = {
-		questionId,
-		attempts: updatedAttempts,
-	};
-
-	data.records[questionId] = updatedRecord;
-
-	const saveResult = saveTimerData(data);
-	if (saveResult.ok) {
-		logger.info(`Attempt saved successfully (total attempts: ${updatedAttempts.length})`);
-	}
-
-	return saveResult;
+	const totalAttempts = mutateResult.value.records[questionId]?.attempts.length ?? 0;
+	logger.info(`Attempt saved successfully (total attempts: ${totalAttempts})`);
+	return ok(undefined);
 }
 
-export function clearQuestionRecords(questionId: string): Result<void, StorageError> {
+export function clearQuestionRecords(questionId: QuestionId): Result<void, StorageError> {
 	logger.info("Clearing records for question");
 
-	const loadResult = loadTimerData();
-	if (!loadResult.ok) {
-		logger.warn("Failed to load existing data before clearing records");
-		return err(loadResult.error);
-	}
+	let hadRecord = false;
+	const mutateResult = mutateTimerData((data) => {
+		hadRecord = questionId in data.records;
+		delete data.records[questionId];
+	});
 
-	const data = loadResult.value;
-
-	const hadRecord = questionId in data.records;
-	delete data.records[questionId];
-
-	const saveResult = saveTimerData(data);
-	if (saveResult.ok) {
+	if (mutateResult.ok) {
 		logger.info(`Records cleared successfully (had existing data: ${hadRecord})`);
+		return ok(undefined);
 	}
-
-	return saveResult;
+	logger.warn("Failed to load existing data before clearing records");
+	return err(mutateResult.error);
 }

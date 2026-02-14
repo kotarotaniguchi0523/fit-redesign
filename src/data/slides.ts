@@ -1,4 +1,5 @@
-import type { Slide } from "../types/index";
+import { z } from "zod";
+import type { Slide, SlideId } from "../types/index";
 
 export const slides: Slide[] = [
 	{ id: "slide-0", title: "ガイダンス", pdfPath: "/pdf/FIT0-guidance2013.pdf" },
@@ -16,12 +17,23 @@ export const slides: Slide[] = [
 	{ id: "slide-12", title: "プログラミング言語", pdfPath: "/pdf/FIT12-Progb.pdf" },
 ];
 
-const slidesById: Record<string, Slide> = Object.fromEntries(
-	slides.map((slide) => [slide.id, slide]),
+const SlideIdSchema = z.custom<SlideId>(
+	(value) => typeof value === "string" && /^slide-\d+$/.test(value),
+	{
+		error: "slide id must match slide-{number}",
+	},
 );
 
+const slidesById: Record<SlideId, Slide> = Object.fromEntries(
+	slides.map((slide) => [slide.id, slide] as const),
+) as Record<SlideId, Slide>;
+
 export function getSlide(id: Slide["id"]): Slide {
-	const slide = slidesById[id];
+	const parsedId = SlideIdSchema.safeParse(id);
+	if (!parsedId.success) {
+		throw new Error(`Invalid slide id format: ${id}`);
+	}
+	const slide = slidesById[parsedId.data];
 	if (!slide) {
 		throw new Error(`Unknown slide id: ${id}`);
 	}
