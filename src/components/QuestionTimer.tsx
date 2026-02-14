@@ -5,7 +5,7 @@ import { useTimer } from "../hooks/useTimer";
 import type { QuestionId } from "../types";
 import type { TimerMode } from "../types/timer";
 import { formatTime } from "../utils/timeFormat";
-import { ClockIcon, GearIcon } from "./icons";
+import { ClockIcon, GearIcon, PauseIcon, PlayIcon } from "./icons";
 
 interface Props {
 	questionId: QuestionId;
@@ -94,13 +94,23 @@ export function QuestionTimer({ questionId }: Props) {
 			<div className="flex items-center gap-2">
 				{/* 操作ボタン（タイマーより先に配置） */}
 				<Button
-					size="sm"
-					color={timer.isRunning ? "danger" : "success"}
+					size="md"
+					color={timer.isRunning ? "danger" : "primary"}
 					variant="solid"
-					className={`min-w-max whitespace-nowrap px-4 font-bold shadow-md ${timer.isRunning ? "bg-red-500 text-white" : "bg-green-500 text-white"}`}
+					className={`min-w-max whitespace-nowrap px-4 font-bold shadow-md gap-2 ${timer.isRunning ? "bg-red-500 text-white" : "bg-[#1e3a5f] text-white"}`}
 					onPress={timer.isRunning ? timer.stop : timer.start}
 				>
-					{timer.isRunning ? "停止" : "開始"}
+					{timer.isRunning ? (
+						<>
+							<PauseIcon className="w-4 h-4" />
+							停止
+						</>
+					) : (
+						<>
+							<PlayIcon className="w-4 h-4" />
+							開始
+						</>
+					)}
 				</Button>
 
 				{timer.isRunning && (
