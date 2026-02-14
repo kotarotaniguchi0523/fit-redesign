@@ -43,7 +43,7 @@
 			"number": 3,
 			"text": "二分探索において、データの個数が8倍になると、最大探索回数はどうなるか？",
 			"answer": "3回増える",
-			"explanation": "二分探索の計算量はO(log n)。8倍→log₂(8n) = log₂8 + log₂n = 3 + log₂n。つまり3回増加"
+			"explanation": "二分探索の計算量はO(log n)。8倍→log2(8n) = log28 + log2n = 3 + log2n。つまり3回増加"
 		},
 		{
 			"id": "exam9-2013-q4",

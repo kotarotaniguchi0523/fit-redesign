@@ -83,6 +83,22 @@ agent-browser screenshot feature-check.png
 
 ---
 
+## 既知の注意点
+
+### MDX で日本語括弧隣接の太字が効かない
+
+CommonMark仕様上、`**` の直後に `「`（Unicode句読点）が来ると左フランキングデリミタとして認識されない。`**「テキスト」**` は太字にならない。`<strong>「テキスト」</strong>` を使うこと。
+
+### Unicode下付き文字をデータに使わない
+
+`₍₂₎` 等のUnicode下付き文字はモバイルで文字化け・極小表示になる。基数表記は通常文字 `(2)` を使うこと。
+
+### HeroUI PopoverContent はモバイルで背景が透過する
+
+`backdrop-filter` が効かないモバイル環境では背景が透けて見える。`background-color: #ffffff !important` と `backdrop-filter: none !important` で明示的に不透明化すること（`.timer-popover` クラス参照）。
+
+---
+
 ## パッケージマネージャー
 
 **pnpm を使用すること**（npm, yarn は禁止）

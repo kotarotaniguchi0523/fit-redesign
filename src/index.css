@@ -155,6 +155,16 @@ body {
 	color: var(--color-accent);
 }
 
+/* Timer Popover - Opaque background override */
+.timer-popover {
+	/* biome-ignore lint/complexity/noImportantStyles: Override HeroUI default styles */
+	background-color: #ffffff !important;
+	/* biome-ignore lint/complexity/noImportantStyles: Override HeroUI default styles */
+	backdrop-filter: none !important;
+	/* biome-ignore lint/complexity/noImportantStyles: Override HeroUI default styles */
+	-webkit-backdrop-filter: none !important;
+}
+
 /* Hide Native Input in YearSelector */
 .year-selector-radio input {
 	/* biome-ignore lint/complexity/noImportantStyles: Override HeroUI default styles */

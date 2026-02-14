@@ -20,12 +20,12 @@
 				},
 				{
 					"label": "ウ",
-					"value": "log₂ n",
+					"value": "log2 n",
 					"isCorrect": true
 				},
 				{
 					"label": "エ",
-					"value": "n log₂ n"
+					"value": "n log2 n"
 				},
 				{
 					"label": "オ",
@@ -33,7 +33,7 @@
 				}
 			],
 			"answer": "ウ",
-			"explanation": "n種類の文字を区別するには log₂ n ビット必要（情報量の基本公式）"
+			"explanation": "n種類の文字を区別するには log2 n ビット必要（情報量の基本公式）"
 		},
 		{
 			"id": "exam7-2017-q2",
@@ -45,35 +45,35 @@
 		{
 			"id": "exam7-2017-q3",
 			"number": 3,
-			"text": "レジスタ d₀, d₁, パリティビット p がある．偶数パリティで常に成立する式を全て選べ．",
+			"text": "レジスタ d0, d1, パリティビット p がある．偶数パリティで常に成立する式を全て選べ．",
 			"options": [
 				{
 					"label": "ア",
-					"value": "d₀ ⊕ d₁ = p",
+					"value": "d0 ⊕ d1 = p",
 					"isCorrect": true
 				},
 				{
 					"label": "イ",
-					"value": "d₀ ⊕ d₁ ⊕ 0 = p",
+					"value": "d0 ⊕ d1 ⊕ 0 = p",
 					"isCorrect": true
 				},
 				{
 					"label": "ウ",
-					"value": "d₀ ⊕ d₁ ⊕ p = 0",
+					"value": "d0 ⊕ d1 ⊕ p = 0",
 					"isCorrect": true
 				},
 				{
 					"label": "エ",
-					"value": "d₀ ⊕ d₁ ⊕ p = 1"
+					"value": "d0 ⊕ d1 ⊕ p = 1"
 				}
 			],
 			"answer": "ア，イ，ウ",
-			"explanation": "偶数パリティでは d₀ ⊕ d₁ ⊕ p = 0 が成立する。これと同値な式がア、イ、ウ"
+			"explanation": "偶数パリティでは d0 ⊕ d1 ⊕ p = 0 が成立する。これと同値な式がア、イ、ウ"
 		},
 		{
 			"id": "exam7-2017-q4",
 			"number": 4,
-			"text": "水平垂直パリティ検査符号 w=(x₁,x₂,x₃,x₄,c₁,c₂,c₃,c₄,c₅)がある．\n受信語 y =(0, 1, 1, 0, 1, 1, 1, 1, 1)に誤りがあるか？あれば訂正した符号語を示せ．",
+			"text": "水平垂直パリティ検査符号 w=(x1,x2,x3,x4,c1,c2,c3,c4,c5)がある．\n受信語 y =(0, 1, 1, 0, 1, 1, 1, 1, 1)に誤りがあるか？あれば訂正した符号語を示せ．",
 			"answer": "(0,1,1,0, 1,1,1,1,0)",
 			"explanation": "水平垂直パリティチェックにより誤り位置を特定し、訂正する",
 			"figureDescription": "水平垂直パリティ検査符号の構造図",
