@@ -1,6 +1,7 @@
 import { render } from "@testing-library/react";
 import { describe, it } from "vitest";
-import type { DataTableColumn, DataTableRow, FigureData } from "../../types/figures";
+import type { FigureData } from "../../types";
+import type { DataTableColumn, DataTableRow } from "../../types/figures";
 import { TableRenderer } from "./TableRenderer";
 
 describe("TableRenderer Performance", () => {
