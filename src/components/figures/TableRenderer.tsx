@@ -71,7 +71,8 @@ function DataTable({ columns, rows }: DataTableProps) {
 				</TableHeader>
 				<TableBody>
 					{rows.map((row, index) => {
-						const rowKey = `row-${index}-${columns.map((col) => String(row[col.key])).join("-")}`;
+						// biome-ignore lint/suspicious/noArrayIndexKey: static list
+						const rowKey = `row-${index}`;
 						return (
 							<TableRow key={rowKey}>
 								{columns.map((column) => (
