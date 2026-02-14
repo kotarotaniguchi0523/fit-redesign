@@ -92,23 +92,10 @@ export function QuestionTimer({ questionId }: Props) {
 		<div className="relative">
 			{/* メインタイマーエリア */}
 			<div className="flex items-center gap-2">
-				{/* タイマー表示（背景付きカプセル） */}
-				<div
-					className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors ${timerBgClass}`}
-				>
-					<ClockIcon className={`w-4 h-4 ${timerTextClass}`} />
-					<span className={`text-sm font-mono font-semibold tabular-nums ${timerTextClass}`}>
-						{formatTime(timer.elapsedSeconds)}
-					</span>
-					{mode === "countdown" && !timer.isRunning && !timer.isCompleted && (
-						<span className="text-xs text-slate-500">/ {formatTime(timer.targetTime)}</span>
-					)}
-				</div>
-
-				{/* 操作ボタン */}
+				{/* 操作ボタン（タイマーより先に配置） */}
 				<Button
 					size="sm"
-					color={timer.isRunning ? "danger" : "primary"}
+					color={timer.isRunning ? "danger" : "success"}
 					variant="solid"
 					className="min-w-max whitespace-nowrap px-4"
 					onPress={timer.isRunning ? timer.stop : timer.start}
@@ -121,6 +108,19 @@ export function QuestionTimer({ questionId }: Props) {
 						リセット
 					</Button>
 				)}
+
+				{/* タイマー表示（背景付きカプセル） */}
+				<div
+					className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors ${timerBgClass}`}
+				>
+					<ClockIcon className={`w-4 h-4 shrink-0 ${timerTextClass}`} />
+					<span className={`text-sm font-mono font-semibold tabular-nums whitespace-nowrap ${timerTextClass}`}>
+						{formatTime(timer.elapsedSeconds)}
+						{mode === "countdown" && !timer.isRunning && !timer.isCompleted && (
+							<span className="text-slate-500"> / {formatTime(timer.targetTime)}</span>
+						)}
+					</span>
+				</div>
 
 				{/* 設定トグルボタン (Popover) */}
 				<Popover placement="bottom-end" isOpen={isOpen} onOpenChange={setIsOpen}>
