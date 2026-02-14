@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import { describe, it } from "vitest";
-import { TableRenderer } from "./TableRenderer";
 import type { DataTableColumn, DataTableRow, FigureData } from "../../types/figures";
+import { TableRenderer } from "./TableRenderer";
 
 describe("TableRenderer Performance", () => {
 	const rowCount = 200;
@@ -38,9 +38,9 @@ describe("TableRenderer Performance", () => {
 			// React usually optimizes if props are strictly equal, so we shallow copy rows
 			// to simulate a prop update.
 			const newRows = [...largeRows];
-            // We modify one value to ensure it's not just referential equality check skipping everything (if memoized)
-            // But TableRenderer likely isn't memoized deeply anyway.
-            newRows[0] = { ...newRows[0], col0: `val-update-${i}` };
+			// We modify one value to ensure it's not just referential equality check skipping everything (if memoized)
+			// But TableRenderer likely isn't memoized deeply anyway.
+			newRows[0] = { ...newRows[0], col0: `val-update-${i}` };
 
 			rerender(
 				<TableRenderer
