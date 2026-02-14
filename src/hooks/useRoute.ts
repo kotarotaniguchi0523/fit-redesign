@@ -17,12 +17,16 @@ function subscribe(callback: () => void): () => void {
 export function useRoute() {
 	const path = useSyncExternalStore(subscribe, getPath, getPath);
 
-	const navigate = useCallback((to: string) => {
+	const navigate = useCallback((to: string, options?: { replace?: boolean }) => {
 		if (!to.startsWith("/") || to.startsWith("//")) return;
 		const normalizedTo = normalizePath(to);
 		const currentPath = normalizePath(window.location.pathname);
 		if (normalizedTo !== currentPath) {
-			window.history.pushState(null, "", normalizedTo);
+			if (options?.replace) {
+				window.history.replaceState(null, "", normalizedTo);
+			} else {
+				window.history.pushState(null, "", normalizedTo);
+			}
 			window.dispatchEvent(new PopStateEvent("popstate"));
 		}
 	}, []);

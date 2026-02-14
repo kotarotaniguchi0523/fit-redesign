@@ -117,6 +117,22 @@ describe("useRoute", () => {
 		spy.mockRestore();
 	});
 
+	it("replace オプション時は replaceState を使う", () => {
+		const pushSpy = vi.spyOn(window.history, "pushState");
+		const replaceSpy = vi.spyOn(window.history, "replaceState");
+		const { result } = renderHook(() => useRoute());
+
+		act(() => {
+			result.current.navigate("/guide", { replace: true });
+		});
+
+		expect(replaceSpy).toHaveBeenCalledOnce();
+		expect(pushSpy).not.toHaveBeenCalled();
+		expect(result.current.path).toBe("/guide");
+		pushSpy.mockRestore();
+		replaceSpy.mockRestore();
+	});
+
 	afterEach(() => {
 		window.history.replaceState(null, "", "/");
 	});

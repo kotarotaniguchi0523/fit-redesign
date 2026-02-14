@@ -12,7 +12,7 @@ function Router() {
 
 	useEffect(() => {
 		if (!isKnownRoute) {
-			navigate("/");
+			navigate("/", { replace: true });
 		}
 	}, [isKnownRoute, navigate]);
 
