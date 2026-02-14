@@ -97,7 +97,7 @@ export function QuestionTimer({ questionId }: Props) {
 					size="sm"
 					color={timer.isRunning ? "danger" : "success"}
 					variant="solid"
-					className="min-w-max whitespace-nowrap px-4"
+					className={`min-w-max whitespace-nowrap px-4 font-bold shadow-md ${timer.isRunning ? "bg-red-500 text-white" : "bg-green-500 text-white"}`}
 					onPress={timer.isRunning ? timer.stop : timer.start}
 				>
 					{timer.isRunning ? "停止" : "開始"}
