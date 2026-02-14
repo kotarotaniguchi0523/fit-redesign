@@ -30,8 +30,9 @@ export function YearSelector({ selectedYear, onYearChange, availableYears = YEAR
 						value={year}
 						isDisabled={!availableYears.includes(year)}
 						classNames={{
-							base: "border-2 border-gray-200 data-[selected=true]:border-[#c9a227] rounded-full px-4 py-1.5 bg-white shadow-sm hover:border-gray-300 transition-colors m-0",
-							wrapper: "hidden",
+							base: "year-selector-radio border-2 border-gray-200 data-[selected=true]:border-[#c9a227] rounded-full px-4 py-1.5 bg-white shadow-sm hover:border-gray-300 transition-colors m-0",
+							wrapper: "hidden-radio-control",
+							control: "hidden-radio-control",
 							label: "text-sm font-medium",
 							labelWrapper: "m-0",
 						}}

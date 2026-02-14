@@ -1,12 +1,11 @@
-import { Button } from "@heroui/react";
-import { AnimatePresence, motion } from "framer-motion";
+import { Button, Popover, PopoverContent, PopoverTrigger } from "@heroui/react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useQuestionTimeRecord } from "../hooks/useQuestionTimeRecord";
 import { useTimer } from "../hooks/useTimer";
 import type { QuestionId } from "../types";
 import type { TimerMode } from "../types/timer";
 import { formatTime } from "../utils/timeFormat";
-import { ChevronDownIcon, ClockIcon } from "./icons";
+import { ClockIcon, GearIcon } from "./icons";
 
 interface Props {
 	questionId: QuestionId;
@@ -24,7 +23,7 @@ const TARGET_TIME_PRESETS = [
 
 export function QuestionTimer({ questionId }: Props) {
 	const [mode, setMode] = useState<TimerMode>("stopwatch");
-	const [isExpanded, setIsExpanded] = useState(false);
+	const [isOpen, setIsOpen] = useState(false);
 
 	const timer = useTimer(mode, DEFAULT_TARGET_TIME);
 	const record = useQuestionTimeRecord(questionId);
@@ -33,8 +32,6 @@ export function QuestionTimer({ questionId }: Props) {
 	const hasSavedRef = useRef(false);
 	// 前回のisRunning値を追跡
 	const prevIsRunningRef = useRef(false);
-	// 展開パネルのref（外側クリック検知用）
-	const panelRef = useRef<HTMLDivElement>(null);
 
 	// useEffectEvent: タイマー停止時の保存処理
 	const saveAttempt = useEffectEvent(() => {
@@ -62,31 +59,6 @@ export function QuestionTimer({ questionId }: Props) {
 
 		prevIsRunningRef.current = timer.isRunning;
 	}, [timer.isRunning]);
-
-	// 外側クリックとEscキーの検知
-	useEffect(() => {
-		if (!isExpanded) return;
-
-		const handleClickOutside = (event: MouseEvent) => {
-			if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
-				setIsExpanded(false);
-			}
-		};
-
-		const handleEscapeKey = (event: KeyboardEvent) => {
-			if (event.key === "Escape") {
-				setIsExpanded(false);
-			}
-		};
-
-		document.addEventListener("mousedown", handleClickOutside);
-		document.addEventListener("keydown", handleEscapeKey);
-
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-			document.removeEventListener("keydown", handleEscapeKey);
-		};
-	}, [isExpanded]);
 
 	const handleModeChange = (nextMode: TimerMode) => {
 		if (nextMode === mode) return;
@@ -138,6 +110,7 @@ export function QuestionTimer({ questionId }: Props) {
 					size="sm"
 					color={timer.isRunning ? "danger" : "primary"}
 					variant="solid"
+					className="min-w-max whitespace-nowrap px-4"
 					onPress={timer.isRunning ? timer.stop : timer.start}
 				>
 					{timer.isRunning ? "停止" : "開始"}
@@ -149,34 +122,19 @@ export function QuestionTimer({ questionId }: Props) {
 					</Button>
 				)}
 
-				{/* 設定トグルボタン */}
-				<Button
-					size="sm"
-					variant="light"
-					onPress={() => setIsExpanded(!isExpanded)}
-					aria-expanded={isExpanded}
-					endContent={
-						<ChevronDownIcon
-							className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-						/>
-					}
-				>
-					設定
-				</Button>
-			</div>
-
-			{/* 展開パネル */}
-			<AnimatePresence>
-				{isExpanded && (
-					<motion.div
-						ref={panelRef}
-						initial={{ height: 0, opacity: 0 }}
-						animate={{ height: "auto", opacity: 1 }}
-						exit={{ height: 0, opacity: 0 }}
-						transition={{ duration: 0.2 }}
-						className="overflow-hidden absolute right-0 top-full z-10 w-80"
-					>
-						<div className="mt-2 p-3 bg-white rounded-lg border border-slate-300 shadow-lg space-y-3">
+				{/* 設定トグルボタン (Popover) */}
+				<Popover placement="bottom-end" isOpen={isOpen} onOpenChange={setIsOpen}>
+					<PopoverTrigger>
+						<Button size="sm" variant="light" isIconOnly aria-label="タイマー設定">
+							<GearIcon
+								className={`w-5 h-5 text-slate-500 transition-transform duration-200 ${
+									isOpen ? "rotate-45" : ""
+								}`}
+							/>
+						</Button>
+					</PopoverTrigger>
+					<PopoverContent className="w-80 p-0">
+						<div className="p-3 space-y-3">
 							{/* モード切替 */}
 							<div>
 								<p className="text-xs font-semibold text-slate-600 mb-2">タイマーモード</p>
@@ -266,9 +224,9 @@ export function QuestionTimer({ questionId }: Props) {
 								履歴をクリア
 							</Button>
 						</div>
-					</motion.div>
-				)}
-			</AnimatePresence>
+					</PopoverContent>
+				</Popover>
+			</div>
 		</div>
 	);
 }

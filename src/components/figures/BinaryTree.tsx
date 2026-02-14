@@ -33,8 +33,8 @@ export function BinaryTree({ root, width = 300, height = 200, nodeRadius = 20 }:
 	) => {
 		if (!node) return;
 
-		const x = (left + right) / 2;
-		const y = ((level + 1) / (depth + 1)) * height;
+		const x = node.x !== undefined ? node.x : (left + right) / 2;
+		const y = node.y !== undefined ? node.y : ((level + 1) / (depth + 1)) * height;
 
 		positions.push({ x, y, node });
 

@@ -30,6 +30,8 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 	const [isRunning, setIsRunning] = useState(false);
 	const [isCompleted, setIsCompleted] = useState(false);
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+	const audioContextRef = useRef<AudioContext | null>(null);
+	const alertTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const start = () => {
 		setIsRunning(true);
@@ -66,7 +68,15 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 	// アラート音を鳴らす関数
 	const playAlertSound = useCallback(() => {
 		try {
-			const audioContext = new AudioContext();
+			if (!audioContextRef.current) {
+				audioContextRef.current = new AudioContext();
+			}
+			const audioContext = audioContextRef.current;
+
+			if (audioContext.state === "suspended") {
+				audioContext.resume().catch(() => {});
+			}
+
 			const oscillator = audioContext.createOscillator();
 			const gainNode = audioContext.createGain();
 
@@ -81,7 +91,7 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 			oscillator.stop(audioContext.currentTime + ALERT_SOUND.DURATION);
 
 			// 2回目のビープ
-			setTimeout(() => {
+			alertTimeoutRef.current = setTimeout(() => {
 				const osc2 = audioContext.createOscillator();
 				const gain2 = audioContext.createGain();
 				osc2.connect(gain2);
@@ -92,9 +102,24 @@ export function useTimer(mode: TimerMode, targetTimeSeconds?: number): UseTimerR
 				osc2.start();
 				osc2.stop(audioContext.currentTime + ALERT_SOUND.DURATION);
 			}, ALERT_SOUND.SECOND_DELAY);
-		} catch {
+		} catch (e) {
+			console.log("AudioContext error", e);
 			// Audio API not supported
 		}
+	}, []);
+
+	// Cleanup AudioContext
+	useEffect(() => {
+		return () => {
+			if (alertTimeoutRef.current) {
+				clearTimeout(alertTimeoutRef.current);
+				alertTimeoutRef.current = null;
+			}
+			if (audioContextRef.current) {
+				audioContextRef.current.close().catch(() => {});
+				audioContextRef.current = null;
+			}
+		};
 	}, []);
 
 	// Timer interval effect

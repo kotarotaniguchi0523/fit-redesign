@@ -81,7 +81,7 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 						role="tab"
 						aria-selected={selectedKey === unit.id}
 						onClick={() => handleSelectionChange(unit.id)}
-						className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
+						className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all h-auto min-h-[40px] whitespace-normal text-center ${
 							selectedKey === unit.id
 								? "bg-[#1e3a5f] text-white border-[#1e3a5f] shadow-sm"
 								: "bg-white text-gray-700 border-gray-300 hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
@@ -129,7 +129,11 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 					{examNumbers.length > 1 && (
 						<div className="mt-4">
 							<p className="text-sm font-medium text-gray-600 mb-2">小テストを切り替え</p>
-							<div className="flex flex-wrap gap-2" role="tablist" aria-label="小テスト選択">
+							<div
+								className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+								role="tablist"
+								aria-label="小テスト選択"
+							>
 								{examSwitchItems.map((item) => {
 									const isActive = activeExamNumber === item.examNumber;
 
@@ -140,14 +144,14 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 											role="tab"
 											aria-selected={isActive}
 											onClick={() => setSelectedExamNumber(item.examNumber)}
-											className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all flex flex-col text-left min-w-40 ${
+											className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all flex flex-col text-left w-full h-full ${
 												isActive
 													? "bg-[#1e3a5f] text-white border-[#1e3a5f] shadow-sm"
 													: "bg-white text-gray-700 border-gray-300 hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
 											}`}
 										>
 											<span className="text-[11px] opacity-80">小テスト{item.examNumber}</span>
-											<span className="text-sm leading-snug">{item.title}</span>
+											<span className="text-sm leading-snug break-words w-full">{item.title}</span>
 										</button>
 									);
 								})}

@@ -27,7 +27,9 @@ function renderFigure(figureData: FigureData) {
 		case "stateDiagram":
 			return <StateDiagram nodes={figureData.nodes} transitions={figureData.transitions} />;
 		case "binaryTree":
-			return <BinaryTree root={figureData.root} />;
+			return (
+				<BinaryTree root={figureData.root} width={figureData.width} height={figureData.height} />
+			);
 		case "truthTable":
 			return <TruthTable columns={figureData.columns} rows={figureData.rows} />;
 		case "parityCheck":
@@ -78,41 +80,49 @@ export function QuestionCard({ question }: Props) {
 	return (
 		<Card className="mb-4 border-l-4 border-l-[#1e3a5f] shadow-sm hover:shadow-md transition-shadow">
 			<CardBody className="p-5">
-				<div className="flex gap-3">
-					<span className="shrink-0 w-8 h-8 rounded-full bg-[#1e3a5f] text-white flex items-center justify-center text-sm font-bold">
+				{/* 1. 問題番号 */}
+				<div className="mb-2">
+					<span className="w-8 h-8 rounded-full bg-[#1e3a5f] text-white flex items-center justify-center text-sm font-bold">
 						{question.number}
 					</span>
-					<div className="flex-1">
-						<div className="flex items-start justify-between gap-2 mb-2">
-							<p className="text-gray-800 leading-relaxed whitespace-pre-wrap flex-1">
-								{question.text}
-							</p>
-							<div className="shrink-0 flex items-center gap-2">
-								<Tooltip content={tooltipContent}>
-									<Button
-										size="sm"
-										variant="light"
-										isIconOnly
-										onPress={handleCopy}
-										className="text-slate-500 hover:text-[#1e3a5f]"
-									>
-										{error ? (
-											<ErrorIcon className="w-4 h-4 text-red-500" />
-										) : isCopied ? (
-											<CheckIcon className="w-4 h-4 text-green-600" />
-										) : (
-											<ClipboardIcon className="w-4 h-4" />
-										)}
-									</Button>
-								</Tooltip>
-								<QuestionTimer questionId={question.id} />
-							</div>
-						</div>
+				</div>
+
+				{/* 2. 問題文 */}
+				<div className="mb-4">
+					<p className="text-gray-800 leading-relaxed whitespace-pre-wrap break-words w-full">
+						{question.text}
+					</p>
+				</div>
+
+				{/* 3. アイコン（コピーボタン・タイマー） */}
+				<div className="flex items-center gap-4 mb-4">
+					<Tooltip content={tooltipContent}>
+						<Button
+							size="sm"
+							variant="light"
+							isIconOnly
+							onPress={handleCopy}
+							className="text-slate-500 hover:text-[#1e3a5f]"
+						>
+							{error ? (
+								<ErrorIcon className="w-4 h-4 text-red-500" />
+							) : isCopied ? (
+								<CheckIcon className="w-4 h-4 text-green-600" />
+							) : (
+								<ClipboardIcon className="w-4 h-4" />
+							)}
+						</Button>
+					</Tooltip>
+					<div className="scale-90 origin-left">
+						<QuestionTimer questionId={question.id} />
 					</div>
 				</div>
 
+				{/* 4. 図表 */}
 				{question.figureData && (
-					<div className="my-4 flex justify-center">{renderFigure(question.figureData)}</div>
+					<div className="my-4 flex justify-center w-full overflow-x-auto">
+						{renderFigure(question.figureData)}
+					</div>
 				)}
 
 				{!question.figureData && question.figureDescription && (
@@ -123,7 +133,7 @@ export function QuestionCard({ question }: Props) {
 					</div>
 				)}
 
-				{/* 選択肢 */}
+				{/* 5. 選択肢 */}
 				{question.options && question.options.length > 0 && (
 					<div className="mt-4 space-y-2">
 						{question.options.map((option) => (
@@ -134,12 +144,15 @@ export function QuestionCard({ question }: Props) {
 								<span className="shrink-0 w-6 h-6 rounded bg-[#1e3a5f] text-white flex items-center justify-center text-xs font-bold">
 									{option.label}
 								</span>
-								<span className="text-gray-800">{option.value || "(選択肢未入力)"}</span>
+								<span className="text-gray-800 break-words w-full">
+									{option.value || "(選択肢未入力)"}
+								</span>
 							</div>
 						))}
 					</div>
 				)}
 
+				{/* 6. 解答 */}
 				<Accordion variant="light" className="mt-4">
 					<AccordionItem
 						key="answer"
