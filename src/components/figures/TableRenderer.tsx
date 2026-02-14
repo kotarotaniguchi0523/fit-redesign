@@ -71,7 +71,7 @@ function DataTable({ columns, rows }: DataTableProps) {
 				</TableHeader>
 				<TableBody>
 					{rows.map((row, index) => {
-						const rowKey = `row-${index}-${columns.map((col) => String(row[col.key])).join("-")}`;
+						const rowKey = `row-${index}`;
 						return (
 							<TableRow key={rowKey}>
 								{columns.map((column) => (
