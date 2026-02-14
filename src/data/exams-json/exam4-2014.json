@@ -1,0 +1,209 @@
+{
+	"id": "exam4-2014",
+	"number": 4,
+	"title": "負数表現・論理演算 (2014)",
+	"pdfPath": "/pdf/Exam2b-Negative.pdf",
+	"answerPdfPath": "/pdf/Exam2014-Ans.html",
+	"questions": [
+		{
+			"id": "exam4-2014-q1",
+			"number": 1,
+			"text": "byte型の整数で100+100を求めると-56になる誤りを何というか",
+			"answer": "オーバーフロー",
+			"explanation": "100 + 100 = 200。byte型は-128から127までの範囲しか表現できないため、200は範囲外となりオーバーフローが発生し、-56となる"
+		},
+		{
+			"id": "exam4-2014-q2",
+			"number": 2,
+			"text": "Xを8bitの整数D9とする。X>>3（右へ算術シフト）を計算せよ",
+			"answer": "FB",
+			"explanation": "D9(16) = 11011001(2)。算術右シフト3ビット: 11111011(2) = FB(16)。最上位ビット（符号ビット）を保持する"
+		},
+		{
+			"id": "exam4-2014-q3",
+			"number": 3,
+			"text": "89(16) ∧ AB(16) ⊕ CD(16)を計算せよ",
+			"answer": "44",
+			"explanation": "89(16) = 10001001(2), AB(16) = 10101011(2), CD(16) = 11001101(2)。まずAND: 89 ∧ AB = 10001001(2)。次にXOR: 10001001 ⊕ 11001101 = 01000100(2) = 44(16)"
+		},
+		{
+			"id": "exam4-2014-q4",
+			"number": 4,
+			"text": "A̅∨B̅∨C（全体にオーバーライン）と恒等な論理式を求めよ",
+			"options": [
+				{
+					"label": "ア",
+					"value": "A∧B ∨ A∧C̅"
+				},
+				{
+					"label": "イ",
+					"value": "A∧C̅ ∨ B"
+				},
+				{
+					"label": "ウ",
+					"value": "A∧B ∨ B∧C"
+				},
+				{
+					"label": "エ",
+					"value": "A∧C̅ ∨ B∧C̅",
+					"isCorrect": true
+				}
+			],
+			"answer": "エ",
+			"explanation": "ド・モルガンの定理を適用: (A̅∨B̅∨C)̅ = A∧B∧C̅。これを分配法則で展開すると (A∨B)∧C̅ = A∧C̅ ∨ B∧C̅"
+		},
+		{
+			"id": "exam4-2014-q5",
+			"number": 5,
+			"text": "次の回路図の真理値表をかけ",
+			"answer": "F: 0,1,1,0",
+			"explanation": "回路の構成: 上段はX,YのNANDゲート、下段はNOT(X)とYのNANDゲート、それらの出力をNORゲートに入力。結果はXOR（排他的論理和）と同等: F = X⊕Y",
+			"figureData": {
+				"type": "logicCircuit",
+				"inputs": [
+					{
+						"id": "X",
+						"label": "X",
+						"x": 50,
+						"y": 60
+					},
+					{
+						"id": "Y",
+						"label": "Y",
+						"x": 50,
+						"y": 140
+					}
+				],
+				"gates": [
+					{
+						"id": "NAND1",
+						"type": "NAND",
+						"x": 180,
+						"y": 70
+					},
+					{
+						"id": "NOT1",
+						"type": "NOT",
+						"x": 120,
+						"y": 120
+					},
+					{
+						"id": "NAND2",
+						"type": "NAND",
+						"x": 180,
+						"y": 130
+					},
+					{
+						"id": "NOR1",
+						"type": "NOR",
+						"x": 280,
+						"y": 100
+					}
+				],
+				"outputs": [
+					{
+						"id": "F",
+						"label": "F",
+						"x": 380,
+						"y": 100,
+						"input": "NOR1"
+					}
+				],
+				"wires": [
+					{
+						"from": "X",
+						"to": "NAND1",
+						"points": [
+							{
+								"x": 80,
+								"y": 60
+							},
+							{
+								"x": 80,
+								"y": 65
+							}
+						]
+					},
+					{
+						"from": "Y",
+						"to": "NAND1",
+						"points": [
+							{
+								"x": 100,
+								"y": 140
+							},
+							{
+								"x": 100,
+								"y": 75
+							}
+						]
+					},
+					{
+						"from": "X",
+						"to": "NOT1",
+						"points": [
+							{
+								"x": 80,
+								"y": 60
+							},
+							{
+								"x": 80,
+								"y": 120
+							}
+						]
+					},
+					{
+						"from": "NOT1",
+						"to": "NAND2"
+					},
+					{
+						"from": "Y",
+						"to": "NAND2",
+						"points": [
+							{
+								"x": 100,
+								"y": 140
+							},
+							{
+								"x": 100,
+								"y": 135
+							}
+						]
+					},
+					{
+						"from": "NAND1",
+						"to": "NOR1",
+						"points": [
+							{
+								"x": 230,
+								"y": 70
+							},
+							{
+								"x": 230,
+								"y": 90
+							}
+						]
+					},
+					{
+						"from": "NAND2",
+						"to": "NOR1",
+						"points": [
+							{
+								"x": 230,
+								"y": 130
+							},
+							{
+								"x": 230,
+								"y": 110
+							}
+						]
+					},
+					{
+						"from": "NOR1",
+						"to": "F"
+					}
+				]
+			}
+		}
+	]
+}

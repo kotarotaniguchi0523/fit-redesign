@@ -46,6 +46,14 @@ jobs:
         run: pnpm check
         timeout-minutes: 1
 
+      - name: Type Check
+        run: pnpm typecheck
+        timeout-minutes: 2
+
+      - name: Test
+        run: pnpm test:run
+        timeout-minutes: 2
+
       - name: Check unused code
         run: pnpm knip
         timeout-minutes: 1

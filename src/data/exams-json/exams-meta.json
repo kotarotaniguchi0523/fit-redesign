@@ -1,0 +1,50 @@
+{
+	"version": 1,
+	"exams": [
+		{
+			"examNumber": 1,
+			"title": "基数変換",
+			"availableYears": ["2013", "2014", "2015", "2016", "2017"]
+		},
+		{
+			"examNumber": 2,
+			"title": "負数表現 / 浮動小数点・論理演算",
+			"availableYears": ["2013", "2014", "2015", "2016", "2017"]
+		},
+		{
+			"examNumber": 3,
+			"title": "浮動小数点 / 集合・確率",
+			"availableYears": ["2013", "2015", "2016", "2017"]
+		},
+		{
+			"examNumber": 4,
+			"title": "論理演算 / オートマトン・符号理論",
+			"availableYears": ["2013", "2014", "2015", "2016", "2017"]
+		},
+		{
+			"examNumber": 5,
+			"title": "集合 / データ構造・ソート",
+			"availableYears": ["2013", "2015", "2016", "2017"]
+		},
+		{
+			"examNumber": 6,
+			"title": "確率 / FSM・確率・データ構造",
+			"availableYears": ["2013", "2014", "2015", "2016", "2017"]
+		},
+		{
+			"examNumber": 7,
+			"title": "オートマトン / 符号理論",
+			"availableYears": ["2013", "2014", "2015", "2016", "2017"]
+		},
+		{
+			"examNumber": 8,
+			"title": "符号理論 / データ構造",
+			"availableYears": ["2013", "2014", "2015", "2016", "2017"]
+		},
+		{
+			"examNumber": 9,
+			"title": "データ構造 / ソート・探索",
+			"availableYears": ["2013", "2014"]
+		}
+	]
+}

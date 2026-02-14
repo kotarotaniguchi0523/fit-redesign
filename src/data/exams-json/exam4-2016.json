@@ -1,0 +1,185 @@
+{
+	"id": "exam4-2016",
+	"number": 4,
+	"title": "オートマトン・符号理論 (2016)",
+	"pdfPath": "/pdf/Exam6d-FSM.pdf",
+	"answerPdfPath": "/pdf/Exam2016-Ans.html",
+	"questions": [
+		{
+			"id": "exam6-2016-q1",
+			"number": 1,
+			"text": "平均70点のテストで75点と採点された時の偏差値が60点だった。この時の標準偏差を求めよ",
+			"answer": "5",
+			"explanation": "偏差値 = 50 + 10×(得点-平均)/σ。60 = 50 + 10×(75-70)/σ、10 = 50/σ、σ = 5"
+		},
+		{
+			"id": "exam6-2016-q2",
+			"number": 2,
+			"text": "正規表現 [A-C]+[1-3]+@[A-C]*.*[A-C]+ で受理される文字列を全て選べ",
+			"options": [
+				{
+					"label": "ア",
+					"value": "3BB@AC.CA"
+				},
+				{
+					"label": "イ",
+					"value": "B32@AAA"
+				},
+				{
+					"label": "ウ",
+					"value": "33@AA."
+				},
+				{
+					"label": "エ",
+					"value": "BB@AC.CA",
+					"isCorrect": true
+				}
+			],
+			"answer": "エ",
+			"explanation": "[A-C]+で文字1つ以上、[1-3]+で数字1つ以上、@、[A-C]*で文字0個以上、.（任意1文字）、*で0回以上、[A-C]+で文字1つ以上。エのみ全条件を満たす"
+		},
+		{
+			"id": "exam6-2016-q3",
+			"number": 3,
+			"text": "次のBNF記法で定義される<M>であらわされる文字列を全て選べ。\n<A> ::= A|B|C\n<N> ::= 1|2|3\n<D> ::= <A>|<A><D>|<D><N>\n<M> ::= <D>@<D>",
+			"options": [
+				{
+					"label": "ア",
+					"value": "32@AA"
+				},
+				{
+					"label": "イ",
+					"value": "B3@CA",
+					"isCorrect": true
+				},
+				{
+					"label": "ウ",
+					"value": "B32@A"
+				},
+				{
+					"label": "エ",
+					"value": "ABA@CA",
+					"isCorrect": true
+				}
+			],
+			"answer": "イ，エ",
+			"explanation": "<D>は文字から始まり、文字か数字が続く形。イ(B3@CA)とエ(ABA@CA)が条件を満たす"
+		},
+		{
+			"id": "exam6-2016-q4",
+			"number": 4,
+			"text": "式 (A+B)*C-(D/A) を逆ポーランド表記法で表せ",
+			"answer": "AB+C*DA/-",
+			"explanation": "(A+B)→AB+、(A+B)*C→AB+C*、(D/A)→DA/、全体→AB+C*DA/-"
+		},
+		{
+			"id": "exam6-2016-q5",
+			"number": 5,
+			"text": "次の概念の中で、有限オートマトンでないものを選べ",
+			"options": [
+				{
+					"label": "ア",
+					"value": "BNF記法"
+				},
+				{
+					"label": "イ",
+					"value": "スタック",
+					"isCorrect": true
+				},
+				{
+					"label": "ウ",
+					"value": "正規表現"
+				},
+				{
+					"label": "エ",
+					"value": "全加算器"
+				}
+			],
+			"answer": "イ",
+			"explanation": "スタックは無限のメモリを持つ可能性があり、有限オートマトンでは表現できない。BNF記法、正規表現、全加算器は有限オートマトンで表現可能"
+		},
+		{
+			"id": "exam7-2016-q1",
+			"number": 1,
+			"text": "出現確率が次の表に従って生起する情報源がある。この情報源のハフマン符号化し、平均符号長Lを求めよ。",
+			"figureDescription": "文字と生起確率",
+			"figureData": {
+				"type": "huffmanTable",
+				"data": {
+					"characters": ["A", "B", "C", "D", "E"],
+					"probabilities": [0.76, 0.08, 0.05, 0.06, 0.05]
+				}
+			},
+			"answer": "1.48 bit/symbol",
+			"explanation": "ハフマン符号化: A=1(1bit), B=01(2bit), D=001(3bit), C=0001(4bit), E=0000(4bit)。平均符号長 = 0.76×1 + 0.08×2 + 0.06×3 + 0.05×4 + 0.05×4 = 0.76 + 0.16 + 0.18 + 0.20 + 0.20 = 1.48 bit/symbol"
+		},
+		{
+			"id": "exam7-2016-q2",
+			"number": 2,
+			"text": "(1)の符号化を用いて、情報ABDを符号化せよ",
+			"answer": "1011010",
+			"explanation": "A=1, B=011, D=010（ハフマン符号化の結果による）。ABD = 1 + 011 + 010 = 1011010"
+		},
+		{
+			"id": "exam7-2016-q3",
+			"number": 3,
+			"text": "式 c = x₁⊕x₂ と同値なものを全て選べ",
+			"options": [
+				{
+					"label": "ア",
+					"value": "x₁ = x₂ ⊕ c",
+					"isCorrect": true
+				},
+				{
+					"label": "イ",
+					"value": "0 = x₁⊕x₂⊕c",
+					"isCorrect": true
+				},
+				{
+					"label": "ウ",
+					"value": "x₁⊕x₂⊕1 = c"
+				},
+				{
+					"label": "エ",
+					"value": "x₁⊕x₂⊕c = c"
+				}
+			],
+			"answer": "ア，イ",
+			"explanation": "XOR演算の性質: c = x₁⊕x₂ ⟺ x₁ = x₂⊕c（アは同値）。また c⊕c = 0 なので x₁⊕x₂⊕c = 0（イも同値）"
+		},
+		{
+			"id": "exam7-2016-q4",
+			"number": 4,
+			"text": "7ビットの値 4A₍₁₆₎の8ビット目に偶数パリティビットを追加した値を16進数で求めよ",
+			"answer": "CA",
+			"explanation": "4A₍₁₆₎ = 1001010₍₂₎（1が3個で奇数）。偶数パリティにするためパリティビット1を追加: 11001010₍₂₎ = CA₍₁₆₎"
+		},
+		{
+			"id": "exam7-2016-q5",
+			"number": 5,
+			"text": "二重誤りを検出できる方式を次の選択肢から全て挙げよ",
+			"options": [
+				{
+					"label": "ア",
+					"value": "偶数パリティ"
+				},
+				{
+					"label": "イ",
+					"value": "奇数パリティ"
+				},
+				{
+					"label": "ウ",
+					"value": "水平垂直パリティ",
+					"isCorrect": true
+				},
+				{
+					"label": "エ",
+					"value": "CRC符号",
+					"isCorrect": true
+				}
+			],
+			"answer": "ウ，エ",
+			"explanation": "偶数/奇数パリティは二重誤りを検出できない（偶数個の誤りはパリティが変化しない）。水平垂直パリティとCRC符号は二重誤りを検出可能"
+		}
+	]
+}
