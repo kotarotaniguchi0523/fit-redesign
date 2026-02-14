@@ -53,15 +53,21 @@ function createStorageError(
 	return { type, message, cause };
 }
 
+let _isStorageAvailable: boolean | undefined;
+
 function isLocalStorageAvailable(): boolean {
+	if (_isStorageAvailable !== undefined) {
+		return _isStorageAvailable;
+	}
 	try {
 		const testKey = "__storage_test__";
 		localStorage.setItem(testKey, "test");
 		localStorage.removeItem(testKey);
-		return true;
+		_isStorageAvailable = true;
 	} catch {
-		return false;
+		_isStorageAvailable = false;
 	}
+	return _isStorageAvailable;
 }
 
 function getInitialData(): TimerStorageData {
