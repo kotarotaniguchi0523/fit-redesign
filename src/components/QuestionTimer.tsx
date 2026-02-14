@@ -111,10 +111,16 @@ export function QuestionTimer({ questionId }: Props) {
 
 				{/* タイマー表示（背景付きカプセル） */}
 				<div
-					className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors ${timerBgClass}`}
+					className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors ${
+						timerBgClass
+					}`}
 				>
 					<ClockIcon className={`w-4 h-4 shrink-0 ${timerTextClass}`} />
-					<span className={`text-sm font-mono font-semibold tabular-nums whitespace-nowrap ${timerTextClass}`}>
+					<span
+						className={`text-sm font-mono font-semibold tabular-nums whitespace-nowrap ${
+							timerTextClass
+						}`}
+					>
 						{formatTime(timer.elapsedSeconds)}
 						{mode === "countdown" && !timer.isRunning && !timer.isCompleted && (
 							<span className="text-slate-500"> / {formatTime(timer.targetTime)}</span>
