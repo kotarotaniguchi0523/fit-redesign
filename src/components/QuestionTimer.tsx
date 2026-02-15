@@ -98,17 +98,11 @@ export function QuestionTimer({ questionId }: Props) {
 					color={timer.isRunning ? "danger" : "primary"}
 					variant="solid"
 					className={`min-w-max whitespace-nowrap px-4 font-bold shadow-md ${
-						timer.isRunning
-							? "bg-red-500 text-white"
-							: "bg-[#1e3a5f] text-white"
+						timer.isRunning ? "bg-red-500 text-white" : "bg-[#1e3a5f] text-white"
 					}`}
 					onPress={timer.isRunning ? timer.stop : timer.start}
 					startContent={
-						timer.isRunning ? (
-							<PauseIcon className="w-4 h-4" />
-						) : (
-							<PlayIcon className="w-4 h-4" />
-						)
+						timer.isRunning ? <PauseIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4" />
 					}
 				>
 					{timer.isRunning ? "停止" : "開始"}
