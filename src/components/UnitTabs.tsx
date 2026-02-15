@@ -1,5 +1,5 @@
 import { Card } from "@heroui/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { getExamByNumber } from "../data/exams";
 import { slideOnlyUnits, unitBasedTabs } from "../data/units";
 import type { ExamNumber, Unit, UnitTabId, Year } from "../types/index";
@@ -52,15 +52,26 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 	};
 
 	// 選択された単元の情報を取得
-	const selectedUnit =
-		selectedKey === "slide-only" ? undefined : selectUnitByKey(unitBasedTabs, selectedKey);
+	const selectedUnit = useMemo(
+		() => (selectedKey === "slide-only" ? undefined : selectUnitByKey(unitBasedTabs, selectedKey)),
+		[selectedKey],
+	);
 	const isSlideOnly = selectedKey === "slide-only";
 
 	// 選択された単元の利用可能な年度と試験情報を取得
-	const availableYears = selectAvailableYears(selectedUnit);
-	const examMapping = selectedUnit?.examMapping.find((m) => m.year === selectedYear);
-	const examNumbers = selectExamNumbers(selectedUnit, selectedYear);
-	const examSwitchItems = selectExamSwitchItems(examNumbers, selectedYear);
+	const availableYears = useMemo(() => selectAvailableYears(selectedUnit), [selectedUnit]);
+	const examMapping = useMemo(
+		() => selectedUnit?.examMapping.find((m) => m.year === selectedYear),
+		[selectedUnit, selectedYear],
+	);
+	const examNumbers = useMemo(
+		() => selectExamNumbers(selectedUnit, selectedYear),
+		[selectedUnit, selectedYear],
+	);
+	const examSwitchItems = useMemo(
+		() => selectExamSwitchItems(examNumbers, selectedYear),
+		[examNumbers, selectedYear],
+	);
 
 	// レンダリング中に計算（useEffect不要）
 	// selectedExamNumberが有効なら維持、無効なら最初の値にフォールバック
