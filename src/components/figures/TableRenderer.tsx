@@ -71,7 +71,7 @@ function DataTable({ columns, rows }: DataTableProps) {
 				</TableHeader>
 				<TableBody>
 					{rows.map((row, index) => {
-						const rowKey = `row-${index}-${columns.map((col) => String(row[col.key])).join("-")}`;
+						const rowKey = `row-${index}`;
 						return (
 							<TableRow key={rowKey}>
 								{columns.map((column) => (
@@ -111,7 +111,7 @@ function HuffmanTable({ data }: HuffmanTableProps) {
 				</TableHeader>
 				<TableBody>
 					{data.characters.map((character, index) => {
-						const rowKey = `huffman-${index}-${character}`;
+						const rowKey = `huffman-${index}`;
 						return (
 							<TableRow key={rowKey}>
 								<TableCell>{character}</TableCell>
@@ -147,7 +147,7 @@ function LinkedListTable({ entries }: LinkedListTableProps) {
 				</TableHeader>
 				<TableBody>
 					{entries.map((entry, index) => {
-						const rowKey = `linkedlist-${index}-${entry.address}`;
+						const rowKey = `linkedlist-${index}`;
 						return (
 							<TableRow key={rowKey}>
 								<TableCell>{String(entry.address)}</TableCell>
@@ -187,7 +187,7 @@ function NormalDistributionTable({ entries }: NormalDistributionTableProps) {
 				</TableHeader>
 				<TableBody>
 					{entries.map((entry, index) => {
-						const rowKey = `normal-${index}-${entry.u}`;
+						const rowKey = `normal-${index}`;
 						return (
 							<TableRow key={rowKey}>
 								<TableCell>{entry.u}</TableCell>
