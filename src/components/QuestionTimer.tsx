@@ -100,19 +100,12 @@ export function QuestionTimer({ questionId }: Props) {
 					className={`font-bold shadow-md ${
 						timer.isRunning ? "bg-red-500 text-white" : "bg-[#1e3a5f] text-white"
 					}`}
+					startContent={
+						timer.isRunning ? <PauseIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4" />
+					}
 					onPress={timer.isRunning ? timer.stop : timer.start}
 				>
-					{timer.isRunning ? (
-						<div className="flex items-center gap-2">
-							<PauseIcon className="w-4 h-4" />
-							<span>停止</span>
-						</div>
-					) : (
-						<div className="flex items-center gap-2">
-							<PlayIcon className="w-4 h-4" />
-							<span>開始</span>
-						</div>
-					)}
+					{timer.isRunning ? "停止" : "開始"}
 				</Button>
 
 				{timer.isRunning && (
