@@ -193,4 +193,16 @@ describe("useClipboard", () => {
 			expect(result.current.isCopied).toBe(false);
 		});
 	});
+
+	describe("安定性", () => {
+		it("copy 関数の参照がレンダリング間で安定している", () => {
+			const { result, rerender } = renderHook(() => useClipboard());
+			const firstCopy = result.current.copy;
+
+			rerender();
+
+			const secondCopy = result.current.copy;
+			expect(secondCopy).toBe(firstCopy);
+		});
+	});
 });
