@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const FEEDBACK_DISPLAY_DURATION = 2000;
 
@@ -30,7 +30,7 @@ export function useClipboard(): UseClipboardReturn {
 		};
 	}, []);
 
-	const copy = async (text: string): Promise<boolean> => {
+	const copy = useCallback(async (text: string): Promise<boolean> => {
 		// 既存のタイマーをキャンセル
 		if (timeoutRef.current !== null) {
 			clearTimeout(timeoutRef.current);
@@ -85,7 +85,7 @@ export function useClipboard(): UseClipboardReturn {
 
 			return false;
 		}
-	};
+	}, []);
 
 	return { copy, isCopied, error };
 }
