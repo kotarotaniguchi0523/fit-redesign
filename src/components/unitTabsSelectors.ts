@@ -6,6 +6,28 @@ export interface ExamSwitchItem {
 	title: string;
 }
 
+// Cache for unit years to avoid re-mapping and re-allocating arrays/sets
+const unitYearsArrayCache = new WeakMap<UnitBasedTab, Year[]>();
+const unitYearsSetCache = new WeakMap<UnitBasedTab, Set<Year>>();
+
+function getUnitYearsArray(unit: UnitBasedTab): Year[] {
+	let years = unitYearsArrayCache.get(unit);
+	if (!years) {
+		years = unit.examMapping.map((mapping) => mapping.year);
+		unitYearsArrayCache.set(unit, years);
+	}
+	return years;
+}
+
+function getUnitYearsSet(unit: UnitBasedTab): Set<Year> {
+	let yearsSet = unitYearsSetCache.get(unit);
+	if (!yearsSet) {
+		yearsSet = new Set(getUnitYearsArray(unit));
+		unitYearsSetCache.set(unit, yearsSet);
+	}
+	return yearsSet;
+}
+
 export function selectUnitByKey(
 	units: UnitBasedTab[],
 	selectedKey: UnitTabId,
@@ -14,7 +36,7 @@ export function selectUnitByKey(
 }
 
 export function selectAvailableYears(unit: UnitBasedTab | undefined): Year[] {
-	return unit?.examMapping.map((mapping) => mapping.year) ?? [];
+	return unit ? getUnitYearsArray(unit) : [];
 }
 
 export function selectExamNumbers(
@@ -59,9 +81,11 @@ export function selectFallbackYear(
 	if (!unit) {
 		return undefined;
 	}
-	const years = unit.examMapping.map((mapping) => mapping.year);
-	if (years.includes(selectedYear)) {
+	// Use cached Set for O(1) lookup
+	const yearsSet = getUnitYearsSet(unit);
+	if (yearsSet.has(selectedYear)) {
 		return undefined;
 	}
-	return years[0];
+	// Return first available year from cached array
+	return getUnitYearsArray(unit)[0];
 }
