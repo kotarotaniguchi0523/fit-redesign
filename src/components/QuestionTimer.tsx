@@ -97,22 +97,21 @@ export function QuestionTimer({ questionId }: Props) {
 					size="sm"
 					color={timer.isRunning ? "danger" : "primary"}
 					variant="solid"
-					className={`font-bold shadow-md ${
-						timer.isRunning ? "bg-red-500 text-white" : "bg-[#1e3a5f] text-white"
+					className={`font-bold shadow-md min-w-[80px] ${
+						timer.isRunning
+							? "bg-red-500 text-white hover:bg-red-600"
+							: "bg-[#1e3a5f] text-white hover:bg-[#2d4a6f]"
 					}`}
 					onPress={timer.isRunning ? timer.stop : timer.start}
-				>
-					{timer.isRunning ? (
-						<div className="flex items-center gap-2">
+					startContent={
+						timer.isRunning ? (
 							<PauseIcon className="w-4 h-4" />
-							<span>停止</span>
-						</div>
-					) : (
-						<div className="flex items-center gap-2">
+						) : (
 							<PlayIcon className="w-4 h-4" />
-							<span>開始</span>
-						</div>
-					)}
+						)
+					}
+				>
+					{timer.isRunning ? "停止" : "開始"}
 				</Button>
 
 				{timer.isRunning && (
