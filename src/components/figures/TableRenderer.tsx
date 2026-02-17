@@ -1,5 +1,5 @@
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
-import { type ReactNode, memo } from "react";
+import { memo, type ReactNode } from "react";
 import type {
 	DataTableColumn,
 	DataTableRow,
@@ -130,9 +130,7 @@ interface LinkedListTableProps {
 	entries: LinkedListEntry[];
 }
 
-const LinkedListTable = memo(function LinkedListTable({
-	entries,
-}: LinkedListTableProps) {
+const LinkedListTable = memo(function LinkedListTable({ entries }: LinkedListTableProps) {
 	const columns = [
 		{ key: "address", label: "アドレス" },
 		{ key: "data", label: "データ" },
