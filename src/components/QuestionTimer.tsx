@@ -104,11 +104,7 @@ export function QuestionTimer({ questionId }: Props) {
 					}`}
 					onPress={timer.isRunning ? timer.stop : timer.start}
 					startContent={
-						timer.isRunning ? (
-							<PauseIcon className="w-4 h-4" />
-						) : (
-							<PlayIcon className="w-4 h-4" />
-						)
+						timer.isRunning ? <PauseIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4" />
 					}
 				>
 					{timer.isRunning ? "停止" : "開始"}
