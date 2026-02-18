@@ -98,9 +98,7 @@ export function QuestionTimer({ questionId }: Props) {
 					color={timer.isRunning ? "danger" : "primary"}
 					variant="solid"
 					className={`font-bold shadow-md text-white transition-colors ${
-						timer.isRunning
-							? "bg-red-500 hover:bg-red-600"
-							: "bg-[#1e3a5f] hover:bg-[#2d4a6f]"
+						timer.isRunning ? "bg-red-500 hover:bg-red-600" : "bg-[#1e3a5f] hover:bg-[#2d4a6f]"
 					}`}
 					onPress={timer.isRunning ? timer.stop : timer.start}
 					startContent={
