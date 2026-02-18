@@ -30,6 +30,10 @@ export function useClipboard(): UseClipboardReturn {
 		};
 	}, []);
 
+	/**
+	 * テキストをクリップボードにコピーします。
+	 * useCallbackを使用して参照を安定させているため、依存配列に含まれても不要な再レンダリングを防ぎます。
+	 */
 	const copy = useCallback(async (text: string): Promise<boolean> => {
 		// 既存のタイマーをキャンセル
 		if (timeoutRef.current !== null) {
