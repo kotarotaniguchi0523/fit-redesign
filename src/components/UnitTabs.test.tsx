@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { UnitTabs } from "./UnitTabs";
-import * as selectors from "./unitTabsSelectors";
+import type * as selectors from "./unitTabsSelectors";
 
 // Mock dependencies to isolate UnitTabs logic
 vi.mock("../components/ExamSection", () => ({
@@ -56,7 +56,7 @@ import { selectAvailableYears } from "./unitTabsSelectors";
 
 function TestWrapper() {
 	const [year, setYear] = useState("2013");
-	// @ts-ignore
+	// @ts-expect-error
 	return <UnitTabs selectedYear={year} onYearChange={setYear} />;
 }
 
