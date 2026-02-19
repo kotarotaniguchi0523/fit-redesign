@@ -8,6 +8,7 @@ import { SlideSection } from "./SlideSection";
 import {
 	selectActiveExamNumber,
 	selectAvailableYears,
+	selectExamMapping,
 	selectExamNumbers,
 	selectExamSwitchItems,
 	selectFallbackYear,
@@ -61,7 +62,7 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 	// 選択された単元の利用可能な年度と試験情報を取得
 	const availableYears = useMemo(() => selectAvailableYears(selectedUnit), [selectedUnit]);
 	const examMapping = useMemo(
-		() => selectedUnit?.examMapping.find((m) => m.year === selectedYear),
+		() => selectExamMapping(selectedUnit, selectedYear),
 		[selectedUnit, selectedYear],
 	);
 	const examNumbers = useMemo(
