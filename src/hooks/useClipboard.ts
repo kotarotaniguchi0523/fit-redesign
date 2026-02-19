@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const FEEDBACK_DISPLAY_DURATION = 2000;
 
@@ -87,5 +87,5 @@ export function useClipboard(): UseClipboardReturn {
 		}
 	}, []);
 
-	return { copy, isCopied, error };
+	return useMemo(() => ({ copy, isCopied, error }), [copy, isCopied, error]);
 }
