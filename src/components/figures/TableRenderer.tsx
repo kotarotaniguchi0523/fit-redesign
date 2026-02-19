@@ -71,11 +71,11 @@ function DataTable({ columns, rows }: DataTableProps) {
 				</TableHeader>
 				<TableBody>
 					{rows.map((row, index) => {
-						const rowKey = `row-${index}`;
+						const rowKey = row.id ?? row.key ?? index;
 						return (
 							<TableRow key={rowKey}>
 								{columns.map((column) => (
-									<TableCell key={`${rowKey}-${column.key}`}>{String(row[column.key])}</TableCell>
+									<TableCell key={column.key}>{String(row[column.key])}</TableCell>
 								))}
 							</TableRow>
 						);
@@ -111,9 +111,8 @@ function HuffmanTable({ data }: HuffmanTableProps) {
 				</TableHeader>
 				<TableBody>
 					{data.characters.map((character, index) => {
-						const rowKey = `huffman-${index}`;
 						return (
-							<TableRow key={rowKey}>
+							<TableRow key={character}>
 								<TableCell>{character}</TableCell>
 								<TableCell>{data.probabilities[index]}</TableCell>
 							</TableRow>
@@ -146,10 +145,9 @@ function LinkedListTable({ entries }: LinkedListTableProps) {
 					))}
 				</TableHeader>
 				<TableBody>
-					{entries.map((entry, index) => {
-						const rowKey = `linkedlist-${index}`;
+					{entries.map((entry) => {
 						return (
-							<TableRow key={rowKey}>
+							<TableRow key={entry.address}>
 								<TableCell>{String(entry.address)}</TableCell>
 								<TableCell>{entry.data}</TableCell>
 								<TableCell>{String(entry.pointer)}</TableCell>
@@ -186,10 +184,9 @@ function NormalDistributionTable({ entries }: NormalDistributionTableProps) {
 					))}
 				</TableHeader>
 				<TableBody>
-					{entries.map((entry, index) => {
-						const rowKey = `normal-${index}`;
+					{entries.map((entry) => {
 						return (
-							<TableRow key={rowKey}>
+							<TableRow key={entry.u}>
 								<TableCell>{entry.u}</TableCell>
 								<TableCell>{entry.probability}</TableCell>
 							</TableRow>
