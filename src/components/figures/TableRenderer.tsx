@@ -1,5 +1,5 @@
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
-import type { ReactNode } from "react";
+import { type ReactNode, memo } from "react";
 import type {
 	DataTableColumn,
 	DataTableRow,
@@ -20,19 +20,6 @@ type TableFigureData = Extract<
 
 export interface TableRendererProps {
 	figureData: TableFigureData;
-}
-
-export function TableRenderer({ figureData }: TableRendererProps) {
-	switch (figureData.type) {
-		case "dataTable":
-			return <DataTable columns={figureData.columns} rows={figureData.rows} />;
-		case "huffmanTable":
-			return <HuffmanTable data={figureData.data} />;
-		case "linkedListTable":
-			return <LinkedListTable entries={figureData.entries} />;
-		case "normalDistributionTable":
-			return <NormalDistributionTable entries={figureData.entries} />;
-	}
 }
 
 function TableWrapper({ children }: { children: ReactNode }) {
@@ -60,7 +47,7 @@ interface DataTableProps {
 	rows: DataTableRow[];
 }
 
-function DataTable({ columns, rows }: DataTableProps) {
+const DataTable = memo(function DataTable({ columns, rows }: DataTableProps) {
 	return (
 		<TableWrapper>
 			<Table aria-label="Data table" className="max-w-2xl min-w-max" {...commonTableProps}>
@@ -71,7 +58,7 @@ function DataTable({ columns, rows }: DataTableProps) {
 				</TableHeader>
 				<TableBody>
 					{rows.map((row, index) => {
-						const rowKey = `row-${index}`;
+						const rowKey = String(row.id ?? row.key ?? `row-${index}`);
 						return (
 							<TableRow key={rowKey}>
 								{columns.map((column) => (
@@ -84,14 +71,14 @@ function DataTable({ columns, rows }: DataTableProps) {
 			</Table>
 		</TableWrapper>
 	);
-}
+});
 
 // ハフマン符号表
 interface HuffmanTableProps {
 	data: HuffmanTableData;
 }
 
-function HuffmanTable({ data }: HuffmanTableProps) {
+const HuffmanTable = memo(function HuffmanTable({ data }: HuffmanTableProps) {
 	const columns = [
 		{ key: "character", label: "文字" },
 		{ key: "probability", label: "確率" },
@@ -111,7 +98,7 @@ function HuffmanTable({ data }: HuffmanTableProps) {
 				</TableHeader>
 				<TableBody>
 					{data.characters.map((character, index) => {
-						const rowKey = `huffman-${index}`;
+						const rowKey = `huffman-${character}`;
 						return (
 							<TableRow key={rowKey}>
 								<TableCell>{character}</TableCell>
@@ -123,14 +110,14 @@ function HuffmanTable({ data }: HuffmanTableProps) {
 			</Table>
 		</TableWrapper>
 	);
-}
+});
 
 // リンクリスト（ポインタ）表
 interface LinkedListTableProps {
 	entries: LinkedListEntry[];
 }
 
-function LinkedListTable({ entries }: LinkedListTableProps) {
+const LinkedListTable = memo(function LinkedListTable({ entries }: LinkedListTableProps) {
 	const columns = [
 		{ key: "address", label: "アドレス" },
 		{ key: "data", label: "データ" },
@@ -147,7 +134,7 @@ function LinkedListTable({ entries }: LinkedListTableProps) {
 				</TableHeader>
 				<TableBody>
 					{entries.map((entry, index) => {
-						const rowKey = `linkedlist-${index}`;
+						const rowKey = `linkedlist-${entry.address}`;
 						return (
 							<TableRow key={rowKey}>
 								<TableCell>{String(entry.address)}</TableCell>
@@ -160,14 +147,14 @@ function LinkedListTable({ entries }: LinkedListTableProps) {
 			</Table>
 		</TableWrapper>
 	);
-}
+});
 
 // 正規分布表
 interface NormalDistributionTableProps {
 	entries: NormalDistributionEntry[];
 }
 
-function NormalDistributionTable({ entries }: NormalDistributionTableProps) {
+const NormalDistributionTable = memo(function NormalDistributionTable({ entries }: NormalDistributionTableProps) {
 	const columns = [
 		{ key: "u", label: "u" },
 		{ key: "probability", label: "確率" },
@@ -187,7 +174,7 @@ function NormalDistributionTable({ entries }: NormalDistributionTableProps) {
 				</TableHeader>
 				<TableBody>
 					{entries.map((entry, index) => {
-						const rowKey = `normal-${index}`;
+						const rowKey = `normal-${entry.u}`;
 						return (
 							<TableRow key={rowKey}>
 								<TableCell>{entry.u}</TableCell>
@@ -199,4 +186,17 @@ function NormalDistributionTable({ entries }: NormalDistributionTableProps) {
 			</Table>
 		</TableWrapper>
 	);
+});
+
+export function TableRenderer({ figureData }: TableRendererProps) {
+	switch (figureData.type) {
+		case "dataTable":
+			return <DataTable columns={figureData.columns} rows={figureData.rows} />;
+		case "huffmanTable":
+			return <HuffmanTable data={figureData.data} />;
+		case "linkedListTable":
+			return <LinkedListTable entries={figureData.entries} />;
+		case "normalDistributionTable":
+			return <NormalDistributionTable entries={figureData.entries} />;
+	}
 }
