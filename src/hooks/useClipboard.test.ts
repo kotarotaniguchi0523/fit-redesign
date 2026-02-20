@@ -204,5 +204,34 @@ describe("useClipboard", () => {
 			const secondCopy = result.current.copy;
 			expect(secondCopy).toBe(firstCopy);
 		});
+
+		it("状態が変更されない場合、戻り値のオブジェクト参照が安定している", () => {
+			const { result, rerender } = renderHook(() => useClipboard());
+			const firstResult = result.current;
+
+			rerender();
+
+			const secondResult = result.current;
+			expect(secondResult).toBe(firstResult);
+		});
+
+		it("状態が変更された場合、戻り値のオブジェクト参照が新しくなる", async () => {
+			Object.defineProperty(navigator, "clipboard", {
+				value: { writeText: vi.fn().mockResolvedValue(undefined) },
+				writable: true,
+				configurable: true,
+			});
+
+			const { result } = renderHook(() => useClipboard());
+			const firstResult = result.current;
+
+			await act(async () => {
+				await result.current.copy("text");
+			});
+
+			const secondResult = result.current;
+			expect(secondResult).not.toBe(firstResult);
+			expect(secondResult.isCopied).toBe(true);
+		});
 	});
 });
