@@ -1,5 +1,5 @@
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
-import { type ReactNode, memo } from "react";
+import { memo, type ReactNode } from "react";
 import type {
 	DataTableColumn,
 	DataTableRow,
@@ -133,7 +133,7 @@ const LinkedListTable = memo(function LinkedListTable({ entries }: LinkedListTab
 					))}
 				</TableHeader>
 				<TableBody>
-					{entries.map((entry, index) => {
+					{entries.map((entry) => {
 						const rowKey = `linkedlist-${entry.address}`;
 						return (
 							<TableRow key={rowKey}>
@@ -154,7 +154,9 @@ interface NormalDistributionTableProps {
 	entries: NormalDistributionEntry[];
 }
 
-const NormalDistributionTable = memo(function NormalDistributionTable({ entries }: NormalDistributionTableProps) {
+const NormalDistributionTable = memo(function NormalDistributionTable({
+	entries,
+}: NormalDistributionTableProps) {
 	const columns = [
 		{ key: "u", label: "u" },
 		{ key: "probability", label: "確率" },
@@ -173,7 +175,7 @@ const NormalDistributionTable = memo(function NormalDistributionTable({ entries 
 					))}
 				</TableHeader>
 				<TableBody>
-					{entries.map((entry, index) => {
+					{entries.map((entry) => {
 						const rowKey = `normal-${entry.u}`;
 						return (
 							<TableRow key={rowKey}>
