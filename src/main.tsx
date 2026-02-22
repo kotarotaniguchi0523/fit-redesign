@@ -5,7 +5,6 @@ import App from "./App";
 import { useRoute } from "./hooks/useRoute";
 import "./index.css";
 import { GuidePage } from "./pages/GuidePage";
-
 function Router() {
 	const { path, navigate } = useRoute();
 	const isKnownRoute = path === "/" || path === "/guide";
