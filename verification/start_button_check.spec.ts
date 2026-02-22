@@ -6,7 +6,7 @@ test('Start Button visual check', async ({ page }) => {
 
   // Wait for the button to be visible
   // The button text is "開始" (Start)
-  const startButton = page.getByRole('button', { name: '開始' });
+  const startButton = page.getByRole('button', { name: '開始' }).first();
   await expect(startButton).toBeVisible();
 
   // Wait for fonts/styles to load fully

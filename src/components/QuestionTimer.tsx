@@ -5,7 +5,7 @@ import { useTimer } from "../hooks/useTimer";
 import type { QuestionId } from "../types";
 import type { TimerMode } from "../types/timer";
 import { formatTime } from "../utils/timeFormat";
-import { ClockIcon, GearIcon, PauseIcon, PlayIcon, PauseIconSolid, PlayIconSolid } from "./icons";
+import { ClockIcon, GearIcon, PauseIconSolid, PlayIconSolid } from "./icons";
 
 interface Props {
 	questionId: QuestionId;
