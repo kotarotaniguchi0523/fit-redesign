@@ -204,5 +204,15 @@ describe("useClipboard", () => {
 			const secondCopy = result.current.copy;
 			expect(secondCopy).toBe(firstCopy);
 		});
+
+		it("戻り値オブジェクトの参照がレンダリング間で安定している（状態変更がない場合）", () => {
+			const { result, rerender } = renderHook(() => useClipboard());
+			const firstResult = result.current;
+
+			rerender();
+
+			const secondResult = result.current;
+			expect(secondResult).toBe(firstResult);
+		});
 	});
 });
