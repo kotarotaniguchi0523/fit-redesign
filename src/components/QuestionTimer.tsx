@@ -5,7 +5,7 @@ import { useTimer } from "../hooks/useTimer";
 import type { QuestionId } from "../types";
 import type { TimerMode } from "../types/timer";
 import { formatTime } from "../utils/timeFormat";
-import { ClockIcon, GearIcon, PauseIcon, PlayIcon } from "./icons";
+import { ClockIcon, GearIcon, PauseIconSolid, PlayIconSolid } from "./icons";
 
 interface Props {
 	questionId: QuestionId;
@@ -97,22 +97,21 @@ export function QuestionTimer({ questionId }: Props) {
 					size="sm"
 					color={timer.isRunning ? "danger" : "primary"}
 					variant="solid"
-					className={`font-bold shadow-md ${
-						timer.isRunning ? "bg-red-500 text-white" : "bg-[#1e3a5f] text-white"
+					className={`font-bold shadow-md min-w-[100px] ${
+						timer.isRunning
+							? "bg-red-500 text-white"
+							: "bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] text-white"
 					}`}
 					onPress={timer.isRunning ? timer.stop : timer.start}
+					startContent={
+						timer.isRunning ? (
+							<PauseIconSolid className="w-4 h-4" />
+						) : (
+							<PlayIconSolid className="w-4 h-4" />
+						)
+					}
 				>
-					{timer.isRunning ? (
-						<div className="flex items-center gap-2">
-							<PauseIcon className="w-4 h-4" />
-							<span>停止</span>
-						</div>
-					) : (
-						<div className="flex items-center gap-2">
-							<PlayIcon className="w-4 h-4" />
-							<span>開始</span>
-						</div>
-					)}
+					{timer.isRunning ? "停止" : "開始"}
 				</Button>
 
 				{timer.isRunning && (
