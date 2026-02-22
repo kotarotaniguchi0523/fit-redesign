@@ -21,6 +21,13 @@ describe("unitTabsSelectors", () => {
 		expect(selectAvailableYears(unit)).toEqual(["2013", "2014"]);
 	});
 
+	it("selectAvailableYears returns referentially stable array for the same unit", () => {
+		const unit = selectUnitByKey(unitBasedTabs, "unit-sort");
+		const result1 = selectAvailableYears(unit);
+		const result2 = selectAvailableYears(unit);
+		expect(result1).toBe(result2); // Should be the same array instance
+	});
+
 	it("selectExamNumbers returns year-specific mappings", () => {
 		const unit = selectUnitByKey(unitBasedTabs, "unit-automaton");
 		expect(selectExamNumbers(unit, "2016")).toEqual([4, 6]);
