@@ -70,16 +70,13 @@ function DataTable({ columns, rows }: DataTableProps) {
 					))}
 				</TableHeader>
 				<TableBody>
-					{rows.map((row, index) => {
-						const rowKey = `row-${index}`;
-						return (
-							<TableRow key={rowKey}>
-								{columns.map((column) => (
-									<TableCell key={`${rowKey}-${column.key}`}>{String(row[column.key])}</TableCell>
-								))}
-							</TableRow>
-						);
-					})}
+					{rows.map((row, index) => (
+						<TableRow key={index}>
+							{columns.map((column) => (
+								<TableCell key={column.key}>{String(row[column.key])}</TableCell>
+							))}
+						</TableRow>
+					))}
 				</TableBody>
 			</Table>
 		</TableWrapper>
@@ -110,15 +107,12 @@ function HuffmanTable({ data }: HuffmanTableProps) {
 					))}
 				</TableHeader>
 				<TableBody>
-					{data.characters.map((character, index) => {
-						const rowKey = `huffman-${index}`;
-						return (
-							<TableRow key={rowKey}>
-								<TableCell>{character}</TableCell>
-								<TableCell>{data.probabilities[index]}</TableCell>
-							</TableRow>
-						);
-					})}
+					{data.characters.map((character, index) => (
+						<TableRow key={index}>
+							<TableCell>{character}</TableCell>
+							<TableCell>{data.probabilities[index]}</TableCell>
+						</TableRow>
+					))}
 				</TableBody>
 			</Table>
 		</TableWrapper>
@@ -146,16 +140,13 @@ function LinkedListTable({ entries }: LinkedListTableProps) {
 					))}
 				</TableHeader>
 				<TableBody>
-					{entries.map((entry, index) => {
-						const rowKey = `linkedlist-${index}`;
-						return (
-							<TableRow key={rowKey}>
-								<TableCell>{String(entry.address)}</TableCell>
-								<TableCell>{entry.data}</TableCell>
-								<TableCell>{String(entry.pointer)}</TableCell>
-							</TableRow>
-						);
-					})}
+					{entries.map((entry, index) => (
+						<TableRow key={index}>
+							<TableCell>{String(entry.address)}</TableCell>
+							<TableCell>{entry.data}</TableCell>
+							<TableCell>{String(entry.pointer)}</TableCell>
+						</TableRow>
+					))}
 				</TableBody>
 			</Table>
 		</TableWrapper>
@@ -186,15 +177,12 @@ function NormalDistributionTable({ entries }: NormalDistributionTableProps) {
 					))}
 				</TableHeader>
 				<TableBody>
-					{entries.map((entry, index) => {
-						const rowKey = `normal-${index}`;
-						return (
-							<TableRow key={rowKey}>
-								<TableCell>{entry.u}</TableCell>
-								<TableCell>{entry.probability}</TableCell>
-							</TableRow>
-						);
-					})}
+					{entries.map((entry, index) => (
+						<TableRow key={index}>
+							<TableCell>{entry.u}</TableCell>
+							<TableCell>{entry.probability}</TableCell>
+						</TableRow>
+					))}
 				</TableBody>
 			</Table>
 		</TableWrapper>
