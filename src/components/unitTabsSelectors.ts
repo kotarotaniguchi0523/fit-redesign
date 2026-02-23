@@ -13,15 +13,48 @@ export function selectUnitByKey(
 	return units.find((unit) => unit.id === selectedKey);
 }
 
+const unitYearsCache = new WeakMap<UnitBasedTab, Year[]>();
+
 export function selectAvailableYears(unit: UnitBasedTab | undefined): Year[] {
-	return unit?.examMapping.map((mapping) => mapping.year) ?? [];
+	if (!unit) {
+		return [];
+	}
+	let years = unitYearsCache.get(unit);
+	if (!years) {
+		years = unit.examMapping.map((mapping) => mapping.year);
+		unitYearsCache.set(unit, years);
+	}
+	return years;
+}
+
+type UnitExamMapping = UnitBasedTab["examMapping"][number];
+const unitExamMappingCache = new WeakMap<UnitBasedTab, Map<Year, UnitExamMapping>>();
+
+function getUnitExamMappingCache(unit: UnitBasedTab): Map<Year, UnitExamMapping> {
+	let mapping = unitExamMappingCache.get(unit);
+	if (!mapping) {
+		mapping = new Map();
+		for (const m of unit.examMapping) {
+			mapping.set(m.year, m);
+		}
+		unitExamMappingCache.set(unit, mapping);
+	}
+	return mapping;
+}
+
+export function selectExamMapping(
+	unit: UnitBasedTab | undefined,
+	selectedYear: Year,
+): UnitExamMapping | undefined {
+	if (!unit) return undefined;
+	return getUnitExamMappingCache(unit).get(selectedYear);
 }
 
 export function selectExamNumbers(
 	unit: UnitBasedTab | undefined,
 	selectedYear: Year,
 ): ExamNumber[] {
-	return unit?.examMapping.find((mapping) => mapping.year === selectedYear)?.examNumbers ?? [];
+	return selectExamMapping(unit, selectedYear)?.examNumbers ?? [];
 }
 
 export function selectActiveExamNumber(
@@ -59,7 +92,7 @@ export function selectFallbackYear(
 	if (!unit) {
 		return undefined;
 	}
-	const years = unit.examMapping.map((mapping) => mapping.year);
+	const years = selectAvailableYears(unit);
 	if (years.includes(selectedYear)) {
 		return undefined;
 	}
