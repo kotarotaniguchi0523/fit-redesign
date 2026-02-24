@@ -5,10 +5,11 @@ import App from "./App";
 import { useRoute } from "./hooks/useRoute";
 import "./index.css";
 import { GuidePage } from "./pages/GuidePage";
+import { VerificationPage } from "./pages/VerificationPage";
 
 function Router() {
 	const { path, navigate } = useRoute();
-	const isKnownRoute = path === "/" || path === "/guide";
+	const isKnownRoute = path === "/" || path === "/guide" || path === "/verification";
 
 	useEffect(() => {
 		if (!isKnownRoute) {
@@ -21,6 +22,8 @@ function Router() {
 			return <App />;
 		case "/guide":
 			return <GuidePage />;
+		case "/verification":
+			return <VerificationPage />;
 		default: {
 			return null;
 		}
