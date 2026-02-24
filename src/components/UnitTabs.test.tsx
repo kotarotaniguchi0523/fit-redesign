@@ -1,8 +1,9 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { useState } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import type { Year } from "../types";
 import { UnitTabs } from "./UnitTabs";
-import * as selectors from "./unitTabsSelectors";
+import type * as selectors from "./unitTabsSelectors";
 
 // Mock dependencies to isolate UnitTabs logic
 vi.mock("../components/ExamSection", () => ({
@@ -52,11 +53,8 @@ vi.mock("./unitTabsSelectors", async (importOriginal) => {
 	};
 });
 
-import { selectAvailableYears } from "./unitTabsSelectors";
-
 function TestWrapper() {
-	const [year, setYear] = useState("2013");
-	// @ts-ignore
+	const [year, setYear] = useState<Year>("2013");
 	return <UnitTabs selectedYear={year} onYearChange={setYear} />;
 }
 
@@ -65,7 +63,7 @@ describe("UnitTabs", () => {
 		render(<TestWrapper />);
 		// Use specific role filtering or getAllByRole to avoid ambiguity if strict mode adds extra elements
 		const tabs = screen.getAllByRole("tab");
-		const testUnitTab = tabs.find(tab => tab.textContent === "Test Unit");
+		const testUnitTab = tabs.find((tab) => tab.textContent === "Test Unit");
 		expect(testUnitTab).toBeTruthy();
 	});
 });
