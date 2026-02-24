@@ -6,7 +6,8 @@ export function VerificationPage() {
 			<h1 className="text-2xl font-bold">Verification Page</h1>
 			<div className="border p-4 w-[400px]">
 				<h2 className="mb-4 font-semibold">Question Timer</h2>
-				<QuestionTimer questionId="verification-dummy" />
+				{/* Use a valid ID from the type definition to satisfy TypeScript */}
+				<QuestionTimer questionId="exam1-2013-q1" />
 			</div>
 		</div>
 	);
