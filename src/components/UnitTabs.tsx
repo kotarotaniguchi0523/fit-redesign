@@ -59,7 +59,8 @@ export function UnitTabs({ selectedYear, onYearChange }: Props) {
 	const isSlideOnly = selectedKey === "slide-only";
 
 	// 選択された単元の利用可能な年度と試験情報を取得
-	const availableYears = useMemo(() => selectAvailableYears(selectedUnit), [selectedUnit]);
+	// selectAvailableYearsは内部でキャッシュしているため、useMemoは不要
+	const availableYears = selectAvailableYears(selectedUnit);
 	const examMapping = useMemo(
 		() => selectedUnit?.examMapping.find((m) => m.year === selectedYear),
 		[selectedUnit, selectedYear],

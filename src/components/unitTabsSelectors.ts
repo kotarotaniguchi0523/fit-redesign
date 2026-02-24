@@ -13,8 +13,21 @@ export function selectUnitByKey(
 	return units.find((unit) => unit.id === selectedKey);
 }
 
+const availableYearsCache = new WeakMap<UnitBasedTab, Year[]>();
+
 export function selectAvailableYears(unit: UnitBasedTab | undefined): Year[] {
-	return unit?.examMapping.map((mapping) => mapping.year) ?? [];
+	if (!unit) {
+		return [];
+	}
+
+	const cached = availableYearsCache.get(unit);
+	if (cached) {
+		return cached;
+	}
+
+	const years = unit.examMapping.map((mapping) => mapping.year);
+	availableYearsCache.set(unit, years);
+	return years;
 }
 
 export function selectExamNumbers(
@@ -59,7 +72,7 @@ export function selectFallbackYear(
 	if (!unit) {
 		return undefined;
 	}
-	const years = unit.examMapping.map((mapping) => mapping.year);
+	const years = selectAvailableYears(unit);
 	if (years.includes(selectedYear)) {
 		return undefined;
 	}
