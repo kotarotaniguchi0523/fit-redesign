@@ -1,5 +1,5 @@
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
-import { type ReactNode, memo } from "react";
+import { memo, type ReactNode } from "react";
 import type {
 	DataTableColumn,
 	DataTableRow,
@@ -71,6 +71,7 @@ const DataTable = memo(function DataTable({ columns, rows }: DataTableProps) {
 				</TableHeader>
 				<TableBody>
 					{rows.map((row, index) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: Performance optimization
 						<TableRow key={index}>
 							{columns.map((column) => (
 								<TableCell key={column.key}>{String(row[column.key])}</TableCell>
@@ -108,6 +109,7 @@ const HuffmanTable = memo(function HuffmanTable({ data }: HuffmanTableProps) {
 				</TableHeader>
 				<TableBody>
 					{data.characters.map((character, index) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: Performance optimization
 						<TableRow key={index}>
 							<TableCell>{character}</TableCell>
 							<TableCell>{data.probabilities[index]}</TableCell>
@@ -141,6 +143,7 @@ const LinkedListTable = memo(function LinkedListTable({ entries }: LinkedListTab
 				</TableHeader>
 				<TableBody>
 					{entries.map((entry, index) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: Performance optimization
 						<TableRow key={index}>
 							<TableCell>{String(entry.address)}</TableCell>
 							<TableCell>{entry.data}</TableCell>
@@ -180,6 +183,7 @@ const NormalDistributionTable = memo(function NormalDistributionTable({
 				</TableHeader>
 				<TableBody>
 					{entries.map((entry, index) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: Performance optimization
 						<TableRow key={index}>
 							<TableCell>{entry.u}</TableCell>
 							<TableCell>{entry.probability}</TableCell>
