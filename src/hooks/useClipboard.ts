@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const FEEDBACK_DISPLAY_DURATION = 2000;
 
@@ -31,6 +31,7 @@ export function useClipboard(): UseClipboardReturn {
 	}, []);
 
 	const copy = useCallback(async (text: string): Promise<boolean> => {
+		// Memoized callback for stable reference
 		// 既存のタイマーをキャンセル
 		if (timeoutRef.current !== null) {
 			clearTimeout(timeoutRef.current);
@@ -87,5 +88,5 @@ export function useClipboard(): UseClipboardReturn {
 		}
 	}, []);
 
-	return { copy, isCopied, error };
+	return useMemo(() => ({ copy, isCopied, error }), [copy, isCopied, error]);
 }
