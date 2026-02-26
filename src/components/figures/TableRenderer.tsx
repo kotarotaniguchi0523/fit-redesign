@@ -1,5 +1,5 @@
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
-import type { ReactNode } from "react";
+import { type ReactNode, memo } from "react";
 import type {
 	DataTableColumn,
 	DataTableRow,
@@ -60,7 +60,7 @@ interface DataTableProps {
 	rows: DataTableRow[];
 }
 
-function DataTable({ columns, rows }: DataTableProps) {
+const DataTable = memo(function DataTable({ columns, rows }: DataTableProps) {
 	return (
 		<TableWrapper>
 			<Table aria-label="Data table" className="max-w-2xl min-w-max" {...commonTableProps}>
@@ -70,28 +70,25 @@ function DataTable({ columns, rows }: DataTableProps) {
 					))}
 				</TableHeader>
 				<TableBody>
-					{rows.map((row, index) => {
-						const rowKey = `row-${index}`;
-						return (
-							<TableRow key={rowKey}>
-								{columns.map((column) => (
-									<TableCell key={`${rowKey}-${column.key}`}>{String(row[column.key])}</TableCell>
-								))}
-							</TableRow>
-						);
-					})}
+					{rows.map((row, index) => (
+						<TableRow key={index}>
+							{columns.map((column) => (
+								<TableCell key={column.key}>{String(row[column.key])}</TableCell>
+							))}
+						</TableRow>
+					))}
 				</TableBody>
 			</Table>
 		</TableWrapper>
 	);
-}
+});
 
 // ハフマン符号表
 interface HuffmanTableProps {
 	data: HuffmanTableData;
 }
 
-function HuffmanTable({ data }: HuffmanTableProps) {
+const HuffmanTable = memo(function HuffmanTable({ data }: HuffmanTableProps) {
 	const columns = [
 		{ key: "character", label: "文字" },
 		{ key: "probability", label: "確率" },
@@ -110,27 +107,24 @@ function HuffmanTable({ data }: HuffmanTableProps) {
 					))}
 				</TableHeader>
 				<TableBody>
-					{data.characters.map((character, index) => {
-						const rowKey = `huffman-${index}`;
-						return (
-							<TableRow key={rowKey}>
-								<TableCell>{character}</TableCell>
-								<TableCell>{data.probabilities[index]}</TableCell>
-							</TableRow>
-						);
-					})}
+					{data.characters.map((character, index) => (
+						<TableRow key={index}>
+							<TableCell>{character}</TableCell>
+							<TableCell>{data.probabilities[index]}</TableCell>
+						</TableRow>
+					))}
 				</TableBody>
 			</Table>
 		</TableWrapper>
 	);
-}
+});
 
 // リンクリスト（ポインタ）表
 interface LinkedListTableProps {
 	entries: LinkedListEntry[];
 }
 
-function LinkedListTable({ entries }: LinkedListTableProps) {
+const LinkedListTable = memo(function LinkedListTable({ entries }: LinkedListTableProps) {
 	const columns = [
 		{ key: "address", label: "アドレス" },
 		{ key: "data", label: "データ" },
@@ -146,28 +140,27 @@ function LinkedListTable({ entries }: LinkedListTableProps) {
 					))}
 				</TableHeader>
 				<TableBody>
-					{entries.map((entry, index) => {
-						const rowKey = `linkedlist-${index}`;
-						return (
-							<TableRow key={rowKey}>
-								<TableCell>{String(entry.address)}</TableCell>
-								<TableCell>{entry.data}</TableCell>
-								<TableCell>{String(entry.pointer)}</TableCell>
-							</TableRow>
-						);
-					})}
+					{entries.map((entry, index) => (
+						<TableRow key={index}>
+							<TableCell>{String(entry.address)}</TableCell>
+							<TableCell>{entry.data}</TableCell>
+							<TableCell>{String(entry.pointer)}</TableCell>
+						</TableRow>
+					))}
 				</TableBody>
 			</Table>
 		</TableWrapper>
 	);
-}
+});
 
 // 正規分布表
 interface NormalDistributionTableProps {
 	entries: NormalDistributionEntry[];
 }
 
-function NormalDistributionTable({ entries }: NormalDistributionTableProps) {
+const NormalDistributionTable = memo(function NormalDistributionTable({
+	entries,
+}: NormalDistributionTableProps) {
 	const columns = [
 		{ key: "u", label: "u" },
 		{ key: "probability", label: "確率" },
@@ -186,17 +179,14 @@ function NormalDistributionTable({ entries }: NormalDistributionTableProps) {
 					))}
 				</TableHeader>
 				<TableBody>
-					{entries.map((entry, index) => {
-						const rowKey = `normal-${index}`;
-						return (
-							<TableRow key={rowKey}>
-								<TableCell>{entry.u}</TableCell>
-								<TableCell>{entry.probability}</TableCell>
-							</TableRow>
-						);
-					})}
+					{entries.map((entry, index) => (
+						<TableRow key={index}>
+							<TableCell>{entry.u}</TableCell>
+							<TableCell>{entry.probability}</TableCell>
+						</TableRow>
+					))}
 				</TableBody>
 			</Table>
 		</TableWrapper>
 	);
-}
+});
