@@ -6,6 +6,11 @@ export interface ExamSwitchItem {
 	title: string;
 }
 
+// Cache for available years per unit
+// This optimization avoids repeatedly mapping examMapping to extract years
+const availableYearsCache = new WeakMap<UnitBasedTab, Year[]>();
+const availableYearsSetCache = new WeakMap<UnitBasedTab, Set<Year>>();
+
 export function selectUnitByKey(
 	units: UnitBasedTab[],
 	selectedKey: UnitTabId,
@@ -14,7 +19,20 @@ export function selectUnitByKey(
 }
 
 export function selectAvailableYears(unit: UnitBasedTab | undefined): Year[] {
-	return unit?.examMapping.map((mapping) => mapping.year) ?? [];
+	if (!unit) {
+		return [];
+	}
+
+	// Check cache first
+	const cached = availableYearsCache.get(unit);
+	if (cached) {
+		return cached;
+	}
+
+	// Compute and cache
+	const years = unit.examMapping.map((mapping) => mapping.year);
+	availableYearsCache.set(unit, years);
+	return years;
 }
 
 export function selectExamNumbers(
@@ -59,9 +77,19 @@ export function selectFallbackYear(
 	if (!unit) {
 		return undefined;
 	}
-	const years = unit.examMapping.map((mapping) => mapping.year);
-	if (years.includes(selectedYear)) {
+
+	// Use cached Set for O(1) lookup
+	let yearsSet = availableYearsSetCache.get(unit);
+	if (!yearsSet) {
+		const years = selectAvailableYears(unit);
+		yearsSet = new Set(years);
+		availableYearsSetCache.set(unit, yearsSet);
+	}
+
+	if (yearsSet.has(selectedYear)) {
 		return undefined;
 	}
-	return years[0];
+
+	// Return first available year
+	return selectAvailableYears(unit)[0];
 }
