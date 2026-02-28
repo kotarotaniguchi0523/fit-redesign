@@ -13,8 +13,21 @@ export function selectUnitByKey(
 	return units.find((unit) => unit.id === selectedKey);
 }
 
+// 派生状態（利用可能な年度）のキャッシュ
+// ユニットオブジェクトは安定しているため、WeakMapを使用して再計算を避ける
+const availableYearsCache = new WeakMap<UnitBasedTab, Year[]>();
+
 export function selectAvailableYears(unit: UnitBasedTab | undefined): Year[] {
-	return unit?.examMapping.map((mapping) => mapping.year) ?? [];
+	if (!unit) {
+		return [];
+	}
+
+	let years = availableYearsCache.get(unit);
+	if (!years) {
+		years = unit.examMapping.map((mapping) => mapping.year);
+		availableYearsCache.set(unit, years);
+	}
+	return years;
 }
 
 export function selectExamNumbers(
@@ -59,7 +72,8 @@ export function selectFallbackYear(
 	if (!unit) {
 		return undefined;
 	}
-	const years = unit.examMapping.map((mapping) => mapping.year);
+	// キャッシュを利用して無駄なmap処理を回避
+	const years = selectAvailableYears(unit);
 	if (years.includes(selectedYear)) {
 		return undefined;
 	}
