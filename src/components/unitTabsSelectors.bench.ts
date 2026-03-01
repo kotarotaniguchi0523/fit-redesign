@@ -3,9 +3,9 @@ import type { UnitBasedTab, Year } from "../types";
 import { selectAvailableYears, selectFallbackYear } from "./unitTabsSelectors";
 
 const largeExamMapping = Array.from({ length: 50000 }, (_, i) => ({
-	year: (2000 + i) as Year,
+	year: String(2000 + i) as Year,
 	examNumbers: [],
-	integratedTitle: null,
+	integratedTitle: undefined,
 }));
 
 const mockUnit: UnitBasedTab = {
@@ -24,10 +24,10 @@ describe("unitTabsSelectors performance", () => {
 	});
 
 	bench("selectFallbackYear - not included", () => {
-		selectFallbackYear(mockUnit, 1999 as Year);
+		selectFallbackYear(mockUnit, "1999" as Year);
 	});
 
 	bench("selectFallbackYear - included at end", () => {
-		selectFallbackYear(mockUnit, 51999 as Year);
+		selectFallbackYear(mockUnit, "51999" as Year);
 	});
 });
