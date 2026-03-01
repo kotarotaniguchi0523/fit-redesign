@@ -6,6 +6,10 @@ export interface ExamSwitchItem {
 	title: string;
 }
 
+// Caches for derived state to avoid O(N) operations on every interaction.
+const availableYearsCache = new WeakMap<UnitBasedTab, Year[]>();
+const availableYearsSetCache = new WeakMap<UnitBasedTab, Set<Year>>();
+
 export function selectUnitByKey(
 	units: UnitBasedTab[],
 	selectedKey: UnitTabId,
@@ -14,7 +18,19 @@ export function selectUnitByKey(
 }
 
 export function selectAvailableYears(unit: UnitBasedTab | undefined): Year[] {
-	return unit?.examMapping.map((mapping) => mapping.year) ?? [];
+	if (!unit) {
+		return [];
+	}
+
+	const cached = availableYearsCache.get(unit);
+	if (cached) {
+		return cached;
+	}
+
+	const years = unit.examMapping.map((mapping) => mapping.year);
+	availableYearsCache.set(unit, years);
+	availableYearsSetCache.set(unit, new Set(years));
+	return years;
 }
 
 export function selectExamNumbers(
@@ -59,8 +75,11 @@ export function selectFallbackYear(
 	if (!unit) {
 		return undefined;
 	}
-	const years = unit.examMapping.map((mapping) => mapping.year);
-	if (years.includes(selectedYear)) {
+
+	const years = selectAvailableYears(unit);
+	const yearsSet = availableYearsSetCache.get(unit);
+
+	if (yearsSet?.has(selectedYear)) {
 		return undefined;
 	}
 	return years[0];
