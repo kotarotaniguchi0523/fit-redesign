@@ -1,0 +1,254 @@
+---
+import type { FlowchartEdge, FlowchartNode } from "../../types";
+
+interface Props {
+	nodes: FlowchartNode[];
+	edges: FlowchartEdge[];
+	width?: number;
+	height?: number;
+}
+
+const FLOWCHART_DEFAULTS = {
+	WIDTH: 300,
+	HEIGHT: 400,
+	NODE_WIDTH: 100,
+	NODE_WIDTH_DECISION: 80,
+	NODE_HEIGHT: 30,
+	NODE_HEIGHT_DECISION: 40,
+} as const;
+
+const {
+	nodes,
+	edges,
+	width = FLOWCHART_DEFAULTS.WIDTH,
+	height = FLOWCHART_DEFAULTS.HEIGHT,
+} = Astro.props;
+
+const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+
+function getNodeDimensions(node: FlowchartNode) {
+	const defaultWidth =
+		node.type === "decision"
+			? FLOWCHART_DEFAULTS.NODE_WIDTH_DECISION
+			: FLOWCHART_DEFAULTS.NODE_WIDTH;
+	const defaultHeight =
+		node.type === "decision"
+			? FLOWCHART_DEFAULTS.NODE_HEIGHT_DECISION
+			: FLOWCHART_DEFAULTS.NODE_HEIGHT;
+	return {
+		w: node.width ?? defaultWidth,
+		h: node.height ?? defaultHeight,
+	};
+}
+
+function getEdgePoint(
+	node: FlowchartNode,
+	side: "top" | "bottom" | "left" | "right",
+): { x: number; y: number } {
+	const { w, h } = getNodeDimensions(node);
+	switch (side) {
+		case "top":
+			return { x: node.x, y: node.y - h / 2 };
+		case "bottom":
+			return { x: node.x, y: node.y + h / 2 };
+		case "left":
+			return { x: node.x - w / 2, y: node.y };
+		case "right":
+			return { x: node.x + w / 2, y: node.y };
+	}
+}
+
+interface NodeRenderData {
+	type: FlowchartNode["type"];
+	id: string;
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+	label: string;
+	// start/end specific
+	rx?: number;
+	ry?: number;
+	// decision specific
+	points?: string;
+}
+
+const nodeRenderData: NodeRenderData[] = nodes.map((node) => {
+	const { w, h } = getNodeDimensions(node);
+	const base = { type: node.type, id: node.id, x: node.x, y: node.y, w, h, label: node.label };
+	if (node.type === "decision") {
+		return {
+			...base,
+			points: `${node.x},${node.y - h / 2} ${node.x + w / 2},${node.y} ${node.x},${node.y + h / 2} ${node.x - w / 2},${node.y}`,
+		};
+	}
+	if (node.type === "start" || node.type === "end") {
+		return { ...base, rx: h / 2, ry: h / 2 };
+	}
+	return base;
+});
+
+interface EdgeRenderData {
+	pathD: string;
+	label?: string;
+	labelX: number;
+	labelY: number;
+}
+
+const edgeRenderData: EdgeRenderData[] = [];
+
+for (let i = 0; i < edges.length; i++) {
+	const edge = edges[i];
+	const fromNode = nodeMap.get(edge.from);
+	const toNode = nodeMap.get(edge.to);
+	if (!fromNode || !toNode) continue;
+
+	const fromSide = edge.fromSide ?? "bottom";
+	const toSide = edge.toSide ?? "top";
+	const start = getEdgePoint(fromNode, fromSide);
+	const end = getEdgePoint(toNode, toSide);
+
+	let pathD: string;
+	if (edge.points && edge.points.length > 0) {
+		const points = [start, ...edge.points, end];
+		pathD = `M ${points[0].x} ${points[0].y}`;
+		for (let j = 1; j < points.length; j++) {
+			pathD += ` L ${points[j].x} ${points[j].y}`;
+		}
+	} else {
+		pathD = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+	}
+
+	let labelX = (start.x + end.x) / 2;
+	let labelY = (start.y + end.y) / 2;
+	if (edge.points && edge.points.length > 0) {
+		labelX = edge.points[0].x;
+		labelY = edge.points[0].y;
+	}
+
+	edgeRenderData.push({ pathD, label: edge.label, labelX, labelY });
+}
+---
+
+<svg
+  width="100%"
+  height="auto"
+  viewBox={`0 0 ${width} ${height}`}
+  preserveAspectRatio="xMidYMid meet"
+  class="max-w-full h-auto"
+  style={`aspect-ratio: ${width}/${height}`}
+  aria-label="Flowchart diagram"
+>
+  <title>Flowchart diagram</title>
+
+  <defs>
+    <marker
+      id="flowchart-arrow"
+      markerWidth="10"
+      markerHeight="10"
+      refX="9"
+      refY="3"
+      orient="auto"
+      markerUnits="strokeWidth"
+    >
+      <polygon points="0 0, 10 3, 0 6" fill="black" />
+    </marker>
+  </defs>
+
+  {edgeRenderData.map((e) => (
+    <g>
+      <path
+        d={e.pathD}
+        fill="none"
+        stroke="black"
+        stroke-width="1.5"
+        marker-end="url(#flowchart-arrow)"
+      />
+      {e.label && (
+        <text x={e.labelX + 8} y={e.labelY - 4} font-size="10" fill="black" font-weight="bold">
+          {e.label}
+        </text>
+      )}
+    </g>
+  ))}
+
+  {nodeRenderData.map((n) => {
+    if (n.type === "start" || n.type === "end") {
+      return (
+        <g>
+          <rect
+            x={n.x - n.w / 2}
+            y={n.y - n.h / 2}
+            width={n.w}
+            height={n.h}
+            rx={n.rx}
+            ry={n.ry}
+            fill="white"
+            stroke="black"
+            stroke-width="1.5"
+          />
+          <text
+            x={n.x}
+            y={n.y}
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-size="12"
+            fill="black"
+          >
+            {n.label}
+          </text>
+        </g>
+      );
+    }
+    if (n.type === "process") {
+      return (
+        <g>
+          <rect
+            x={n.x - n.w / 2}
+            y={n.y - n.h / 2}
+            width={n.w}
+            height={n.h}
+            fill="white"
+            stroke="black"
+            stroke-width="1.5"
+          />
+          <text
+            x={n.x}
+            y={n.y}
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-size="11"
+            fill="black"
+          >
+            {n.label}
+          </text>
+        </g>
+      );
+    }
+    if (n.type === "decision") {
+      return (
+        <g>
+          <polygon points={n.points} fill="white" stroke="black" stroke-width="1.5" />
+          <text
+            x={n.x}
+            y={n.y}
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-size="11"
+            fill="black"
+          >
+            {n.label}
+          </text>
+        </g>
+      );
+    }
+    if (n.type === "connector") {
+      return (
+        <g>
+          <circle cx={n.x} cy={n.y} r={8} fill="white" stroke="black" stroke-width="1.5" />
+        </g>
+      );
+    }
+    return null;
+  })}
+</svg>

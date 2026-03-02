@@ -1,17 +1,16 @@
 import type { ExamByYear, ExamNumber } from "../../types";
 import { loadExams } from "./loader";
 
-export const allExams: ExamByYear[] = loadExams();
+let _loadPromise: Promise<ExamByYear[]> | null = null;
 
-const examByNumber = new Map<ExamNumber, ExamByYear>(
-	allExams.map((exam) => [exam.examNumber, exam] as const),
-);
+export function getAllExams(): Promise<ExamByYear[]> {
+	if (!_loadPromise) {
+		_loadPromise = loadExams();
+	}
+	return _loadPromise;
+}
 
-/**
- * examNumberから対応するExamByYearを取得
- * @param examNumber 小テスト番号（1-9）
- * @returns 対応するExamByYear、見つからない場合はundefined
- */
-export function getExamByNumber(examNumber: ExamNumber): ExamByYear | undefined {
-	return examByNumber.get(examNumber);
+export async function getExamByNumber(examNumber: ExamNumber): Promise<ExamByYear | undefined> {
+	const exams = await getAllExams();
+	return exams.find((e) => e.examNumber === examNumber);
 }

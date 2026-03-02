@@ -4,12 +4,12 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"dev": "vite",
-		"build": "tsgo && vite build",
-		"preview": "vite preview",
+		"dev": "astro dev",
+		"build": "astro build",
+		"preview": "astro preview",
 		"format": "biome format --write .",
 		"check": "biome ci .",
-		"typecheck": "tsgo --noEmit",
+		"typecheck": "astro check",
 		"knip": "knip",
 		"data:convert": "node scripts/convert-exams-to-json.mjs",
 		"test": "vitest",
@@ -17,27 +17,18 @@
 		"test:coverage": "vitest run --coverage"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.3.15",
-		"@mdx-js/rollup": "^3.1.1",
-		"@tailwindcss/vite": "^4.1.18",
-		"@testing-library/react": "^16.3.2",
-		"@types/react": "^19.2.14",
-		"@types/react-dom": "^19.2.3",
+		"@astrojs/check": "^0.9.6",
+		"@biomejs/biome": "^2.4.4",
+		"@tailwindcss/vite": "^4.2.1",
 		"@typescript/native-preview": "7.0.0-dev.20260122.4",
-		"@vitejs/plugin-react": "^5.1.4",
 		"@vitest/coverage-v8": "^4.0.18",
 		"jsdom": "^27.4.0",
 		"knip": "^5.83.1",
-		"remark-gfm": "^4.0.1",
 		"tailwindcss": "^4.1.18",
-		"vite": "^7.3.1",
 		"vitest": "^4.0.18"
 	},
 	"dependencies": {
-		"@heroui/react": "^2.8.9",
-		"framer-motion": "^12.34.0",
-		"react": "^19.2.4",
-		"react-dom": "^19.2.4",
+		"astro": "6.0.0-beta.17",
 		"zod": "^4.3.6"
 	}
 }

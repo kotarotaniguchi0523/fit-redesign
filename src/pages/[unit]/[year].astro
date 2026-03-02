@@ -1,0 +1,195 @@
+---
+import Header from "../../components/Header.astro";
+import ExamSection from "../../components/ExamSection.astro";
+import SlideSection from "../../components/SlideSection.astro";
+import Layout from "../../layouts/Layout.astro";
+import { unitBasedTabs } from "../../data/units";
+import { getExamByNumber } from "../../data/exams";
+import { YEARS } from "../../types/index";
+import type { ExamNumber, Year, UnitBasedTab } from "../../types/index";
+
+export async function getStaticPaths() {
+	const paths = [];
+
+	for (const unit of unitBasedTabs) {
+		for (const mapping of unit.examMapping) {
+			paths.push({
+				params: { unit: unit.id, year: mapping.year },
+				props: { unit, year: mapping.year },
+			});
+		}
+	}
+
+	return paths;
+}
+
+interface Props {
+	unit: UnitBasedTab;
+	year: Year;
+}
+
+const { unit, year } = Astro.props;
+const defaultYear = YEARS[0];
+
+// この年度の試験情報を取得
+const examMapping = unit.examMapping.find((m) => m.year === year);
+const examNumbers = examMapping?.examNumbers ?? [];
+
+// 各試験のデータを取得
+const examDataList: {
+	examNumber: ExamNumber;
+	examByYear: Awaited<ReturnType<typeof getExamByNumber>>;
+}[] = [];
+for (const examNumber of examNumbers) {
+	const data = await getExamByNumber(examNumber);
+	if (data) {
+		examDataList.push({ examNumber, examByYear: data });
+	}
+}
+
+// 利用可能な年度
+const availableYears = unit.examMapping.map((m) => m.year);
+---
+
+<Layout title={`${unit.title} (${year}年度) - 基本情報技術 I`}>
+	<Header />
+	<main class="container mx-auto px-4 py-6 max-w-5xl">
+		<div class="w-full">
+			{/* 単元タブ */}
+			<div class="flex flex-wrap gap-2 mb-6" role="tablist" aria-label="単元選択">
+				{
+					unitBasedTabs.map((tab) => {
+						const isActive = tab.id === unit.id;
+						const targetYear = tab.examMapping[0]?.year ?? defaultYear;
+						return (
+							<a
+								href={`/${tab.id}/${targetYear}`}
+								role="tab"
+								aria-selected={isActive ? "true" : "false"}
+								class={`px-4 py-2 rounded-lg border text-sm font-medium transition-all h-auto min-h-[40px] whitespace-normal text-center ${
+									isActive
+										? "bg-[#1e3a5f] text-white border-[#1e3a5f] shadow-sm"
+										: "bg-white text-gray-700 border-gray-300 hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
+								}`}
+							>
+								{tab.name}
+							</a>
+						);
+					})
+				}
+				<a
+					href="/slide-only"
+					class="px-4 py-2 rounded-lg border text-sm font-medium transition-all h-auto min-h-[40px] whitespace-normal text-center bg-white text-gray-700 border-gray-300 hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
+				>
+					講義資料のみ
+				</a>
+			</div>
+
+			{/* コンテンツ */}
+			<div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200">
+				{/* 講義スライド */}
+				{unit.slides.length > 0 && <SlideSection slides={unit.slides} />}
+
+				{/* 年度選択 */}
+				<div class="mt-4">
+					<p class="text-sm font-medium text-gray-600 mb-2">年度を選択</p>
+					<div class="flex flex-row flex-wrap gap-3">
+						{
+							YEARS.map((y) => {
+								const isAvailable = availableYears.includes(y);
+								const isSelected = y === year;
+								return isAvailable ? (
+									<a
+										href={`/${unit.id}/${y}`}
+										class={`border-2 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+											isSelected
+												? "border-[#c9a227] bg-[#c9a227]/10"
+												: "border-gray-200 bg-white shadow-sm hover:border-gray-300"
+										}`}
+									>
+										{y}年度
+									</a>
+								) : (
+									<span class="border-2 border-gray-100 rounded-full px-4 py-1.5 text-sm font-medium text-gray-300 cursor-not-allowed">
+										{y}年度
+									</span>
+								);
+							})
+						}
+					</div>
+				</div>
+
+				{/* 統合試験の注意表示 */}
+				{
+					examMapping?.integratedTitle && (
+						<div class="mt-4 bg-blue-50 border border-blue-200 shadow-sm rounded-lg p-3">
+							<div class="flex items-start gap-2">
+								<div class="text-blue-600 font-medium mt-0.5">ℹ️</div>
+								<div class="flex-1">
+									<p class="text-sm text-blue-800">
+										<span class="font-semibold">注意:</span> この年度では
+										<span class="font-semibold">
+											「{examMapping.integratedTitle}」
+										</span>
+										として統合試験になっています。
+									</p>
+								</div>
+							</div>
+						</div>
+					)
+				}
+
+				{/* 小テスト切り替え（複数ある場合） */}
+				{
+					examDataList.length > 1 && (
+						<div class="mt-4">
+							<p class="text-sm font-medium text-gray-600 mb-2">
+								小テスト一覧
+							</p>
+							<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+								{examDataList.map((item) => {
+									const exam = item.examByYear?.exams[year];
+									const title =
+										exam?.title ?? item.examByYear?.title ?? "";
+									return (
+										<a
+											href={`#exam-${item.examNumber}`}
+											class="px-3 py-2 rounded-lg border text-xs font-medium transition-all flex flex-col text-left w-full bg-white text-gray-700 border-gray-300 hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
+										>
+											<span class="text-[11px] opacity-80">
+												小テスト{item.examNumber}
+											</span>
+											<span class="text-sm leading-snug break-words w-full">
+												{title}
+											</span>
+										</a>
+									);
+								})}
+							</div>
+						</div>
+					)
+				}
+
+				{/* 各小テスト */}
+				{
+					examDataList.map((item) => {
+						const exam = item.examByYear?.exams[year];
+						const title =
+							exam?.title ?? item.examByYear?.title ?? "";
+						return (
+							<div id={`exam-${item.examNumber}`}>
+								<ExamSection exam={exam} title={title} />
+							</div>
+						);
+					})
+				}
+			</div>
+		</div>
+	</main>
+
+	{/* タイマー・コピースクリプト */}
+	<script>
+		import "../../scripts/question-timer";
+		import "../../scripts/copy-button";
+	</script>
+</Layout>

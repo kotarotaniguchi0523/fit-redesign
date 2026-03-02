@@ -53,7 +53,7 @@ const UnitBasedTabSchema = z
 		const uniqueYears = new Set<Year>(years);
 		if (uniqueYears.size !== years.length) {
 			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
+				code: "custom",
 				path: ["examMapping"],
 				message: "examMapping years must be unique within each unit tab",
 			});
@@ -65,7 +65,7 @@ const UnitBasedTabsSchema = z.array(UnitBasedTabSchema).superRefine((tabs, ctx) 
 	const uniqueIds = new Set<UnitTabId>(ids);
 	if (uniqueIds.size !== ids.length) {
 		ctx.addIssue({
-			code: z.ZodIssueCode.custom,
+			code: "custom",
 			path: [],
 			message: "unit tab ids must be unique",
 		});

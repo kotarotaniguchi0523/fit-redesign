@@ -1,14 +1,68 @@
+import {
+	MAX_ATTEMPTS_PER_QUESTION,
+	QUESTION_ID_RE,
+	STORAGE_KEY_PREFIX,
+	TIMER_MODES,
+	USER_ID_KEY,
+} from "../constants";
 import type { QuestionId } from "../types";
 import { err, ok, type Result } from "../types/result";
 import type { AttemptRecord, QuestionTimeRecord, TimerStorageData } from "../types/timer";
-import { formatZodError, TimerStorageDataSchema } from "../types/timer";
 import { createLogger } from "./logger";
 
-const USER_ID_KEY = "fit-exam-user-id";
-const STORAGE_KEY_PREFIX = "fit-exam-timer-records";
-const MAX_ATTEMPTS_PER_QUESTION = 50;
-
 const logger = createLogger("[TimerStorage]");
+
+// --- Lightweight validation (replaces Zod to keep Zod out of client bundle) ---
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+	return v !== null && typeof v === "object" && !Array.isArray(v);
+}
+
+function validateAttempt(v: unknown): v is AttemptRecord {
+	if (!isRecord(v)) return false;
+	return (
+		Number.isFinite(v.timestamp) &&
+		Number.isFinite(v.duration) &&
+		(v.duration as number) >= 0 &&
+		typeof v.mode === "string" &&
+		TIMER_MODES.has(v.mode) &&
+		typeof v.completed === "boolean" &&
+		(v.targetTime === undefined || Number.isFinite(v.targetTime))
+	);
+}
+
+function validateTimerStorageData(
+	data: unknown,
+): { success: true; data: TimerStorageData } | { success: false; error: string } {
+	if (!isRecord(data)) return { success: false, error: "データがオブジェクトではありません" };
+	if (data.version !== 1) return { success: false, error: "version が 1 ではありません" };
+	if (!isRecord(data.records))
+		return { success: false, error: "records がオブジェクトではありません" };
+
+	for (const [key, record] of Object.entries(data.records)) {
+		if (!QUESTION_ID_RE.test(key)) {
+			return { success: false, error: `不正な questionId キー: ${key}` };
+		}
+		if (!isRecord(record)) {
+			return { success: false, error: `records[${key}] がオブジェクトではありません` };
+		}
+		if (record.questionId !== key) {
+			return { success: false, error: `records のキーと questionId が不一致: ${key}` };
+		}
+		if (!Array.isArray(record.attempts)) {
+			return { success: false, error: `records[${key}].attempts が配列ではありません` };
+		}
+		for (const attempt of record.attempts) {
+			if (!validateAttempt(attempt)) {
+				return { success: false, error: `records[${key}] に不正な attempt があります` };
+			}
+		}
+	}
+
+	return { success: true, data: data as TimerStorageData };
+}
+
+// --- Core implementation ---
 
 /**
  * ユーザーIDを取得（なければ生成して保存）
@@ -16,13 +70,13 @@ const logger = createLogger("[TimerStorage]");
  */
 function getUserId(): string {
 	try {
-		let userId = localStorage.getItem(USER_ID_KEY);
-		if (!userId) {
-			userId = crypto.randomUUID();
-			localStorage.setItem(USER_ID_KEY, userId);
-			logger.info("Generated new user ID");
-		}
-		return userId;
+		const existing = localStorage.getItem(USER_ID_KEY);
+		if (existing) return existing;
+
+		const newId = crypto.randomUUID();
+		localStorage.setItem(USER_ID_KEY, newId);
+		logger.info("Generated new user ID");
+		return newId;
 	} catch {
 		// localStorageが使えない場合は一時的なIDを返す
 		logger.warn("Failed to access localStorage for user ID, using temporary ID");
@@ -81,22 +135,18 @@ function loadTimerDataUnsafe(): Result<TimerStorageData, StorageError> {
 		}
 
 		const parsed = JSON.parse(rawData);
-		const validated = TimerStorageDataSchema.safeParse(parsed);
+		const validated = validateTimerStorageData(parsed);
 
 		if (!validated.success) {
-			logger.error("Data validation failed", { error: formatZodError(validated.error) });
+			logger.error("Data validation failed", { error: validated.error });
 			return err(
-				createStorageError(
-					"VALIDATION_ERROR",
-					`データ形式が不正です: ${formatZodError(validated.error)}`,
-					validated.error,
-				),
+				createStorageError("VALIDATION_ERROR", `データ形式が不正です: ${validated.error}`),
 			);
 		}
 
 		const recordCount = Object.keys(validated.data.records).length;
 		logger.info(`Loaded timer data successfully (${recordCount} questions)`);
-		return ok(validated.data as TimerStorageData);
+		return ok(validated.data);
 	} catch (error) {
 		logger.error("Failed to parse stored data", { error });
 		return err(createStorageError("PARSE_ERROR", "Failed to parse stored data", error));
@@ -142,8 +192,12 @@ export function saveTimerData(data: TimerStorageData): Result<void, StorageError
 	return saveTimerDataUnsafe(data);
 }
 
-function mutateTimerData(
-	mutator: (data: TimerStorageData) => void,
+/**
+ * タイマーデータを純粋関数で更新する。
+ * updater は元データから新しいデータを返す（元データは変更しない）。
+ */
+function withTimerData(
+	updater: (data: TimerStorageData) => TimerStorageData,
 ): Result<TimerStorageData, StorageError> {
 	const storageCheck = requireStorage();
 	if (!storageCheck.ok) {
@@ -155,14 +209,13 @@ function mutateTimerData(
 		return loadResult;
 	}
 
-	mutator(loadResult.value);
-
-	const saveResult = saveTimerDataUnsafe(loadResult.value);
+	const newData = updater(loadResult.value);
+	const saveResult = saveTimerDataUnsafe(newData);
 	if (!saveResult.ok) {
 		return err(saveResult.error);
 	}
 
-	return ok(loadResult.value);
+	return ok(newData);
 }
 
 export function saveAttempt(
@@ -173,31 +226,35 @@ export function saveAttempt(
 		`Saving attempt for question (mode: ${attempt.mode}, completed: ${attempt.completed})`,
 	);
 
-	const mutateResult = mutateTimerData((data) => {
-		const existingRecord = data.records[questionId];
-		const currentAttempts = existingRecord?.attempts || [];
-		const updatedAttempts = [...currentAttempts, attempt];
+	const result = withTimerData((data) => {
+		const currentAttempts = data.records[questionId]?.attempts ?? [];
+		const allAttempts = currentAttempts.concat(attempt);
+		const trimmedAttempts =
+			allAttempts.length > MAX_ATTEMPTS_PER_QUESTION
+				? allAttempts.slice(-MAX_ATTEMPTS_PER_QUESTION)
+				: allAttempts;
 
-		if (updatedAttempts.length > MAX_ATTEMPTS_PER_QUESTION) {
-			const removedCount = updatedAttempts.length - MAX_ATTEMPTS_PER_QUESTION;
-			updatedAttempts.splice(0, updatedAttempts.length - MAX_ATTEMPTS_PER_QUESTION);
+		if (allAttempts.length > MAX_ATTEMPTS_PER_QUESTION) {
+			const removedCount = allAttempts.length - MAX_ATTEMPTS_PER_QUESTION;
 			logger.info(`Trimmed ${removedCount} old attempts (max: ${MAX_ATTEMPTS_PER_QUESTION})`);
 		}
 
 		const updatedRecord: QuestionTimeRecord = {
 			questionId,
-			attempts: updatedAttempts,
+			attempts: trimmedAttempts,
 		};
 
-		data.records[questionId] = updatedRecord;
+		return Object.assign({}, data, {
+			records: Object.assign({}, data.records, { [questionId]: updatedRecord }),
+		});
 	});
 
-	if (!mutateResult.ok) {
+	if (!result.ok) {
 		logger.warn("Failed to load existing data before saving attempt");
-		return err(mutateResult.error);
+		return err(result.error);
 	}
 
-	const totalAttempts = mutateResult.value.records[questionId]?.attempts.length ?? 0;
+	const totalAttempts = result.value.records[questionId]?.attempts.length ?? 0;
 	logger.info(`Attempt saved successfully (total attempts: ${totalAttempts})`);
 	return ok(undefined);
 }
@@ -205,16 +262,18 @@ export function saveAttempt(
 export function clearQuestionRecords(questionId: QuestionId): Result<void, StorageError> {
 	logger.info("Clearing records for question");
 
-	let hadRecord = false;
-	const mutateResult = mutateTimerData((data) => {
-		hadRecord = questionId in data.records;
-		delete data.records[questionId];
-	});
+	const result = withTimerData((data) =>
+		Object.assign({}, data, {
+			records: Object.fromEntries(
+				Object.entries(data.records).filter(([key]) => key !== questionId),
+			),
+		}),
+	);
 
-	if (mutateResult.ok) {
-		logger.info(`Records cleared successfully (had existing data: ${hadRecord})`);
+	if (result.ok) {
+		logger.info("Records cleared successfully");
 		return ok(undefined);
 	}
 	logger.warn("Failed to load existing data before clearing records");
-	return err(mutateResult.error);
+	return err(result.error);
 }

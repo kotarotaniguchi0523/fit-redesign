@@ -1,0 +1,44 @@
+---
+import type { Slide } from "../types/index";
+
+interface Props {
+	slides: Slide[];
+}
+
+const { slides } = Astro.props;
+---
+
+<div
+	class="mb-4 bg-linear-to-br from-blue-50/50 to-indigo-50/30 border border-blue-100 rounded-lg"
+>
+	<div class="p-5">
+		<h3
+			class="text-lg font-semibold mb-4 flex items-center gap-2 text-[#1e3a5f]"
+		>
+			<span
+				class="w-8 h-8 rounded-lg bg-[#1e3a5f]/10 flex items-center justify-center"
+				>📖</span
+			>
+			講義スライド
+		</h3>
+		<div class="space-y-2">
+			{
+				slides.map((slide) => (
+					<div class="flex flex-col gap-2 p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100 sm:flex-row sm:items-center sm:justify-between">
+						<span class="text-sm text-gray-700 wrap-break-words">
+							{slide.title}
+						</span>
+						<a
+							href={slide.pdfPath}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="w-full text-center px-3 py-1.5 text-sm bg-[#1e3a5f] text-white rounded-lg hover:bg-[#2d4a6f] transition-colors sm:w-auto"
+						>
+							開く ↗
+						</a>
+					</div>
+				))
+			}
+		</div>
+	</div>
+</div>

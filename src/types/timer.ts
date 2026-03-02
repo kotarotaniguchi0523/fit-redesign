@@ -44,7 +44,7 @@ export const TimerStorageDataSchema = z.object({
 			for (const [key, record] of Object.entries(records)) {
 				if (key !== record.questionId) {
 					ctx.addIssue({
-						code: z.ZodIssueCode.custom,
+						code: "custom",
 						path: [key, "questionId"],
 						message: "records のキーと questionId は一致している必要があります",
 					});

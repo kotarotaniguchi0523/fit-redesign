@@ -1,0 +1,22 @@
+---
+import Header from "../components/Header.astro";
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="使い方ガイド - 基本情報技術 I">
+	<Header />
+	<main class="container mx-auto px-4 py-8 max-w-3xl">
+		<div id="guide-content">読み込み中...</div>
+	</main>
+	<link
+		rel="stylesheet"
+		href="https://hacknock.github.io/lobsterjs/themes/formal.css"
+	/>
+	<script is:inline type="module">
+		import { loadMarkdown } from "https://hacknock.github.io/lobsterjs/lobster.js";
+		const el = document.getElementById("guide-content");
+		if (el) {
+			loadMarkdown("/guide-content.md", el);
+		}
+	</script>
+</Layout>

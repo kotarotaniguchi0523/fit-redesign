@@ -1,0 +1,177 @@
+---
+interface Props {
+	data: number[][];
+	width?: number;
+	height?: number;
+	cellSize?: number;
+}
+
+const { data, width = 300, height = 300, cellSize = 40 } = Astro.props;
+
+const rows = data.length;
+const cols = data[0]?.length || 0;
+
+const horizontalParity = data.map((row) => row.reduce((acc, bit) => acc ^ bit, 0));
+
+const verticalParity = Array.from({ length: cols }, (_, colIndex) =>
+	data.reduce((acc, row) => acc ^ row[colIndex], 0),
+);
+
+const dataCells = data.flatMap((row, rowIndex) =>
+	row.map((bit, colIndex) => ({
+		bit,
+		rowIndex,
+		colIndex,
+	})),
+);
+
+const horizontalCells = horizontalParity.map((bit, rowIndex) => ({
+	bit,
+	rowIndex,
+}));
+
+const verticalCells = verticalParity.map((bit, colIndex) => ({
+	bit,
+	colIndex,
+}));
+
+const totalParity = horizontalParity.reduce((acc, bit) => acc ^ bit, 0);
+
+const svgWidth = (cols + 2) * cellSize;
+const svgHeight = (rows + 2) * cellSize;
+---
+
+<svg
+  width={width}
+  height={height}
+  viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+  class="border border-gray-300 rounded"
+  aria-label="Parity check diagram"
+>
+  <title>Parity check diagram</title>
+
+  {dataCells.map((cell) => (
+    <g>
+      <rect
+        x={(cell.colIndex + 1) * cellSize}
+        y={(cell.rowIndex + 1) * cellSize}
+        width={cellSize}
+        height={cellSize}
+        fill="white"
+        stroke="black"
+        stroke-width="1"
+      />
+      <text
+        x={(cell.colIndex + 1.5) * cellSize}
+        y={(cell.rowIndex + 1.5) * cellSize}
+        font-size="16"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        fill="black"
+      >
+        {cell.bit}
+      </text>
+    </g>
+  ))}
+
+  {horizontalCells.map((cell) => (
+    <g>
+      <rect
+        x={(cols + 1) * cellSize}
+        y={(cell.rowIndex + 1) * cellSize}
+        width={cellSize}
+        height={cellSize}
+        fill="#e0f2fe"
+        stroke="black"
+        stroke-width="1"
+      />
+      <text
+        x={(cols + 1.5) * cellSize}
+        y={(cell.rowIndex + 1.5) * cellSize}
+        font-size="16"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        fill="black"
+      >
+        {cell.bit}
+      </text>
+    </g>
+  ))}
+
+  {verticalCells.map((cell) => (
+    <g>
+      <rect
+        x={(cell.colIndex + 1) * cellSize}
+        y={(rows + 1) * cellSize}
+        width={cellSize}
+        height={cellSize}
+        fill="#e0f2fe"
+        stroke="black"
+        stroke-width="1"
+      />
+      <text
+        x={(cell.colIndex + 1.5) * cellSize}
+        y={(rows + 1.5) * cellSize}
+        font-size="16"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        fill="black"
+      >
+        {cell.bit}
+      </text>
+    </g>
+  ))}
+
+  <g>
+    <rect
+      x={(cols + 1) * cellSize}
+      y={(rows + 1) * cellSize}
+      width={cellSize}
+      height={cellSize}
+      fill="#dbeafe"
+      stroke="black"
+      stroke-width="1"
+    />
+    <text
+      x={(cols + 1.5) * cellSize}
+      y={(rows + 1.5) * cellSize}
+      font-size="16"
+      text-anchor="middle"
+      dominant-baseline="middle"
+      fill="black"
+    >
+      {totalParity}
+    </text>
+  </g>
+
+  <text
+    x={0.5 * cellSize}
+    y={0.5 * cellSize}
+    font-size="12"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    fill="black"
+  >
+    Data
+  </text>
+  <text
+    x={(cols + 1.5) * cellSize}
+    y={0.5 * cellSize}
+    font-size="12"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    fill="black"
+  >
+    H
+  </text>
+  <text
+    x={0.5 * cellSize}
+    y={(rows + 1.5) * cellSize}
+    font-size="12"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    fill="black"
+  >
+    V
+  </text>
+</svg>
