@@ -173,7 +173,6 @@ export type {
 } from "./timer";
 export {
 	AttemptRecordSchema,
-	formatZodError,
 	QuestionTimeRecordSchema,
 	TimerModeSchema,
 	TimerStorageDataSchema,

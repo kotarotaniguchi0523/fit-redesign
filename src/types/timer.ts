@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { formatZodError as formatSharedZodError } from "../utils/zod";
 import type { QuestionId } from "./index";
 
 export const TimerModeSchema = z.enum(["stopwatch", "countdown"], {
@@ -55,8 +54,3 @@ export const TimerStorageDataSchema = z.object({
 export type TimerStorageData = Omit<z.infer<typeof TimerStorageDataSchema>, "records"> & {
 	records: Partial<Record<QuestionId, QuestionTimeRecord>>;
 };
-
-/** Zodエラーを読みやすい文字列にフォーマット */
-export function formatZodError(error: z.ZodError): string {
-	return formatSharedZodError(error);
-}
