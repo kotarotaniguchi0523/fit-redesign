@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Figure Data Editor</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  .tab-btn { transition: all 0.15s; }
+  .tab-btn.active { background-color: #2563eb; color: white; }
+  .parity-cell { width: 36px; height: 36px; cursor: pointer; user-select: none; }
+  .parity-cell:hover { opacity: 0.8; }
+  .svg-preview { background: repeating-conic-gradient(#f3f4f6 0% 25%, white 0% 50%) 50% / 20px 20px; }
+  .drop-zone { border: 2px dashed #d1d5db; transition: all 0.2s; }
+  .drop-zone.dragover { border-color: #2563eb; background-color: #eff6ff; }
+  .json-output { font-family: 'Courier New', monospace; font-size: 12px; }
+  table.editor-table th, table.editor-table td { padding: 4px 8px; }
+  table.editor-table input, table.editor-table select { padding: 2px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; }
+  table.editor-table input:focus, table.editor-table select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
+  .validation-ok { color: #16a34a; }
+  .validation-err { color: #dc2626; }
+  .node-selected { stroke: #2563eb !important; stroke-width: 3 !important; }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div class="max-w-7xl mx-auto p-4">
+  <!-- Header -->
+  <h1 class="text-2xl font-bold text-gray-800 mb-4">Figure Data Editor</h1>
+
+  <!-- Tabs -->
+  <div class="flex flex-wrap gap-2 mb-4" id="tabs">
+    <button class="tab-btn px-3 py-1.5 text-sm rounded border border-gray-300 bg-white hover:bg-gray-100" data-type="stateDiagram">StateDiagram</button>
+    <button class="tab-btn px-3 py-1.5 text-sm rounded border border-gray-300 bg-white hover:bg-gray-100" data-type="logicCircuit">LogicCircuit</button>
+    <button class="tab-btn px-3 py-1.5 text-sm rounded border border-gray-300 bg-white hover:bg-gray-100" data-type="flowchart">Flowchart</button>
+    <button class="tab-btn px-3 py-1.5 text-sm rounded border border-gray-300 bg-white hover:bg-gray-100" data-type="binaryTree">BinaryTree</button>
+    <button class="tab-btn px-3 py-1.5 text-sm rounded border border-gray-300 bg-white hover:bg-gray-100" data-type="parityCheck">ParityCheck</button>
+    <button class="tab-btn px-3 py-1.5 text-sm rounded border border-gray-300 bg-white hover:bg-gray-100" data-type="truthTable">TruthTable</button>
+    <button class="tab-btn px-3 py-1.5 text-sm rounded border border-gray-300 bg-white hover:bg-gray-100" data-type="dataTable">DataTable</button>
+    <button class="tab-btn px-3 py-1.5 text-sm rounded border border-gray-300 bg-white hover:bg-gray-100" data-type="huffmanTable">HuffmanTable</button>
+    <button class="tab-btn px-3 py-1.5 text-sm rounded border border-gray-300 bg-white hover:bg-gray-100" data-type="linkedListTable">LinkedListTable</button>
+    <button class="tab-btn px-3 py-1.5 text-sm rounded border border-gray-300 bg-white hover:bg-gray-100" data-type="normalDistributionTable">NormalDistribution</button>
+  </div>
+
+  <!-- Reference Image + SVG Preview -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <!-- Reference Image -->
+    <div>
+      <h2 class="text-sm font-semibold text-gray-600 mb-1">参考画像</h2>
+      <div id="dropZone" class="drop-zone rounded-lg bg-white min-h-[250px] flex items-center justify-center text-gray-400 text-sm relative overflow-hidden">
+        <div id="dropPlaceholder">ここに画像をドラッグ&ドロップ (PNG/JPG)</div>
+        <img id="refImage" class="hidden max-w-full max-h-[300px] object-contain" />
+        <button id="clearRefImage" class="hidden absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600">クリア</button>
+      </div>
+    </div>
+    <!-- Live SVG Preview -->
+    <div>
+      <h2 class="text-sm font-semibold text-gray-600 mb-1">プレビュー</h2>
+      <div id="previewContainer" class="svg-preview rounded-lg bg-white border border-gray-200 min-h-[250px] overflow-auto p-2">
+      </div>
+    </div>
+  </div>
+
+  <!-- Editor Area -->
+  <div class="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+    <h2 class="text-sm font-semibold text-gray-600 mb-2">エディタ</h2>
+    <div id="editorArea"></div>
+  </div>
+
+  <!-- JSON Output -->
+  <div class="bg-white rounded-lg border border-gray-200 p-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-sm font-semibold text-gray-600">JSON 出力</h2>
+      <div class="flex items-center gap-2">
+        <span id="validationStatus" class="text-sm validation-ok font-medium">OK</span>
+        <button id="copyBtn" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">コピー</button>
+        <button id="loadJsonBtn" class="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700">JSONを読み込み</button>
+      </div>
+    </div>
+    <textarea id="jsonOutput" class="json-output w-full h-48 border border-gray-300 rounded p-2 resize-y" readonly></textarea>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// SVG Rendering Functions (inlined from TypeScript sources)
+// ============================================================
+
+// --- Binary Tree ---
+function getTreeDepth(node) {
+  if (!node) return 0;
+  return 1 + Math.max(getTreeDepth(node.left), getTreeDepth(node.right));
+}
+
+function calculatePositions(root, width, height, nodeRadius) {
+  const depth = getTreeDepth(root);
+  const positions = [];
+  const walk = (node, level, left, right) => {
+    if (!node) return;
+    const x = node.x !== undefined ? node.x : (left + right) / 2;
+    const y = node.y !== undefined ? node.y : ((level + 1) / (depth + 1)) * height;
+    positions.push({ x, y, node });
+    if (node.left) walk(node.left, level + 1, left, x);
+    if (node.right) walk(node.right, level + 1, x, right);
+  };
+  walk(root, 0, nodeRadius * 2, width - nodeRadius * 2);
+  return positions;
+}
+
+function getEdgeLines(positions, nodeRadius) {
+  const positionMap = new Map();
+  for (const pos of positions) positionMap.set(pos.node, pos);
+  const edges = [];
+  const collectEdges = (node, parentPos) => {
+    if (!node || !parentPos) return;
+    const currentPos = positionMap.get(node);
+    if (!currentPos) return;
+    edges.push({ from: parentPos, to: currentPos });
+    if (node.left) collectEdges(node.left, currentPos);
+    if (node.right) collectEdges(node.right, currentPos);
+  };
+  const root = positions[0]?.node;
+  const rootPos = root ? positionMap.get(root) : undefined;
+  if (root && rootPos) {
+    if (root.left) collectEdges(root.left, rootPos);
+    if (root.right) collectEdges(root.right, rootPos);
+  }
+  return edges.map(edge => {
+    const dx = edge.to.x - edge.from.x;
+    const dy = edge.to.y - edge.from.y;
+    const angle = Math.atan2(dy, dx);
+    return {
+      x1: edge.from.x + nodeRadius * Math.cos(angle),
+      y1: edge.from.y + nodeRadius * Math.sin(angle),
+      x2: edge.to.x - nodeRadius * Math.cos(angle),
+      y2: edge.to.y - nodeRadius * Math.sin(angle),
+    };
+  });
+}
+
+// --- Parity Check ---
+function calculateParity(data, cellSize) {
+  const rows = data.length;
+  const cols = data[0]?.length || 0;
+  const horizontalParity = data.map(row => row.reduce((acc, bit) => acc ^ bit, 0));
+  const verticalParity = Array.from({length: cols}, (_, i) => data.reduce((acc, row) => acc ^ row[i], 0));
+  const totalParity = horizontalParity.reduce((acc, bit) => acc ^ bit, 0);
+  return { rows, cols, horizontalParity, verticalParity, totalParity, svgWidth: (cols+2)*cellSize, svgHeight: (rows+2)*cellSize };
+}
+
+// --- State Diagram ---
+function getArrowPath(fromX, fromY, toX, toY, curveOffset = 0) {
+  if (curveOffset === 0) return `M ${fromX} ${fromY} L ${toX} ${toY}`;
+  const midX = (fromX + toX) / 2, midY = (fromY + toY) / 2;
+  const dx = toX - fromX, dy = toY - fromY;
+  const perpX = -dy, perpY = dx;
+  const length = Math.sqrt(perpX * perpX + perpY * perpY);
+  const controlX = midX + (perpX / length) * curveOffset;
+  const controlY = midY + (perpY / length) * curveOffset;
+  return `M ${fromX} ${fromY} Q ${controlX} ${controlY} ${toX} ${toY}`;
+}
+
+function getArrowHead(fromX, fromY, toX, toY, curveOffset = 0, nodeRadius = 20) {
+  const arrowSize = 6;
+  let angle;
+  if (curveOffset === 0) {
+    angle = Math.atan2(toY - fromY, toX - fromX);
+  } else {
+    const midX = (fromX + toX) / 2, midY = (fromY + toY) / 2;
+    const dx = toX - fromX, dy = toY - fromY;
+    const perpX = -dy, perpY = dx;
+    const length = Math.sqrt(perpX * perpX + perpY * perpY);
+    const controlX = midX + (perpX / length) * curveOffset;
+    const controlY = midY + (perpY / length) * curveOffset;
+    angle = Math.atan2(toY - controlY, toX - controlX);
+  }
+  const endX = toX - nodeRadius * Math.cos(angle);
+  const endY = toY - nodeRadius * Math.sin(angle);
+  const x1 = endX - arrowSize * Math.cos(angle - Math.PI / 6);
+  const y1 = endY - arrowSize * Math.sin(angle - Math.PI / 6);
+  const x2 = endX - arrowSize * Math.cos(angle + Math.PI / 6);
+  const y2 = endY - arrowSize * Math.sin(angle + Math.PI / 6);
+  return `M ${endX} ${endY} L ${x1} ${y1} M ${endX} ${endY} L ${x2} ${y2}`;
+}
+
+function getLabelPosition(fromX, fromY, toX, toY, curveOffset = 0) {
+  if (curveOffset === 0) return { x: (fromX + toX) / 2, y: (fromY + toY) / 2 - 5 };
+  const midX = (fromX + toX) / 2, midY = (fromY + toY) / 2;
+  const dx = toX - fromX, dy = toY - fromY;
+  const perpX = -dy, perpY = dx;
+  const length = Math.sqrt(perpX * perpX + perpY * perpY);
+  return { x: midX + (perpX / length) * curveOffset, y: midY + (perpY / length) * curveOffset - 5 };
+}
+
+function buildTransitionData(nodes, transitions, nodeRadius = 20, acceptingNodeRadius = 25) {
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  const result = [];
+  for (const transition of transitions) {
+    const fromNode = nodeMap.get(transition.from);
+    const toNode = nodeMap.get(transition.to);
+    if (!fromNode || !toNode) continue;
+    if (transition.from === transition.to) {
+      const radius = fromNode.isAccepting ? acceptingNodeRadius : nodeRadius;
+      const cx = fromNode.x, cy = fromNode.y - radius - 15, r = 15;
+      result.push({ type: "selfLoop", label: transition.label, cx, cy, r,
+        arrowD: `M ${cx + r * 0.7} ${cy - r * 0.7} l 3 -3 M ${cx + r * 0.7} ${cy - r * 0.7} l 3 3`,
+        labelX: cx, labelY: cy - r - 5 });
+    } else {
+      const curveOffset = transition.curveOffset || 0;
+      const labelPos = getLabelPosition(fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset);
+      const angle = Math.atan2(toNode.y - fromNode.y, toNode.x - fromNode.x);
+      let startX, startY, endX, endY;
+      if (curveOffset === 0) {
+        startX = fromNode.x + nodeRadius * Math.cos(angle);
+        startY = fromNode.y + nodeRadius * Math.sin(angle);
+        endX = toNode.x - nodeRadius * Math.cos(angle);
+        endY = toNode.y - nodeRadius * Math.sin(angle);
+      } else {
+        startX = fromNode.x; startY = fromNode.y; endX = toNode.x; endY = toNode.y;
+      }
+      result.push({ type: "normal", label: transition.label,
+        pathD: getArrowPath(startX, startY, endX, endY, curveOffset),
+        arrowHeadD: getArrowHead(startX, startY, endX, endY, curveOffset, nodeRadius),
+        labelX: labelPos.x, labelY: labelPos.y });
+    }
+  }
+  return result;
+}
+
+// --- Logic Circuit ---
+const GATE_WIDTH = 50, GATE_HEIGHT = 40;
+
+function getGateSymbolPath(gate, gateWidth = GATE_WIDTH, gateHeight = GATE_HEIGHT) {
+  const { x, y, type } = gate;
+  switch (type) {
+    case "AND": return `<g><path d="M ${x - gateWidth/2} ${y - gateHeight/2} L ${x} ${y - gateHeight/2} A ${gateWidth/2} ${gateHeight/2} 0 0 1 ${x} ${y + gateHeight/2} L ${x - gateWidth/2} ${y + gateHeight/2} Z" fill="white" stroke="black" stroke-width="1.5" /></g>`;
+    case "OR": return `<g><path d="M ${x - gateWidth/2} ${y - gateHeight/2} Q ${x - gateWidth/4} ${y - gateHeight/2} ${x} ${y - gateHeight/2} A ${gateWidth/1.5} ${gateHeight/2} 0 0 1 ${x} ${y + gateHeight/2} Q ${x - gateWidth/4} ${y + gateHeight/2} ${x - gateWidth/2} ${y + gateHeight/2} Q ${x - gateWidth/3} ${y} ${x - gateWidth/2} ${y - gateHeight/2} Z" fill="white" stroke="black" stroke-width="1.5" /></g>`;
+    case "NOT": return `<g><path d="M ${x - gateWidth/2} ${y - gateHeight/2} L ${x + gateWidth/3} ${y} L ${x - gateWidth/2} ${y + gateHeight/2} Z" fill="white" stroke="black" stroke-width="1.5" /><circle cx="${x + gateWidth/3 + 5}" cy="${y}" r="5" fill="white" stroke="black" stroke-width="1.5" /></g>`;
+    case "NAND": return `<g><path d="M ${x - gateWidth/2} ${y - gateHeight/2} L ${x} ${y - gateHeight/2} A ${gateWidth/2} ${gateHeight/2} 0 0 1 ${x} ${y + gateHeight/2} L ${x - gateWidth/2} ${y + gateHeight/2} Z" fill="white" stroke="black" stroke-width="1.5" /><circle cx="${x + 5}" cy="${y}" r="5" fill="white" stroke="black" stroke-width="1.5" /></g>`;
+    case "NOR": return `<g><path d="M ${x - gateWidth/2} ${y - gateHeight/2} Q ${x - gateWidth/4} ${y - gateHeight/2} ${x} ${y - gateHeight/2} A ${gateWidth/1.5} ${gateHeight/2} 0 0 1 ${x} ${y + gateHeight/2} Q ${x - gateWidth/4} ${y + gateHeight/2} ${x - gateWidth/2} ${y + gateHeight/2} Q ${x - gateWidth/3} ${y} ${x - gateWidth/2} ${y - gateHeight/2} Z" fill="white" stroke="black" stroke-width="1.5" /><circle cx="${x + 5}" cy="${y}" r="5" fill="white" stroke="black" stroke-width="1.5" /></g>`;
+    case "XOR": return `<g><path d="M ${x - gateWidth/2 + 5} ${y - gateHeight/2} Q ${x - gateWidth/4 + 5} ${y - gateHeight/2} ${x + 5} ${y - gateHeight/2} A ${gateWidth/1.5} ${gateHeight/2} 0 0 1 ${x + 5} ${y + gateHeight/2} Q ${x - gateWidth/4 + 5} ${y + gateHeight/2} ${x - gateWidth/2 + 5} ${y + gateHeight/2} Q ${x - gateWidth/3 + 5} ${y} ${x - gateWidth/2 + 5} ${y - gateHeight/2} Z" fill="white" stroke="black" stroke-width="1.5" /><path d="M ${x - gateWidth/2} ${y - gateHeight/2} Q ${x - gateWidth/3} ${y} ${x - gateWidth/2} ${y + gateHeight/2}" fill="none" stroke="black" stroke-width="1.5" /></g>`;
+    case "XNOR": return `<g><path d="M ${x - gateWidth/2 + 5} ${y - gateHeight/2} Q ${x - gateWidth/4 + 5} ${y - gateHeight/2} ${x + 5} ${y - gateHeight/2} A ${gateWidth/1.5} ${gateHeight/2} 0 0 1 ${x + 5} ${y + gateHeight/2} Q ${x - gateWidth/4 + 5} ${y + gateHeight/2} ${x - gateWidth/2 + 5} ${y + gateHeight/2} Q ${x - gateWidth/3 + 5} ${y} ${x - gateWidth/2 + 5} ${y - gateHeight/2} Z" fill="white" stroke="black" stroke-width="1.5" /><path d="M ${x - gateWidth/2} ${y - gateHeight/2} Q ${x - gateWidth/3} ${y} ${x - gateWidth/2} ${y + gateHeight/2}" fill="none" stroke="black" stroke-width="1.5" /><circle cx="${x + 10}" cy="${y}" r="5" fill="white" stroke="black" stroke-width="1.5" /></g>`;
+    default: return "";
+  }
+}
+
+function getWirePath(wire, inputs, outputs, gates, gateWidth = GATE_WIDTH) {
+  const elementMap = new Map([...inputs, ...gates, ...outputs].map(el => [el.id, el]));
+  const fromElement = elementMap.get(wire.from);
+  const toElement = elementMap.get(wire.to);
+  if (!fromElement || !toElement) return null;
+  let startX, startY, endX, endY;
+  if (fromElement.label !== undefined && inputs.some(i => i.id === fromElement.id)) {
+    startX = fromElement.x + 20; startY = fromElement.y;
+  } else {
+    startX = fromElement.x + gateWidth / 2; startY = fromElement.y;
+  }
+  if (toElement.label !== undefined && outputs.some(o => o.id === toElement.id)) {
+    endX = toElement.x - 20; endY = toElement.y;
+  } else {
+    endX = toElement.x - gateWidth / 2; endY = toElement.y;
+  }
+  let pathData;
+  if (wire.points && wire.points.length > 0) {
+    pathData = `M ${startX} ${startY}`;
+    for (const point of wire.points) pathData += ` L ${point.x} ${point.y}`;
+    pathData += ` L ${endX} ${endY}`;
+  } else {
+    pathData = `M ${startX} ${startY} L ${endX} ${endY}`;
+  }
+  return pathData;
+}
+
+// --- Flowchart ---
+const FC_DEFAULTS = { NODE_WIDTH: 100, NODE_WIDTH_DECISION: 80, NODE_HEIGHT: 30, NODE_HEIGHT_DECISION: 40 };
+
+function getNodeDimensions(node) {
+  return {
+    w: node.width ?? (node.type === "decision" ? FC_DEFAULTS.NODE_WIDTH_DECISION : FC_DEFAULTS.NODE_WIDTH),
+    h: node.height ?? (node.type === "decision" ? FC_DEFAULTS.NODE_HEIGHT_DECISION : FC_DEFAULTS.NODE_HEIGHT)
+  };
+}
+
+function getEdgePoint(node, side) {
+  const {w, h} = getNodeDimensions(node);
+  switch(side) {
+    case "top": return {x: node.x, y: node.y - h/2};
+    case "bottom": return {x: node.x, y: node.y + h/2};
+    case "left": return {x: node.x - w/2, y: node.y};
+    case "right": return {x: node.x + w/2, y: node.y};
+  }
+}
+
+function buildNodeRenderData(nodes) {
+  return nodes.map(node => {
+    const {w, h} = getNodeDimensions(node);
+    const base = {type: node.type, id: node.id, x: node.x, y: node.y, w, h, label: node.label};
+    if (node.type === "decision") return {...base, points: `${node.x},${node.y-h/2} ${node.x+w/2},${node.y} ${node.x},${node.y+h/2} ${node.x-w/2},${node.y}`};
+    if (node.type === "start" || node.type === "end") return {...base, rx: h/2, ry: h/2};
+    return base;
+  });
+}
+
+function buildEdgeRenderData(nodes, edges) {
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  const result = [];
+  for (const edge of edges) {
+    const fromNode = nodeMap.get(edge.from);
+    const toNode = nodeMap.get(edge.to);
+    if (!fromNode || !toNode) continue;
+    const start = getEdgePoint(fromNode, edge.fromSide || "bottom");
+    const end = getEdgePoint(toNode, edge.toSide || "top");
+    let pathD;
+    if (edge.points && edge.points.length > 0) {
+      const points = [start, ...edge.points, end];
+      pathD = `M ${points[0].x} ${points[0].y}`;
+      for (let j = 1; j < points.length; j++) pathD += ` L ${points[j].x} ${points[j].y}`;
+    } else {
+      pathD = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+    }
+    let labelX = (start.x + end.x) / 2;
+    let labelY = (start.y + end.y) / 2;
+    if (edge.points && edge.points.length > 0) {
+      labelX = edge.points[0].x; labelY = edge.points[0].y;
+    }
+    result.push({pathD, label: edge.label, labelX, labelY});
+  }
+  return result;
+}
+
+// ============================================================
+// Default Data for each figure type
+// ============================================================
+
+const defaultData = {
+  stateDiagram: {
+    type: "stateDiagram",
+    nodes: [
+      { id: "q0", label: "q0", x: 100, y: 100, isInitial: true, isAccepting: false },
+      { id: "q1", label: "q1", x: 250, y: 100, isInitial: false, isAccepting: false },
+      { id: "q2", label: "q2", x: 400, y: 100, isInitial: false, isAccepting: true }
+    ],
+    transitions: [
+      { from: "q0", to: "q1", label: "a", curveOffset: 0 },
+      { from: "q1", to: "q2", label: "b", curveOffset: 0 },
+      { from: "q2", to: "q0", label: "c", curveOffset: 30 }
+    ]
+  },
+  logicCircuit: {
+    type: "logicCircuit",
+    inputs: [
+      { id: "in1", label: "A", x: 50, y: 80 },
+      { id: "in2", label: "B", x: 50, y: 160 }
+    ],
+    gates: [
+      { id: "g1", type: "AND", x: 200, y: 120 }
+    ],
+    outputs: [
+      { id: "out1", label: "Y", x: 350, y: 120, input: "g1" }
+    ],
+    wires: [
+      { from: "in1", to: "g1", points: [] },
+      { from: "in2", to: "g1", points: [] },
+      { from: "g1", to: "out1", points: [] }
+    ]
+  },
+  flowchart: {
+    type: "flowchart",
+    nodes: [
+      { id: "n1", type: "start", label: "開始", x: 200, y: 40 },
+      { id: "n2", type: "process", label: "処理A", x: 200, y: 120 },
+      { id: "n3", type: "decision", label: "条件?", x: 200, y: 220, width: 100, height: 60 },
+      { id: "n4", type: "process", label: "処理B", x: 350, y: 220 },
+      { id: "n5", type: "end", label: "終了", x: 200, y: 320 }
+    ],
+    edges: [
+      { from: "n1", to: "n2", fromSide: "bottom", toSide: "top" },
+      { from: "n2", to: "n3", fromSide: "bottom", toSide: "top" },
+      { from: "n3", to: "n4", label: "Yes", fromSide: "right", toSide: "left" },
+      { from: "n3", to: "n5", label: "No", fromSide: "bottom", toSide: "top" },
+      { from: "n4", to: "n5", fromSide: "bottom", toSide: "right", points: [{ x: 350, y: 320 }] }
+    ]
+  },
+  binaryTree: {
+    type: "binaryTree",
+    root: {
+      value: "A",
+      left: { value: "B", left: { value: "D" }, right: { value: "E" } },
+      right: { value: "C", left: null, right: { value: "F" } }
+    },
+    width: 400,
+    height: 250
+  },
+  parityCheck: {
+    type: "parityCheck",
+    data: [
+      [1, 0, 1, 1],
+      [0, 1, 0, 1],
+      [1, 1, 0, 0],
+      [0, 0, 1, 1]
+    ]
+  },
+  truthTable: {
+    type: "truthTable",
+    columns: [
+      { key: "A", label: "A" },
+      { key: "B", label: "B" },
+      { key: "Y", label: "A AND B" }
+    ],
+    rows: [
+      { A: 0, B: 0, Y: 0 },
+      { A: 0, B: 1, Y: 0 },
+      { A: 1, B: 0, Y: 0 },
+      { A: 1, B: 1, Y: 1 }
+    ]
+  },
+  dataTable: {
+    type: "dataTable",
+    columns: [
+      { key: "name", label: "名前" },
+      { key: "score", label: "点数" }
+    ],
+    rows: [
+      { name: "太郎", score: 85 },
+      { name: "花子", score: 92 },
+      { name: "次郎", score: 78 }
+    ]
+  },
+  huffmanTable: {
+    type: "huffmanTable",
+    data: {
+      characters: ["A", "B", "C", "D", "E"],
+      probabilities: [0.35, 0.25, 0.20, 0.12, 0.08]
+    }
+  },
+  linkedListTable: {
+    type: "linkedListTable",
+    entries: [
+      { address: 100, data: "A", pointer: 200 },
+      { address: 200, data: "B", pointer: 300 },
+      { address: 300, data: "C", pointer: "NULL" }
+    ]
+  },
+  normalDistributionTable: {
+    type: "normalDistributionTable",
+    entries: [
+      { u: 0.0, probability: 0.0000 },
+      { u: 0.5, probability: 0.1915 },
+      { u: 1.0, probability: 0.3413 },
+      { u: 1.5, probability: 0.4332 },
+      { u: 2.0, probability: 0.4772 },
+      { u: 2.5, probability: 0.4938 },
+      { u: 3.0, probability: 0.4987 }
+    ]
+  }
+};
+
+// ============================================================
+// Application State
+// ============================================================
+let state = {
+  activeType: "stateDiagram",
+  data: {},
+  selectedTreePath: null  // for binary tree node selection
+};
+
+// Deep clone helper
+function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+// Initialize state with default data
+for (const key of Object.keys(defaultData)) {
+  state.data[key] = deepClone(defaultData[key]);
+}
+
+// ============================================================
+// DOM references
+// ============================================================
+const $tabs = document.getElementById("tabs");
+const $editorArea = document.getElementById("editorArea");
+const $previewContainer = document.getElementById("previewContainer");
+const $jsonOutput = document.getElementById("jsonOutput");
+const $validationStatus = document.getElementById("validationStatus");
+const $copyBtn = document.getElementById("copyBtn");
+const $loadJsonBtn = document.getElementById("loadJsonBtn");
+const $dropZone = document.getElementById("dropZone");
+const $refImage = document.getElementById("refImage");
+const $dropPlaceholder = document.getElementById("dropPlaceholder");
+const $clearRefImage = document.getElementById("clearRefImage");
+
+// ============================================================
+// Tab switching
+// ============================================================
+$tabs.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-type]");
+  if (!btn) return;
+  state.activeType = btn.dataset.type;
+  renderAll();
+});
+
+// ============================================================
+// Reference Image Drag & Drop
+// ============================================================
+$dropZone.addEventListener("dragover", (e) => { e.preventDefault(); $dropZone.classList.add("dragover"); });
+$dropZone.addEventListener("dragleave", () => { $dropZone.classList.remove("dragover"); });
+$dropZone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  $dropZone.classList.remove("dragover");
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith("image/")) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      $refImage.src = ev.target.result;
+      $refImage.classList.remove("hidden");
+      $dropPlaceholder.classList.add("hidden");
+      $clearRefImage.classList.remove("hidden");
+    };
+    reader.readAsDataURL(file);
+  }
+});
+$clearRefImage.addEventListener("click", () => {
+  $refImage.src = "";
+  $refImage.classList.add("hidden");
+  $dropPlaceholder.classList.remove("hidden");
+  $clearRefImage.classList.add("hidden");
+});
+
+// ============================================================
+// Copy & Load JSON
+// ============================================================
+$copyBtn.addEventListener("click", () => {
+  const text = $jsonOutput.value;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = $copyBtn.textContent;
+    $copyBtn.textContent = "コピー完了!";
+    setTimeout(() => { $copyBtn.textContent = orig; }, 1500);
+  }).catch(() => {
+    $jsonOutput.select();
+    document.execCommand("copy");
+  });
+});
+
+$loadJsonBtn.addEventListener("click", () => {
+  const input = prompt("JSONを貼り付けてください:");
+  if (!input) return;
+  try {
+    const parsed = JSON.parse(input);
+    if (parsed.type && state.data[parsed.type] !== undefined) {
+      state.data[parsed.type] = parsed;
+      state.activeType = parsed.type;
+      renderAll();
+    } else {
+      alert("不明なtypeです: " + (parsed.type || "(未指定)"));
+    }
+  } catch (err) {
+    alert("JSON解析エラー: " + err.message);
+  }
+});
+
+// ============================================================
+// Main render
+// ============================================================
+function renderAll() {
+  renderTabs();
+  renderEditor();
+  renderPreview();
+  renderJson();
+}
+
+function renderTabs() {
+  for (const btn of $tabs.querySelectorAll("[data-type]")) {
+    btn.classList.toggle("active", btn.dataset.type === state.activeType);
+  }
+}
+
+function getCurrentData() {
+  return state.data[state.activeType];
+}
+
+function update() {
+  renderPreview();
+  renderJson();
+}
+
+// ============================================================
+// JSON output
+// ============================================================
+function renderJson() {
+  const data = getCurrentData();
+  try {
+    const json = JSON.stringify(data, null, 2);
+    $jsonOutput.value = json;
+    $validationStatus.textContent = "OK";
+    $validationStatus.className = "text-sm validation-ok font-medium";
+  } catch (err) {
+    $validationStatus.textContent = "Error: " + err.message;
+    $validationStatus.className = "text-sm validation-err font-medium";
+  }
+}
+
+// ============================================================
+// SVG Preview Renderers
+// ============================================================
+function renderPreview() {
+  const data = getCurrentData();
+  switch (data.type) {
+    case "stateDiagram": renderStateDiagramPreview(data); break;
+    case "logicCircuit": renderLogicCircuitPreview(data); break;
+    case "flowchart": renderFlowchartPreview(data); break;
+    case "binaryTree": renderBinaryTreePreview(data); break;
+    case "parityCheck": renderParityCheckPreview(data); break;
+    case "truthTable": renderTablePreview(data.columns, data.rows); break;
+    case "dataTable": renderTablePreview(data.columns, data.rows); break;
+    case "huffmanTable": renderHuffmanPreview(data); break;
+    case "linkedListTable": renderLinkedListPreview(data); break;
+    case "normalDistributionTable": renderNormalDistPreview(data); break;
+  }
+}
+
+function renderStateDiagramPreview(data) {
+  const { nodes, transitions } = data;
+  const nodeRadius = 20;
+  const tData = buildTransitionData(nodes, transitions, nodeRadius, 25);
+  let maxX = 200, maxY = 200;
+  for (const n of nodes) { maxX = Math.max(maxX, n.x + 60); maxY = Math.max(maxY, n.y + 60); }
+  let svg = `<svg width="${maxX}" height="${maxY}" xmlns="http://www.w3.org/2000/svg" style="font-family: sans-serif; font-size: 12px;">`;
+  // Initial arrow
+  for (const n of nodes) {
+    if (n.isInitial) {
+      svg += `<line x1="${n.x - 50}" y1="${n.y}" x2="${n.x - nodeRadius}" y2="${n.y}" stroke="black" stroke-width="1.5" marker-end="url(#arrowhead-sd)" />`;
+    }
+  }
+  svg += `<defs><marker id="arrowhead-sd" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0, 6 3, 0 6" fill="black"/></marker></defs>`;
+  // Transitions
+  for (const t of tData) {
+    if (t.type === "selfLoop") {
+      svg += `<circle cx="${t.cx}" cy="${t.cy}" r="${t.r}" fill="none" stroke="black" stroke-width="1.5" />`;
+      svg += `<path d="${t.arrowD}" fill="none" stroke="black" stroke-width="1.5" />`;
+      svg += `<text x="${t.labelX}" y="${t.labelY}" text-anchor="middle" font-size="11">${escHtml(t.label)}</text>`;
+    } else {
+      svg += `<path d="${t.pathD}" fill="none" stroke="black" stroke-width="1.5" />`;
+      svg += `<path d="${t.arrowHeadD}" fill="none" stroke="black" stroke-width="1.5" />`;
+      svg += `<text x="${t.labelX}" y="${t.labelY}" text-anchor="middle" font-size="11">${escHtml(t.label)}</text>`;
+    }
+  }
+  // Nodes
+  for (const n of nodes) {
+    svg += `<circle cx="${n.x}" cy="${n.y}" r="${nodeRadius}" fill="white" stroke="black" stroke-width="1.5" />`;
+    if (n.isAccepting) {
+      svg += `<circle cx="${n.x}" cy="${n.y}" r="${nodeRadius + 5}" fill="none" stroke="black" stroke-width="1.5" />`;
+    }
+    svg += `<text x="${n.x}" y="${n.y + 4}" text-anchor="middle" font-size="12">${escHtml(n.label)}</text>`;
+  }
+  svg += "</svg>";
+  $previewContainer.innerHTML = svg;
+}
+
+function renderLogicCircuitPreview(data) {
+  const { inputs, gates, outputs, wires } = data;
+  let maxX = 200, maxY = 200;
+  for (const el of [...inputs, ...gates, ...outputs]) { maxX = Math.max(maxX, el.x + 80); maxY = Math.max(maxY, el.y + 60); }
+  let svg = `<svg width="${maxX}" height="${maxY}" xmlns="http://www.w3.org/2000/svg" style="font-family: sans-serif; font-size: 12px;">`;
+  // Wires
+  for (const wire of wires) {
+    const path = getWirePath(wire, inputs, outputs, gates);
+    if (path) svg += `<path d="${path}" fill="none" stroke="black" stroke-width="1.5" />`;
+  }
+  // Gates
+  for (const gate of gates) {
+    svg += getGateSymbolPath(gate);
+    svg += `<text x="${gate.x}" y="${gate.y + 4}" text-anchor="middle" font-size="10" font-weight="bold">${gate.type}</text>`;
+  }
+  // Inputs
+  for (const inp of inputs) {
+    svg += `<text x="${inp.x}" y="${inp.y + 4}" text-anchor="middle" font-size="12" font-weight="bold">${escHtml(inp.label)}</text>`;
+    svg += `<line x1="${inp.x + 10}" y1="${inp.y}" x2="${inp.x + 20}" y2="${inp.y}" stroke="black" stroke-width="1.5" />`;
+  }
+  // Outputs
+  for (const out of outputs) {
+    svg += `<text x="${out.x}" y="${out.y + 4}" text-anchor="middle" font-size="12" font-weight="bold">${escHtml(out.label)}</text>`;
+    svg += `<line x1="${out.x - 20}" y1="${out.y}" x2="${out.x - 10}" y2="${out.y}" stroke="black" stroke-width="1.5" />`;
+  }
+  svg += "</svg>";
+  $previewContainer.innerHTML = svg;
+}
+
+function renderFlowchartPreview(data) {
+  const { nodes, edges } = data;
+  const nodeRender = buildNodeRenderData(nodes);
+  const edgeRender = buildEdgeRenderData(nodes, edges);
+  let maxX = 200, maxY = 200;
+  for (const n of nodeRender) { maxX = Math.max(maxX, n.x + n.w/2 + 40); maxY = Math.max(maxY, n.y + n.h/2 + 40); }
+  let svg = `<svg width="${maxX}" height="${maxY}" xmlns="http://www.w3.org/2000/svg" style="font-family: sans-serif; font-size: 12px;">`;
+  svg += `<defs><marker id="arrowhead-fc" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="black"/></marker></defs>`;
+  // Edges
+  for (const e of edgeRender) {
+    svg += `<path d="${e.pathD}" fill="none" stroke="black" stroke-width="1.5" marker-end="url(#arrowhead-fc)" />`;
+    if (e.label) svg += `<text x="${e.labelX + 5}" y="${e.labelY - 3}" font-size="11">${escHtml(e.label)}</text>`;
+  }
+  // Nodes
+  for (const n of nodeRender) {
+    if (n.type === "decision") {
+      svg += `<polygon points="${n.points}" fill="white" stroke="black" stroke-width="1.5" />`;
+    } else if (n.type === "start" || n.type === "end") {
+      svg += `<rect x="${n.x - n.w/2}" y="${n.y - n.h/2}" width="${n.w}" height="${n.h}" rx="${n.rx}" ry="${n.ry}" fill="white" stroke="black" stroke-width="1.5" />`;
+    } else {
+      svg += `<rect x="${n.x - n.w/2}" y="${n.y - n.h/2}" width="${n.w}" height="${n.h}" fill="white" stroke="black" stroke-width="1.5" />`;
+    }
+    svg += `<text x="${n.x}" y="${n.y + 4}" text-anchor="middle" font-size="12">${escHtml(n.label)}</text>`;
+  }
+  svg += "</svg>";
+  $previewContainer.innerHTML = svg;
+}
+
+function renderBinaryTreePreview(data) {
+  const { root, width = 400, height = 250 } = data;
+  if (!root) { $previewContainer.innerHTML = '<div class="text-gray-400 p-4">ルートノードがありません</div>'; return; }
+  const nodeRadius = 20;
+  const positions = calculatePositions(root, width, height, nodeRadius);
+  const edgeLines = getEdgeLines(positions, nodeRadius);
+  let svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" style="font-family: sans-serif; font-size: 12px;">`;
+  for (const e of edgeLines) {
+    svg += `<line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}" stroke="black" stroke-width="1.5" />`;
+  }
+  for (const p of positions) {
+    svg += `<circle cx="${p.x}" cy="${p.y}" r="${nodeRadius}" fill="white" stroke="black" stroke-width="1.5" />`;
+    svg += `<text x="${p.x}" y="${p.y + 4}" text-anchor="middle" font-size="12">${escHtml(String(p.node.value))}</text>`;
+  }
+  svg += "</svg>";
+  $previewContainer.innerHTML = svg;
+}
+
+function renderParityCheckPreview(data) {
+  const cellSize = 36;
+  const parity = calculateParity(data.data, cellSize);
+  const { rows, cols, horizontalParity, verticalParity, totalParity } = parity;
+  let svg = `<svg width="${parity.svgWidth}" height="${parity.svgHeight}" xmlns="http://www.w3.org/2000/svg" style="font-family: sans-serif; font-size: 12px;">`;
+  // Data cells
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = (c + 1) * cellSize, y = (r + 1) * cellSize;
+      svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" fill="white" stroke="#999" stroke-width="1" />`;
+      svg += `<text x="${x + cellSize/2}" y="${y + cellSize/2 + 4}" text-anchor="middle">${data.data[r][c]}</text>`;
+    }
+  }
+  // Horizontal parity
+  for (let r = 0; r < rows; r++) {
+    const x = (cols + 1) * cellSize, y = (r + 1) * cellSize;
+    svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" fill="#fef3c7" stroke="#999" stroke-width="1" />`;
+    svg += `<text x="${x + cellSize/2}" y="${y + cellSize/2 + 4}" text-anchor="middle" fill="#b45309">${horizontalParity[r]}</text>`;
+  }
+  // Vertical parity
+  for (let c = 0; c < cols; c++) {
+    const x = (c + 1) * cellSize, y = (rows + 1) * cellSize;
+    svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" fill="#fef3c7" stroke="#999" stroke-width="1" />`;
+    svg += `<text x="${x + cellSize/2}" y="${y + cellSize/2 + 4}" text-anchor="middle" fill="#b45309">${verticalParity[c]}</text>`;
+  }
+  // Total parity
+  const tx = (cols + 1) * cellSize, ty = (rows + 1) * cellSize;
+  svg += `<rect x="${tx}" y="${ty}" width="${cellSize}" height="${cellSize}" fill="#fde68a" stroke="#999" stroke-width="1" />`;
+  svg += `<text x="${tx + cellSize/2}" y="${ty + cellSize/2 + 4}" text-anchor="middle" fill="#92400e" font-weight="bold">${totalParity}</text>`;
+  // Labels
+  svg += `<text x="${cellSize/2}" y="${cellSize/2 + 4}" text-anchor="middle" font-size="10" fill="#666">Data</text>`;
+  for (let c = 0; c < cols; c++) {
+    svg += `<text x="${(c + 1) * cellSize + cellSize/2}" y="${cellSize/2 + 4}" text-anchor="middle" font-size="10" fill="#666">C${c}</text>`;
+  }
+  svg += `<text x="${(cols + 1) * cellSize + cellSize/2}" y="${cellSize/2 + 4}" text-anchor="middle" font-size="10" fill="#b45309">P</text>`;
+  for (let r = 0; r < rows; r++) {
+    svg += `<text x="${cellSize/2}" y="${(r + 1) * cellSize + cellSize/2 + 4}" text-anchor="middle" font-size="10" fill="#666">R${r}</text>`;
+  }
+  svg += `<text x="${cellSize/2}" y="${(rows + 1) * cellSize + cellSize/2 + 4}" text-anchor="middle" font-size="10" fill="#b45309">P</text>`;
+  svg += "</svg>";
+  $previewContainer.innerHTML = svg;
+}
+
+function renderTablePreview(columns, rows) {
+  let html = '<table class="border-collapse border border-gray-300 text-sm">';
+  html += "<thead><tr>";
+  for (const col of columns) html += `<th class="border border-gray-300 px-3 py-1 bg-gray-100">${escHtml(col.label)}</th>`;
+  html += "</tr></thead><tbody>";
+  for (const row of rows) {
+    html += "<tr>";
+    for (const col of columns) html += `<td class="border border-gray-300 px-3 py-1 text-center">${escHtml(String(row[col.key] ?? ""))}</td>`;
+    html += "</tr>";
+  }
+  html += "</tbody></table>";
+  $previewContainer.innerHTML = html;
+}
+
+function renderHuffmanPreview(data) {
+  const { characters, probabilities } = data.data;
+  let html = '<table class="border-collapse border border-gray-300 text-sm">';
+  html += '<thead><tr><th class="border border-gray-300 px-3 py-1 bg-gray-100">文字</th><th class="border border-gray-300 px-3 py-1 bg-gray-100">確率</th></tr></thead><tbody>';
+  for (let i = 0; i < characters.length; i++) {
+    html += `<tr><td class="border border-gray-300 px-3 py-1 text-center">${escHtml(characters[i])}</td>`;
+    html += `<td class="border border-gray-300 px-3 py-1 text-center">${probabilities[i]}</td></tr>`;
+  }
+  html += "</tbody></table>";
+  $previewContainer.innerHTML = html;
+}
+
+function renderLinkedListPreview(data) {
+  let html = '<table class="border-collapse border border-gray-300 text-sm">';
+  html += '<thead><tr><th class="border border-gray-300 px-3 py-1 bg-gray-100">アドレス</th><th class="border border-gray-300 px-3 py-1 bg-gray-100">データ</th><th class="border border-gray-300 px-3 py-1 bg-gray-100">ポインタ</th></tr></thead><tbody>';
+  for (const entry of data.entries) {
+    html += `<tr><td class="border border-gray-300 px-3 py-1 text-center">${escHtml(String(entry.address))}</td>`;
+    html += `<td class="border border-gray-300 px-3 py-1 text-center">${escHtml(entry.data)}</td>`;
+    html += `<td class="border border-gray-300 px-3 py-1 text-center">${escHtml(String(entry.pointer))}</td></tr>`;
+  }
+  html += "</tbody></table>";
+  $previewContainer.innerHTML = html;
+}
+
+function renderNormalDistPreview(data) {
+  let html = '<table class="border-collapse border border-gray-300 text-sm">';
+  html += '<thead><tr><th class="border border-gray-300 px-3 py-1 bg-gray-100">u</th><th class="border border-gray-300 px-3 py-1 bg-gray-100">確率</th></tr></thead><tbody>';
+  for (const entry of data.entries) {
+    html += `<tr><td class="border border-gray-300 px-3 py-1 text-center">${entry.u}</td>`;
+    html += `<td class="border border-gray-300 px-3 py-1 text-center">${entry.probability}</td></tr>`;
+  }
+  html += "</tbody></table>";
+  $previewContainer.innerHTML = html;
+}
+
+// ============================================================
+// Editor Renderers
+// ============================================================
+function renderEditor() {
+  const data = getCurrentData();
+  switch (data.type) {
+    case "stateDiagram": renderStateDiagramEditor(data); break;
+    case "logicCircuit": renderLogicCircuitEditor(data); break;
+    case "flowchart": renderFlowchartEditor(data); break;
+    case "binaryTree": renderBinaryTreeEditor(data); break;
+    case "parityCheck": renderParityCheckEditor(data); break;
+    case "truthTable": renderTruthTableEditor(data); break;
+    case "dataTable": renderDataTableEditor(data); break;
+    case "huffmanTable": renderHuffmanTableEditor(data); break;
+    case "linkedListTable": renderLinkedListTableEditor(data); break;
+    case "normalDistributionTable": renderNormalDistTableEditor(data); break;
+  }
+}
+
+// --- State Diagram Editor ---
+function renderStateDiagramEditor(data) {
+  let html = '<div class="space-y-4">';
+  // Nodes table
+  html += '<div><h3 class="text-sm font-semibold mb-1">ノード</h3>';
+  html += '<table class="editor-table border-collapse border border-gray-200 text-sm w-full"><thead><tr class="bg-gray-50">';
+  html += '<th class="border border-gray-200">ID</th><th class="border border-gray-200">ラベル</th><th class="border border-gray-200">X</th><th class="border border-gray-200">Y</th>';
+  html += '<th class="border border-gray-200">初期</th><th class="border border-gray-200">受理</th><th class="border border-gray-200">操作</th></tr></thead><tbody>';
+  data.nodes.forEach((n, i) => {
+    html += `<tr>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(n.id)}" class="w-16" onchange="sdNodeChange(${i},'id',this.value)"></td>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(n.label)}" class="w-16" onchange="sdNodeChange(${i},'label',this.value)"></td>
+      <td class="border border-gray-200"><input type="number" value="${n.x}" class="w-16" onchange="sdNodeChange(${i},'x',+this.value)"></td>
+      <td class="border border-gray-200"><input type="number" value="${n.y}" class="w-16" onchange="sdNodeChange(${i},'y',+this.value)"></td>
+      <td class="border border-gray-200 text-center"><input type="checkbox" ${n.isInitial ? 'checked' : ''} onchange="sdNodeChange(${i},'isInitial',this.checked)"></td>
+      <td class="border border-gray-200 text-center"><input type="checkbox" ${n.isAccepting ? 'checked' : ''} onchange="sdNodeChange(${i},'isAccepting',this.checked)"></td>
+      <td class="border border-gray-200 text-center"><button class="text-red-600 hover:text-red-800 text-xs px-1" onclick="sdRemoveNode(${i})">削除</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  html += '<button class="mt-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700" onclick="sdAddNode()">+ ノード追加</button></div>';
+
+  // Transitions table
+  html += '<div><h3 class="text-sm font-semibold mb-1">遷移</h3>';
+  html += '<table class="editor-table border-collapse border border-gray-200 text-sm w-full"><thead><tr class="bg-gray-50">';
+  html += '<th class="border border-gray-200">From</th><th class="border border-gray-200">To</th><th class="border border-gray-200">ラベル</th><th class="border border-gray-200">曲線オフセット</th><th class="border border-gray-200">操作</th></tr></thead><tbody>';
+  data.transitions.forEach((t, i) => {
+    html += `<tr>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(t.from)}" class="w-16" onchange="sdTransChange(${i},'from',this.value)"></td>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(t.to)}" class="w-16" onchange="sdTransChange(${i},'to',this.value)"></td>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(t.label)}" class="w-20" onchange="sdTransChange(${i},'label',this.value)"></td>
+      <td class="border border-gray-200"><input type="number" value="${t.curveOffset || 0}" class="w-16" onchange="sdTransChange(${i},'curveOffset',+this.value)"></td>
+      <td class="border border-gray-200 text-center"><button class="text-red-600 hover:text-red-800 text-xs px-1" onclick="sdRemoveTrans(${i})">削除</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  html += '<button class="mt-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700" onclick="sdAddTrans()">+ 遷移追加</button></div>';
+  html += '</div>';
+  $editorArea.innerHTML = html;
+}
+
+window.sdNodeChange = (i, key, val) => { state.data.stateDiagram.nodes[i][key] = val; update(); };
+window.sdRemoveNode = (i) => { state.data.stateDiagram.nodes.splice(i, 1); renderEditor(); update(); };
+window.sdAddNode = () => {
+  const nodes = state.data.stateDiagram.nodes;
+  const id = "q" + nodes.length;
+  nodes.push({ id, label: id, x: 100 + nodes.length * 80, y: 100, isInitial: false, isAccepting: false });
+  renderEditor(); update();
+};
+window.sdTransChange = (i, key, val) => { state.data.stateDiagram.transitions[i][key] = val; update(); };
+window.sdRemoveTrans = (i) => { state.data.stateDiagram.transitions.splice(i, 1); renderEditor(); update(); };
+window.sdAddTrans = () => {
+  const nodes = state.data.stateDiagram.nodes;
+  state.data.stateDiagram.transitions.push({ from: nodes[0]?.id || "", to: nodes[0]?.id || "", label: "", curveOffset: 0 });
+  renderEditor(); update();
+};
+
+// --- Logic Circuit Editor ---
+function renderLogicCircuitEditor(data) {
+  let html = '<div class="space-y-4">';
+  const gateTypes = ["AND", "OR", "NOT", "NAND", "NOR", "XOR", "XNOR"];
+
+  // Inputs
+  html += '<div><h3 class="text-sm font-semibold mb-1">入力</h3>';
+  html += '<table class="editor-table border-collapse border border-gray-200 text-sm w-full"><thead><tr class="bg-gray-50">';
+  html += '<th class="border border-gray-200">ID</th><th class="border border-gray-200">ラベル</th><th class="border border-gray-200">X</th><th class="border border-gray-200">Y</th><th class="border border-gray-200">操作</th></tr></thead><tbody>';
+  data.inputs.forEach((inp, i) => {
+    html += `<tr>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(inp.id)}" class="w-16" onchange="lcInputChange(${i},'id',this.value)"></td>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(inp.label)}" class="w-16" onchange="lcInputChange(${i},'label',this.value)"></td>
+      <td class="border border-gray-200"><input type="number" value="${inp.x}" class="w-16" onchange="lcInputChange(${i},'x',+this.value)"></td>
+      <td class="border border-gray-200"><input type="number" value="${inp.y}" class="w-16" onchange="lcInputChange(${i},'y',+this.value)"></td>
+      <td class="border border-gray-200 text-center"><button class="text-red-600 text-xs" onclick="lcRemoveInput(${i})">削除</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  html += '<button class="mt-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700" onclick="lcAddInput()">+ 入力追加</button></div>';
+
+  // Gates
+  html += '<div><h3 class="text-sm font-semibold mb-1">ゲート</h3>';
+  html += '<table class="editor-table border-collapse border border-gray-200 text-sm w-full"><thead><tr class="bg-gray-50">';
+  html += '<th class="border border-gray-200">ID</th><th class="border border-gray-200">種類</th><th class="border border-gray-200">X</th><th class="border border-gray-200">Y</th><th class="border border-gray-200">操作</th></tr></thead><tbody>';
+  data.gates.forEach((g, i) => {
+    const opts = gateTypes.map(t => `<option value="${t}" ${g.type === t ? 'selected' : ''}>${t}</option>`).join('');
+    html += `<tr>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(g.id)}" class="w-16" onchange="lcGateChange(${i},'id',this.value)"></td>
+      <td class="border border-gray-200"><select onchange="lcGateChange(${i},'type',this.value)">${opts}</select></td>
+      <td class="border border-gray-200"><input type="number" value="${g.x}" class="w-16" onchange="lcGateChange(${i},'x',+this.value)"></td>
+      <td class="border border-gray-200"><input type="number" value="${g.y}" class="w-16" onchange="lcGateChange(${i},'y',+this.value)"></td>
+      <td class="border border-gray-200 text-center"><button class="text-red-600 text-xs" onclick="lcRemoveGate(${i})">削除</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  html += '<button class="mt-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700" onclick="lcAddGate()">+ ゲート追加</button></div>';
+
+  // Outputs
+  html += '<div><h3 class="text-sm font-semibold mb-1">出力</h3>';
+  html += '<table class="editor-table border-collapse border border-gray-200 text-sm w-full"><thead><tr class="bg-gray-50">';
+  html += '<th class="border border-gray-200">ID</th><th class="border border-gray-200">ラベル</th><th class="border border-gray-200">X</th><th class="border border-gray-200">Y</th><th class="border border-gray-200">Input</th><th class="border border-gray-200">操作</th></tr></thead><tbody>';
+  data.outputs.forEach((o, i) => {
+    html += `<tr>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(o.id)}" class="w-16" onchange="lcOutputChange(${i},'id',this.value)"></td>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(o.label)}" class="w-16" onchange="lcOutputChange(${i},'label',this.value)"></td>
+      <td class="border border-gray-200"><input type="number" value="${o.x}" class="w-16" onchange="lcOutputChange(${i},'x',+this.value)"></td>
+      <td class="border border-gray-200"><input type="number" value="${o.y}" class="w-16" onchange="lcOutputChange(${i},'y',+this.value)"></td>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(o.input)}" class="w-16" onchange="lcOutputChange(${i},'input',this.value)"></td>
+      <td class="border border-gray-200 text-center"><button class="text-red-600 text-xs" onclick="lcRemoveOutput(${i})">削除</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  html += '<button class="mt-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700" onclick="lcAddOutput()">+ 出力追加</button></div>';
+
+  // Wires
+  html += '<div><h3 class="text-sm font-semibold mb-1">配線</h3>';
+  html += '<table class="editor-table border-collapse border border-gray-200 text-sm w-full"><thead><tr class="bg-gray-50">';
+  html += '<th class="border border-gray-200">From</th><th class="border border-gray-200">To</th><th class="border border-gray-200">中間点 (JSON)</th><th class="border border-gray-200">操作</th></tr></thead><tbody>';
+  data.wires.forEach((w, i) => {
+    const pts = w.points ? JSON.stringify(w.points) : '[]';
+    html += `<tr>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(w.from)}" class="w-20" onchange="lcWireChange(${i},'from',this.value)"></td>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(w.to)}" class="w-20" onchange="lcWireChange(${i},'to',this.value)"></td>
+      <td class="border border-gray-200"><input type="text" value='${escAttr(pts)}' class="w-48" onchange="lcWirePointsChange(${i},this.value)"></td>
+      <td class="border border-gray-200 text-center"><button class="text-red-600 text-xs" onclick="lcRemoveWire(${i})">削除</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  html += '<button class="mt-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700" onclick="lcAddWire()">+ 配線追加</button></div>';
+  html += '</div>';
+  $editorArea.innerHTML = html;
+}
+
+window.lcInputChange = (i, k, v) => { state.data.logicCircuit.inputs[i][k] = v; update(); };
+window.lcRemoveInput = (i) => { state.data.logicCircuit.inputs.splice(i, 1); renderEditor(); update(); };
+window.lcAddInput = () => {
+  const inputs = state.data.logicCircuit.inputs;
+  inputs.push({ id: "in" + (inputs.length + 1), label: String.fromCharCode(65 + inputs.length), x: 50, y: 80 + inputs.length * 60 });
+  renderEditor(); update();
+};
+window.lcGateChange = (i, k, v) => { state.data.logicCircuit.gates[i][k] = v; update(); };
+window.lcRemoveGate = (i) => { state.data.logicCircuit.gates.splice(i, 1); renderEditor(); update(); };
+window.lcAddGate = () => {
+  const gates = state.data.logicCircuit.gates;
+  gates.push({ id: "g" + (gates.length + 1), type: "AND", x: 200, y: 120 + gates.length * 80 });
+  renderEditor(); update();
+};
+window.lcOutputChange = (i, k, v) => { state.data.logicCircuit.outputs[i][k] = v; update(); };
+window.lcRemoveOutput = (i) => { state.data.logicCircuit.outputs.splice(i, 1); renderEditor(); update(); };
+window.lcAddOutput = () => {
+  const outputs = state.data.logicCircuit.outputs;
+  outputs.push({ id: "out" + (outputs.length + 1), label: "Y" + (outputs.length + 1), x: 350, y: 120 + outputs.length * 60, input: "" });
+  renderEditor(); update();
+};
+window.lcWireChange = (i, k, v) => { state.data.logicCircuit.wires[i][k] = v; update(); };
+window.lcWirePointsChange = (i, v) => { try { state.data.logicCircuit.wires[i].points = JSON.parse(v); update(); } catch {} };
+window.lcRemoveWire = (i) => { state.data.logicCircuit.wires.splice(i, 1); renderEditor(); update(); };
+window.lcAddWire = () => {
+  state.data.logicCircuit.wires.push({ from: "", to: "", points: [] });
+  renderEditor(); update();
+};
+
+// --- Flowchart Editor ---
+function renderFlowchartEditor(data) {
+  let html = '<div class="space-y-4">';
+  const nodeTypes = ["start", "end", "process", "decision", "connector"];
+  const sides = ["top", "bottom", "left", "right"];
+
+  // Width/Height
+  html += `<div class="flex gap-4 items-center">
+    <label class="text-sm">SVG幅: <input type="number" value="${data.width || ''}" class="w-20 border border-gray-300 rounded px-2 py-1 text-sm" placeholder="auto" onchange="fcSizeChange('width', this.value)"></label>
+    <label class="text-sm">SVG高さ: <input type="number" value="${data.height || ''}" class="w-20 border border-gray-300 rounded px-2 py-1 text-sm" placeholder="auto" onchange="fcSizeChange('height', this.value)"></label>
+  </div>`;
+
+  // Nodes
+  html += '<div><h3 class="text-sm font-semibold mb-1">ノード</h3>';
+  html += '<table class="editor-table border-collapse border border-gray-200 text-sm w-full"><thead><tr class="bg-gray-50">';
+  html += '<th class="border border-gray-200">ID</th><th class="border border-gray-200">種類</th><th class="border border-gray-200">ラベル</th><th class="border border-gray-200">X</th><th class="border border-gray-200">Y</th><th class="border border-gray-200">幅</th><th class="border border-gray-200">高さ</th><th class="border border-gray-200">操作</th></tr></thead><tbody>';
+  data.nodes.forEach((n, i) => {
+    const opts = nodeTypes.map(t => `<option value="${t}" ${n.type === t ? 'selected' : ''}>${t}</option>`).join('');
+    html += `<tr>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(n.id)}" class="w-12" onchange="fcNodeChange(${i},'id',this.value)"></td>
+      <td class="border border-gray-200"><select onchange="fcNodeChange(${i},'type',this.value)">${opts}</select></td>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(n.label)}" class="w-16" onchange="fcNodeChange(${i},'label',this.value)"></td>
+      <td class="border border-gray-200"><input type="number" value="${n.x}" class="w-14" onchange="fcNodeChange(${i},'x',+this.value)"></td>
+      <td class="border border-gray-200"><input type="number" value="${n.y}" class="w-14" onchange="fcNodeChange(${i},'y',+this.value)"></td>
+      <td class="border border-gray-200"><input type="number" value="${n.width || ''}" class="w-14" placeholder="auto" onchange="fcNodeChange(${i},'width',this.value ? +this.value : undefined)"></td>
+      <td class="border border-gray-200"><input type="number" value="${n.height || ''}" class="w-14" placeholder="auto" onchange="fcNodeChange(${i},'height',this.value ? +this.value : undefined)"></td>
+      <td class="border border-gray-200 text-center"><button class="text-red-600 text-xs" onclick="fcRemoveNode(${i})">削除</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  html += '<button class="mt-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700" onclick="fcAddNode()">+ ノード追加</button></div>';
+
+  // Edges
+  html += '<div><h3 class="text-sm font-semibold mb-1">エッジ</h3>';
+  html += '<table class="editor-table border-collapse border border-gray-200 text-sm w-full"><thead><tr class="bg-gray-50">';
+  html += '<th class="border border-gray-200">From</th><th class="border border-gray-200">To</th><th class="border border-gray-200">ラベル</th><th class="border border-gray-200">From側</th><th class="border border-gray-200">To側</th><th class="border border-gray-200">中間点</th><th class="border border-gray-200">操作</th></tr></thead><tbody>';
+  data.edges.forEach((e, i) => {
+    const fromOpts = sides.map(s => `<option value="${s}" ${(e.fromSide || 'bottom') === s ? 'selected' : ''}>${s}</option>`).join('');
+    const toOpts = sides.map(s => `<option value="${s}" ${(e.toSide || 'top') === s ? 'selected' : ''}>${s}</option>`).join('');
+    const pts = e.points ? JSON.stringify(e.points) : '[]';
+    html += `<tr>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(e.from)}" class="w-12" onchange="fcEdgeChange(${i},'from',this.value)"></td>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(e.to)}" class="w-12" onchange="fcEdgeChange(${i},'to',this.value)"></td>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(e.label || '')}" class="w-12" onchange="fcEdgeChange(${i},'label',this.value)"></td>
+      <td class="border border-gray-200"><select onchange="fcEdgeChange(${i},'fromSide',this.value)">${fromOpts}</select></td>
+      <td class="border border-gray-200"><select onchange="fcEdgeChange(${i},'toSide',this.value)">${toOpts}</select></td>
+      <td class="border border-gray-200"><input type="text" value='${escAttr(pts)}' class="w-40" onchange="fcEdgePointsChange(${i},this.value)"></td>
+      <td class="border border-gray-200 text-center"><button class="text-red-600 text-xs" onclick="fcRemoveEdge(${i})">削除</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  html += '<button class="mt-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700" onclick="fcAddEdge()">+ エッジ追加</button></div>';
+  html += '</div>';
+  $editorArea.innerHTML = html;
+}
+
+window.fcSizeChange = (k, v) => { state.data.flowchart[k] = v ? +v : undefined; update(); };
+window.fcNodeChange = (i, k, v) => { state.data.flowchart.nodes[i][k] = v; update(); };
+window.fcRemoveNode = (i) => { state.data.flowchart.nodes.splice(i, 1); renderEditor(); update(); };
+window.fcAddNode = () => {
+  const nodes = state.data.flowchart.nodes;
+  nodes.push({ id: "n" + (nodes.length + 1), type: "process", label: "新規", x: 200, y: 50 + nodes.length * 80 });
+  renderEditor(); update();
+};
+window.fcEdgeChange = (i, k, v) => { state.data.flowchart.edges[i][k] = v; update(); };
+window.fcEdgePointsChange = (i, v) => { try { state.data.flowchart.edges[i].points = JSON.parse(v); update(); } catch {} };
+window.fcRemoveEdge = (i) => { state.data.flowchart.edges.splice(i, 1); renderEditor(); update(); };
+window.fcAddEdge = () => {
+  state.data.flowchart.edges.push({ from: "", to: "", fromSide: "bottom", toSide: "top" });
+  renderEditor(); update();
+};
+
+// --- Binary Tree Editor ---
+function renderBinaryTreeEditor(data) {
+  let html = '<div class="space-y-4">';
+  html += `<div class="flex gap-4 items-center">
+    <label class="text-sm">SVG幅: <input type="number" value="${data.width || 400}" class="w-20 border border-gray-300 rounded px-2 py-1 text-sm" onchange="btSizeChange('width', +this.value)"></label>
+    <label class="text-sm">SVG高さ: <input type="number" value="${data.height || 250}" class="w-20 border border-gray-300 rounded px-2 py-1 text-sm" onchange="btSizeChange('height', +this.value)"></label>
+  </div>`;
+
+  // Flatten tree to show in table
+  html += '<div><h3 class="text-sm font-semibold mb-1">ノード一覧 (パスで指定)</h3>';
+  html += '<p class="text-xs text-gray-500 mb-2">パス: root, root.left, root.right, root.left.left など</p>';
+  html += '<table class="editor-table border-collapse border border-gray-200 text-sm w-full"><thead><tr class="bg-gray-50">';
+  html += '<th class="border border-gray-200">パス</th><th class="border border-gray-200">値</th><th class="border border-gray-200">X (任意)</th><th class="border border-gray-200">Y (任意)</th><th class="border border-gray-200">操作</th></tr></thead><tbody>';
+
+  const flatNodes = [];
+  function flattenTree(node, path) {
+    if (!node) return;
+    flatNodes.push({ path, node });
+    flattenTree(node.left, path + ".left");
+    flattenTree(node.right, path + ".right");
+  }
+  if (data.root) flattenTree(data.root, "root");
+
+  flatNodes.forEach((fn, i) => {
+    html += `<tr>
+      <td class="border border-gray-200 text-xs font-mono px-2">${fn.path}</td>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(String(fn.node.value))}" class="w-16" onchange="btValueChange('${fn.path}',this.value)"></td>
+      <td class="border border-gray-200"><input type="number" value="${fn.node.x ?? ''}" class="w-14" placeholder="auto" onchange="btPosChange('${fn.path}','x',this.value)"></td>
+      <td class="border border-gray-200"><input type="number" value="${fn.node.y ?? ''}" class="w-14" placeholder="auto" onchange="btPosChange('${fn.path}','y',this.value)"></td>
+      <td class="border border-gray-200 text-center">
+        <button class="text-blue-600 text-xs mr-1" onclick="btAddChild('${fn.path}','left')" title="左の子を追加">+左</button>
+        <button class="text-blue-600 text-xs mr-1" onclick="btAddChild('${fn.path}','right')" title="右の子を追加">+右</button>
+        ${fn.path !== "root" ? `<button class="text-red-600 text-xs" onclick="btRemoveNode('${fn.path}')">削除</button>` : ''}
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  if (!data.root) {
+    html += '<button class="mt-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700" onclick="btCreateRoot()">+ ルートノード作成</button>';
+  }
+  html += '</div></div>';
+  $editorArea.innerHTML = html;
+}
+
+function getNodeByPath(root, path) {
+  if (path === "root") return root;
+  const parts = path.split(".").slice(1);
+  let node = root;
+  for (const p of parts) {
+    if (!node) return null;
+    node = node[p];
+  }
+  return node;
+}
+
+function setNodeByPath(root, path, value) {
+  if (path === "root") return value;
+  const parts = path.split(".");
+  const parentPath = parts.slice(0, -1).join(".");
+  const key = parts[parts.length - 1];
+  const parent = getNodeByPath(root, parentPath);
+  if (parent) parent[key] = value;
+  return root;
+}
+
+window.btSizeChange = (k, v) => { state.data.binaryTree[k] = v; update(); };
+window.btValueChange = (path, val) => {
+  const node = getNodeByPath(state.data.binaryTree.root, path);
+  if (node) { node.value = isNaN(+val) ? val : +val; update(); }
+};
+window.btPosChange = (path, key, val) => {
+  const node = getNodeByPath(state.data.binaryTree.root, path);
+  if (node) { node[key] = val ? +val : undefined; update(); }
+};
+window.btAddChild = (path, side) => {
+  const node = getNodeByPath(state.data.binaryTree.root, path);
+  if (node) {
+    if (node[side]) { alert("既に" + (side === "left" ? "左" : "右") + "の子が存在します"); return; }
+    node[side] = { value: "?" };
+    renderEditor(); update();
+  }
+};
+window.btRemoveNode = (path) => {
+  const parts = path.split(".");
+  const parentPath = parts.slice(0, -1).join(".");
+  const key = parts[parts.length - 1];
+  const parent = getNodeByPath(state.data.binaryTree.root, parentPath);
+  if (parent) { parent[key] = null; renderEditor(); update(); }
+};
+window.btCreateRoot = () => {
+  state.data.binaryTree.root = { value: "root" };
+  renderEditor(); update();
+};
+
+// --- Parity Check Editor ---
+function renderParityCheckEditor(data) {
+  const d = data.data;
+  const rows = d.length;
+  const cols = d[0]?.length || 0;
+  let html = '<div class="space-y-3">';
+  html += `<div class="flex gap-2 items-center">
+    <button class="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700" onclick="pcAddRow()">+ 行追加</button>
+    <button class="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700" onclick="pcAddCol()">+ 列追加</button>
+    <button class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700" onclick="pcRemoveRow()">- 行削除</button>
+    <button class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700" onclick="pcRemoveCol()">- 列削除</button>
+  </div>`;
+  html += '<p class="text-xs text-gray-500">セルをクリックして 0/1 を切り替え</p>';
+  html += '<div class="inline-block">';
+  html += '<table class="border-collapse">';
+  for (let r = 0; r < rows; r++) {
+    html += '<tr>';
+    for (let c = 0; c < cols; c++) {
+      const val = d[r][c];
+      const bg = val === 1 ? 'bg-blue-200' : 'bg-white';
+      html += `<td class="parity-cell border border-gray-300 text-center font-mono text-sm ${bg}" onclick="pcToggle(${r},${c})">${val}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</table></div></div>';
+  $editorArea.innerHTML = html;
+}
+
+window.pcToggle = (r, c) => {
+  state.data.parityCheck.data[r][c] = state.data.parityCheck.data[r][c] === 0 ? 1 : 0;
+  renderEditor(); update();
+};
+window.pcAddRow = () => {
+  const d = state.data.parityCheck.data;
+  const cols = d[0]?.length || 4;
+  d.push(Array(cols).fill(0));
+  renderEditor(); update();
+};
+window.pcAddCol = () => {
+  const d = state.data.parityCheck.data;
+  for (const row of d) row.push(0);
+  renderEditor(); update();
+};
+window.pcRemoveRow = () => {
+  const d = state.data.parityCheck.data;
+  if (d.length > 1) { d.pop(); renderEditor(); update(); }
+};
+window.pcRemoveCol = () => {
+  const d = state.data.parityCheck.data;
+  if (d[0]?.length > 1) { for (const row of d) row.pop(); renderEditor(); update(); }
+};
+
+// --- Truth Table Editor ---
+function renderTruthTableEditor(data) {
+  let html = '<div class="space-y-3">';
+  html += `<div class="flex gap-2 items-center">
+    <button class="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700" onclick="ttAddCol()">+ 列追加</button>
+    <button class="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700" onclick="ttAddRow()">+ 行追加</button>
+    <button class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700" onclick="ttRemoveCol()">- 列削除</button>
+    <button class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700" onclick="ttRemoveRow()">- 行削除</button>
+  </div>`;
+
+  // Column headers editor
+  html += '<div><h3 class="text-xs font-semibold text-gray-500 mb-1">列定義 (key / label)</h3>';
+  html += '<div class="flex gap-2 flex-wrap">';
+  data.columns.forEach((col, ci) => {
+    html += `<div class="flex gap-1 items-center border border-gray-200 rounded px-1">
+      <input type="text" value="${escAttr(col.key)}" class="w-12 text-xs border-none" placeholder="key" onchange="ttColKeyChange(${ci},this.value)">
+      <span class="text-gray-400">/</span>
+      <input type="text" value="${escAttr(col.label)}" class="w-16 text-xs border-none" placeholder="label" onchange="ttColLabelChange(${ci},this.value)">
+    </div>`;
+  });
+  html += '</div></div>';
+
+  // Data table
+  html += '<table class="editor-table border-collapse border border-gray-200 text-sm w-full"><thead><tr class="bg-gray-50">';
+  for (const col of data.columns) html += `<th class="border border-gray-200">${escHtml(col.label)}</th>`;
+  html += '</tr></thead><tbody>';
+  data.rows.forEach((row, ri) => {
+    html += '<tr>';
+    data.columns.forEach((col, ci) => {
+      html += `<td class="border border-gray-200"><input type="text" value="${escAttr(String(row[col.key] ?? ''))}" class="w-16" onchange="ttCellChange(${ri},'${escAttr(col.key)}',this.value)"></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  $editorArea.innerHTML = html;
+}
+
+window.ttColKeyChange = (ci, val) => {
+  const data = state.data.truthTable;
+  const oldKey = data.columns[ci].key;
+  data.columns[ci].key = val;
+  for (const row of data.rows) {
+    row[val] = row[oldKey];
+    if (oldKey !== val) delete row[oldKey];
+  }
+  renderEditor(); update();
+};
+window.ttColLabelChange = (ci, val) => { state.data.truthTable.columns[ci].label = val; renderEditor(); update(); };
+window.ttCellChange = (ri, key, val) => {
+  const numVal = +val;
+  state.data.truthTable.rows[ri][key] = isNaN(numVal) ? val : numVal;
+  update();
+};
+window.ttAddCol = () => {
+  const data = state.data.truthTable;
+  const key = "col" + data.columns.length;
+  data.columns.push({ key, label: key });
+  for (const row of data.rows) row[key] = 0;
+  renderEditor(); update();
+};
+window.ttAddRow = () => {
+  const data = state.data.truthTable;
+  const row = {};
+  for (const col of data.columns) row[col.key] = 0;
+  data.rows.push(row);
+  renderEditor(); update();
+};
+window.ttRemoveCol = () => {
+  const data = state.data.truthTable;
+  if (data.columns.length <= 1) return;
+  const removed = data.columns.pop();
+  for (const row of data.rows) delete row[removed.key];
+  renderEditor(); update();
+};
+window.ttRemoveRow = () => {
+  const data = state.data.truthTable;
+  if (data.rows.length <= 1) return;
+  data.rows.pop();
+  renderEditor(); update();
+};
+
+// --- Data Table Editor ---
+function renderDataTableEditor(data) {
+  let html = '<div class="space-y-3">';
+  html += `<div class="flex gap-2 items-center">
+    <button class="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700" onclick="dtAddCol()">+ 列追加</button>
+    <button class="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700" onclick="dtAddRow()">+ 行追加</button>
+    <button class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700" onclick="dtRemoveCol()">- 列削除</button>
+    <button class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700" onclick="dtRemoveRow()">- 行削除</button>
+  </div>`;
+
+  html += '<div><h3 class="text-xs font-semibold text-gray-500 mb-1">列定義 (key / label)</h3>';
+  html += '<div class="flex gap-2 flex-wrap">';
+  data.columns.forEach((col, ci) => {
+    html += `<div class="flex gap-1 items-center border border-gray-200 rounded px-1">
+      <input type="text" value="${escAttr(col.key)}" class="w-16 text-xs border-none" placeholder="key" onchange="dtColKeyChange(${ci},this.value)">
+      <span class="text-gray-400">/</span>
+      <input type="text" value="${escAttr(col.label)}" class="w-16 text-xs border-none" placeholder="label" onchange="dtColLabelChange(${ci},this.value)">
+    </div>`;
+  });
+  html += '</div></div>';
+
+  html += '<table class="editor-table border-collapse border border-gray-200 text-sm w-full"><thead><tr class="bg-gray-50">';
+  for (const col of data.columns) html += `<th class="border border-gray-200">${escHtml(col.label)}</th>`;
+  html += '</tr></thead><tbody>';
+  data.rows.forEach((row, ri) => {
+    html += '<tr>';
+    data.columns.forEach((col, ci) => {
+      html += `<td class="border border-gray-200"><input type="text" value="${escAttr(String(row[col.key] ?? ''))}" class="w-20" onchange="dtCellChange(${ri},'${escAttr(col.key)}',this.value)"></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  $editorArea.innerHTML = html;
+}
+
+window.dtColKeyChange = (ci, val) => {
+  const data = state.data.dataTable;
+  const oldKey = data.columns[ci].key;
+  data.columns[ci].key = val;
+  for (const row of data.rows) { row[val] = row[oldKey]; if (oldKey !== val) delete row[oldKey]; }
+  renderEditor(); update();
+};
+window.dtColLabelChange = (ci, val) => { state.data.dataTable.columns[ci].label = val; renderEditor(); update(); };
+window.dtCellChange = (ri, key, val) => {
+  const numVal = +val;
+  state.data.dataTable.rows[ri][key] = isNaN(numVal) ? val : numVal;
+  update();
+};
+window.dtAddCol = () => {
+  const data = state.data.dataTable;
+  const key = "col" + data.columns.length;
+  data.columns.push({ key, label: key });
+  for (const row of data.rows) row[key] = "";
+  renderEditor(); update();
+};
+window.dtAddRow = () => {
+  const data = state.data.dataTable;
+  const row = {};
+  for (const col of data.columns) row[col.key] = "";
+  data.rows.push(row);
+  renderEditor(); update();
+};
+window.dtRemoveCol = () => {
+  const data = state.data.dataTable;
+  if (data.columns.length <= 1) return;
+  const removed = data.columns.pop();
+  for (const row of data.rows) delete row[removed.key];
+  renderEditor(); update();
+};
+window.dtRemoveRow = () => {
+  const data = state.data.dataTable;
+  if (data.rows.length <= 1) return;
+  data.rows.pop();
+  renderEditor(); update();
+};
+
+// --- Huffman Table Editor ---
+function renderHuffmanTableEditor(data) {
+  const { characters, probabilities } = data.data;
+  let html = '<div class="space-y-3">';
+  html += `<div class="flex gap-2 items-center">
+    <button class="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700" onclick="htAddEntry()">+ エントリ追加</button>
+    <button class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700" onclick="htRemoveEntry()">- エントリ削除</button>
+  </div>`;
+  html += '<table class="editor-table border-collapse border border-gray-200 text-sm w-full"><thead><tr class="bg-gray-50">';
+  html += '<th class="border border-gray-200">文字</th><th class="border border-gray-200">確率</th></tr></thead><tbody>';
+  characters.forEach((ch, i) => {
+    html += `<tr>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(ch)}" class="w-16" onchange="htCharChange(${i},this.value)"></td>
+      <td class="border border-gray-200"><input type="number" step="0.01" value="${probabilities[i]}" class="w-20" onchange="htProbChange(${i},+this.value)"></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  const total = probabilities.reduce((a, b) => a + b, 0);
+  html += `<p class="text-xs ${Math.abs(total - 1) < 0.01 ? 'text-green-600' : 'text-red-600'}">確率合計: ${total.toFixed(4)}</p>`;
+  html += '</div>';
+  $editorArea.innerHTML = html;
+}
+
+window.htCharChange = (i, val) => { state.data.huffmanTable.data.characters[i] = val; update(); };
+window.htProbChange = (i, val) => { state.data.huffmanTable.data.probabilities[i] = val; renderEditor(); update(); };
+window.htAddEntry = () => {
+  state.data.huffmanTable.data.characters.push("?");
+  state.data.huffmanTable.data.probabilities.push(0);
+  renderEditor(); update();
+};
+window.htRemoveEntry = () => {
+  const d = state.data.huffmanTable.data;
+  if (d.characters.length <= 1) return;
+  d.characters.pop(); d.probabilities.pop();
+  renderEditor(); update();
+};
+
+// --- Linked List Table Editor ---
+function renderLinkedListTableEditor(data) {
+  let html = '<div class="space-y-3">';
+  html += `<div class="flex gap-2 items-center">
+    <button class="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700" onclick="llAddEntry()">+ エントリ追加</button>
+    <button class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700" onclick="llRemoveEntry()">- エントリ削除</button>
+  </div>`;
+  html += '<table class="editor-table border-collapse border border-gray-200 text-sm w-full"><thead><tr class="bg-gray-50">';
+  html += '<th class="border border-gray-200">アドレス</th><th class="border border-gray-200">データ</th><th class="border border-gray-200">ポインタ</th></tr></thead><tbody>';
+  data.entries.forEach((e, i) => {
+    html += `<tr>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(String(e.address))}" class="w-20" onchange="llChange(${i},'address',this.value)"></td>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(e.data)}" class="w-20" onchange="llChange(${i},'data',this.value)"></td>
+      <td class="border border-gray-200"><input type="text" value="${escAttr(String(e.pointer))}" class="w-20" onchange="llChange(${i},'pointer',this.value)"></td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  $editorArea.innerHTML = html;
+}
+
+window.llChange = (i, k, v) => {
+  const numVal = +v;
+  state.data.linkedListTable.entries[i][k] = (k !== 'data' && !isNaN(numVal) && v !== 'NULL') ? numVal : v;
+  update();
+};
+window.llAddEntry = () => {
+  state.data.linkedListTable.entries.push({ address: 0, data: "", pointer: "NULL" });
+  renderEditor(); update();
+};
+window.llRemoveEntry = () => {
+  const d = state.data.linkedListTable.entries;
+  if (d.length <= 1) return;
+  d.pop();
+  renderEditor(); update();
+};
+
+// --- Normal Distribution Table Editor ---
+function renderNormalDistTableEditor(data) {
+  let html = '<div class="space-y-3">';
+  html += `<div class="flex gap-2 items-center">
+    <button class="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700" onclick="ndAddEntry()">+ エントリ追加</button>
+    <button class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700" onclick="ndRemoveEntry()">- エントリ削除</button>
+  </div>`;
+  html += '<table class="editor-table border-collapse border border-gray-200 text-sm w-full"><thead><tr class="bg-gray-50">';
+  html += '<th class="border border-gray-200">u</th><th class="border border-gray-200">確率</th></tr></thead><tbody>';
+  data.entries.forEach((e, i) => {
+    html += `<tr>
+      <td class="border border-gray-200"><input type="number" step="0.1" value="${e.u}" class="w-20" onchange="ndChange(${i},'u',+this.value)"></td>
+      <td class="border border-gray-200"><input type="number" step="0.0001" value="${e.probability}" class="w-24" onchange="ndChange(${i},'probability',+this.value)"></td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  $editorArea.innerHTML = html;
+}
+
+window.ndChange = (i, k, v) => { state.data.normalDistributionTable.entries[i][k] = v; update(); };
+window.ndAddEntry = () => {
+  state.data.normalDistributionTable.entries.push({ u: 0, probability: 0 });
+  renderEditor(); update();
+};
+window.ndRemoveEntry = () => {
+  const d = state.data.normalDistributionTable.entries;
+  if (d.length <= 1) return;
+  d.pop();
+  renderEditor(); update();
+};
+
+// ============================================================
+// Utility
+// ============================================================
+function escHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function escAttr(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ============================================================
+// Initial render
+// ============================================================
+renderAll();
+</script>
+</body>
+</html>
