@@ -377,10 +377,8 @@ class QuestionTimer extends HTMLElement {
 
 	private handleModeChange(nextMode: TimerMode) {
 		if (nextMode === this.mode) return;
-		this.reset(nextMode);
 		this.mode = nextMode;
-		this.elapsedSeconds = nextMode === "countdown" ? this.targetTime : 0;
-		this.updateDisplay();
+		this.reset();
 	}
 
 	private handleTargetTimeChange(value: number) {
