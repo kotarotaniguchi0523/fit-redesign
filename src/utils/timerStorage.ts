@@ -68,7 +68,7 @@ function validateTimerStorageData(
  * ユーザーIDを取得（なければ生成して保存）
  * ブラウザ/デバイス単位でユーザーを識別
  */
-function getUserId(): string {
+export function getUserId(): string {
 	try {
 		const existing = localStorage.getItem(USER_ID_KEY);
 		if (existing) return existing;
@@ -262,6 +262,12 @@ export function saveAttempt(
 
 	const totalAttempts = result.value.records[questionId]?.attempts.length ?? 0;
 	logger.info(`Attempt saved successfully (total attempts: ${totalAttempts})`);
+
+	// Fire-and-forget server sync
+	import("./timerSync").then(({ syncToServer }) => {
+		syncToServer(getUserId(), result.value);
+	}).catch(() => {});
+
 	return ok(undefined);
 }
 
@@ -278,6 +284,12 @@ export function clearQuestionRecords(questionId: QuestionId): Result<void, Stora
 
 	if (result.ok) {
 		logger.info("Records cleared successfully");
+
+		// Fire-and-forget server clear
+		import("./timerSync").then(({ clearOnServer }) => {
+			clearOnServer(getUserId(), questionId);
+		}).catch(() => {});
+
 		return ok(undefined);
 	}
 	logger.warn("Failed to load existing data before clearing records");

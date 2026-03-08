@@ -1,0 +1,11 @@
+{
+	"name": "fit-redesign",
+	"compatibility_date": "2025-01-01",
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "fit-timer-db",
+			"database_id": "57532062-e9cf-4a86-a89f-fc6fdb1e3ba5"
+		}
+	]
+}

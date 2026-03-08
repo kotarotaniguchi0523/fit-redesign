@@ -1,6 +1,7 @@
 // --- Storage ---
 
 export const USER_ID_KEY = "fit-exam-user-id";
+export const USER_ID_COOKIE = "fit-user-id";
 export const STORAGE_KEY_PREFIX = "fit-exam-timer-records";
 export const MAX_ATTEMPTS_PER_QUESTION = 50;
 
