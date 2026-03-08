@@ -148,7 +148,7 @@ class QuestionTimer extends HTMLElement {
 		// Popover
 		this.popoverEl = document.createElement("div");
 		this.popoverEl.className =
-			"absolute right-0 top-full mt-2 w-80 p-0 border border-slate-200 shadow-lg rounded-xl bg-white z-50 hidden";
+			"absolute right-0 bottom-full mb-2 w-80 p-0 border border-slate-200 shadow-lg rounded-xl bg-white z-50 hidden";
 
 		const popoverInner = document.createElement("div");
 		popoverInner.className = "p-3 space-y-3";
