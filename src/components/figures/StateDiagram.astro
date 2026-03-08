@@ -1,0 +1,98 @@
+---
+import type { StateNode, Transition } from "../../types/index";
+import { STATE_DEFAULTS, buildTransitionData } from "../../lib/figures/state-diagram";
+
+interface Props {
+	nodes: StateNode[];
+	transitions: Transition[];
+	width?: number;
+	height?: number;
+}
+
+const { nodes, transitions, width = 400, height = 150 } = Astro.props;
+
+const nodeRadius = STATE_DEFAULTS.NODE_RADIUS;
+const acceptingNodeRadius = STATE_DEFAULTS.ACCEPTING_NODE_RADIUS;
+
+const transitionData = buildTransitionData(nodes, transitions, nodeRadius, acceptingNodeRadius);
+---
+
+<svg
+  width="100%"
+  height="auto"
+  viewBox={`0 0 ${width} ${height}`}
+  preserveAspectRatio="xMidYMid meet"
+  class="border border-gray-300 rounded max-w-full h-auto"
+  style={`aspect-ratio: ${width}/${height}`}
+  aria-label="State machine diagram"
+>
+  <title>State machine diagram</title>
+
+  {transitionData.map((t) =>
+    t.type === "selfLoop" ? (
+      <g>
+        <circle cx={t.cx} cy={t.cy} r={t.r} fill="none" stroke="black" stroke-width="1.5" />
+        <path d={t.arrowD} stroke="black" stroke-width="1.5" fill="none" />
+        <text x={t.labelX} y={t.labelY} font-size="12" text-anchor="middle" fill="black">
+          {t.label}
+        </text>
+      </g>
+    ) : (
+      <g>
+        <path d={t.pathD} stroke="black" stroke-width="1.5" fill="none" />
+        <path d={t.arrowHeadD} stroke="black" stroke-width="1.5" fill="none" />
+        <text x={t.labelX} y={t.labelY} font-size="12" text-anchor="middle" fill="black">
+          {t.label}
+        </text>
+      </g>
+    ),
+  )}
+
+  {nodes.map((node) => (
+    <g>
+      {node.isAccepting && (
+        <circle
+          cx={node.x}
+          cy={node.y}
+          r={acceptingNodeRadius}
+          fill="none"
+          stroke="black"
+          stroke-width="1.5"
+        />
+      )}
+      <circle
+        cx={node.x}
+        cy={node.y}
+        r={nodeRadius}
+        fill="white"
+        stroke="black"
+        stroke-width="1.5"
+      />
+      <text
+        x={node.x}
+        y={node.y}
+        font-size="14"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        fill="black"
+      >
+        {node.label}
+      </text>
+      {node.isInitial && (
+        <path
+          d={`M ${node.x - nodeRadius - 20} ${node.y} L ${node.x - nodeRadius} ${node.y}`}
+          stroke="black"
+          stroke-width="1.5"
+          fill="none"
+          marker-end="url(#arrowhead)"
+        />
+      )}
+    </g>
+  ))}
+
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="5" refY="3" orient="auto">
+      <polygon points="0 0, 6 3, 0 6" fill="black" />
+    </marker>
+  </defs>
+</svg>

@@ -1,0 +1,48 @@
+---
+const currentPath = Astro.url.pathname;
+const isGuide = currentPath === "/guide" || currentPath === "/guide/";
+---
+
+<nav
+	class="w-full bg-linear-to-r from-[#1e3a5f] to-[#152a45] text-white border-b-2 border-[#c9a227]"
+>
+	<div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+		<a href="/" class="flex items-center gap-4 no-underline text-white">
+			<div
+				class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center"
+			>
+				<span class="text-xl">🎓</span>
+			</div>
+			<div class="flex flex-col">
+				<span
+					class="text-lg font-bold tracking-wide"
+					style="font-family: var(--font-serif)">基本情報技術 I</span
+				>
+				<span class="text-xs text-white/70 tracking-widest"
+					>MEIJI UNIVERSITY</span
+				>
+			</div>
+		</a>
+
+		<a
+			href={isGuide ? "/" : "/guide"}
+			class="text-sm text-white/80 hover:text-white transition-colors flex items-center gap-1.5"
+		>
+			{
+				isGuide ? (
+					<>
+						<span>←</span>
+						<span class="hidden sm:inline">ホームに戻る</span>
+						<span class="sm:hidden">戻る</span>
+					</>
+				) : (
+					<>
+						<span>📖</span>
+						<span class="hidden sm:inline">使い方ガイド</span>
+						<span class="sm:hidden">使い方</span>
+					</>
+				)
+			}
+		</a>
+	</div>
+</nav>

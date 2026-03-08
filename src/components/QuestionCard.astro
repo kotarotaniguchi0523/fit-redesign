@@ -1,0 +1,171 @@
+---
+import type { Question } from "../types/index";
+import { questionToMarkdown } from "../utils/questionToMarkdown";
+import BinaryTree from "./figures/BinaryTree.astro";
+import Flowchart from "./figures/Flowchart.astro";
+import LogicCircuit from "./figures/LogicCircuit.astro";
+import ParityCheck from "./figures/ParityCheck.astro";
+import StateDiagram from "./figures/StateDiagram.astro";
+import TableRenderer from "./figures/TableRenderer.astro";
+import TruthTable from "./figures/TruthTable.astro";
+
+interface Props {
+	question: Question;
+}
+
+const { question } = Astro.props;
+const markdownText = questionToMarkdown(question);
+---
+
+<div
+	class="mb-4 border-l-4 border-l-[#1e3a5f] shadow-sm hover:shadow-md transition-shadow bg-white rounded-lg"
+>
+	<div class="p-5">
+		{/* 1. 問題番号 */}
+		<div class="mb-2">
+			<span
+				class="w-8 h-8 rounded-full bg-[#1e3a5f] text-white flex items-center justify-center text-sm font-bold"
+			>
+				{question.number}
+			</span>
+		</div>
+
+		{/* 2. 問題文 */}
+		<div class="mb-4">
+			<p class="text-gray-800 leading-relaxed whitespace-pre-wrap break-words w-full">
+				{question.text}
+			</p>
+		</div>
+
+		{/* 3. アイコン（コピーボタン・タイマー） */}
+		<div class="flex items-center gap-4 mb-4">
+			<button
+				data-copy-button
+				data-copy-text={markdownText}
+				class="p-1.5 rounded text-slate-500 hover:text-[#1e3a5f] hover:bg-slate-100 transition-colors"
+				aria-label="Markdownでコピー"
+				title="Markdownでコピー"
+			>
+				<svg class="w-4 h-4 copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+					<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+				</svg>
+				<svg class="w-4 h-4 check-icon hidden text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<polyline points="20 6 9 17 4 12"></polyline>
+				</svg>
+			</button>
+			<div class="scale-90 origin-left">
+				<question-timer data-question-id={question.id}></question-timer>
+			</div>
+		</div>
+
+		{/* 4. 図表 */}
+		{
+			question.figureData && (
+				<div class="my-4 flex justify-center w-full overflow-x-auto">
+					{question.figureData.type === "stateDiagram" && (
+						<StateDiagram
+							nodes={question.figureData.nodes}
+							transitions={question.figureData.transitions}
+						/>
+					)}
+					{question.figureData.type === "binaryTree" && (
+						<BinaryTree
+							root={question.figureData.root}
+							width={question.figureData.width}
+							height={question.figureData.height}
+						/>
+					)}
+					{question.figureData.type === "truthTable" && (
+						<TruthTable
+							columns={question.figureData.columns}
+							rows={question.figureData.rows}
+						/>
+					)}
+					{question.figureData.type === "parityCheck" && (
+						<ParityCheck data={question.figureData.data} />
+					)}
+					{question.figureData.type === "logicCircuit" && (
+						<LogicCircuit
+							inputs={question.figureData.inputs}
+							outputs={question.figureData.outputs}
+							gates={question.figureData.gates}
+							wires={question.figureData.wires}
+						/>
+					)}
+					{question.figureData.type === "flowchart" && (
+						<Flowchart
+							nodes={question.figureData.nodes}
+							edges={question.figureData.edges}
+							width={question.figureData.width}
+							height={question.figureData.height}
+						/>
+					)}
+					{(question.figureData.type === "dataTable" ||
+						question.figureData.type === "huffmanTable" ||
+						question.figureData.type === "linkedListTable" ||
+						question.figureData.type === "normalDistributionTable") && (
+						<TableRenderer figureData={question.figureData as any} />
+					)}
+				</div>
+			)
+		}
+
+		{
+			!question.figureData && question.figureDescription && (
+				<div class="my-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+					<p class="text-sm text-blue-800">
+						<strong>図:</strong> {question.figureDescription}
+					</p>
+				</div>
+			)
+		}
+
+		{/* 5. 選択肢 */}
+		{
+			question.options && question.options.length > 0 && (
+				<div class="mt-4 space-y-2">
+					{question.options.map((option) => (
+						<div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+							<span class="shrink-0 w-6 h-6 rounded bg-[#1e3a5f] text-white flex items-center justify-center text-xs font-bold">
+								{option.label}
+							</span>
+							<span class="text-gray-800 break-words w-full">
+								{option.value || "(選択肢未入力)"}
+							</span>
+						</div>
+					))}
+				</div>
+			)
+		}
+
+		{/* 6. 解答（details/summary でアコーディオン） */}
+		<details class="mt-4 group">
+			<summary
+				class="cursor-pointer text-sm font-medium text-[#1e3a5f] hover:text-[#2d4a6f] transition-colors list-none flex items-center gap-1"
+			>
+				<span class="group-open:rotate-90 transition-transform">▶</span>
+				解答を表示
+			</summary>
+			<div class="mt-2">
+				<div
+					class="p-4 bg-linear-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200"
+				>
+					<div class="flex items-start gap-2">
+						<span class="text-emerald-600 font-bold">A.</span>
+						<span class="font-medium text-emerald-900"
+							>{question.answer}</span
+						>
+					</div>
+				</div>
+				{
+					question.explanation && (
+						<div class="mt-3 p-3 bg-gray-50 rounded-lg text-gray-600 text-sm">
+							<strong>解説:</strong> {question.explanation}
+						</div>
+					)
+				}
+			</div>
+		</details>
+	</div>
+</div>

@@ -1,0 +1,148 @@
+---
+import type { FlowchartEdge, FlowchartNode } from "../../types";
+import {
+	FLOWCHART_DEFAULTS,
+	buildEdgeRenderData,
+	buildNodeRenderData,
+} from "../../lib/figures/flowchart";
+
+interface Props {
+	nodes: FlowchartNode[];
+	edges: FlowchartEdge[];
+	width?: number;
+	height?: number;
+}
+
+const {
+	nodes,
+	edges,
+	width = FLOWCHART_DEFAULTS.WIDTH,
+	height = FLOWCHART_DEFAULTS.HEIGHT,
+} = Astro.props;
+
+const nodeRenderData = buildNodeRenderData(nodes);
+const edgeRenderData = buildEdgeRenderData(nodes, edges);
+---
+
+<svg
+  width="100%"
+  height="auto"
+  viewBox={`0 0 ${width} ${height}`}
+  preserveAspectRatio="xMidYMid meet"
+  class="max-w-full h-auto"
+  style={`aspect-ratio: ${width}/${height}`}
+  aria-label="Flowchart diagram"
+>
+  <title>Flowchart diagram</title>
+
+  <defs>
+    <marker
+      id="flowchart-arrow"
+      markerWidth="10"
+      markerHeight="10"
+      refX="9"
+      refY="3"
+      orient="auto"
+      markerUnits="strokeWidth"
+    >
+      <polygon points="0 0, 10 3, 0 6" fill="black" />
+    </marker>
+  </defs>
+
+  {edgeRenderData.map((e) => (
+    <g>
+      <path
+        d={e.pathD}
+        fill="none"
+        stroke="black"
+        stroke-width="1.5"
+        marker-end="url(#flowchart-arrow)"
+      />
+      {e.label && (
+        <text x={e.labelX + 8} y={e.labelY - 4} font-size="10" fill="black" font-weight="bold">
+          {e.label}
+        </text>
+      )}
+    </g>
+  ))}
+
+  {nodeRenderData.map((n) => {
+    if (n.type === "start" || n.type === "end") {
+      return (
+        <g>
+          <rect
+            x={n.x - n.w / 2}
+            y={n.y - n.h / 2}
+            width={n.w}
+            height={n.h}
+            rx={n.rx}
+            ry={n.ry}
+            fill="white"
+            stroke="black"
+            stroke-width="1.5"
+          />
+          <text
+            x={n.x}
+            y={n.y}
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-size="12"
+            fill="black"
+          >
+            {n.label}
+          </text>
+        </g>
+      );
+    }
+    if (n.type === "process") {
+      return (
+        <g>
+          <rect
+            x={n.x - n.w / 2}
+            y={n.y - n.h / 2}
+            width={n.w}
+            height={n.h}
+            fill="white"
+            stroke="black"
+            stroke-width="1.5"
+          />
+          <text
+            x={n.x}
+            y={n.y}
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-size="11"
+            fill="black"
+          >
+            {n.label}
+          </text>
+        </g>
+      );
+    }
+    if (n.type === "decision") {
+      return (
+        <g>
+          <polygon points={n.points} fill="white" stroke="black" stroke-width="1.5" />
+          <text
+            x={n.x}
+            y={n.y}
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-size="11"
+            fill="black"
+          >
+            {n.label}
+          </text>
+        </g>
+      );
+    }
+    if (n.type === "connector") {
+      return (
+        <g>
+          <circle cx={n.x} cy={n.y} r={8} fill="white" stroke="black" stroke-width="1.5" />
+        </g>
+      );
+    }
+    return null;
+  })}
+</svg>

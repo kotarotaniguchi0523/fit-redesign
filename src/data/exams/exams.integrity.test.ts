@@ -1,10 +1,9 @@
-// @ts-expect-error Node typings are intentionally not included in app tsconfig.
 import { existsSync } from "node:fs";
-// @ts-expect-error Node typings are intentionally not included in app tsconfig.
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import type { ExamByYear, ExamNumber } from "../../types";
 import { unitBasedTabs } from "../units";
-import { allExams, getExamByNumber } from ".";
+import { assembleExamsByYear } from "./assemble";
 import { ExamJsonSchema, ExamsMetaSchema, ParsedJsonExamFilePathSchema } from "./schema";
 
 const examModules = import.meta.glob<{ default: unknown }>("../exams-json/exam[0-9]-*.json", {
@@ -19,6 +18,29 @@ function getJsonValue(module: unknown): unknown {
 		return (module as { default: unknown }).default;
 	}
 	return module;
+}
+
+/**
+ * Build allExams from glob-loaded JSON, bypassing Astro Content Collections.
+ * This keeps the test runnable in plain Vitest (no astro:content virtual module).
+ */
+function buildAllExams(): ExamByYear[] {
+	const meta = ExamsMetaSchema.parse(getJsonValue(Object.values(metaModule)[0]));
+
+	const entries = Object.entries(examModules).flatMap(([filePath, module]) => {
+		const parsed = ExamJsonSchema.parse(getJsonValue(module));
+		const match = filePath.match(/exam(\d+)-(\d{4})\.json$/);
+		if (!match) return [];
+		return [{ examNumber: Number(match[1]), year: match[2], data: parsed }];
+	});
+
+	return assembleExamsByYear(meta.exams, entries);
+}
+
+const allExams = buildAllExams();
+
+function getExamByNumber(num: ExamNumber): ExamByYear | undefined {
+	return allExams.find((e) => e.examNumber === num);
 }
 
 describe("exam data integrity", () => {

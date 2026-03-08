@@ -81,6 +81,8 @@ const FigureDataSchema = z.discriminatedUnion("type", [
 	z.object({
 		type: z.literal("binaryTree"),
 		root: TreeNodeSchema,
+		width: z.number().optional(),
+		height: z.number().optional(),
 	}),
 	TruthTableSchema,
 	z.object({
