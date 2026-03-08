@@ -8,7 +8,13 @@ export default defineConfig({
 			enabled: true,
 		},
 	}),
+	image: {
+		service: { entrypoint: "astro/assets/services/noop" },
+	},
 	vite: {
 		plugins: [tailwindcss()],
+		ssr: {
+			external: ["sharp"],
+		},
 	},
 });
