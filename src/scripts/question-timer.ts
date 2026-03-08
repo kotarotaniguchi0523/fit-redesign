@@ -71,6 +71,8 @@ class QuestionTimer extends HTMLElement {
 			this.audioContext = null;
 		}
 		this.closePopover();
+		this.popoverBackdrop?.remove();
+		this.popoverEl?.remove();
 	}
 
 	private loadRecords() {
@@ -145,10 +147,10 @@ class QuestionTimer extends HTMLElement {
 		this.popoverBackdrop.className = "fixed inset-0 z-40 hidden";
 		this.popoverBackdrop.addEventListener("click", () => this.closePopover());
 
-		// Popover
+		// Popover (fixed positioning to escape stacking context created by parent's scale-90)
 		this.popoverEl = document.createElement("div");
 		this.popoverEl.className =
-			"absolute right-0 bottom-full mb-2 w-80 p-0 border border-slate-200 shadow-lg rounded-xl bg-white z-50 hidden";
+			"fixed w-80 p-0 border border-slate-200 shadow-lg rounded-xl bg-white z-50 hidden";
 
 		const popoverInner = document.createElement("div");
 		popoverInner.className = "p-3 space-y-3";
@@ -227,9 +229,10 @@ class QuestionTimer extends HTMLElement {
 		this.popoverEl.appendChild(popoverInner);
 
 		wrapper.appendChild(mainRow);
-		wrapper.appendChild(this.popoverBackdrop);
-		wrapper.appendChild(this.popoverEl);
 		this.appendChild(wrapper);
+		// Append popover and backdrop to body to escape stacking context
+		document.body.appendChild(this.popoverBackdrop);
+		document.body.appendChild(this.popoverEl);
 	}
 
 	private createStatCard(label: string, value: string): HTMLDivElement {
@@ -409,7 +412,15 @@ class QuestionTimer extends HTMLElement {
 		this.popoverEl.classList.remove("hidden");
 		this.popoverBackdrop.classList.remove("hidden");
 		this.gearIcon.classList.add("rotate-45");
+		this.positionPopover();
 		this.updatePopoverContent();
+	}
+
+	private positionPopover() {
+		const rect = this.settingsBtn.getBoundingClientRect();
+		const popoverHeight = this.popoverEl.offsetHeight;
+		this.popoverEl.style.top = `${rect.top - popoverHeight - 8}px`;
+		this.popoverEl.style.left = `${Math.max(8, rect.right - this.popoverEl.offsetWidth)}px`;
 	}
 
 	private closePopover() {

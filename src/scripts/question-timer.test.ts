@@ -70,8 +70,8 @@ function getSettingsBtn(el: HTMLElement): HTMLButtonElement {
 	return el.querySelector("[aria-label='タイマー設定']") as HTMLButtonElement;
 }
 
-function getPopover(el: HTMLElement): HTMLDivElement {
-	return el.querySelector(".z-50") as HTMLDivElement;
+function getPopover(_el: HTMLElement): HTMLDivElement {
+	return document.body.querySelector(".z-50") as HTMLDivElement;
 }
 
 describe("QuestionTimer Custom Element", () => {
@@ -280,7 +280,7 @@ describe("QuestionTimer Custom Element", () => {
 			expect(getPopover(el).classList.contains("hidden")).toBe(false);
 
 			// backdrop をクリック
-			const backdrop = el.querySelector(".fixed.inset-0") as HTMLDivElement;
+			const backdrop = document.body.querySelector(".fixed.inset-0") as HTMLDivElement;
 			backdrop.click();
 
 			expect(getPopover(el).classList.contains("hidden")).toBe(true);
