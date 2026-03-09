@@ -55,9 +55,7 @@ export interface DashboardData {
 	trend: "improving" | "stable" | "declining";
 }
 
-export function aggregateStats(
-	answerHistory: Record<string, AnswerRecord[]>,
-): DashboardData {
+export function aggregateStats(answerHistory: Record<string, AnswerRecord[]>): DashboardData {
 	const allAnswers = Object.values(answerHistory).flat();
 
 	if (allAnswers.length === 0) {
@@ -88,7 +86,8 @@ export function aggregateStats(
 	const durationsWithValue = allAnswers.filter((a) => a.duration != null);
 	const avgDuration =
 		durationsWithValue.length > 0
-			? durationsWithValue.reduce((sum, a) => sum + (a.duration ?? 0), 0) / durationsWithValue.length
+			? durationsWithValue.reduce((sum, a) => sum + (a.duration ?? 0), 0) /
+				durationsWithValue.length
 			: null;
 
 	// 月ごと集計
@@ -98,15 +97,14 @@ export function aggregateStats(
 	const unitStats = aggregateByUnit(answerHistory);
 
 	// 全体トレンド
-	const trend = calculateTrend(
-		monthlyStats.map((m) => m.accuracy),
-	);
+	const trend = calculateTrend(monthlyStats.map((m) => m.accuracy));
 
 	return {
 		totalQuestions: getTotalQuestionCount(),
 		totalAnswered: latestByQuestion.size,
 		totalAttempts: allAnswers.length,
-		overallAccuracy: latestAnswers.length > 0 ? Math.round((correctCount / latestAnswers.length) * 100) : 0,
+		overallAccuracy:
+			latestAnswers.length > 0 ? Math.round((correctCount / latestAnswers.length) * 100) : 0,
 		avgDuration: avgDuration ? Math.round(avgDuration * 10) / 10 : null,
 		monthlyStats,
 		unitStats,
@@ -150,9 +148,7 @@ export function aggregateByMonth(answers: AnswerRecord[]): MonthlyStats[] {
 	return stats;
 }
 
-function aggregateByUnit(
-	answerHistory: Record<string, AnswerRecord[]>,
-): UnitStats[] {
+function aggregateByUnit(answerHistory: Record<string, AnswerRecord[]>): UnitStats[] {
 	const unitMap = new Map<string, { answers: Map<string, AnswerRecord[]> }>();
 
 	for (const [questionId, records] of Object.entries(answerHistory)) {
@@ -217,9 +213,7 @@ function getRecentAccuracies(answers: AnswerRecord[], windowSize: number): numbe
 	return accuracies;
 }
 
-export function calculateTrend(
-	values: number[],
-): "improving" | "stable" | "declining" {
+export function calculateTrend(values: number[]): "improving" | "stable" | "declining" {
 	if (values.length < 2) return "stable";
 
 	// 線形回帰の傾き

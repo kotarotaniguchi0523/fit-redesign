@@ -80,7 +80,9 @@ class AnswerSelector extends HTMLElement {
 
 			const button = document.createElement("button");
 			button.type = "button";
-			button.className = div.className + " cursor-pointer transition-all duration-200 hover:border-blue-400 hover:bg-blue-50 w-full text-left";
+			button.className =
+				div.className +
+				" cursor-pointer transition-all duration-200 hover:border-blue-400 hover:bg-blue-50 w-full text-left";
 			button.innerHTML = div.innerHTML;
 			button.dataset.label = label;
 
@@ -191,11 +193,22 @@ class AnswerSelector extends HTMLElement {
 		for (const btn of this.optionButtons) {
 			btn.disabled = false;
 			btn.classList.remove(
-				"border-emerald-500", "bg-emerald-50", "ring-emerald-300",
-				"border-red-500", "bg-red-50", "ring-red-300",
-				"ring-2", "opacity-60",
+				"border-emerald-500",
+				"bg-emerald-50",
+				"ring-emerald-300",
+				"border-red-500",
+				"bg-red-50",
+				"ring-red-300",
+				"ring-2",
+				"opacity-60",
 			);
-			btn.classList.add("cursor-pointer", "hover:border-blue-400", "hover:bg-blue-50", "border-gray-200", "bg-gray-50");
+			btn.classList.add(
+				"cursor-pointer",
+				"hover:border-blue-400",
+				"hover:bg-blue-50",
+				"border-gray-200",
+				"bg-gray-50",
+			);
 		}
 
 		if (this.submitButton) {
@@ -262,8 +275,8 @@ class AnswerSelector extends HTMLElement {
 		if (!timer) return undefined;
 
 		// question-timerのdisplay要素から時間を読み取る
-		const display = timer.shadowRoot?.querySelector("[data-elapsed]")
-			?? timer.querySelector("[data-elapsed]");
+		const display =
+			timer.shadowRoot?.querySelector("[data-elapsed]") ?? timer.querySelector("[data-elapsed]");
 		if (display) {
 			const elapsed = Number(display.getAttribute("data-elapsed"));
 			if (Number.isFinite(elapsed) && elapsed > 0) return elapsed;

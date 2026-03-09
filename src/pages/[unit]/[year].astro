@@ -49,9 +49,56 @@ for (const examNumber of examNumbers) {
 
 // 利用可能な年度
 const availableYears = unit.examMapping.map((m) => m.year);
+
+// 問題数を集計
+const totalQuestions = examDataList.reduce((sum, item) => {
+	const exam = item.examByYear?.exams[year];
+	return sum + (exam?.questions?.length ?? 0);
+}, 0);
+
+// JSON-LD: Quiz + LearningResource
+const pageDescription = `明治大学 基本情報技術 I「${unit.name}」${year}年度の演習問題${totalQuestions > 0 ? `（全${totalQuestions}問）` : ""}。${unit.description}`;
+const jsonLd = {
+	"@context": "https://schema.org",
+	"@graph": [
+		{
+			"@type": "Quiz",
+			name: `${unit.name} - ${year}年度演習問題`,
+			about: {
+				"@type": "Thing",
+				name: unit.name,
+				description: unit.description,
+			},
+			educationalLevel: "大学学部",
+			inLanguage: "ja",
+			isPartOf: {
+				"@type": "Course",
+				name: "基本情報技術 I",
+				provider: {
+					"@type": "EducationalOrganization",
+					name: "明治大学",
+				},
+			},
+			...(totalQuestions > 0 ? { numberOfQuestions: totalQuestions } : {}),
+		},
+		{
+			"@type": "LearningResource",
+			name: `${unit.title} (${year}年度)`,
+			description: pageDescription,
+			learningResourceType: "Practice Problem",
+			educationalLevel: "大学学部",
+			inLanguage: "ja",
+			teaches: unit.description,
+		},
+	],
+};
 ---
 
-<Layout title={`${unit.title} (${year}年度) - 基本情報技術 I`}>
+<Layout
+	title={`${unit.title} (${year}年度) - 基本情報技術 I`}
+	description={pageDescription}
+	jsonLd={jsonLd}
+>
 	<Header />
 	<main class="container mx-auto px-4 py-6 max-w-5xl">
 		<div class="w-full">

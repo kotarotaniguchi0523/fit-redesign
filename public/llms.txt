@@ -1,0 +1,86 @@
+# 基本情報技術 I - 明治大学 演習問題サイト
+
+> 明治大学の「基本情報技術 I」講義の演習問題サイト。2013〜2017年度の小テスト問題を単元別に整理し、選択肢の正誤記録と学習ダッシュボードを提供する。
+
+## サイト構造
+
+- トップページ: https://fit-redesign.pages.dev/
+- 使い方ガイド: https://fit-redesign.pages.dev/guide/
+
+## 単元一覧（演習問題ページ）
+
+### 単元1: 基数変換
+- 概要: 2進数・8進数・16進数の変換
+- 2013年度: https://fit-redesign.pages.dev/unit-base-conversion/2013/
+- 2014年度: https://fit-redesign.pages.dev/unit-base-conversion/2014/
+- 2015年度: https://fit-redesign.pages.dev/unit-base-conversion/2015/
+- 2016年度: https://fit-redesign.pages.dev/unit-base-conversion/2016/
+- 2017年度: https://fit-redesign.pages.dev/unit-base-conversion/2017/
+
+### 単元2: 負数表現
+- 概要: 2の補数と負の数の表現方法
+- 2013年度: https://fit-redesign.pages.dev/unit-negative/2013/
+- 2014年度: https://fit-redesign.pages.dev/unit-negative/2014/
+- 2015年度: https://fit-redesign.pages.dev/unit-negative/2015/
+- 2016年度: https://fit-redesign.pages.dev/unit-negative/2016/
+- 2017年度: https://fit-redesign.pages.dev/unit-negative/2017/
+
+### 単元3: 浮動小数点
+- 概要: IEEE754浮動小数点数の表現
+- 2013年度: https://fit-redesign.pages.dev/unit-float/2013/
+- 2015年度: https://fit-redesign.pages.dev/unit-float/2015/
+- 2017年度: https://fit-redesign.pages.dev/unit-float/2017/
+
+### 単元4: 論理演算
+- 概要: AND・OR・NOT・XORの論理演算と論理回路
+- 2013年度: https://fit-redesign.pages.dev/unit-logic/2013/
+- 2014年度: https://fit-redesign.pages.dev/unit-logic/2014/
+- 2015年度: https://fit-redesign.pages.dev/unit-logic/2015/
+- 2016年度: https://fit-redesign.pages.dev/unit-logic/2016/
+- 2017年度: https://fit-redesign.pages.dev/unit-logic/2017/
+
+### 単元5: 集合と確率
+- 概要: 集合演算・確率計算・データ構造の基礎
+- 2013年度: https://fit-redesign.pages.dev/unit-set-prob/2013/
+- 2014年度: https://fit-redesign.pages.dev/unit-set-prob/2014/
+- 2015年度: https://fit-redesign.pages.dev/unit-set-prob/2015/
+- 2016年度: https://fit-redesign.pages.dev/unit-set-prob/2016/
+- 2017年度: https://fit-redesign.pages.dev/unit-set-prob/2017/
+
+### 単元6: オートマトン
+- 概要: 有限オートマトン・状態遷移図
+- 2013年度: https://fit-redesign.pages.dev/unit-automaton/2013/
+- 2014年度: https://fit-redesign.pages.dev/unit-automaton/2014/
+- 2015年度: https://fit-redesign.pages.dev/unit-automaton/2015/
+- 2016年度: https://fit-redesign.pages.dev/unit-automaton/2016/
+- 2017年度: https://fit-redesign.pages.dev/unit-automaton/2017/
+
+### 単元7: 符号理論
+- 概要: パリティ検査・ハミング符号・誤り検出訂正
+- 2013年度: https://fit-redesign.pages.dev/unit-ecc/2013/
+- 2014年度: https://fit-redesign.pages.dev/unit-ecc/2014/
+- 2015年度: https://fit-redesign.pages.dev/unit-ecc/2015/
+- 2016年度: https://fit-redesign.pages.dev/unit-ecc/2016/
+- 2017年度: https://fit-redesign.pages.dev/unit-ecc/2017/
+
+### 単元8: データ構造
+- 概要: スタック・キュー・リスト・木構造
+- 2013年度: https://fit-redesign.pages.dev/unit-data-structure/2013/
+- 2014年度: https://fit-redesign.pages.dev/unit-data-structure/2014/
+- 2015年度: https://fit-redesign.pages.dev/unit-data-structure/2015/
+- 2016年度: https://fit-redesign.pages.dev/unit-data-structure/2016/
+- 2017年度: https://fit-redesign.pages.dev/unit-data-structure/2017/
+
+### 単元9: ソート・探索
+- 概要: バブルソート・選択ソート・線形探索・2分探索
+- 2013年度: https://fit-redesign.pages.dev/unit-sort/2013/
+- 2014年度: https://fit-redesign.pages.dev/unit-sort/2014/
+
+## 講義資料のみ
+- https://fit-redesign.pages.dev/slide-only/
+
+## 技術情報
+- フレームワーク: Astro (SSG + SSR hybrid)
+- ホスティング: Cloudflare Pages
+- データベース: Cloudflare D1
+- 言語: TypeScript

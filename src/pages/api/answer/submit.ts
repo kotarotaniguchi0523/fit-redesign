@@ -46,10 +46,10 @@ export async function POST(context: APIContext) {
 			// Redis 失敗は無視（D1が信頼源）
 		}
 
-		return new Response(
-			JSON.stringify({ ok: true, answerId }),
-			{ status: 200, headers: { "Content-Type": "application/json" } },
-		);
+		return new Response(JSON.stringify({ ok: true, answerId }), {
+			status: 200,
+			headers: { "Content-Type": "application/json" },
+		});
 	} catch (error) {
 		console.error("Answer submit error:", error);
 		return new Response(JSON.stringify({ error: "Internal server error" }), {

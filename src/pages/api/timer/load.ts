@@ -29,10 +29,10 @@ export async function GET(context: APIContext) {
 		await upsertUser(db, userId);
 		const data = await loadUserAttempts(db, userId);
 
-		return new Response(
-			JSON.stringify({ records: data.records, syncedAt: Date.now() }),
-			{ status: 200, headers: { "Content-Type": "application/json" } },
-		);
+		return new Response(JSON.stringify({ records: data.records, syncedAt: Date.now() }), {
+			status: 200,
+			headers: { "Content-Type": "application/json" },
+		});
 	} catch (error) {
 		console.error("Timer load error:", error);
 		return new Response(JSON.stringify({ error: "Internal server error" }), {

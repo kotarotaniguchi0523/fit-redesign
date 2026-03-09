@@ -6,14 +6,55 @@ import { YEARS } from "../types/index";
 
 // デフォルトの年度
 const defaultYear = YEARS[0];
+
+// JSON-LD: WebSite + Course
+const jsonLd = {
+	"@context": "https://schema.org",
+	"@graph": [
+		{
+			"@type": "WebSite",
+			name: "基本情報技術 I - 明治大学",
+			url: "https://fit-redesign.pages.dev/",
+			description:
+				"明治大学の基本情報技術 I 講義の演習問題サイト。2013〜2017年度の9単元・全問題を掲載。",
+			inLanguage: "ja",
+			publisher: {
+				"@type": "EducationalOrganization",
+				name: "明治大学",
+			},
+		},
+		{
+			"@type": "Course",
+			name: "基本情報技術 I",
+			description:
+				"基数変換、負数表現、浮動小数点、論理演算、集合と確率、オートマトン、符号理論、データ構造、ソート・探索の9単元を学習する情報技術の基礎講義。",
+			provider: {
+				"@type": "EducationalOrganization",
+				name: "明治大学",
+			},
+			educationalLevel: "大学学部",
+			inLanguage: "ja",
+			numberOfCredits: 2,
+			hasCourseInstance: YEARS.map((y) => ({
+				"@type": "CourseInstance",
+				name: `基本情報技術 I (${y}年度)`,
+				courseMode: "onsite",
+			})),
+		},
+	],
+};
 ---
 
-<Layout title="基本情報技術 I - 明治大学">
+<Layout
+	title="基本情報技術 I - 明治大学"
+	description="明治大学の基本情報技術 I 講義の演習問題サイト。基数変換・論理演算・オートマトンなど9単元、2013〜2017年度の全問題を掲載。"
+	jsonLd={jsonLd}
+>
 	<Header />
 	<main class="container mx-auto px-4 py-6 max-w-5xl">
 		<div class="w-full">
 			{/* 単元タブ（リンクとして表示） */}
-			<div class="flex flex-wrap gap-2 mb-6" role="tablist" aria-label="単元選択">
+			<nav class="flex flex-wrap gap-2 mb-6" role="tablist" aria-label="単元選択">
 				{
 					unitBasedTabs.map((unit) => (
 						<a
@@ -30,17 +71,17 @@ const defaultYear = YEARS[0];
 				>
 					講義資料のみ
 				</a>
-			</div>
+			</nav>
 
 			{/* デフォルト表示: 最初のユニットのコンテンツ */}
-			<div class="p-4 bg-white rounded-xl shadow-sm border border-gray-200">
+			<article class="p-4 bg-white rounded-xl shadow-sm border border-gray-200">
 				<div class="text-center py-8">
-					<h2
+					<h1
 						class="text-2xl font-bold text-[#1e3a5f] mb-4"
 						style="font-family: var(--font-serif)"
 					>
 						基本情報技術 I 演習問題
-					</h2>
+					</h1>
 					<p class="text-gray-600 mb-6">
 						上のタブから学習したい単元を選んでください。
 					</p>
@@ -63,7 +104,7 @@ const defaultYear = YEARS[0];
 						}
 					</div>
 				</div>
-			</div>
+			</article>
 		</div>
 	</main>
 </Layout>

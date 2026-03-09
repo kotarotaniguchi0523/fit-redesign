@@ -27,9 +27,7 @@ export function syncToServer(userId: string, data: TimerStorageData): void {
 /**
  * サーバーからタイマーデータを取得
  */
-export async function loadFromServer(
-	userId: string,
-): Promise<TimerStorageData | null> {
+export async function loadFromServer(userId: string): Promise<TimerStorageData | null> {
 	try {
 		const res = await fetch(`/api/timer/load?userId=${encodeURIComponent(userId)}`);
 		if (!res.ok) {
@@ -48,14 +46,8 @@ export async function loadFromServer(
  * ローカルとリモートのデータをマージ（additive merge）
  * 同一 questionId + timestamp の attempt は重複排除
  */
-export function mergeData(
-	local: TimerStorageData,
-	remote: TimerStorageData,
-): TimerStorageData {
-	const allQuestionIds = new Set([
-		...Object.keys(local.records),
-		...Object.keys(remote.records),
-	]);
+export function mergeData(local: TimerStorageData, remote: TimerStorageData): TimerStorageData {
+	const allQuestionIds = new Set([...Object.keys(local.records), ...Object.keys(remote.records)]);
 
 	const merged: TimerStorageData = { version: 1, records: {} };
 

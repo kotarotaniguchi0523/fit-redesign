@@ -264,9 +264,11 @@ export function saveAttempt(
 	logger.info(`Attempt saved successfully (total attempts: ${totalAttempts})`);
 
 	// Fire-and-forget server sync
-	import("./timerSync").then(({ syncToServer }) => {
-		syncToServer(getUserId(), result.value);
-	}).catch(() => {});
+	import("./timerSync")
+		.then(({ syncToServer }) => {
+			syncToServer(getUserId(), result.value);
+		})
+		.catch(() => {});
 
 	return ok(undefined);
 }
@@ -286,9 +288,11 @@ export function clearQuestionRecords(questionId: QuestionId): Result<void, Stora
 		logger.info("Records cleared successfully");
 
 		// Fire-and-forget server clear
-		import("./timerSync").then(({ clearOnServer }) => {
-			clearOnServer(getUserId(), questionId);
-		}).catch(() => {});
+		import("./timerSync")
+			.then(({ clearOnServer }) => {
+				clearOnServer(getUserId(), questionId);
+			})
+			.catch(() => {});
 
 		return ok(undefined);
 	}

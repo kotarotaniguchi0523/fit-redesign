@@ -38,12 +38,11 @@ export async function upsertUser(db: D1Database, userId: string): Promise<void> 
 		.run();
 }
 
-export async function loadUserAttempts(
-	db: D1Database,
-	userId: string,
-): Promise<TimerStorageData> {
+export async function loadUserAttempts(db: D1Database, userId: string): Promise<TimerStorageData> {
 	const result = await db
-		.prepare("SELECT question_id, timestamp, duration, mode, target_time, completed FROM attempts WHERE user_id = ? ORDER BY timestamp ASC")
+		.prepare(
+			"SELECT question_id, timestamp, duration, mode, target_time, completed FROM attempts WHERE user_id = ? ORDER BY timestamp ASC",
+		)
 		.bind(userId)
 		.all<AttemptRow>();
 

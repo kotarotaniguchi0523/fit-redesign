@@ -40,10 +40,10 @@ export async function POST(context: APIContext) {
 		const { userId, records } = parsed.data;
 		const merged = await syncAttempts(db, userId, records);
 
-		return new Response(
-			JSON.stringify({ records: merged.records, syncedAt: Date.now() }),
-			{ status: 200, headers: { "Content-Type": "application/json" } },
-		);
+		return new Response(JSON.stringify({ records: merged.records, syncedAt: Date.now() }), {
+			status: 200,
+			headers: { "Content-Type": "application/json" },
+		});
 	} catch (error) {
 		console.error("Timer sync error:", error);
 		return new Response(JSON.stringify({ error: "Internal server error" }), {

@@ -88,30 +88,32 @@ class QuestionTimer extends HTMLElement {
 	}
 
 	private loadFromServerAndMerge() {
-		import("../utils/timerSync").then(async ({ loadFromServer, mergeData }) => {
-			const { getUserId } = await import("../utils/timerStorage");
-			const userId = getUserId();
-			const remoteData = await loadFromServer(userId);
-			if (!remoteData) return;
+		import("../utils/timerSync")
+			.then(async ({ loadFromServer, mergeData }) => {
+				const { getUserId } = await import("../utils/timerStorage");
+				const userId = getUserId();
+				const remoteData = await loadFromServer(userId);
+				if (!remoteData) return;
 
-			const localResult = loadTimerData();
-			if (!localResult.ok) return;
+				const localResult = loadTimerData();
+				if (!localResult.ok) return;
 
-			const merged = mergeData(localResult.value, remoteData);
+				const merged = mergeData(localResult.value, remoteData);
 
-			// Save merged data back to localStorage
-			const { saveTimerData } = await import("../utils/timerStorage");
-			saveTimerData(merged);
+				// Save merged data back to localStorage
+				const { saveTimerData } = await import("../utils/timerStorage");
+				saveTimerData(merged);
 
-			// Update this timer's attempts
-			const record = merged.records[this.questionId as QuestionId];
-			if (record) {
-				this.attempts = record.attempts;
-				if (this.settingsOpen) {
-					this.updateStats();
+				// Update this timer's attempts
+				const record = merged.records[this.questionId as QuestionId];
+				if (record) {
+					this.attempts = record.attempts;
+					if (this.settingsOpen) {
+						this.updateStats();
+					}
 				}
-			}
-		}).catch(() => {});
+			})
+			.catch(() => {});
 	}
 
 	private buildDOM() {

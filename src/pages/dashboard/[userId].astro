@@ -2,7 +2,11 @@
 import Layout from "../../layouts/Layout.astro";
 import Header from "../../components/Header.astro";
 import { getUserAnswerHistory } from "../../utils/d1AnswerRepository";
-import { aggregateStats, type DashboardData, type UnitStats } from "../../utils/dashboardAggregator";
+import {
+	aggregateStats,
+	type DashboardData,
+	type UnitStats,
+} from "../../utils/dashboardAggregator";
 
 export const prerender = false;
 

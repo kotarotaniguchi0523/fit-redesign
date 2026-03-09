@@ -6,9 +6,9 @@ import {
 	Chart,
 	DoughnutController,
 	Legend,
+	LinearScale,
 	LineController,
 	LineElement,
-	LinearScale,
 	PointElement,
 	Tooltip,
 } from "chart.js";

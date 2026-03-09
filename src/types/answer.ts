@@ -2,11 +2,9 @@ import { z } from "zod";
 
 export const AnswerSubmitSchema = z.object({
 	userId: z.string().min(1),
-	questionId: z
-		.string()
-		.regex(/^exam[1-9]-\d{4}-q\d+$/, {
-			error: "questionId は exam{1-9}-{year}-q{n} 形式である必要があります",
-		}),
+	questionId: z.string().regex(/^exam[1-9]-\d{4}-q\d+$/, {
+		error: "questionId は exam{1-9}-{year}-q{n} 形式である必要があります",
+	}),
 	selectedLabel: z.string().min(1),
 	isCorrect: z.boolean(),
 	duration: z.number().nonnegative().optional(),
