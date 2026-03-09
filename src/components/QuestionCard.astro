@@ -124,7 +124,11 @@ const markdownText = questionToMarkdown(question);
 		{/* 5. 選択肢 */}
 		{
 			question.options && question.options.length > 0 && (
-				<div class="mt-4 space-y-2">
+				<answer-selector
+					class="mt-4 space-y-2 block"
+					data-question-id={question.id}
+					data-correct-label={question.answer}
+				>
 					{question.options.map((option) => (
 						<div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
 							<span class="shrink-0 w-6 h-6 rounded bg-[#1e3a5f] text-white flex items-center justify-center text-xs font-bold">
@@ -135,7 +139,7 @@ const markdownText = questionToMarkdown(question);
 							</span>
 						</div>
 					))}
-				</div>
+				</answer-selector>
 			)
 		}
 

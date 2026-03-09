@@ -1,6 +1,7 @@
 ---
 const currentPath = Astro.url.pathname;
 const isGuide = currentPath === "/guide" || currentPath === "/guide/";
+const isDashboard = currentPath.startsWith("/dashboard");
 ---
 
 <nav
@@ -24,25 +25,51 @@ const isGuide = currentPath === "/guide" || currentPath === "/guide/";
 			</div>
 		</a>
 
-		<a
-			href={isGuide ? "/" : "/guide"}
-			class="text-sm text-white/80 hover:text-white transition-colors flex items-center gap-1.5"
-		>
-			{
-				isGuide ? (
-					<>
-						<span>←</span>
-						<span class="hidden sm:inline">ホームに戻る</span>
-						<span class="sm:hidden">戻る</span>
-					</>
-				) : (
-					<>
-						<span>📖</span>
-						<span class="hidden sm:inline">使い方ガイド</span>
-						<span class="sm:hidden">使い方</span>
-					</>
-				)
-			}
-		</a>
+		<div class="flex items-center gap-4">
+			{!isDashboard && (
+				<a
+					id="dashboard-link"
+					href="/dashboard/"
+					class="text-sm text-white/80 hover:text-white transition-colors flex items-center gap-1.5"
+				>
+					<span class="hidden sm:inline">学習進捗</span>
+					<span class="sm:hidden">進捗</span>
+				</a>
+			)}
+			<a
+				href={isGuide ? "/" : "/guide"}
+				class="text-sm text-white/80 hover:text-white transition-colors flex items-center gap-1.5"
+			>
+				{
+					isGuide ? (
+						<>
+							<span>←</span>
+							<span class="hidden sm:inline">ホームに戻る</span>
+							<span class="sm:hidden">戻る</span>
+						</>
+					) : (
+						<>
+							<span class="hidden sm:inline">使い方ガイド</span>
+							<span class="sm:hidden">使い方</span>
+						</>
+					)
+				}
+			</a>
+		</div>
 	</div>
 </nav>
+
+<script>
+	// ダッシュボードリンクに userId を付与
+	const link = document.getElementById("dashboard-link") as HTMLAnchorElement | null;
+	if (link) {
+		try {
+			const userId = localStorage.getItem("fit-exam-user-id");
+			if (userId) {
+				link.href = `/dashboard/${userId}/`;
+			}
+		} catch {
+			// localStorage 未対応の場合は /dashboard/ のまま
+		}
+	}
+</script>
