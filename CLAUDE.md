@@ -8,6 +8,7 @@
 - **CSS**: Tailwind CSS v4
 - **Lint/Format**: Biome
 - **テスト**: Vitest
+- **ドキュメント**: Showboat（実行可能なデモドキュメント生成）
 - **パッケージマネージャー**: **pnpm**（npm, yarn 禁止）
 
 ## コマンド一覧
@@ -152,3 +153,48 @@ public/             # 静的ファイル（robots.txt, llms.txt, _headers）
 ## スクリーンショット管理
 
 **保存先**: `screenshots/` フォルダ。**命名**: `{機能名}-{状態}.png`
+
+---
+
+## Showboat（実行可能ドキュメント）
+
+[simonw/showboat](https://github.com/simonw/showboat) — エージェントの作業を実行可能なMarkdownで記録・検証するツール。
+
+**保存先**: `docs/showboat/` フォルダ
+
+### インストール
+
+```bash
+uv tool install showboat
+```
+
+### 基本ワークフロー
+
+```bash
+# 1. ドキュメント初期化
+showboat init docs/showboat/feature-name.md "タイトル"
+
+# 2. 解説テキスト追加
+showboat note docs/showboat/feature-name.md "説明文"
+
+# 3. コマンド実行＋出力キャプチャ
+showboat exec docs/showboat/feature-name.md bash "コマンド"
+
+# 4. スクリーンショット追加
+showboat image docs/showboat/feature-name.md screenshots/feature.png
+
+# 5. 直前のエントリ削除（ミス時）
+showboat pop docs/showboat/feature-name.md
+
+# 6. 全コードブロック再実行＋出力検証
+showboat verify docs/showboat/feature-name.md
+
+# 7. 再現用コマンド列を出力
+showboat extract docs/showboat/feature-name.md
+```
+
+### 用途
+
+- **ADR（Architecture Decision Record）**: 設計判断と検証結果を実行可能な形で記録
+- **機能デモ**: API動作やビルド結果を再現可能なドキュメントとして残す
+- **変更検証**: `showboat verify` で過去のドキュメントが現在も有効か確認
