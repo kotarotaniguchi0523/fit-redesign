@@ -2,6 +2,7 @@
 
 ## 技術スタック
 
+- **Python ツール**: `uv`（pip/pipx ではなく `uv tool install` を使用）
 - **フレームワーク**: Astro 6 (SSG + SSR hybrid)
 - **ホスティング**: Cloudflare Pages（git push で自動デプロイ）
 - **DB**: Cloudflare D1（SQLite）、Upstash Redis（キャッシュ）
@@ -93,6 +94,7 @@ public/             # 静的ファイル（robots.txt, llms.txt, _headers）
 
 - **本番URL**: https://fit-redesign.pages.dev
 - **デプロイ方法**: `git push origin main` で自動デプロイ（`wrangler pages deploy` は使わない）
+- **反映タイミング**: push 後、静的ファイル（robots.txt等）の反映に数分かかる場合あり
 - **CSP設定**: `public/_headers`（外部リソース追加時は `connect-src` 更新必須）
 - **D1マイグレーション**: `wrangler d1 execute fit-timer-db --remote --command="SQL文"` で個別実行（`--file` はリモートで認証エラーになる場合あり）
 - **Upstash Redis**: `wrangler secret put UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` で設定
@@ -160,7 +162,7 @@ public/             # 静的ファイル（robots.txt, llms.txt, _headers）
 
 [simonw/showboat](https://github.com/simonw/showboat) — エージェントの作業を実行可能なMarkdownで記録・検証するツール。
 
-**保存先**: `docs/showboat/` フォルダ
+**保存先**: `docs/showboat/` フォルダ。**命名**: `adr-{機能名}.md`（ADR）、`demo-{機能名}.md`（デモ）
 
 ### インストール
 
