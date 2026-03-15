@@ -212,9 +212,13 @@ function getRecentAccuracies(answers: AnswerRecord[], windowSize: number): numbe
 	const accuracies: number[] = [];
 
 	for (let i = windowSize - 1; i < sorted.length; i += windowSize) {
-		const window = sorted.slice(Math.max(0, i - windowSize + 1), i + 1);
-		const correct = window.filter((a) => a.isCorrect).length;
-		accuracies.push((correct / window.length) * 100);
+		const start = Math.max(0, i - windowSize + 1);
+		const end = i + 1;
+		let correct = 0;
+		for (let j = start; j < end; j++) {
+			if (sorted[j].isCorrect) correct++;
+		}
+		accuracies.push((correct / (end - start)) * 100);
 	}
 
 	return accuracies;
