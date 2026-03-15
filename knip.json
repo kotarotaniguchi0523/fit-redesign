@@ -1,9 +1,21 @@
 {
 	"$schema": "https://unpkg.com/knip@5/schema.json",
-	"entry": ["src/pages/**/*.astro", "src/scripts/*.ts"],
-	"project": ["src/**/*.{ts,tsx,astro}"],
-	"ignore": [],
-	"ignoreDependencies": ["tailwindcss", "@vitest/coverage-v8"],
+	"entry": [
+		"src/pages/**/*.astro",
+		"src/scripts/*.ts"
+	],
+	"project": [
+		"src/**/*.{ts,tsx,astro}"
+	],
+	"ignore": [
+		"src/constants.ts",
+		"src/types/answer.ts"
+	],
+	"ignoreDependencies": [
+		"tailwindcss",
+		"@vitest/coverage-v8",
+		"cloudflare"
+	],
 	"ignoreExportsUsedInFile": true,
 	"rules": {
 		"exports": "warn",

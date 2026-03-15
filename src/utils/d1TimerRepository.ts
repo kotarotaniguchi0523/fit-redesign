@@ -125,9 +125,11 @@ export async function syncAttempts(
 	}
 
 	// バッチ実行（D1 は最大100文ずつ）
+	const batchPromises: Promise<D1Result<unknown>[]>[] = [];
 	for (let i = 0; i < statements.length; i += 100) {
-		await db.batch(statements.slice(i, i + 100));
+		batchPromises.push(db.batch(statements.slice(i, i + 100)));
 	}
+	await Promise.all(batchPromises);
 
 	// マージ後の全データを返却
 	return loadUserAttempts(db, userId);
