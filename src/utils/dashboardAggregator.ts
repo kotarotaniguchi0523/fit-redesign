@@ -128,8 +128,19 @@ export function aggregateByMonth(answers: AnswerRecord[]): MonthlyStats[] {
 
 	for (const month of sortedMonths) {
 		const monthAnswers = byMonth.get(month)!;
-		const correct = monthAnswers.filter((a) => a.isCorrect).length;
-		const withDuration = monthAnswers.filter((a) => a.duration != null);
+
+		let correct = 0;
+		let durationSum = 0;
+		let withDurationCount = 0;
+
+		for (let i = 0; i < monthAnswers.length; i++) {
+			const a = monthAnswers[i];
+			if (a.isCorrect) correct++;
+			if (a.duration != null) {
+				durationSum += a.duration;
+				withDurationCount++;
+			}
+		}
 
 		stats.push({
 			month,
@@ -137,11 +148,7 @@ export function aggregateByMonth(answers: AnswerRecord[]): MonthlyStats[] {
 			correctAnswers: correct,
 			accuracy: Math.round((correct / monthAnswers.length) * 100),
 			avgDuration:
-				withDuration.length > 0
-					? Math.round(
-							(withDuration.reduce((s, a) => s + (a.duration ?? 0), 0) / withDuration.length) * 10,
-						) / 10
-					: null,
+				withDurationCount > 0 ? Math.round((durationSum / withDurationCount) * 10) / 10 : null,
 		});
 	}
 
