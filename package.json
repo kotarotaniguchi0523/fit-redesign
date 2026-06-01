@@ -3,6 +3,7 @@
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
+	"packageManager": "pnpm@11.5.0",
 	"scripts": {
 		"dev": "astro dev",
 		"build": "astro build",
@@ -21,23 +22,25 @@
 		"test:coverage": "vitest run --coverage"
 	},
 	"devDependencies": {
-		"@astrojs/check": "^0.9.6",
-		"@biomejs/biome": "^2.4.4",
-		"@cloudflare/workers-types": "^4.20260307.1",
-		"@tailwindcss/vite": "^4.2.1",
-		"@typescript/native-preview": "7.0.0-dev.20260122.4",
-		"@vitest/coverage-v8": "^4.0.18",
-		"jsdom": "^27.4.0",
-		"knip": "^5.83.1",
-		"tailwindcss": "^4.1.18",
-		"vitest": "^4.0.18"
+		"@astrojs/check": "^0.9.9",
+		"@biomejs/biome": "^2.4.16",
+		"@cloudflare/workers-types": "^4.20260601.1",
+		"@tailwindcss/vite": "^4.3.0",
+		"@typescript/native-preview": "7.0.0-dev.20260527.2",
+		"@vitest/coverage-v8": "^4.1.8",
+		"jsdom": "^29.1.1",
+		"knip": "^6.15.0",
+		"tailwindcss": "^4.3.0",
+		"vitest": "^4.1.8",
+		"workerd": "^1.20260601.1",
+		"wrangler": "^4.95.0"
 	},
 	"dependencies": {
-		"@astrojs/cloudflare": "^12.6.12",
-		"@astrojs/sitemap": "^3.7.0",
-		"@upstash/redis": "^1.36.3",
-		"astro": "6.0.0-beta.17",
+		"@astrojs/cloudflare": "^13.6.0",
+		"@astrojs/sitemap": "^3.7.3",
+		"@upstash/redis": "^1.38.0",
+		"astro": "6.4.2",
 		"chart.js": "^4.5.1",
-		"zod": "^4.3.6"
+		"zod": "^4.4.3"
 	}
 }

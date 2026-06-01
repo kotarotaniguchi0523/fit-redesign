@@ -1,8 +1,12 @@
 {
 	"name": "fit-redesign",
-	"pages_build_output_dir": "dist",
+	"main": "@astrojs/cloudflare/entrypoints/server",
 	"compatibility_date": "2025-01-01",
 	"compatibility_flags": ["nodejs_compat"],
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS"
+	},
 	"d1_databases": [
 		{
 			"binding": "DB",
