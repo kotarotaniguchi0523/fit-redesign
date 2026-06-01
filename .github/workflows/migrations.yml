@@ -1,0 +1,70 @@
+name: D1 Migrations
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  migrate:
+    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 5
+    concurrency:
+      group: d1-migrations
+      cancel-in-progress: false
+    steps:
+      - name: Download D1 migration state
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: d1-migration-state
+          path: /tmp/d1-migration-state
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        timeout-minutes: 1
+
+      - name: Download D1 migration files
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: d1-migration-files
+          path: .
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        timeout-minutes: 1
+
+      - name: Read D1 migration state
+        id: d1-migrations
+        run: |
+          changed="$(cat /tmp/d1-migration-state/changed)"
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+        timeout-minutes: 1
+
+      - name: Apply D1 migrations
+        if: steps.d1-migrations.outputs.changed == 'true'
+        uses: cloudflare/wrangler-action@9681c2997648301493e78cacbfb790a9f19c833f # v3.9.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: d1 migrations apply fit-timer-db --remote
+        timeout-minutes: 3
+
+      - name: Write production deploy state
+        run: |
+          mkdir -p /tmp/production-deploy-state
+          echo "${{ github.event.workflow_run.id }}" > /tmp/production-deploy-state/ci-run-id
+        timeout-minutes: 1
+
+      - name: Upload production deploy state
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: production-deploy-state
+          path: /tmp/production-deploy-state/ci-run-id
+          retention-days: 1
+        timeout-minutes: 1

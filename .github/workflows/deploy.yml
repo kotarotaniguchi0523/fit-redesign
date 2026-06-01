@@ -1,76 +1,42 @@
 name: Deploy to Cloudflare Pages
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  workflow_run:
+    workflows:
+      - D1 Migrations
+    types:
+      - completed
 
-permissions:
-  contents: read
+permissions: read-all
 
 jobs:
   deploy:
+    if: github.event.workflow_run.actor.login == 'kotarotaniguchi0523' && github.event.workflow_run.event == 'workflow_run' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    environment: production
     timeout-minutes: 10
-    permissions:
-      contents: read
-      deployments: write
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
     steps:
-      - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Download production deploy state
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          persist-credentials: false
-        timeout-minutes: 2
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
-        with:
-          version: 10
-        timeout-minutes: 2
-
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 24
-          cache: pnpm
-        timeout-minutes: 2
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-        timeout-minutes: 3
-
-      - name: Lint & Format Check
-        run: pnpm check
+          name: production-deploy-state
+          path: /tmp/production-deploy-state
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         timeout-minutes: 1
 
-      - name: TypeScript Check
-        run: pnpm typecheck
-        timeout-minutes: 2
-
-      - name: Test
-        run: pnpm test:run
-        timeout-minutes: 2
-
-      - name: Check unused code
-        run: pnpm knip
-        timeout-minutes: 1
-
-      - name: Build
-        run: pnpm build
-        timeout-minutes: 3
-
-      - name: Check for broken links
-        uses: lycheeverse/lychee-action@a8c4c7cb88f0c7386610c35eb25108e448569cb0 # v2.7.0
-        with:
-          args: --offline --verbose './dist/**/*.html'
-          fail: true
+      - name: Download Pages artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ci_run_id="$(cat /tmp/production-deploy-state/ci-run-id)"
+          gh run download "$ci_run_id" --name pages-dist --dir dist
         timeout-minutes: 2
 
       - name: Deploy to Cloudflare Pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: cloudflare/wrangler-action@9681c2997648301493e78cacbfb790a9f19c833f # v3.9.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
