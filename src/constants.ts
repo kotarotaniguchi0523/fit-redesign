@@ -28,6 +28,10 @@ export const ALERT_SOUND = {
 
 export const FEEDBACK_DURATION = 2000;
 
+// --- 回答イベント（カード採点 → SRS / セッション / ホームが購読） ---
+
+export const QUESTION_GRADED_EVENT = "question-graded";
+
 // --- Validation (keep in sync with src/types/timer.ts schemas) ---
 
 export const QUESTION_ID_RE = /^exam[1-9]-\d{4}-q\d+$/;

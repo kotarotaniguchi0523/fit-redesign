@@ -96,7 +96,8 @@ public/             # 静的ファイル（robots.txt, llms.txt, _headers）
 - **デプロイ方法**: `git push origin main` で自動デプロイ（`wrangler pages deploy` は使わない）
 - **反映タイミング**: push 後、静的ファイル（robots.txt等）の反映に数分かかる場合あり
 - **CSP設定**: `public/_headers`（外部リソース追加時は `connect-src` 更新必須）
-- **D1マイグレーション**: `wrangler d1 execute fit-timer-db --remote --command="SQL文"` で個別実行（`--file` はリモートで認証エラーになる場合あり）
+- **D1マイグレーション（リモート）**: `wrangler d1 execute fit-timer-db --remote --command="SQL文"` で個別実行（`--file` はリモートで認証エラーになる場合あり）
+- **D1マイグレーション（ローカル）**: `pnpm db:migrate:local`（`migrations/` を `.wrangler/state/v3/d1` のローカルDBへ適用。`astro dev` はここを読むので、`no such table` エラーが出たらこれを実行）。任意SQLは `pnpm db:query:local "SELECT ..."`
 - **Upstash Redis**: `wrangler secret put UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` で設定
 - **GEO/SEO**: `robots.txt`, `llms.txt`, `llms-full.txt`, `/api/markdown/`, JSON-LD, sitemap.xml 実装済み
 

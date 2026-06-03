@@ -51,7 +51,7 @@ class QuestionTimer extends HTMLElement {
 	private settingsOpen = false;
 
 	get questionId(): string {
-		return this.getAttribute("question-id") || "";
+		return this.dataset.questionId || this.getAttribute("question-id") || "";
 	}
 
 	connectedCallback() {
@@ -123,19 +123,19 @@ class QuestionTimer extends HTMLElement {
 
 		// Main timer area
 		const mainRow = document.createElement("div");
-		mainRow.className = "flex items-center gap-2";
+		mainRow.className = "flex flex-wrap items-center gap-2";
 
 		// Start/Stop button
 		this.startStopBtn = document.createElement("button");
 		this.startStopBtn.className =
-			"min-w-max whitespace-nowrap px-4 py-1.5 text-sm font-medium rounded-xl text-white bg-green-600 hover:bg-green-700 transition-colors";
+			"min-w-max whitespace-nowrap rounded-xl bg-green-600 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-green-700";
 		this.startStopBtn.textContent = "開始";
 		this.startStopBtn.addEventListener("click", () => this.handleStartStop());
 
 		// Reset button (hidden by default)
 		this.resetBtn = document.createElement("button");
 		this.resetBtn.className =
-			"px-3 py-1.5 text-sm font-medium rounded-xl text-white bg-amber-500 hover:bg-amber-600 transition-colors hidden";
+			"hidden rounded-xl bg-amber-500 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-amber-600";
 		this.resetBtn.textContent = "リセット";
 		this.resetBtn.addEventListener("click", () => this.handleReset());
 
@@ -157,7 +157,7 @@ class QuestionTimer extends HTMLElement {
 
 		// Settings button
 		this.settingsBtn = document.createElement("button");
-		this.settingsBtn.className = "p-1.5 rounded-lg hover:bg-slate-100 transition-colors";
+		this.settingsBtn.className = "rounded-lg p-1.5 transition-colors hover:bg-white";
 		this.settingsBtn.setAttribute("aria-label", "タイマー設定");
 		this.gearIcon = document.createElement("span");
 		this.gearIcon.className =
@@ -467,11 +467,11 @@ class QuestionTimer extends HTMLElement {
 		if (this.isRunning) {
 			this.startStopBtn.textContent = "停止";
 			this.startStopBtn.className =
-				"min-w-max whitespace-nowrap px-4 py-1.5 text-sm font-medium rounded-xl text-white bg-red-600 hover:bg-red-700 transition-colors";
+				"min-w-max whitespace-nowrap rounded-xl bg-red-600 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-red-700";
 		} else {
 			this.startStopBtn.textContent = "開始";
 			this.startStopBtn.className =
-				"min-w-max whitespace-nowrap px-4 py-1.5 text-sm font-medium rounded-xl text-white bg-green-600 hover:bg-green-700 transition-colors";
+				"min-w-max whitespace-nowrap rounded-xl bg-green-600 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-green-700";
 		}
 
 		// Reset button visibility

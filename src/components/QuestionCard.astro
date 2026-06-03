@@ -15,54 +15,34 @@ interface Props {
 
 const { question } = Astro.props;
 const markdownText = questionToMarkdown(question);
+const hasOptions = !!question.options && question.options.length > 0;
 ---
 
-<div
-	class="mb-4 border-l-4 border-l-[#1e3a5f] shadow-sm hover:shadow-md transition-shadow bg-white rounded-lg"
->
-	<div class="p-5">
-		{/* 1. 問題番号 */}
-		<div class="mb-2">
-			<span
-				class="w-8 h-8 rounded-full bg-[#1e3a5f] text-white flex items-center justify-center text-sm font-bold"
-			>
-				{question.number}
-			</span>
-		</div>
+<article data-question-card data-question-id={question.id} class="q-card">
+	{/* 進捗チップ（回答後にJSが表示） */}
+	<div data-status-chip hidden class="q-chip"></div>
+
+	<div class="q-card__body">
+		{/* 1. 問題番号 + 種別 */}
+		<header class="q-head">
+			<span class="q-num">{question.number}</span>
+			<div>
+				<p class="q-eyebrow">問題 {question.number}</p>
+				<p class="q-hint">
+					{hasOptions ? "選択肢を1つ選んで確かめよう" : "答えを出してから、答え合わせしよう"}
+				</p>
+			</div>
+		</header>
 
 		{/* 2. 問題文 */}
-		<div class="mb-4">
-			<p class="text-gray-800 leading-relaxed whitespace-pre-wrap break-words w-full">
-				{question.text}
-			</p>
+		<div class="q-text-wrap">
+			<p class="q-text">{question.text}</p>
 		</div>
 
-		{/* 3. アイコン（コピーボタン・タイマー） */}
-		<div class="flex items-center gap-4 mb-4">
-			<button
-				data-copy-button
-				data-copy-text={markdownText}
-				class="p-1.5 rounded text-slate-500 hover:text-[#1e3a5f] hover:bg-slate-100 transition-colors"
-				aria-label="Markdownでコピー"
-				title="Markdownでコピー"
-			>
-				<svg class="w-4 h-4 copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-					<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-				</svg>
-				<svg class="w-4 h-4 check-icon hidden text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					<polyline points="20 6 9 17 4 12"></polyline>
-				</svg>
-			</button>
-			<div class="scale-90 origin-left">
-				<question-timer data-question-id={question.id}></question-timer>
-			</div>
-		</div>
-
-		{/* 4. 図表 */}
+		{/* 3. 図表 */}
 		{
 			question.figureData && (
-				<div class="my-4 flex justify-center w-full overflow-x-auto">
+				<div class="q-figure-wrap">
 					{question.figureData.type === "stateDiagram" && (
 						<StateDiagram
 							nodes={question.figureData.nodes}
@@ -113,63 +93,70 @@ const markdownText = questionToMarkdown(question);
 
 		{
 			!question.figureData && question.figureDescription && (
-				<div class="my-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-					<p class="text-sm text-blue-800">
-						<strong>図:</strong> {question.figureDescription}
-					</p>
+				<div class="q-figure-fallback">
+					<strong>図:</strong> {question.figureDescription}
 				</div>
 			)
 		}
 
-		{/* 5. 選択肢 */}
+		{/* 4. 回答（選択式 or 記述式の自己採点） */}
 		{
-			question.options && question.options.length > 0 && (
+			hasOptions ? (
 				<answer-selector
-					class="mt-4 space-y-2 block"
+					class="q-options"
 					data-question-id={question.id}
 					data-correct-label={question.answer}
 				>
-					{question.options.map((option) => (
-						<div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-							<span class="shrink-0 w-6 h-6 rounded bg-[#1e3a5f] text-white flex items-center justify-center text-xs font-bold">
-								{option.label}
-							</span>
-							<span class="text-gray-800 break-words w-full">
+					{question.options?.map((option) => (
+						<div data-option class="q-option">
+							<span class="q-option__label">{option.label}</span>
+							<span class="q-option__value">
 								{option.value || "(選択肢未入力)"}
 							</span>
 						</div>
 					))}
 				</answer-selector>
+			) : (
+				<self-grade class="mt-4 block" data-question-id={question.id}>
+					<button type="button" data-reveal class="q-btn-primary">
+						答え合わせをする
+					</button>
+				</self-grade>
 			)
 		}
 
-		{/* 6. 解答（details/summary でアコーディオン） */}
-		<details class="mt-4 group">
-			<summary
-				class="cursor-pointer text-sm font-medium text-[#1e3a5f] hover:text-[#2d4a6f] transition-colors list-none flex items-center gap-1"
-			>
-				<span class="group-open:rotate-90 transition-transform">▶</span>
-				解答を表示
-			</summary>
-			<div class="mt-2">
-				<div
-					class="p-4 bg-linear-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200"
-				>
-					<div class="flex items-start gap-2">
-						<span class="text-emerald-600 font-bold">A.</span>
-						<span class="font-medium text-emerald-900"
-							>{question.answer}</span
-						>
-					</div>
-				</div>
-				{
-					question.explanation && (
-						<div class="mt-3 p-3 bg-gray-50 rounded-lg text-gray-600 text-sm">
-							<strong>解説:</strong> {question.explanation}
-						</div>
-					)
-				}
+		{/* 5. 解き方パネル（回答後にJSが表示） */}
+		<div data-solution hidden class="q-solution">
+			<p class="q-solution__title">解き方</p>
+			<div class="q-solution__answer">
+				<span class="q-solution__answer-label">答え</span>
+				<span class="q-solution__answer-value">{question.answer}</span>
 			</div>
-		</details>
+			{
+				question.explanation && (
+					<p class="q-solution__explanation">{question.explanation}</p>
+				)
+			}
+		</div>
+
+		{/* 6. ツール（控えめなフッター） */}
+		<footer class="q-footer">
+			<question-timer data-question-id={question.id}></question-timer>
+			<button
+				data-copy-button
+				data-copy-text={markdownText}
+				class="q-tool"
+				aria-label="Markdownでコピー"
+				title="Markdownでコピー"
+			>
+				<svg class="copy-icon h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+					<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+				</svg>
+				<svg class="check-icon hidden h-4 w-4 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<polyline points="20 6 9 17 4 12"></polyline>
+				</svg>
+			</button>
+		</footer>
 	</div>
-</div>
+</article>

@@ -28,3 +28,7 @@ screenshots/
 coverage/
 test-results/
 .wrangler/
+
+# local agent/wrangler state
+.wrangler-home/
+.ab-home/

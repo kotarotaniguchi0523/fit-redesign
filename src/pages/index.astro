@@ -1,11 +1,13 @@
 ---
 import Header from "../components/Header.astro";
 import Layout from "../layouts/Layout.astro";
-import { unitBasedTabs } from "../data/units";
+import { buildUnitManifest } from "../utils/questionManifest";
 import { YEARS } from "../types/index";
 
-// デフォルトの年度
-const defaultYear = YEARS[0];
+const manifest = await buildUnitManifest();
+// `</script>` でスクリプトが途切れないよう `<` をエスケープ（JSON.parse は復元する）
+const manifestJson = JSON.stringify(manifest).replace(/</g, "\\u003c");
+const fallbackCta = manifest[0] ? `/today/${manifest[0].id}` : "/";
 
 // JSON-LD: WebSite + Course
 const jsonLd = {
@@ -18,20 +20,14 @@ const jsonLd = {
 			description:
 				"明治大学の基本情報技術 I 講義の演習問題サイト。2013〜2017年度の9単元・全問題を掲載。",
 			inLanguage: "ja",
-			publisher: {
-				"@type": "EducationalOrganization",
-				name: "明治大学",
-			},
+			publisher: { "@type": "EducationalOrganization", name: "明治大学" },
 		},
 		{
 			"@type": "Course",
 			name: "基本情報技術 I",
 			description:
 				"基数変換、負数表現、浮動小数点、論理演算、集合と確率、オートマトン、符号理論、データ構造、ソート・探索の9単元を学習する情報技術の基礎講義。",
-			provider: {
-				"@type": "EducationalOrganization",
-				name: "明治大学",
-			},
+			provider: { "@type": "EducationalOrganization", name: "明治大学" },
 			educationalLevel: "大学学部",
 			inLanguage: "ja",
 			numberOfCredits: 2,
@@ -51,60 +47,79 @@ const jsonLd = {
 	jsonLd={jsonLd}
 >
 	<Header />
-	<main class="container mx-auto px-4 py-6 max-w-5xl">
-		<div class="w-full">
-			{/* 単元タブ（リンクとして表示） */}
-			<nav class="flex flex-wrap gap-2 mb-6" role="tablist" aria-label="単元選択">
-				{
-					unitBasedTabs.map((unit) => (
-						<a
-							href={`/${unit.id}/${defaultYear}`}
-							class="px-4 py-2 rounded-lg border text-sm font-medium transition-all h-auto min-h-[40px] whitespace-normal text-center bg-white text-gray-700 border-gray-300 hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
-						>
-							{unit.name}
-						</a>
-					))
-				}
-				<a
-					href="/slide-only"
-					class="px-4 py-2 rounded-lg border text-sm font-medium transition-all h-auto min-h-[40px] whitespace-normal text-center bg-white text-gray-700 border-gray-300 hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
-				>
-					講義資料のみ
-				</a>
-			</nav>
+	<main class="study-shell">
+		<div class="container mx-auto max-w-4xl px-4 py-8">
+			<study-home>
+				<script data-manifest type="application/json" is:inline set:html={manifestJson} />
 
-			{/* デフォルト表示: 最初のユニットのコンテンツ */}
-			<article class="p-4 bg-white rounded-xl shadow-sm border border-gray-200">
-				<div class="text-center py-8">
-					<h1
-						class="text-2xl font-bold text-[#1e3a5f] mb-4"
-						style="font-family: var(--font-serif)"
-					>
-						基本情報技術 I 演習問題
-					</h1>
-					<p class="text-gray-600 mb-6">
-						上のタブから学習したい単元を選んでください。
+				{/* ヒーロー */}
+				<section class="py-2">
+					<p class="home-eyebrow">基本情報技術の演習</p>
+					<h1 class="home-title">勉強が嫌いな日でも、まず今日のぶんだけ。</h1>
+					<p class="home-lede">
+						何から手をつけるか迷わなくて大丈夫。アプリが「今日やる分」を少しずつ出します。間違えた問題は、忘れた頃にまた戻ってきます。
 					</p>
-					<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-w-2xl mx-auto">
+				</section>
+
+				{/* 試験本番メーター ＋ 今日の道 */}
+				<section class="home-hero-card">
+					<div class="home-meter">
+						<div class="home-meter-head">
+							<span class="home-meter-label">いまの仕上がり</span>
+							<span data-overall-value class="home-meter-value">—</span>
+						</div>
+						<div class="home-meter-track">
+							<div data-overall-bar class="home-meter-fill" style="width:0%"></div>
+						</div>
+						<p class="home-meter-note">
+							今日やる分: <strong data-overall-due>—</strong> 問
+						</p>
+					</div>
+					<a data-today-cta href={fallbackCta} class="home-cta">
+						<span data-cta-label class="home-cta-label">今日の道を始める</span>
+						<span data-cta-sub class="home-cta-sub">まずは1問だけでもOK</span>
+					</a>
+				</section>
+
+				{/* 単元別の仕上がり */}
+				<section class="mt-8">
+					<div class="home-section-head">
+						<h2 class="home-section-title">単元ごとの仕上がり</h2>
+						<a href="/slide-only" class="home-textlink">講義資料だけ見る</a>
+					</div>
+
+					<div class="home-unit-list">
 						{
-							unitBasedTabs.map((unit) => (
-								<a
-									href={`/${unit.id}/${defaultYear}`}
-									class="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-[#1e3a5f] hover:shadow-md transition-all text-left"
-								>
-									<div class="text-2xl mb-2">{unit.icon}</div>
-									<div class="text-sm font-semibold text-[#1e3a5f]">
-										{unit.name}
-									</div>
-									<div class="text-xs text-gray-500 mt-1">
-										{unit.description}
+							manifest.map((unit, index) => (
+								<a data-unit-row={unit.id} href={`/today/${unit.id}`} class="home-unit-row">
+									<span class="home-unit-num">{index + 1}</span>
+									<div class="home-unit-main">
+										<div class="home-unit-titlerow">
+											<span class="home-unit-name">{unit.name}</span>
+											<span data-unit-due hidden class="home-unit-due" />
+										</div>
+										<p class="home-unit-desc">{unit.description}</p>
+										<div class="home-unit-meterrow">
+											<div class="home-unit-track">
+												<div data-unit-bar class="home-unit-fill" style="width:0%" />
+											</div>
+											<span data-unit-value class="home-unit-value">0%</span>
+										</div>
 									</div>
 								</a>
 							))
 						}
 					</div>
-				</div>
-			</article>
+
+					<p class="home-foot-note">
+						年度ごとに問題を見たいときは、各単元の演習ページ内から選べます。
+					</p>
+				</section>
+			</study-home>
 		</div>
 	</main>
+
+	<script>
+		import "../scripts/study-home";
+	</script>
 </Layout>

@@ -4,8 +4,10 @@
 :root {
 	--color-primary: #1e3a5f;
 	--color-primary-light: #2d4a6f;
+	--color-primary-soft: #e8eef5;
 	--color-accent: #c9a227;
 	--color-accent-light: #dbb84a;
+	--color-accent-soft: #f7eed1;
 	--color-bg: #faf9f7;
 	--color-bg-card: #ffffff;
 	--color-text: #1a1a1a;
@@ -22,6 +24,20 @@ body {
 	color: var(--color-text);
 }
 
+html {
+	scroll-behavior: smooth;
+}
+
+::selection {
+	background: var(--color-accent-soft);
+	color: var(--color-primary);
+}
+
+:focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--color-accent) 72%, white);
+	outline-offset: 3px;
+}
+
 /* 微細なテクスチャ背景 */
 .bg-texture {
 	background-image: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.03) 1px, transparent 0);
@@ -36,4 +52,464 @@ details summary::-webkit-details-marker {
 details summary::marker {
 	display: none;
 	content: "";
+}
+
+.study-shell {
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(250, 249, 247, 0.96)),
+		radial-gradient(circle at 12% 8%, rgba(201, 162, 39, 0.14), transparent 30%),
+		radial-gradient(circle at 88% 16%, rgba(30, 58, 95, 0.12), transparent 32%);
+}
+
+.soft-panel {
+	background: rgba(255, 255, 255, 0.88);
+	border: 1px solid rgba(226, 224, 220, 0.95);
+	box-shadow: 0 16px 44px rgba(30, 58, 95, 0.08);
+}
+
+.lift-card {
+	transition:
+		transform 180ms ease,
+		box-shadow 180ms ease,
+		border-color 180ms ease,
+		background-color 180ms ease;
+}
+
+.lift-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 16px 32px rgba(30, 58, 95, 0.11);
+}
+
+.study-card-enter {
+	animation: study-card-enter 420ms ease both;
+}
+
+.no-scrollbar {
+	scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+	display: none;
+}
+
+@keyframes study-card-enter {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* 解き方パネルの表示アニメーション */
+.solution-reveal {
+	animation: solution-reveal 320ms ease both;
+}
+
+@keyframes solution-reveal {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ===== 問題カード（QuestionCard / answer-selector / self-grade で共有） ===== */
+@layer components {
+	.q-card {
+		@apply relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow;
+		animation: study-card-enter 420ms ease both;
+	}
+	.q-card:hover {
+		@apply shadow-md;
+	}
+	.q-card__body {
+		@apply p-4 sm:p-5;
+	}
+
+	/* 進捗チップ */
+	.q-chip {
+		@apply absolute right-3 top-3 z-10 rounded-full px-3 py-1 text-xs font-bold;
+	}
+	.q-chip--correct {
+		@apply bg-emerald-100 text-emerald-800;
+	}
+	.q-chip--review {
+		@apply bg-amber-100 text-amber-800;
+	}
+
+	/* ヘッダー */
+	.q-head {
+		@apply mb-4 flex items-center gap-3;
+	}
+	.q-num {
+		@apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white;
+		background-color: var(--color-primary);
+	}
+	.q-eyebrow {
+		@apply text-xs font-bold tracking-[0.14em];
+		color: var(--color-accent);
+	}
+	.q-hint {
+		@apply text-sm text-slate-500;
+	}
+
+	/* 問題文 */
+	.q-text-wrap {
+		@apply mb-4 rounded-xl p-4;
+		background-color: var(--color-bg);
+	}
+
+	/* 図表 */
+	.q-figure-wrap {
+		@apply my-4 flex w-full justify-center overflow-x-auto rounded-xl border border-slate-200 bg-white p-3;
+	}
+	.q-figure-fallback {
+		@apply my-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800;
+	}
+	.q-text {
+		@apply w-full whitespace-pre-wrap break-words text-[15px] leading-8 text-slate-800;
+	}
+
+	/* 選択肢 */
+	.q-options {
+		@apply mt-4 block space-y-2;
+	}
+	.q-option {
+		@apply flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 transition-all;
+	}
+	.q-option__label {
+		@apply flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white;
+		background-color: var(--color-primary);
+	}
+	.q-option__value {
+		@apply w-full break-words text-sm leading-6 text-gray-800;
+	}
+	/* 選択肢の状態（JSが付与） */
+	button.q-option {
+		@apply w-full cursor-pointer text-left;
+	}
+	button.q-option:hover {
+		border-color: var(--color-primary);
+		background-color: var(--color-primary-soft);
+	}
+	.q-option.is-selected {
+		@apply border-blue-500 bg-blue-50 ring-2 ring-blue-300;
+	}
+	.q-option.is-correct {
+		@apply border-emerald-500 bg-emerald-50 ring-2 ring-emerald-300;
+	}
+	.q-option.is-wrong {
+		@apply border-red-500 bg-red-50 ring-2 ring-red-300;
+	}
+	.q-option.is-muted {
+		@apply border-gray-200 bg-gray-50 opacity-60;
+	}
+	.q-option[disabled] {
+		@apply cursor-default;
+	}
+
+	/* フィードバック（正誤メッセージ） */
+	.q-feedback {
+		@apply mt-3 rounded-xl border px-4 py-3 text-sm font-bold;
+	}
+	.q-feedback.is-correct {
+		@apply border-emerald-200 bg-emerald-50 text-emerald-900;
+	}
+	.q-feedback.is-review {
+		@apply border-amber-200 bg-amber-50 text-amber-900;
+	}
+
+	/* 解き方パネル */
+	.q-solution {
+		@apply mt-4 rounded-xl border border-indigo-200 p-4;
+		background-color: color-mix(in srgb, #eef2ff 70%, white);
+	}
+	.q-solution__title {
+		@apply flex items-center gap-2 text-sm font-bold text-indigo-900;
+	}
+	.q-solution__title::before {
+		content: "";
+		@apply inline-block h-4 w-1 rounded-full bg-indigo-500;
+	}
+	.q-solution__answer {
+		@apply mt-2 flex items-baseline gap-2 rounded-lg px-3 py-2;
+		background-color: rgba(255, 255, 255, 0.8);
+	}
+	.q-solution__answer-label {
+		@apply shrink-0 text-xs font-bold text-emerald-700;
+	}
+	.q-solution__answer-value {
+		@apply break-words font-bold text-emerald-900;
+	}
+	.q-solution__explanation {
+		@apply mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-slate-700;
+	}
+
+	/* ボタン群 */
+	.q-btn-primary {
+		@apply min-h-11 w-full rounded-xl px-4 py-3 text-sm font-bold text-white transition-colors;
+		background-color: var(--color-primary);
+	}
+	.q-btn-primary:hover {
+		background-color: var(--color-primary-light);
+	}
+	.q-btn-outline {
+		@apply mt-2 min-h-11 w-full rounded-xl border px-4 py-2.5 text-sm font-bold transition-colors;
+		border-color: var(--color-primary);
+		color: var(--color-primary);
+	}
+	.q-btn-outline:hover {
+		background-color: var(--color-primary-soft);
+	}
+	.q-btn-emerald {
+		@apply min-h-11 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-800 transition-colors;
+	}
+	.q-btn-emerald:hover {
+		@apply bg-emerald-100;
+	}
+	.q-btn-amber {
+		@apply min-h-11 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-bold text-amber-800 transition-colors;
+	}
+	.q-btn-amber:hover {
+		@apply bg-amber-100;
+	}
+	.q-btn-ghost {
+		@apply mt-2 w-full rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-slate-600 transition-colors;
+	}
+	.q-btn-ghost:hover {
+		@apply bg-slate-50;
+	}
+	.q-btn-peek {
+		@apply mt-2 w-full rounded-lg px-3 py-2 text-xs font-bold text-slate-400 underline-offset-4 transition-colors;
+	}
+	.q-btn-peek:hover {
+		@apply text-slate-600 underline;
+	}
+	.q-grade-row {
+		@apply mt-3 grid grid-cols-2 gap-2;
+	}
+
+	/* フッター（控えめなツール列） */
+	.q-footer {
+		@apply mt-4 flex items-center justify-end gap-1 border-t border-slate-100 pt-3;
+	}
+	.q-tool {
+		@apply rounded-lg p-2 text-slate-400 transition-colors;
+	}
+	.q-tool:hover {
+		@apply bg-slate-50;
+		color: var(--color-primary);
+	}
+}
+
+/* ===== ホーム（ハブ: 試験メーター・今日の道・単元別仕上がり） ===== */
+@layer components {
+	.home-eyebrow {
+		@apply text-sm font-semibold tracking-[0.18em];
+		color: var(--color-accent);
+	}
+	.home-title {
+		@apply mt-3 max-w-3xl text-3xl font-bold leading-tight sm:text-4xl;
+		color: var(--color-primary);
+		font-family: var(--font-serif);
+	}
+	.home-lede {
+		@apply mt-3 max-w-2xl text-base leading-8 text-slate-600;
+	}
+	.home-section-head {
+		@apply mb-3 flex items-end justify-between;
+	}
+	.home-section-title {
+		@apply text-xl font-bold;
+		color: var(--color-primary);
+		font-family: var(--font-serif);
+	}
+	.home-textlink {
+		@apply text-sm font-semibold underline-offset-4 hover:underline;
+		color: var(--color-primary);
+	}
+	.home-foot-note {
+		@apply mt-4 text-center text-sm text-slate-500;
+	}
+	.home-hero-card {
+		@apply mt-6 grid gap-4 rounded-2xl border p-5 sm:grid-cols-[1.1fr_0.9fr] sm:items-center;
+		border-color: var(--color-border);
+		background: rgba(255, 255, 255, 0.9);
+		box-shadow: 0 16px 44px rgba(30, 58, 95, 0.08);
+	}
+	.home-meter-head {
+		@apply flex items-baseline justify-between;
+	}
+	.home-meter-label {
+		@apply text-sm font-bold;
+		color: var(--color-primary);
+	}
+	.home-meter-value {
+		@apply text-3xl font-black;
+		color: var(--color-primary);
+		font-family: var(--font-serif);
+	}
+	.home-meter-track {
+		@apply mt-2 h-3 w-full overflow-hidden rounded-full bg-slate-100;
+	}
+	.home-meter-fill {
+		@apply h-full rounded-full transition-all;
+		background: linear-gradient(90deg, var(--color-accent), #e0c14e);
+	}
+	.home-meter-note {
+		@apply mt-2 text-sm text-slate-500;
+	}
+	.home-cta {
+		@apply flex min-h-16 flex-col justify-center rounded-xl px-5 py-3 text-white transition-colors;
+		background: var(--color-primary);
+	}
+	.home-cta:hover {
+		background: var(--color-primary-light);
+	}
+	.home-cta-label {
+		@apply text-base font-bold;
+	}
+	.home-cta-sub {
+		@apply mt-0.5 text-xs text-white/75;
+	}
+
+	.home-unit-list {
+		@apply grid gap-2;
+	}
+	.home-unit-row {
+		@apply flex items-start gap-3 rounded-xl border bg-white p-4 transition-all;
+		border-color: var(--color-border);
+	}
+	.home-unit-row:hover {
+		border-color: var(--color-primary);
+		transform: translateY(-1px);
+		box-shadow: 0 12px 28px rgba(30, 58, 95, 0.1);
+	}
+	.home-unit-num {
+		@apply flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-black;
+		background: var(--color-primary-soft);
+		color: var(--color-primary);
+	}
+	.home-unit-main {
+		@apply min-w-0 flex-1;
+	}
+	.home-unit-titlerow {
+		@apply flex items-center justify-between gap-2;
+	}
+	.home-unit-name {
+		@apply font-bold;
+		color: var(--color-primary);
+	}
+	.home-unit-due {
+		@apply shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800;
+	}
+	.home-unit-desc {
+		@apply mt-0.5 text-sm leading-5 text-slate-500;
+	}
+	.home-unit-meterrow {
+		@apply mt-2 flex items-center gap-2;
+	}
+	.home-unit-track {
+		@apply h-2 flex-1 overflow-hidden rounded-full bg-slate-100;
+	}
+	.home-unit-fill {
+		@apply h-full rounded-full transition-all;
+		background: var(--color-accent);
+	}
+	.home-unit-value {
+		@apply w-10 shrink-0 text-right text-xs font-bold text-slate-500;
+	}
+}
+
+/* ===== 今日の道（連続演習セッション） ===== */
+@layer components {
+	.today-shell {
+		background:
+			linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(250, 249, 247, 0.96)),
+			radial-gradient(circle at 12% 8%, rgba(201, 162, 39, 0.12), transparent 30%);
+		min-height: 100vh;
+	}
+	.today-back {
+		@apply inline-block text-sm font-bold text-slate-500 underline-offset-4 hover:text-[#1e3a5f] hover:underline;
+	}
+	.session-header {
+		@apply mb-5 mt-3 rounded-2xl border p-5;
+		border-color: var(--color-border);
+		background: rgba(255, 255, 255, 0.9);
+	}
+	.session-head-row {
+		@apply flex items-center gap-3;
+	}
+	.session-title {
+		@apply text-2xl font-bold;
+		color: var(--color-primary);
+		font-family: var(--font-serif);
+	}
+	.session-sub {
+		@apply mt-3 text-sm leading-6 text-slate-600;
+	}
+	.session-progress {
+		@apply mt-4 flex items-center gap-3;
+	}
+	.session-bar-track {
+		@apply h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100;
+	}
+	.session-bar-fill {
+		@apply h-full rounded-full transition-all;
+		background: var(--color-accent);
+		width: 0%;
+	}
+	.session-progress-label {
+		@apply shrink-0 text-sm font-bold text-slate-500;
+	}
+	.session-cards {
+		@apply space-y-4;
+	}
+	.session-nav {
+		@apply sticky bottom-0 mt-4 -mx-4 border-t bg-white/95 px-4 py-3 backdrop-blur;
+		border-color: var(--color-border);
+	}
+	.session-next {
+		@apply min-h-12 w-full rounded-xl px-4 py-3 text-base font-bold text-white transition-colors;
+		background: var(--color-primary);
+	}
+	.session-next:hover {
+		background: var(--color-primary-light);
+	}
+	.session-next.is-ready {
+		background: #15803d;
+	}
+	.session-empty,
+	.session-summary {
+		@apply rounded-2xl border p-6 text-center;
+		border-color: var(--color-border);
+		background: rgba(255, 255, 255, 0.95);
+	}
+	.session-empty-title,
+	.session-summary-title {
+		@apply text-xl font-bold;
+		color: var(--color-primary);
+		font-family: var(--font-serif);
+	}
+	.session-empty-sub {
+		@apply mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600;
+	}
+	.session-summary-stat {
+		@apply mt-3 text-2xl font-black;
+		color: var(--color-primary);
+	}
+	.session-summary-readiness {
+		@apply mt-1 text-sm text-slate-600;
+	}
+	.session-empty-link {
+		@apply mt-4 inline-block w-auto px-6;
+	}
 }

@@ -17,6 +17,8 @@
 		"apply-year-mapping": "node scripts/apply-year-mapping.mjs",
 		"figure-gen": "node scripts/generate-figure.mjs",
 		"data:convert": "node scripts/convert-exams-to-json.mjs",
+		"db:migrate:local": "wrangler d1 migrations apply fit-timer-db --local",
+		"db:query:local": "wrangler d1 execute fit-timer-db --local --command",
 		"test": "vitest",
 		"test:run": "vitest run",
 		"test:coverage": "vitest run --coverage"
