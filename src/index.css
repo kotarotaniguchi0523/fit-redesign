@@ -178,6 +178,12 @@ details summary::marker {
 		@apply w-full whitespace-pre-wrap break-words text-[15px] leading-8 text-slate-800;
 	}
 
+	/* 論理否定など: 結合オーバーライン(U+0305)の代替（フォント非依存の上線） */
+	.ovl {
+		text-decoration: overline;
+		text-decoration-thickness: from-font;
+	}
+
 	/* 選択肢 */
 	.q-options {
 		@apply mt-4 block space-y-2;

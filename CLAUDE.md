@@ -48,13 +48,15 @@ pnpm test            # テスト実行（vitest）
 src/
 ├── components/     # Astro コンポーネント（QuestionCard, Header 等）
 ├── scripts/        # クライアント Web Component（question-timer, answer-selector, dashboard）
+├── server/         # サーバー専用（cloudflare:workers/D1/Redis に触れるもの）
+│                   #   http.ts（json/badRequest/serverError/route）, answerRepository, timerRepository, redis
 ├── pages/
 │   ├── [unit]/[year].astro   # 単元ページ（SSG）
 │   ├── dashboard/[userId].astro  # ダッシュボード（SSR）
 │   ├── api/answer/   # 回答記録API（submit, status, history）
 │   ├── api/timer/    # タイマー同期API（sync, load, clear）
 │   └── api/markdown/ # AI向けMarkdownエンドポイント
-├── utils/          # D1リポジトリ、Redis、集計ロジック等
+├── utils/          # 純粋ユーティリティ（集計ロジック dashboardAggregator, overline, zod 等）
 ├── types/          # Zod スキーマ + TypeScript型
 ├── data/           # 単元定義（units.ts）、試験データ（exams/）
 └── layouts/        # Layout.astro（canonical, OG, JSON-LD対応）
@@ -71,8 +73,8 @@ public/             # 静的ファイル（robots.txt, llms.txt, _headers）
 ### 主要パターン
 
 - **Web Component**: `connectedCallback`/`disconnectedCallback` でライフサイクル管理。クライアントバンドルに Zod を入れない（軽量バリデーション関数を手書き、`timerStorage.ts` 参照）
-- **D1クエリ**: `d1TimerRepository.ts` / `d1AnswerRepository.ts` のパターンに従う。バッチは100件ずつ
-- **APIエンドポイント**: `export const prerender = false` + Zod バリデーション + `cloudflare:workers` から env 取得
+- **D1クエリ**: `server/timerRepository.ts` / `server/answerRepository.ts` のパターンに従う。D1 型は `@cloudflare/workers-types` のグローバル `D1Database` を使う（ローカル再定義しない）。バッチは100件ずつ
+- **APIエンドポイント**: `export const prerender = false` + `server/http.ts` の `route(label, handler)` でラップ（try/catch と env 注入を共通化）+ Zod バリデーション。レスポンスは `json` / `badRequest` / `serverError` で生成
 
 ---
 

@@ -1,6 +1,6 @@
-import type { APIContext } from "astro";
 import { z } from "zod";
-import { loadUserAttempts, upsertUser } from "../../../utils/d1TimerRepository";
+import { badRequest, json, route } from "../../../server/http";
+import { loadUserAttempts, upsertUser } from "../../../server/timerRepository";
 
 export const prerender = false;
 
@@ -8,36 +8,18 @@ const LoadQuerySchema = z.object({
 	userId: z.string().min(1),
 });
 
-export async function GET(context: APIContext) {
-	try {
-		const { env } = await import("cloudflare:workers");
-		const db = env.DB;
+export const GET = route("Timer load error:", async ({ context, db }) => {
+	const parsed = LoadQuerySchema.safeParse({
+		userId: context.url.searchParams.get("userId"),
+	});
 
-		const url = new URL(context.request.url);
-		const parsed = LoadQuerySchema.safeParse({
-			userId: url.searchParams.get("userId"),
-		});
-
-		if (!parsed.success) {
-			return new Response(
-				JSON.stringify({ error: "Invalid request", details: parsed.error.issues }),
-				{ status: 400, headers: { "Content-Type": "application/json" } },
-			);
-		}
-
-		const { userId } = parsed.data;
-		await upsertUser(db, userId);
-		const data = await loadUserAttempts(db, userId);
-
-		return new Response(JSON.stringify({ records: data.records, syncedAt: Date.now() }), {
-			status: 200,
-			headers: { "Content-Type": "application/json" },
-		});
-	} catch (error) {
-		console.error("Timer load error:", error);
-		return new Response(JSON.stringify({ error: "Internal server error" }), {
-			status: 500,
-			headers: { "Content-Type": "application/json" },
-		});
+	if (!parsed.success) {
+		return badRequest(parsed.error.issues);
 	}
-}
+
+	const { userId } = parsed.data;
+	await upsertUser(db, userId);
+	const data = await loadUserAttempts(db, userId);
+
+	return json({ records: data.records, syncedAt: Date.now() });
+});

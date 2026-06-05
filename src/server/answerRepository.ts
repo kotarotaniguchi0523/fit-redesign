@@ -1,23 +1,5 @@
 import type { AnswerRecord, AnswerStatus } from "../types/answer";
-import { upsertUser } from "./d1TimerRepository";
-
-interface D1Database {
-	prepare(query: string): D1PreparedStatement;
-	batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]>;
-}
-
-interface D1PreparedStatement {
-	bind(...values: unknown[]): D1PreparedStatement;
-	all<T = unknown>(): Promise<D1Result<T>>;
-	run(): Promise<D1Result>;
-	first<T = unknown>(): Promise<T | null>;
-}
-
-interface D1Result<T = unknown> {
-	results: T[];
-	success: boolean;
-	meta: { last_row_id: number };
-}
+import { upsertUser } from "./timerRepository";
 
 interface AnswerRow {
 	id: number;

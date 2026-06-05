@@ -1,6 +1,6 @@
-import type { APIContext } from "astro";
 import { z } from "zod";
-import { syncAttempts } from "../../../utils/d1TimerRepository";
+import { badRequest, json, route } from "../../../server/http";
+import { syncAttempts } from "../../../server/timerRepository";
 
 export const prerender = false;
 
@@ -22,33 +22,16 @@ const SyncRequestSchema = z.object({
 	records: z.record(z.string(), RecordSchema),
 });
 
-export async function POST(context: APIContext) {
-	try {
-		const { env } = await import("cloudflare:workers");
-		const db = env.DB;
+export const POST = route("Timer sync error:", async ({ context, db }) => {
+	const body = await context.request.json();
+	const parsed = SyncRequestSchema.safeParse(body);
 
-		const body = await context.request.json();
-		const parsed = SyncRequestSchema.safeParse(body);
-
-		if (!parsed.success) {
-			return new Response(
-				JSON.stringify({ error: "Invalid request", details: parsed.error.issues }),
-				{ status: 400, headers: { "Content-Type": "application/json" } },
-			);
-		}
-
-		const { userId, records } = parsed.data;
-		const merged = await syncAttempts(db, userId, records);
-
-		return new Response(JSON.stringify({ records: merged.records, syncedAt: Date.now() }), {
-			status: 200,
-			headers: { "Content-Type": "application/json" },
-		});
-	} catch (error) {
-		console.error("Timer sync error:", error);
-		return new Response(JSON.stringify({ error: "Internal server error" }), {
-			status: 500,
-			headers: { "Content-Type": "application/json" },
-		});
+	if (!parsed.success) {
+		return badRequest(parsed.error.issues);
 	}
-}
+
+	const { userId, records } = parsed.data;
+	const merged = await syncAttempts(db, userId, records);
+
+	return json({ records: merged.records, syncedAt: Date.now() });
+});

@@ -1,5 +1,6 @@
 ---
 import type { Question } from "../types/index";
+import { overlineToHtml } from "../utils/overline";
 import { questionToMarkdown } from "../utils/questionToMarkdown";
 import BinaryTree from "./figures/BinaryTree.astro";
 import Flowchart from "./figures/Flowchart.astro";
@@ -36,7 +37,7 @@ const hasOptions = !!question.options && question.options.length > 0;
 
 		{/* 2. 問題文 */}
 		<div class="q-text-wrap">
-			<p class="q-text">{question.text}</p>
+			<p class="q-text" set:html={overlineToHtml(question.text)}></p>
 		</div>
 
 		{/* 3. 図表 */}
@@ -94,7 +95,7 @@ const hasOptions = !!question.options && question.options.length > 0;
 		{
 			!question.figureData && question.figureDescription && (
 				<div class="q-figure-fallback">
-					<strong>図:</strong> {question.figureDescription}
+					<strong>図:</strong> <span set:html={overlineToHtml(question.figureDescription)} />
 				</div>
 			)
 		}
@@ -110,9 +111,10 @@ const hasOptions = !!question.options && question.options.length > 0;
 					{question.options?.map((option) => (
 						<div data-option class="q-option">
 							<span class="q-option__label">{option.label}</span>
-							<span class="q-option__value">
-								{option.value || "(選択肢未入力)"}
-							</span>
+							<span
+								class="q-option__value"
+								set:html={overlineToHtml(option.value || "(選択肢未入力)")}
+							/>
 						</div>
 					))}
 				</answer-selector>
@@ -130,11 +132,11 @@ const hasOptions = !!question.options && question.options.length > 0;
 			<p class="q-solution__title">解き方</p>
 			<div class="q-solution__answer">
 				<span class="q-solution__answer-label">答え</span>
-				<span class="q-solution__answer-value">{question.answer}</span>
+				<span class="q-solution__answer-value" set:html={overlineToHtml(question.answer)} />
 			</div>
 			{
 				question.explanation && (
-					<p class="q-solution__explanation">{question.explanation}</p>
+					<p class="q-solution__explanation" set:html={overlineToHtml(question.explanation)} />
 				)
 			}
 		</div>

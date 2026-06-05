@@ -1,32 +1,25 @@
-import type { APIContext } from "astro";
-import { getUserAnswerHistory } from "../../../utils/d1AnswerRepository";
+import { z } from "zod";
+import { getUserAnswerHistory } from "../../../server/answerRepository";
+import { badRequest, json, route } from "../../../server/http";
 
 export const prerender = false;
 
-export async function GET(context: APIContext) {
-	try {
-		const userId = context.url.searchParams.get("userId");
-		if (!userId) {
-			return new Response(JSON.stringify({ error: "userId is required" }), {
-				status: 400,
-				headers: { "Content-Type": "application/json" },
-			});
-		}
+const HistoryQuerySchema = z.object({
+	userId: z.string().min(1),
+});
 
-		const { env } = await import("cloudflare:workers");
-		const db = env.DB;
+export const GET = route("Answer history error:", async ({ context, db }) => {
+	const parsed = HistoryQuerySchema.safeParse({
+		userId: context.url.searchParams.get("userId"),
+	});
 
-		const answers = await getUserAnswerHistory(db, userId);
-
-		return new Response(JSON.stringify({ answers }), {
-			status: 200,
-			headers: { "Content-Type": "application/json" },
-		});
-	} catch (error) {
-		console.error("Answer history error:", error);
-		return new Response(JSON.stringify({ error: "Internal server error" }), {
-			status: 500,
-			headers: { "Content-Type": "application/json" },
-		});
+	if (!parsed.success) {
+		return badRequest(parsed.error.issues);
 	}
-}
+
+	const { userId } = parsed.data;
+
+	const answers = await getUserAnswerHistory(db, userId);
+
+	return json({ answers });
+});

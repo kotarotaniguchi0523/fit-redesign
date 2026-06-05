@@ -2,22 +2,6 @@ import { MAX_ATTEMPTS_PER_QUESTION } from "../constants";
 import type { QuestionId } from "../types";
 import type { AttemptRecord, TimerStorageData } from "../types/timer";
 
-interface D1Database {
-	prepare(query: string): D1PreparedStatement;
-	batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]>;
-}
-
-interface D1PreparedStatement {
-	bind(...values: unknown[]): D1PreparedStatement;
-	all<T = unknown>(): Promise<D1Result<T>>;
-	run(): Promise<D1Result>;
-}
-
-interface D1Result<T = unknown> {
-	results: T[];
-	success: boolean;
-}
-
 interface AttemptRow {
 	question_id: string;
 	timestamp: number;
