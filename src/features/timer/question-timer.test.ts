@@ -310,7 +310,7 @@ describe("QuestionTimer Custom Element", () => {
 				Object.keys(localStorage).find((k) => k.startsWith("fit-exam-timer-records")) ?? "",
 			);
 			expect(raw).toBeTruthy();
-			const data = JSON.parse(raw!);
+			const data = JSON.parse(raw ?? "");
 			const record = data.records["exam1-2013-q1"];
 			expect(record).toBeDefined();
 			expect(record.attempts).toHaveLength(1);

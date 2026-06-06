@@ -4,11 +4,11 @@ import {
 	STORAGE_KEY_PREFIX,
 	TIMER_MODES,
 	USER_ID_KEY,
-} from "../constants";
-import type { QuestionId } from "../types";
-import { err, ok, type Result } from "../types/result";
-import type { AttemptRecord, QuestionTimeRecord, TimerStorageData } from "../types/timer";
-import { createLogger } from "./logger";
+} from "../../constants";
+import type { QuestionId } from "../../types";
+import { err, ok, type Result } from "../../types/result";
+import { createLogger } from "../../utils/logger";
+import type { AttemptRecord, QuestionTimeRecord, TimerStorageData } from "./types";
 
 const logger = createLogger("[TimerStorage]");
 

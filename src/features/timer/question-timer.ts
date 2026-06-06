@@ -3,11 +3,11 @@ import {
 	DEFAULT_TARGET_TIME,
 	TARGET_TIME_PRESETS,
 	TIMER_INTERVAL_MS,
-} from "../constants";
-import type { QuestionId } from "../types/index";
-import type { AttemptRecord, TimerMode } from "../types/timer";
-import { formatTime } from "../utils/timeFormat";
-import { clearQuestionRecords, loadTimerData, saveAttempt } from "../utils/timerStorage";
+} from "../../constants";
+import type { QuestionId } from "../../types/index";
+import { formatTime } from "./timeFormat";
+import { clearQuestionRecords, loadTimerData, saveAttempt } from "./timerStorage";
+import type { AttemptRecord, TimerMode } from "./types";
 
 // SVG icons as raw strings
 const CLOCK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>`;
@@ -88,9 +88,9 @@ class QuestionTimer extends HTMLElement {
 	}
 
 	private loadFromServerAndMerge() {
-		import("../utils/timerSync")
+		import("./timerSync")
 			.then(async ({ loadFromServer, mergeData }) => {
-				const { getUserId } = await import("../utils/timerStorage");
+				const { getUserId } = await import("./timerStorage");
 				const userId = getUserId();
 				const remoteData = await loadFromServer(userId);
 				if (!remoteData) return;
@@ -101,7 +101,7 @@ class QuestionTimer extends HTMLElement {
 				const merged = mergeData(localResult.value, remoteData);
 
 				// Save merged data back to localStorage
-				const { saveTimerData } = await import("../utils/timerStorage");
+				const { saveTimerData } = await import("./timerStorage");
 				saveTimerData(merged);
 
 				// Update this timer's attempts

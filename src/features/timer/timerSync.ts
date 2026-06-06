@@ -1,5 +1,5 @@
-import type { TimerStorageData } from "../types/timer";
-import { createLogger } from "./logger";
+import { createLogger } from "../../utils/logger";
+import type { TimerStorageData } from "./types";
 
 const logger = createLogger("[TimerSync]");
 

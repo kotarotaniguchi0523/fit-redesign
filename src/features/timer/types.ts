@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { QuestionId } from "./index";
+import type { QuestionId } from "../../types/index";
 
 export const TimerModeSchema = z.enum(["stopwatch", "countdown"], {
 	error: "タイマーモードは 'stopwatch' または 'countdown' である必要があります",

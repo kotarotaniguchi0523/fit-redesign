@@ -1,6 +1,7 @@
-import { MAX_ATTEMPTS_PER_QUESTION } from "../constants";
-import type { QuestionId } from "../types";
-import type { AttemptRecord, TimerStorageData } from "../types/timer";
+import { MAX_ATTEMPTS_PER_QUESTION } from "../../constants";
+import { upsertUser } from "../../server/userRepository";
+import type { QuestionId } from "../../types";
+import type { AttemptRecord, TimerStorageData } from "./types";
 
 interface AttemptRow {
 	question_id: string;
@@ -9,17 +10,6 @@ interface AttemptRow {
 	mode: string;
 	target_time: number | null;
 	completed: number;
-}
-
-export async function upsertUser(db: D1Database, userId: string): Promise<void> {
-	const now = Date.now();
-	await db
-		.prepare(
-			`INSERT INTO users (id, created_at, last_seen_at) VALUES (?, ?, ?)
-			 ON CONFLICT(id) DO UPDATE SET last_seen_at = ?`,
-		)
-		.bind(userId, now, now, now)
-		.run();
 }
 
 export async function loadUserAttempts(db: D1Database, userId: string): Promise<TimerStorageData> {
@@ -34,8 +24,10 @@ export async function loadUserAttempts(db: D1Database, userId: string): Promise<
 
 	for (const row of result.results) {
 		const qid = row.question_id as QuestionId;
-		if (!records[qid]) {
-			records[qid] = { questionId: qid, attempts: [] };
+		let record = records[qid];
+		if (!record) {
+			record = { questionId: qid, attempts: [] };
+			records[qid] = record;
 		}
 		const attempt: AttemptRecord = {
 			timestamp: row.timestamp,
@@ -44,7 +36,7 @@ export async function loadUserAttempts(db: D1Database, userId: string): Promise<
 			completed: row.completed === 1,
 			...(row.target_time != null ? { targetTime: row.target_time } : {}),
 		};
-		records[qid]!.attempts.push(attempt);
+		record.attempts.push(attempt);
 	}
 
 	// 各問題ごとに MAX_ATTEMPTS_PER_QUESTION で切り詰め

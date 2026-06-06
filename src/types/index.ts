@@ -163,17 +163,3 @@ export interface UnitBasedTab {
 // Result types
 export type { Result } from "./result";
 export { err, ok } from "./result";
-
-// Timer types
-export type {
-	AttemptRecord,
-	QuestionTimeRecord,
-	TimerMode,
-	TimerStorageData,
-} from "./timer";
-export {
-	AttemptRecordSchema,
-	QuestionTimeRecordSchema,
-	TimerModeSchema,
-	TimerStorageDataSchema,
-} from "./timer";

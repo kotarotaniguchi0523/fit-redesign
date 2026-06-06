@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { loadUserAttempts } from "../../../features/timer/timerRepository";
 import { badRequest, json, route } from "../../../server/http";
-import { loadUserAttempts, upsertUser } from "../../../server/timerRepository";
+import { upsertUser } from "../../../server/userRepository";
 
 export const prerender = false;
 

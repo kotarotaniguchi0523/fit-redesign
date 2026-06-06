@@ -1,6 +1,6 @@
 import { z } from "zod";
+import { syncAttempts } from "../../../features/timer/timerRepository";
 import { badRequest, json, route } from "../../../server/http";
-import { syncAttempts } from "../../../server/timerRepository";
 
 export const prerender = false;
 

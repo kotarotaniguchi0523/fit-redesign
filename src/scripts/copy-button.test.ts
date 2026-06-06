@@ -98,8 +98,9 @@ describe("copy-button", () => {
 
 			await vi.advanceTimersByTimeAsync(0);
 
-			const icon = button.querySelector("[data-copy-icon]")!;
-			expect(icon.innerHTML).toContain("m4.5 12.75 6 6 9-13.5"); // チェックマークSVG
+			const icon = button.querySelector("[data-copy-icon]");
+			expect(icon).not.toBeNull();
+			expect(icon?.innerHTML).toContain("m4.5 12.75 6 6 9-13.5"); // チェックマークSVG
 		});
 
 		it("フィードバックが一定時間後に元に戻る", async () => {

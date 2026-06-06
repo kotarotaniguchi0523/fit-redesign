@@ -124,11 +124,9 @@ export function aggregateByMonth(answers: AnswerRecord[]): MonthlyStats[] {
 	}
 
 	const stats: MonthlyStats[] = [];
-	const sortedMonths = Array.from(byMonth.keys()).sort();
+	const sortedMonths = Array.from(byMonth.entries()).sort(([a], [b]) => a.localeCompare(b));
 
-	for (const month of sortedMonths) {
-		const monthAnswers = byMonth.get(month)!;
-
+	for (const [month, monthAnswers] of sortedMonths) {
 		let correct = 0;
 		let durationSum = 0;
 		let withDurationCount = 0;
@@ -162,10 +160,12 @@ function aggregateByUnit(answerHistory: Record<string, AnswerRecord[]>): UnitSta
 		const unitId = mapQuestionToUnit(questionId);
 		if (!unitId) continue;
 
-		if (!unitMap.has(unitId)) {
-			unitMap.set(unitId, { answers: new Map() });
+		let unitEntry = unitMap.get(unitId);
+		if (!unitEntry) {
+			unitEntry = { answers: new Map() };
+			unitMap.set(unitId, unitEntry);
 		}
-		unitMap.get(unitId)!.answers.set(questionId, records);
+		unitEntry.answers.set(questionId, records);
 	}
 
 	const stats: UnitStats[] = [];

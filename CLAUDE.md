@@ -46,23 +46,40 @@ pnpm test            # テスト実行（vitest）
 
 ```
 src/
-├── components/     # Astro コンポーネント（QuestionCard, Header 等）
-├── scripts/        # クライアント Web Component（question-timer, answer-selector, dashboard）
-├── server/         # サーバー専用（cloudflare:workers/D1/Redis に触れるもの）
-│                   #   http.ts（json/badRequest/serverError/route）, answerRepository, timerRepository, redis
-├── pages/
+├── features/       # 機能別（縦スライス）。横断機能の client script・repository・型・集計を同居
+│   └── timer/      #   question-timer(client), timerRepository(D1), timerStorage/timerSync, timeFormat, types
+│                   #   ※ answer / srs / dashboard / exams / figures は features/ へ順次移行中
+├── server/         # 機能に属さない横断基盤（cloudflare:workers/D1/Redis）
+│                   #   http.ts（json/badRequest/serverError/route）, userRepository（users テーブル）, redis
+├── components/     # 全画面共有の Astro コンポーネント（Header, Layout 部品 等）
+├── scripts/        # 旧・技術タイプ別の client script 置き場（features/ へ移行中。新規は features/ へ）
+├── pages/          # ファイルベースルーティング（薄く保つ）。ルート専用部品は同階層に `_` で co-location
 │   ├── [unit]/[year].astro   # 単元ページ（SSG）
 │   ├── dashboard/[userId].astro  # ダッシュボード（SSR）
 │   ├── api/answer/   # 回答記録API（submit, status, history）
 │   ├── api/timer/    # タイマー同期API（sync, load, clear）
 │   └── api/markdown/ # AI向けMarkdownエンドポイント
-├── utils/          # 純粋ユーティリティ（集計ロジック dashboardAggregator, overline, zod 等）
-├── types/          # Zod スキーマ + TypeScript型
+├── utils/          # 純粋ユーティリティ（dashboardAggregator, overline, zod, logger 等）※汎用のみ
+├── types/          # 共有 Zod スキーマ + TypeScript型（機能固有の型は features/<x>/types.ts へ）
 ├── data/           # 単元定義（units.ts）、試験データ（exams/）
+├── content/        # Content Collections（exams JSON）※Astro 固定・移動不可
 └── layouts/        # Layout.astro（canonical, OG, JSON-LD対応）
 migrations/         # D1 マイグレーション SQL
 public/             # 静的ファイル（robots.txt, llms.txt, _headers）
 ```
+
+### コード構成方針（Feature ベース）
+
+機能別（Package by Feature）を採用する。判断基準は1つ:
+
+- **特定ルートでしか使わないもの** → そのルート配下に `_` プレフィックスで co-location（例: `src/pages/dashboard/_components/`。Astro は `_` 始まりをルーティング除外する）
+- **複数ルート横断 / ドメインロジック** → `src/features/<機能>/` に同居（client script・repository・型・集計）
+- **真に汎用なヘルパー** → `src/utils/`（将来 `src/shared/`）。「とりあえず utils」は禁止
+- **機能に属さない横断基盤** → `src/server/`（`http.ts` の `route()` 等、`userRepository`）
+
+**依存方向の不変条件**: `features/<x>` は `types/` `server/` `utils/` を import してよいが、**逆（`types/` `server/` `utils/` から `features/` への import）は禁止**。共有バレル（`types/index.ts` 等）に機能固有の型を再エクスポートしない（機能固有型は `features/<x>/types.ts` から直接 import する）。
+
+Astro が固定する `pages/` `content/` `layouts/` `components/` は移動しない。詳細と却下案は `docs/showboat/adr-feature-based-structure.md`（ADR）参照。
 
 ### データフロー
 
@@ -72,8 +89,8 @@ public/             # 静的ファイル（robots.txt, llms.txt, _headers）
 
 ### 主要パターン
 
-- **Web Component**: `connectedCallback`/`disconnectedCallback` でライフサイクル管理。クライアントバンドルに Zod を入れない（軽量バリデーション関数を手書き、`timerStorage.ts` 参照）
-- **D1クエリ**: `server/timerRepository.ts` / `server/answerRepository.ts` のパターンに従う。D1 型は `@cloudflare/workers-types` のグローバル `D1Database` を使う（ローカル再定義しない）。バッチは100件ずつ
+- **Web Component**: `connectedCallback`/`disconnectedCallback` でライフサイクル管理。クライアントバンドルに Zod を入れない（軽量バリデーション関数を手書き、`features/timer/timerStorage.ts` 参照）
+- **D1クエリ**: `features/timer/timerRepository.ts` / `server/answerRepository.ts` のパターンに従う。D1 型は `@cloudflare/workers-types` のグローバル `D1Database` を使う（ローカル再定義しない）。バッチは100件ずつ。`users` テーブルの upsert は `server/userRepository.ts`
 - **APIエンドポイント**: `export const prerender = false` + `server/http.ts` の `route(label, handler)` でラップ（try/catch と env 注入を共通化）+ Zod バリデーション。レスポンスは `json` / `badRequest` / `serverError` で生成
 
 ---

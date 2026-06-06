@@ -1,5 +1,5 @@
 import type { AnswerRecord, AnswerStatus } from "../types/answer";
-import { upsertUser } from "./timerRepository";
+import { upsertUser } from "./userRepository";
 
 interface AnswerRow {
 	id: number;
