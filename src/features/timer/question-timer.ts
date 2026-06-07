@@ -457,6 +457,10 @@ export function setupQuestionTimer(el: HTMLElement): void {
 	}
 
 	function updateDisplay() {
+		// 解いた時間（秒）を data-elapsed に露出する。回答記録の duration に使う（readTimerDuration）。
+		const spent = mode === "stopwatch" ? elapsedSeconds : targetTime - elapsedSeconds;
+		el.dataset.elapsed = String(spent);
+
 		// Start/Stop button
 		if (isRunning) {
 			startStopBtn.textContent = "停止";

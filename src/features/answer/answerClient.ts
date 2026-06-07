@@ -71,17 +71,10 @@ export async function saveAnswer(params: {
 }
 
 /**
- * 同じカード内の question-timer から経過秒数を読み取る。
+ * 同じカード内の question-timer（[data-question-timer]）が露出する解答時間（秒）を読み取る。
  */
 export function readTimerDuration(card: Element | null): number | undefined {
-	const timer = card?.querySelector("question-timer");
-	if (!timer) return undefined;
-
-	const display =
-		timer.shadowRoot?.querySelector("[data-elapsed]") ?? timer.querySelector("[data-elapsed]");
-	if (display) {
-		const elapsed = Number(display.getAttribute("data-elapsed"));
-		if (Number.isFinite(elapsed) && elapsed > 0) return elapsed;
-	}
-	return undefined;
+	const timer = card?.querySelector<HTMLElement>("[data-question-timer]");
+	const elapsed = Number(timer?.dataset.elapsed);
+	return Number.isFinite(elapsed) && elapsed > 0 ? elapsed : undefined;
 }
