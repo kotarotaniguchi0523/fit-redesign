@@ -2,7 +2,9 @@
 	"$schema": "https://unpkg.com/knip@5/schema.json",
 	"entry": [
 		"src/pages/**/*.astro",
-		"src/scripts/*.ts"
+		"src/app.ts",
+		"src/features/study/studyHome.ts",
+		"src/features/dashboard/dashboard.ts"
 	],
 	"project": [
 		"src/**/*.{ts,tsx,astro}"
@@ -13,8 +15,8 @@
 	],
 	"ignoreDependencies": [
 		"tailwindcss",
-		"@vitest/coverage-v8",
-		"cloudflare"
+		"cloudflare",
+		"workerd"
 	],
 	"ignoreExportsUsedInFile": true,
 	"rules": {
