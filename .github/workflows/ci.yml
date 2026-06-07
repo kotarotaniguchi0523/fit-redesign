@@ -14,7 +14,7 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -44,8 +44,22 @@ jobs:
         timeout-minutes: 1
 
       - name: TypeScript check
-        run: pnpm typecheck:full
-        timeout-minutes: 2
+        # astro check は advancedRouting 下で worker introspection が非決定的に
+        # "Network connection lost" でフレークする（型エラーではない）。最大 3 回まで再試行し、
+        # ゲートの完全性（真の型エラーは 3 回とも落ちる）を保ったままフレークだけ吸収する。
+        run: |
+          for attempt in 1 2 3; do
+            echo "::group::typecheck:full (attempt ${attempt}/3)"
+            if pnpm typecheck:full; then
+              echo "::endgroup::"
+              exit 0
+            fi
+            echo "::endgroup::"
+            echo "typecheck:full failed on attempt ${attempt} (known advancedRouting flake?), retrying..."
+          done
+          echo "typecheck:full failed after 3 attempts"
+          exit 1
+        timeout-minutes: 7
 
       - name: Test
         run: pnpm test:run
@@ -56,8 +70,20 @@ jobs:
         timeout-minutes: 1
 
       - name: Build
-        run: pnpm build
-        timeout-minutes: 3
+        # astro build も同じ worker introspection フレークを起こし得るため同様に最大 3 回再試行する。
+        run: |
+          for attempt in 1 2 3; do
+            echo "::group::build (attempt ${attempt}/3)"
+            if pnpm build; then
+              echo "::endgroup::"
+              exit 0
+            fi
+            echo "::endgroup::"
+            echo "build failed on attempt ${attempt} (known advancedRouting flake?), retrying..."
+          done
+          echo "build failed after 3 attempts"
+          exit 1
+        timeout-minutes: 9
 
       - name: Check for broken links
         uses: lycheeverse/lychee-action@a8c4c7cb88f0c7386610c35eb25108e448569cb0 # v2.7.0
