@@ -129,6 +129,8 @@ function setupSession(el: HTMLElement): void {
 	};
 
 	nextButton?.addEventListener("click", advance);
+	// document リスナは解除しない（mountAll のライフサイクル契約: ページ寿命まで生存。
+	// SSG フルページロードのため要素削除＝ページ遷移でドキュメントごと破棄される）。
 	document.addEventListener(QUESTION_GRADED_EVENT, handleGraded);
 
 	showCurrent();

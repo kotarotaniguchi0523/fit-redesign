@@ -105,7 +105,8 @@ export function initStudyHome(): void {
 	mountAll("[data-study-home]", (el) => {
 		const rerender = () => render(el);
 		rerender();
-		// 他タブ等で採点された場合に備えて更新（同一ページでは通常発火しない）
+		// 他タブ等で採点された場合に備えて更新（同一ページでは通常発火しない）。
+		// 解除しない（mountAll のライフサイクル契約: ページ寿命まで生存）。
 		document.addEventListener(QUESTION_GRADED_EVENT, rerender);
 	});
 }
