@@ -16,13 +16,20 @@ export function SavingIndicator({ label }: { label: string }) {
 	) : null;
 }
 
-/** 採点結果をサーバーへ記録する。成功で true（記録済み）、失敗で false（再試行可能）を返す。 */
+// 同一 questionId への記録が進行中かを同期的に追跡する。useFormStatus().pending は描画専用で
+// ボタンを disabled にしないため、別フォーム（採点/わからない）の二重 click を防げない。
+// await の前に同期的にマークし、進行中なら skip して重複 INSERT / SRS の二重加算を防ぐ。
+const inFlight = new Set<string>();
+
+/** 採点結果をサーバーへ記録する。成功で true（記録済み）、失敗/重複 skip で false を返す。 */
 export async function recordAnswer(
 	questionId: string,
 	card: Element | null,
 	selectedLabel: string,
 	isCorrect: boolean,
 ): Promise<boolean> {
+	if (inFlight.has(questionId)) return false;
+	inFlight.add(questionId);
 	try {
 		await saveAnswer({
 			questionId,
@@ -33,5 +40,7 @@ export async function recordAnswer(
 		return true;
 	} catch {
 		return false;
+	} finally {
+		inFlight.delete(questionId);
 	}
 }

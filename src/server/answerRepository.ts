@@ -65,14 +65,12 @@ export async function getLatestAnswers(
 		.bind(userId)
 		.all<{ question_id: string; selected_label: string; is_correct: number }>();
 
-	const statuses: Record<string, AnswerStatus> = {};
-	for (const row of result.results) {
-		statuses[row.question_id] = {
-			label: row.selected_label,
-			isCorrect: row.is_correct === 1,
-		};
-	}
-	return statuses;
+	return Object.fromEntries(
+		result.results.map((row) => [
+			row.question_id,
+			{ label: row.selected_label, isCorrect: row.is_correct === 1 },
+		]),
+	);
 }
 
 export async function getUserAnswerHistory(
@@ -89,13 +87,9 @@ export async function getUserAnswerHistory(
 		.bind(userId)
 		.all<AnswerRow>();
 
-	const history: Record<string, AnswerRecord[]> = {};
-	for (const row of result.results) {
+	return result.results.reduce<Record<string, AnswerRecord[]>>((history, row) => {
 		const record = rowToRecord(row);
-		if (!history[record.questionId]) {
-			history[record.questionId] = [];
-		}
-		history[record.questionId].push(record);
-	}
-	return history;
+		history[record.questionId] = [...(history[record.questionId] ?? []), record];
+		return history;
+	}, {});
 }

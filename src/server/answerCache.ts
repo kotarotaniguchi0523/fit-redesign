@@ -49,23 +49,11 @@ export async function getAnswerStatuses(
 }
 
 /**
- * submit 後の KV 更新。
- * マップが存在すれば該当 question を上書きして書き戻す。
- * 不在ならば何もしない（次の status ミスで D1 から全マップを再構築する）。
+ * submit 後の KV 更新（write-invalidate）。
+ * 該当ユーザーのキャッシュを無効化し、次の status 読み出しで D1 から全マップを再構築させる。
+ * get→mutate→put だと別 question の並行 submit で取りこぼし（lost-update）が起きるため、
+ * D1（信頼源）への再構築に委ねて整合性を保つ。
  */
-export async function updateAnswerStatus(
-	cache: KVNamespace,
-	userId: string,
-	questionId: string,
-	status: AnswerStatus,
-): Promise<void> {
-	const cached = await cache.get<StatusMap>(answerStatusKey(userId), "json");
-	if (!cached) {
-		return;
-	}
-
-	cached[questionId] = status;
-	await cache.put(answerStatusKey(userId), JSON.stringify(cached), {
-		expirationTtl: TTL_SECONDS,
-	});
+export async function updateAnswerStatus(cache: KVNamespace, userId: string): Promise<void> {
+	await cache.delete(answerStatusKey(userId));
 }

@@ -17,11 +17,13 @@ interface FakeKV {
 	kv: KVNamespace;
 	store: Map<string, string>;
 	putCount: () => number;
+	deleteCount: () => number;
 }
 
 function makeFakeKV(initial: Record<string, string> = {}, options: FakeKVOptions = {}): FakeKV {
 	const store = new Map<string, string>(Object.entries(initial));
 	let putCount = 0;
+	let deleteCount = 0;
 	const kv = {
 		get(key: string, type?: string) {
 			if (options.throwOnGet) return Promise.reject(new Error("KV get failed"));
@@ -35,8 +37,13 @@ function makeFakeKV(initial: Record<string, string> = {}, options: FakeKVOptions
 			store.set(key, value);
 			return Promise.resolve();
 		},
+		delete(key: string) {
+			deleteCount++;
+			store.delete(key);
+			return Promise.resolve();
+		},
 	} as unknown as KVNamespace;
-	return { kv, store, putCount: () => putCount };
+	return { kv, store, putCount: () => putCount, deleteCount: () => deleteCount };
 }
 
 interface FakeD1 {
@@ -167,68 +174,51 @@ describe("getAnswerStatuses（read-through）", () => {
 	});
 });
 
-describe("updateAnswerStatus（submit 時の KV 更新）", () => {
-	it("KV にマップが存在する場合は該当 question を上書きして書き戻す", async () => {
+describe("updateAnswerStatus（submit 時の write-invalidate）", () => {
+	it("warm な KV を無効化する（次の status 読み出しで D1 から再構築させる）", async () => {
 		// Arrange
 		const fakeKV = makeFakeKV({
 			"answer:u1": JSON.stringify({ "exam1-2013-q1": STATUS_A }),
 		});
 
 		// Act
-		await updateAnswerStatus(fakeKV.kv, "u1", "exam1-2013-q2", STATUS_I);
+		await updateAnswerStatus(fakeKV.kv, "u1");
 
-		// Assert
-		expect(JSON.parse(fakeKV.store.get("answer:u1") ?? "null")).toEqual({
-			"exam1-2013-q1": STATUS_A,
-			"exam1-2013-q2": STATUS_I,
-		});
+		// Assert: キーが削除され、get→mutate→put の競合（lost-update）が起きない
+		expect(fakeKV.store.has("answer:u1")).toBe(false);
+		expect(fakeKV.deleteCount()).toBe(1);
 	});
 
-	it("同一 question の再回答はステータスを上書きする", async () => {
-		// Arrange
-		const fakeKV = makeFakeKV({
-			"answer:u1": JSON.stringify({ "exam1-2013-q1": STATUS_A }),
-		});
-
-		// Act
-		await updateAnswerStatus(fakeKV.kv, "u1", "exam1-2013-q1", STATUS_I);
-
-		// Assert
-		expect(JSON.parse(fakeKV.store.get("answer:u1") ?? "null")).toEqual({
-			"exam1-2013-q1": STATUS_I,
-		});
-	});
-
-	it("KV にマップが存在しない場合は部分マップを書かない（整合性維持）", async () => {
+	it("KV が cold でも安全に no-op（throw しない）", async () => {
 		// Arrange
 		const fakeKV = makeFakeKV();
 
-		// Act
-		await updateAnswerStatus(fakeKV.kv, "u1", "exam1-2013-q1", STATUS_A);
-
-		// Assert
+		// Act / Assert
+		await expect(updateAnswerStatus(fakeKV.kv, "u1")).resolves.toBeUndefined();
 		expect(fakeKV.store.has("answer:u1")).toBe(false);
-		expect(fakeKV.putCount()).toBe(0);
 	});
 });
 
 describe("submit → status の整合（モジュール結合の振る舞い）", () => {
-	it("warm な KV に submit 反映後、status は D1 を読まず最新マップを返す", async () => {
-		// Arrange: q1 が既にキャッシュ済み
+	it("submit で無効化後、status は D1 から最新マップを再構築して返す", async () => {
+		// Arrange: q1 がキャッシュ済み、D1 には submit 済みの q1+q2 が存在
 		const fakeKV = makeFakeKV({
 			"answer:u1": JSON.stringify({ "exam1-2013-q1": STATUS_A }),
 		});
-		const { db, prepareCount } = makeFakeD1([]);
+		const { db, prepareCount } = makeFakeD1([
+			{ question_id: "exam1-2013-q1", selected_label: "ア", is_correct: 1 },
+			{ question_id: "exam1-2013-q2", selected_label: "イ", is_correct: 0 },
+		]);
 
-		// Act: submit で q2 を追加 → status を取得
-		await updateAnswerStatus(fakeKV.kv, "u1", "exam1-2013-q2", STATUS_I);
+		// Act: submit で無効化 → status を取得
+		await updateAnswerStatus(fakeKV.kv, "u1");
 		const statuses = await getAnswerStatuses(fakeKV.kv, db, "u1");
 
-		// Assert: 両方見え、D1 は不発火
+		// Assert: D1 の正準マップ（両方）が返り、D1 が読まれる（再構築）
 		expect(statuses).toEqual({
 			"exam1-2013-q1": STATUS_A,
 			"exam1-2013-q2": STATUS_I,
 		});
-		expect(prepareCount()).toBe(0);
+		expect(prepareCount()).toBe(1);
 	});
 });

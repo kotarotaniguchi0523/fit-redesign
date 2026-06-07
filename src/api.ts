@@ -88,10 +88,7 @@ const api = new Hono<Env>()
 				timestamp,
 			);
 			try {
-				await updateAnswerStatus(c.env.CACHE, userId, questionId, {
-					label: selectedLabel,
-					isCorrect,
-				});
+				await updateAnswerStatus(c.env.CACHE, userId);
 			} catch {
 				// KV 失敗は無視（D1 が信頼源）
 			}
