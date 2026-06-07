@@ -1,12 +1,7 @@
 import { render, useActionState } from "hono/jsx/dom";
-import { fetchAnswerStatuses } from "../../scripts/answerClient";
-import {
-	clearStatusChip,
-	hideSolution,
-	revealSolution,
-	setStatusChip,
-} from "../../scripts/questionCardUi";
 import { recordAnswer, SavingIndicator } from "./answerActions";
+import { fetchAnswerStatuses } from "./answerClient";
+import { clearStatusChip, hideSolution, revealSolution, setStatusChip } from "./questionCardUi";
 
 /**
  * 記述式（選択肢なし）問題の自己採点。旧 self-grade Web Component の hono/jsx/dom 版。

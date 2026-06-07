@@ -1,5 +1,5 @@
 import { useFormStatus } from "hono/jsx/dom";
-import { readTimerDuration, saveAnswer } from "../../scripts/answerClient";
+import { readTimerDuration, saveAnswer } from "./answerClient";
 
 /**
  * 採点フォーム共有部品。self-grade / answer-selector の両方が使う Async React の pending 表示と、

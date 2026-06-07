@@ -1,4 +1,4 @@
-import { QUESTION_GRADED_EVENT } from "../constants";
+import { QUESTION_GRADED_EVENT } from "../../constants";
 import type { QuestionGradedDetail } from "./srs";
 import { recordGrade } from "./srs";
 

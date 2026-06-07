@@ -1,7 +1,7 @@
 import { QUESTION_GRADED_EVENT } from "../../constants";
-import { readEmbeddedManifest, type UnitManifestEntry } from "../../scripts/progressClient";
-import { buildDailySet, loadSrsState, unitReadiness } from "../../scripts/srs";
 import { mountAll } from "../../utils/mountAll";
+import { readEmbeddedManifest, type UnitManifestEntry } from "../srs/progressClient";
+import { buildDailySet, loadSrsState, unitReadiness } from "../srs/srs";
 
 /**
  * ホームのハブ。試験本番メーター・今日の道・単元別習熟度を、埋め込みマニフェスト＋

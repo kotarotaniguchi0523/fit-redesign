@@ -1,12 +1,7 @@
 import { QUESTION_GRADED_EVENT } from "../../constants";
-import {
-	buildDailySet,
-	loadSrsState,
-	type QuestionGradedDetail,
-	unitReadiness,
-} from "../../scripts/srs";
 import { createLogger } from "../../utils/logger";
 import { mountAll } from "../../utils/mountAll";
+import { buildDailySet, loadSrsState, type QuestionGradedDetail, unitReadiness } from "../srs/srs";
 
 const logger = createLogger("[DailySession]");
 

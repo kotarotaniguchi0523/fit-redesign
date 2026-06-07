@@ -1,12 +1,7 @@
 import { render, useActionState } from "hono/jsx/dom";
-import { fetchAnswerStatuses } from "../../scripts/answerClient";
-import {
-	clearStatusChip,
-	hideSolution,
-	revealSolution,
-	setStatusChip,
-} from "../../scripts/questionCardUi";
 import { recordAnswer, SavingIndicator } from "./answerActions";
+import { fetchAnswerStatuses } from "./answerClient";
+import { clearStatusChip, hideSolution, revealSolution, setStatusChip } from "./questionCardUi";
 
 /**
  * 選択式（MCQ）問題の回答。旧 answer-selector Web Component の hono/jsx/dom 版。
