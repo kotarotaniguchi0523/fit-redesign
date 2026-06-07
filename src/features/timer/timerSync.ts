@@ -1,3 +1,4 @@
+import { apiClient } from "../../utils/apiClient";
 import { createLogger } from "../../utils/logger";
 import type { TimerStorageData } from "./types";
 
@@ -7,11 +8,12 @@ const logger = createLogger("[TimerSync]");
  * サーバーにタイマーデータを同期（fire-and-forget）
  */
 export function syncToServer(userId: string, data: TimerStorageData): void {
-	fetch("/api/timer/sync", {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ userId, records: data.records }),
-	})
+	// Partial<Record<QuestionId, ...>> から undefined 値を除いて RPC 入力型に合わせる
+	const records = Object.fromEntries(
+		Object.entries(data.records).flatMap(([qid, record]) => (record ? [[qid, record]] : [])),
+	);
+	apiClient.api.timer.sync
+		.$post({ json: { userId, records } })
 		.then((res) => {
 			if (!res.ok) {
 				logger.warn(`Sync failed with status ${res.status}`);
@@ -29,13 +31,13 @@ export function syncToServer(userId: string, data: TimerStorageData): void {
  */
 export async function loadFromServer(userId: string): Promise<TimerStorageData | null> {
 	try {
-		const res = await fetch(`/api/timer/load?userId=${encodeURIComponent(userId)}`);
+		const res = await apiClient.api.timer.load.$get({ query: { userId } });
 		if (!res.ok) {
 			logger.warn(`Load from server failed with status ${res.status}`);
 			return null;
 		}
-		const json = (await res.json()) as { records?: TimerStorageData["records"] };
-		return { version: 1, records: json.records ?? {} };
+		const json = await res.json();
+		return { version: 1, records: "records" in json ? json.records : {} };
 	} catch (err) {
 		logger.warn("Load from server failed (offline?)", { error: err });
 		return null;
@@ -81,10 +83,8 @@ export function mergeData(local: TimerStorageData, remote: TimerStorageData): Ti
  * サーバーから特定問題の履歴をクリア
  */
 export function clearOnServer(userId: string, questionId: string): void {
-	fetch(
-		`/api/timer/clear?userId=${encodeURIComponent(userId)}&questionId=${encodeURIComponent(questionId)}`,
-		{ method: "DELETE" },
-	)
+	apiClient.api.timer.clear
+		.$delete({ query: { userId, questionId } })
 		.then((res) => {
 			if (!res.ok) {
 				logger.warn(`Clear on server failed with status ${res.status}`);

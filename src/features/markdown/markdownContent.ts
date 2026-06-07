@@ -1,56 +1,52 @@
-import type { APIContext } from "astro";
-import { getExamByNumber } from "../../../data/exams";
-import { unitBasedTabs } from "../../../data/units";
-import type { ExamNumber, Year } from "../../../types/index";
-
-export const prerender = false;
+import { getExamByNumber } from "../../data/exams";
+import { unitBasedTabs } from "../../data/units";
+import type { ExamNumber, Year } from "../../types/index";
 
 /**
- * Markdown エンドポイント: AI エージェント向けにクリーンなMarkdownでコンテンツを提供
- * GET /api/markdown/unit-base-conversion/2013 → Markdown形式で問題と解答を返却
- * GET /api/markdown/ → サイト全体の概要をMarkdownで返却
+ * AI エージェント向け Markdown コンテンツ生成（純粋ロジック）。
+ * Hono ルート（/api/markdown/*）から呼ばれ、Response 生成は呼び出し側が担う。
  */
-export async function GET(context: APIContext) {
-	const path = context.params.path ?? "";
 
-	// サイト概要
+export interface MarkdownResult {
+	status: number;
+	body: string;
+}
+
+const MARKDOWN_PATH_RE = /^(unit-[a-z-]+)\/(\d{4})$/;
+
+/**
+ * パス（例 "unit-base-conversion/2013" / "" / "/"）から Markdown を解決する。
+ * - 空 or "/" → サイト概要
+ * - unit-xxx/yyyy → 単元 Markdown
+ * - それ以外 / 未知の単元・年度 → 404
+ */
+export async function renderMarkdown(path: string): Promise<MarkdownResult> {
 	if (!path || path === "/") {
-		return markdownResponse(generateSiteOverview());
+		return { status: 200, body: generateSiteOverview() };
 	}
 
-	// 単元ページ: unit-xxx/yyyy
-	const match = path.match(/^(unit-[a-z-]+)\/(\d{4})$/);
+	const match = path.match(MARKDOWN_PATH_RE);
 	if (!match) {
-		return new Response("Not Found", { status: 404 });
+		return { status: 404, body: "Not Found" };
 	}
 
 	const [, unitId, yearStr] = match;
 	const unit = unitBasedTabs.find((t) => t.id === unitId);
 	if (!unit) {
-		return new Response("Unit not found", { status: 404 });
+		return { status: 404, body: "Unit not found" };
 	}
 
 	const year = yearStr as Year;
 	const examMapping = unit.examMapping.find((m) => m.year === year);
 	if (!examMapping) {
-		return new Response("Year not available for this unit", { status: 404 });
+		return { status: 404, body: "Year not available for this unit" };
 	}
 
-	const markdown = await generateUnitMarkdown(unit, year, examMapping.examNumbers);
-	return markdownResponse(markdown);
+	const body = await generateUnitMarkdown(unit, year, examMapping.examNumbers);
+	return { status: 200, body };
 }
 
-function markdownResponse(content: string): Response {
-	return new Response(content, {
-		status: 200,
-		headers: {
-			"Content-Type": "text/markdown; charset=utf-8",
-			"Cache-Control": "public, max-age=86400",
-		},
-	});
-}
-
-function generateSiteOverview(): string {
+export function generateSiteOverview(): string {
 	const lines: string[] = [
 		"# 基本情報技術 I - 明治大学 演習問題サイト",
 		"",

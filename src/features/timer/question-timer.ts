@@ -90,7 +90,7 @@ class QuestionTimer extends HTMLElement {
 	private loadFromServerAndMerge() {
 		import("./timerSync")
 			.then(async ({ loadFromServer, mergeData }) => {
-				const { getUserId } = await import("./timerStorage");
+				const { getUserId } = await import("../../utils/userId");
 				const userId = getUserId();
 				const remoteData = await loadFromServer(userId);
 				if (!remoteData) return;

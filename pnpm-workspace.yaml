@@ -19,3 +19,5 @@ minimumReleaseAgeExclude:
   - '@vitest/spy@4.1.8'
   - '@vitest/utils@4.1.8'
   - vitest@4.1.8
+patchedDependencies:
+  '@astrojs/cloudflare@13.6.0': patches/@astrojs__cloudflare@13.6.0.patch

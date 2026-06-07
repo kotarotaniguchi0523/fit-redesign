@@ -3,7 +3,11 @@ import { getExamByNumber } from "../data/exams";
 import { unitBasedTabs } from "../data/units";
 import type { Year } from "../types/index";
 
-export const prerender = true;
+// advancedRouting の build 時 prerender はこのエンドポイントが空ボディ化する。
+// 根本原因は prerender 時に ExecutionContext / env が無く（src/app.ts のパッチ注記参照）、
+// 全 unit×年×exam を走査する重い content-collection 処理が完走しないこと。
+// SSR に切り替え、Cache-Control max-age=86400 でエッジキャッシュさせる。
+export const prerender = false;
 
 export const GET: APIRoute = async () => {
 	const lines: string[] = [

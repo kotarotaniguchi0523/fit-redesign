@@ -3,11 +3,11 @@ import {
 	QUESTION_ID_RE,
 	STORAGE_KEY_PREFIX,
 	TIMER_MODES,
-	USER_ID_KEY,
 } from "../../constants";
 import type { QuestionId } from "../../types";
 import { err, ok, type Result } from "../../types/result";
 import { createLogger } from "../../utils/logger";
+import { getUserId } from "../../utils/userId";
 import type { AttemptRecord, QuestionTimeRecord, TimerStorageData } from "./types";
 
 const logger = createLogger("[TimerStorage]");
@@ -63,26 +63,6 @@ function validateTimerStorageData(
 }
 
 // --- Core implementation ---
-
-/**
- * ユーザーIDを取得（なければ生成して保存）
- * ブラウザ/デバイス単位でユーザーを識別
- */
-export function getUserId(): string {
-	try {
-		const existing = localStorage.getItem(USER_ID_KEY);
-		if (existing) return existing;
-
-		const newId = crypto.randomUUID();
-		localStorage.setItem(USER_ID_KEY, newId);
-		logger.info("Generated new user ID");
-		return newId;
-	} catch {
-		// localStorageが使えない場合は一時的なIDを返す
-		logger.warn("Failed to access localStorage for user ID, using temporary ID");
-		return "anonymous";
-	}
-}
 
 /**
  * ユーザー固有のストレージキーを取得

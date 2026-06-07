@@ -11,11 +11,19 @@ export default defineConfig({
 		},
 	}),
 	integrations: [sitemap()],
+	experimental: {
+		advancedRouting: true,
+	},
 	image: {
 		service: { entrypoint: "astro/assets/services/noop" },
 	},
 	vite: {
 		plugins: [tailwindcss()],
+		// hono/jsx/dom クライアントコンポーネント(.tsx)を esbuild が正しく変換するための設定
+		esbuild: {
+			jsx: "automatic",
+			jsxImportSource: "hono/jsx/dom",
+		},
 		ssr: {
 			external: ["sharp"],
 		},

@@ -4,6 +4,8 @@
 		"target": "ES2022",
 		"lib": ["ES2024", "DOM", "DOM.Iterable"],
 		"types": ["astro/client", "vitest/globals", "@cloudflare/workers-types/2023-07-01"],
+		"jsx": "react-jsx",
+		"jsxImportSource": "hono/jsx/dom",
 		"skipLibCheck": true,
 		"resolveJsonModule": true,
 		"verbatimModuleSyntax": true,

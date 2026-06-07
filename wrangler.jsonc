@@ -3,6 +3,9 @@
 	"main": "@astrojs/cloudflare/entrypoints/server",
 	"compatibility_date": "2025-01-01",
 	"compatibility_flags": ["nodejs_compat"],
+	"observability": {
+		"enabled": true
+	},
 	"assets": {
 		"directory": "./dist",
 		"binding": "ASSETS"
@@ -12,6 +15,12 @@
 			"binding": "DB",
 			"database_name": "fit-timer-db",
 			"database_id": "57532062-e9cf-4a86-a89f-fc6fdb1e3ba5"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "CACHE",
+			"id": "3c8eaee5ccf74b93b8fcf51e35728d57"
 		}
 	]
 }

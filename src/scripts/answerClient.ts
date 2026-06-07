@@ -1,5 +1,7 @@
-import { QUESTION_GRADED_EVENT, USER_ID_KEY } from "../constants";
+import { QUESTION_GRADED_EVENT } from "../constants";
+import { apiClient } from "../utils/apiClient";
 import { createLogger } from "../utils/logger";
+import { getUserId } from "../utils/userId";
 
 const logger = createLogger("[AnswerClient]");
 
@@ -10,22 +12,6 @@ export interface AnswerStatus {
 
 export interface AnswerStatusMap {
 	[questionId: string]: AnswerStatus;
-}
-
-/**
- * 匿名ユーザーID。localStorage に保存し、なければ生成する。
- * 取得できない環境では "anonymous"（サーバー記録はスキップ）。
- */
-export function getUserId(): string {
-	try {
-		const existing = localStorage.getItem(USER_ID_KEY);
-		if (existing) return existing;
-		const newId = crypto.randomUUID();
-		localStorage.setItem(USER_ID_KEY, newId);
-		return newId;
-	} catch {
-		return "anonymous";
-	}
 }
 
 // ページ全体で1回だけ回答済み状態を取得（カードごとの重複fetchを防ぐ）
@@ -40,9 +26,10 @@ export function fetchAnswerStatuses(): Promise<AnswerStatusMap> {
 		return statusPromise;
 	}
 
-	statusPromise = fetch(`/api/answer/status?userId=${encodeURIComponent(userId)}`)
-		.then((res) => (res.ok ? res.json() : {}))
-		.then((data: { statuses?: AnswerStatusMap }) => data.statuses ?? {})
+	statusPromise = apiClient.api.answer.status
+		.$get({ query: { userId } })
+		.then((res) => (res.ok ? res.json() : null))
+		.then((data) => (data && "statuses" in data ? data.statuses : {}))
 		.catch(() => ({}));
 
 	return statusPromise;
@@ -68,17 +55,15 @@ export async function saveAnswer(params: {
 	if (userId === "anonymous") return;
 
 	try {
-		await fetch("/api/answer/submit", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
+		await apiClient.api.answer.submit.$post({
+			json: {
 				userId,
 				questionId: params.questionId,
 				selectedLabel: params.selectedLabel,
 				isCorrect: params.isCorrect,
 				duration: params.duration,
 				timestamp: Date.now(),
-			}),
+			},
 		});
 	} catch {
 		logger.warn("Failed to save answer to server");
