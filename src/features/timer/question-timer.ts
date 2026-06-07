@@ -13,81 +13,78 @@ import type { AttemptRecord, TimerMode } from "./types";
 const CLOCK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>`;
 const GEAR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 0 1 0 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>`;
 
-class QuestionTimer extends HTMLElement {
+/**
+ * 1 問題のタイマー（ストップウォッチ / カウントダウン）。旧 question-timer Web Component の
+ * 脱 customElements 版。連続ティック・設定ポップオーバー・音・localStorage 記録・サーバー同期を
+ * 司るステートフルコントローラのため、状態はクロージャ内のローカル変数に保持する（関数型）。
+ */
+export function setupQuestionTimer(el: HTMLElement): void {
+	const questionId = el.dataset.questionId || el.getAttribute("question-id") || "";
+
 	// Timer state
-	private mode: TimerMode = "stopwatch";
-	private elapsedSeconds = 0;
-	private isRunning = false;
-	private isCompleted = false;
-	private targetTime = DEFAULT_TARGET_TIME;
+	let mode: TimerMode = "stopwatch";
+	let elapsedSeconds = 0;
+	let isRunning = false;
+	let isCompleted = false;
+	let targetTime = DEFAULT_TARGET_TIME;
 
 	// Records state
-	private attempts: AttemptRecord[] = [];
+	let attempts: AttemptRecord[] = [];
 
 	// Refs
-	private intervalId: ReturnType<typeof setInterval> | null = null;
-	private audioContext: AudioContext | null = null;
-	private alertTimeout: ReturnType<typeof setTimeout> | null = null;
-	private hasSaved = false;
+	let intervalId: ReturnType<typeof setInterval> | null = null;
+	let audioContext: AudioContext | null = null;
+	let alertTimeout: ReturnType<typeof setTimeout> | null = null;
+	let hasSaved = false;
 
 	// DOM elements
-	private startStopBtn!: HTMLButtonElement;
-	private resetBtn!: HTMLButtonElement;
-	private timerDisplay!: HTMLDivElement;
-	private clockIcon!: HTMLSpanElement;
-	private timeText!: HTMLSpanElement;
-	private settingsBtn!: HTMLButtonElement;
-	private gearIcon!: HTMLSpanElement;
-	private popoverEl!: HTMLDivElement;
-	private popoverBackdrop!: HTMLDivElement;
-	private modeStopwatchBtn!: HTMLButtonElement;
-	private modeCountdownBtn!: HTMLButtonElement;
-	private targetTimeContainer!: HTMLDivElement;
-	private presetButtons: HTMLButtonElement[] = [];
-	private statLast!: HTMLDivElement;
-	private statAvg!: HTMLDivElement;
-	private statCount!: HTMLDivElement;
-	private clearBtn!: HTMLButtonElement;
-	private settingsOpen = false;
+	let startStopBtn: HTMLButtonElement;
+	let resetBtn: HTMLButtonElement;
+	let timerDisplay: HTMLDivElement;
+	let clockIcon: HTMLSpanElement;
+	let timeText: HTMLSpanElement;
+	let settingsBtn: HTMLButtonElement;
+	let gearIcon: HTMLSpanElement;
+	let popoverEl: HTMLDivElement;
+	let popoverBackdrop: HTMLDivElement;
+	let modeStopwatchBtn: HTMLButtonElement;
+	let modeCountdownBtn: HTMLButtonElement;
+	let targetTimeContainer: HTMLDivElement;
+	let presetButtons: HTMLButtonElement[] = [];
+	let statLast: HTMLDivElement;
+	let statAvg: HTMLDivElement;
+	let statCount: HTMLDivElement;
+	let clearBtn: HTMLButtonElement;
+	let settingsOpen = false;
 
-	get questionId(): string {
-		return this.dataset.questionId || this.getAttribute("question-id") || "";
-	}
-
-	connectedCallback() {
-		this.loadRecords();
-		this.buildDOM();
-		this.updateDisplay();
-	}
-
-	disconnectedCallback() {
-		this.stopInterval();
-		if (this.alertTimeout) {
-			clearTimeout(this.alertTimeout);
-			this.alertTimeout = null;
+	function destroy() {
+		stopInterval();
+		if (alertTimeout) {
+			clearTimeout(alertTimeout);
+			alertTimeout = null;
 		}
-		if (this.audioContext) {
-			this.audioContext.close().catch(() => {});
-			this.audioContext = null;
+		if (audioContext) {
+			audioContext.close().catch(() => {});
+			audioContext = null;
 		}
-		this.closePopover();
-		this.popoverBackdrop?.remove();
-		this.popoverEl?.remove();
+		closePopover();
+		popoverBackdrop?.remove();
+		popoverEl?.remove();
 	}
 
-	private loadRecords() {
+	function loadRecords() {
 		const loadResult = loadTimerData();
 		if (!loadResult.ok) return;
-		const questionRecord = loadResult.value.records[this.questionId as QuestionId];
+		const questionRecord = loadResult.value.records[questionId as QuestionId];
 		if (questionRecord) {
-			this.attempts = questionRecord.attempts;
+			attempts = questionRecord.attempts;
 		}
 
 		// Background: load from server and merge
-		this.loadFromServerAndMerge();
+		loadFromServerAndMerge();
 	}
 
-	private loadFromServerAndMerge() {
+	function loadFromServerAndMerge() {
 		import("./timerSync")
 			.then(async ({ loadFromServer, mergeData }) => {
 				const { getUserId } = await import("../../utils/userId");
@@ -105,19 +102,19 @@ class QuestionTimer extends HTMLElement {
 				saveTimerData(merged);
 
 				// Update this timer's attempts
-				const record = merged.records[this.questionId as QuestionId];
+				const record = merged.records[questionId as QuestionId];
 				if (record) {
-					this.attempts = record.attempts;
-					if (this.settingsOpen) {
-						this.updateStats();
+					attempts = record.attempts;
+					if (settingsOpen) {
+						updateStats();
 					}
 				}
 			})
 			.catch(() => {});
 	}
 
-	private buildDOM() {
-		this.innerHTML = "";
+	function buildDOM() {
+		el.innerHTML = "";
 		const wrapper = document.createElement("div");
 		wrapper.className = "relative";
 
@@ -126,62 +123,61 @@ class QuestionTimer extends HTMLElement {
 		mainRow.className = "flex flex-wrap items-center gap-2";
 
 		// Start/Stop button
-		this.startStopBtn = document.createElement("button");
-		this.startStopBtn.className =
+		startStopBtn = document.createElement("button");
+		startStopBtn.className =
 			"min-w-max whitespace-nowrap rounded-xl bg-green-600 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-green-700";
-		this.startStopBtn.textContent = "開始";
-		this.startStopBtn.addEventListener("click", () => this.handleStartStop());
+		startStopBtn.textContent = "開始";
+		startStopBtn.addEventListener("click", () => handleStartStop());
 
 		// Reset button (hidden by default)
-		this.resetBtn = document.createElement("button");
-		this.resetBtn.className =
+		resetBtn = document.createElement("button");
+		resetBtn.className =
 			"hidden rounded-xl bg-amber-500 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-amber-600";
-		this.resetBtn.textContent = "リセット";
-		this.resetBtn.addEventListener("click", () => this.handleReset());
+		resetBtn.textContent = "リセット";
+		resetBtn.addEventListener("click", () => handleReset());
 
 		// Timer display capsule
-		this.timerDisplay = document.createElement("div");
-		this.timerDisplay.className =
+		timerDisplay = document.createElement("div");
+		timerDisplay.className =
 			"flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors bg-slate-100 border-slate-200";
 
-		this.clockIcon = document.createElement("span");
-		this.clockIcon.className = "w-4 h-4 shrink-0 text-slate-700 inline-flex";
-		this.clockIcon.innerHTML = CLOCK_SVG;
+		clockIcon = document.createElement("span");
+		clockIcon.className = "w-4 h-4 shrink-0 text-slate-700 inline-flex";
+		clockIcon.innerHTML = CLOCK_SVG;
 
-		this.timeText = document.createElement("span");
-		this.timeText.className =
+		timeText = document.createElement("span");
+		timeText.className =
 			"text-sm font-mono font-semibold tabular-nums whitespace-nowrap text-slate-700";
 
-		this.timerDisplay.appendChild(this.clockIcon);
-		this.timerDisplay.appendChild(this.timeText);
+		timerDisplay.appendChild(clockIcon);
+		timerDisplay.appendChild(timeText);
 
 		// Settings button
-		this.settingsBtn = document.createElement("button");
-		this.settingsBtn.className = "rounded-lg p-1.5 transition-colors hover:bg-white";
-		this.settingsBtn.setAttribute("aria-label", "タイマー設定");
-		this.gearIcon = document.createElement("span");
-		this.gearIcon.className =
-			"w-5 h-5 text-slate-500 inline-flex transition-transform duration-200";
-		this.gearIcon.innerHTML = GEAR_SVG;
-		this.settingsBtn.appendChild(this.gearIcon);
-		this.settingsBtn.addEventListener("click", (e) => {
+		settingsBtn = document.createElement("button");
+		settingsBtn.className = "rounded-lg p-1.5 transition-colors hover:bg-white";
+		settingsBtn.setAttribute("aria-label", "タイマー設定");
+		gearIcon = document.createElement("span");
+		gearIcon.className = "w-5 h-5 text-slate-500 inline-flex transition-transform duration-200";
+		gearIcon.innerHTML = GEAR_SVG;
+		settingsBtn.appendChild(gearIcon);
+		settingsBtn.addEventListener("click", (e) => {
 			e.stopPropagation();
-			this.toggleSettingsPopover();
+			toggleSettingsPopover();
 		});
 
-		mainRow.appendChild(this.startStopBtn);
-		mainRow.appendChild(this.resetBtn);
-		mainRow.appendChild(this.timerDisplay);
-		mainRow.appendChild(this.settingsBtn);
+		mainRow.appendChild(startStopBtn);
+		mainRow.appendChild(resetBtn);
+		mainRow.appendChild(timerDisplay);
+		mainRow.appendChild(settingsBtn);
 
 		// Popover backdrop (invisible click catcher)
-		this.popoverBackdrop = document.createElement("div");
-		this.popoverBackdrop.className = "fixed inset-0 z-40 hidden";
-		this.popoverBackdrop.addEventListener("click", () => this.closePopover());
+		popoverBackdrop = document.createElement("div");
+		popoverBackdrop.className = "fixed inset-0 z-40 hidden";
+		popoverBackdrop.addEventListener("click", () => closePopover());
 
 		// Popover (fixed positioning to escape stacking context created by parent's scale-90)
-		this.popoverEl = document.createElement("div");
-		this.popoverEl.className =
+		popoverEl = document.createElement("div");
+		popoverEl.className =
 			"fixed w-80 p-0 border border-slate-200 shadow-lg rounded-xl bg-white z-50 hidden";
 
 		const popoverInner = document.createElement("div");
@@ -195,39 +191,39 @@ class QuestionTimer extends HTMLElement {
 		const modeRow = document.createElement("div");
 		modeRow.className = "flex gap-1";
 
-		this.modeStopwatchBtn = document.createElement("button");
-		this.modeStopwatchBtn.textContent = "ストップウォッチ";
-		this.modeStopwatchBtn.addEventListener("click", () => this.handleModeChange("stopwatch"));
+		modeStopwatchBtn = document.createElement("button");
+		modeStopwatchBtn.textContent = "ストップウォッチ";
+		modeStopwatchBtn.addEventListener("click", () => handleModeChange("stopwatch"));
 
-		this.modeCountdownBtn = document.createElement("button");
-		this.modeCountdownBtn.textContent = "カウントダウン";
-		this.modeCountdownBtn.addEventListener("click", () => this.handleModeChange("countdown"));
+		modeCountdownBtn = document.createElement("button");
+		modeCountdownBtn.textContent = "カウントダウン";
+		modeCountdownBtn.addEventListener("click", () => handleModeChange("countdown"));
 
-		modeRow.appendChild(this.modeStopwatchBtn);
-		modeRow.appendChild(this.modeCountdownBtn);
+		modeRow.appendChild(modeStopwatchBtn);
+		modeRow.appendChild(modeCountdownBtn);
 		modeSection.appendChild(modeLabel);
 		modeSection.appendChild(modeRow);
 
 		// Target time section (countdown only)
-		this.targetTimeContainer = document.createElement("div");
-		this.targetTimeContainer.className = "hidden";
+		targetTimeContainer = document.createElement("div");
+		targetTimeContainer.className = "hidden";
 		const targetLabel = document.createElement("p");
 		targetLabel.className = "text-xs font-semibold text-slate-600 mb-2";
 		targetLabel.textContent = "目標時間";
 		const presetRow = document.createElement("div");
 		presetRow.className = "flex gap-1 flex-wrap";
 
-		this.presetButtons = TARGET_TIME_PRESETS.map((preset) => {
+		presetButtons = TARGET_TIME_PRESETS.map((preset) => {
 			const btn = document.createElement("button");
 			btn.textContent = preset.label;
 			btn.dataset.value = String(preset.value);
-			btn.addEventListener("click", () => this.handleTargetTimeChange(preset.value));
+			btn.addEventListener("click", () => handleTargetTimeChange(preset.value));
 			presetRow.appendChild(btn);
 			return btn;
 		});
 
-		this.targetTimeContainer.appendChild(targetLabel);
-		this.targetTimeContainer.appendChild(presetRow);
+		targetTimeContainer.appendChild(targetLabel);
+		targetTimeContainer.appendChild(presetRow);
 
 		// Stats section
 		const statsSection = document.createElement("div");
@@ -237,37 +233,37 @@ class QuestionTimer extends HTMLElement {
 		const statsGrid = document.createElement("div");
 		statsGrid.className = "grid grid-cols-3 gap-1";
 
-		this.statLast = this.createStatCard("前回", "--:--");
-		this.statAvg = this.createStatCard("平均", "--:--");
-		this.statCount = this.createStatCard("回数", "0回");
+		statLast = createStatCard("前回", "--:--");
+		statAvg = createStatCard("平均", "--:--");
+		statCount = createStatCard("回数", "0回");
 
-		statsGrid.appendChild(this.statLast);
-		statsGrid.appendChild(this.statAvg);
-		statsGrid.appendChild(this.statCount);
+		statsGrid.appendChild(statLast);
+		statsGrid.appendChild(statAvg);
+		statsGrid.appendChild(statCount);
 		statsSection.appendChild(statsLabel);
 		statsSection.appendChild(statsGrid);
 
 		// Clear button
-		this.clearBtn = document.createElement("button");
-		this.clearBtn.className =
+		clearBtn = document.createElement("button");
+		clearBtn.className =
 			"px-3 py-1.5 text-sm font-medium rounded-xl text-red-600 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
-		this.clearBtn.textContent = "履歴をクリア";
-		this.clearBtn.addEventListener("click", () => this.handleClearRecords());
+		clearBtn.textContent = "履歴をクリア";
+		clearBtn.addEventListener("click", () => handleClearRecords());
 
 		popoverInner.appendChild(modeSection);
-		popoverInner.appendChild(this.targetTimeContainer);
+		popoverInner.appendChild(targetTimeContainer);
 		popoverInner.appendChild(statsSection);
-		popoverInner.appendChild(this.clearBtn);
-		this.popoverEl.appendChild(popoverInner);
+		popoverInner.appendChild(clearBtn);
+		popoverEl.appendChild(popoverInner);
 
 		wrapper.appendChild(mainRow);
-		this.appendChild(wrapper);
+		el.appendChild(wrapper);
 		// Append popover and backdrop to body to escape stacking context
-		document.body.appendChild(this.popoverBackdrop);
-		document.body.appendChild(this.popoverEl);
+		document.body.appendChild(popoverBackdrop);
+		document.body.appendChild(popoverEl);
 	}
 
-	private createStatCard(label: string, value: string): HTMLDivElement {
+	function createStatCard(label: string, value: string): HTMLDivElement {
 		const card = document.createElement("div");
 		card.className = "bg-slate-50 rounded p-2 text-center";
 		const labelEl = document.createElement("div");
@@ -281,104 +277,104 @@ class QuestionTimer extends HTMLElement {
 		return card;
 	}
 
-	private handleStartStop() {
-		if (this.isRunning) {
-			this.stop();
+	function handleStartStop() {
+		if (isRunning) {
+			stop();
 		} else {
-			this.start();
+			start();
 		}
 	}
 
-	private start() {
-		this.isRunning = true;
-		this.isCompleted = false;
-		this.hasSaved = false;
-		this.startInterval();
-		this.updateDisplay();
+	function start() {
+		isRunning = true;
+		isCompleted = false;
+		hasSaved = false;
+		startInterval();
+		updateDisplay();
 	}
 
-	private stop() {
-		this.isRunning = false;
-		this.stopInterval();
-		this.saveAttemptIfNeeded();
-		this.updateDisplay();
+	function stop() {
+		isRunning = false;
+		stopInterval();
+		saveAttemptIfNeeded();
+		updateDisplay();
 	}
 
-	private handleReset() {
-		this.stopInterval();
-		this.isRunning = false;
-		this.isCompleted = false;
-		this.elapsedSeconds = this.mode === "countdown" ? this.targetTime : 0;
-		this.updateDisplay();
+	function handleReset() {
+		stopInterval();
+		isRunning = false;
+		isCompleted = false;
+		elapsedSeconds = mode === "countdown" ? targetTime : 0;
+		updateDisplay();
 	}
 
-	private reset(nextMode?: TimerMode) {
-		const effectiveMode = nextMode ?? this.mode;
-		this.stopInterval();
-		this.isRunning = false;
-		this.isCompleted = false;
-		this.hasSaved = false;
-		this.elapsedSeconds = effectiveMode === "countdown" ? this.targetTime : 0;
-		this.updateDisplay();
+	function reset(nextMode?: TimerMode) {
+		const effectiveMode = nextMode ?? mode;
+		stopInterval();
+		isRunning = false;
+		isCompleted = false;
+		hasSaved = false;
+		elapsedSeconds = effectiveMode === "countdown" ? targetTime : 0;
+		updateDisplay();
 	}
 
-	private startInterval() {
-		this.stopInterval();
-		this.intervalId = setInterval(() => {
-			if (this.mode === "stopwatch") {
-				this.elapsedSeconds += 1;
+	function startInterval() {
+		stopInterval();
+		intervalId = setInterval(() => {
+			if (mode === "stopwatch") {
+				elapsedSeconds += 1;
 			} else {
-				const next = this.elapsedSeconds - 1;
-				this.elapsedSeconds = next <= 0 ? 0 : next;
+				const next = elapsedSeconds - 1;
+				elapsedSeconds = next <= 0 ? 0 : next;
 			}
-			this.updateDisplay();
+			updateDisplay();
 
 			// Countdown completion check
-			if (this.mode === "countdown" && this.isRunning && this.elapsedSeconds === 0) {
-				this.isRunning = false;
-				this.isCompleted = true;
-				this.stopInterval();
-				this.playAlertSound();
-				this.saveAttemptIfNeeded();
-				this.updateDisplay();
+			if (mode === "countdown" && isRunning && elapsedSeconds === 0) {
+				isRunning = false;
+				isCompleted = true;
+				stopInterval();
+				playAlertSound();
+				saveAttemptIfNeeded();
+				updateDisplay();
 			}
 		}, TIMER_INTERVAL_MS);
 	}
 
-	private stopInterval() {
-		if (this.intervalId !== null) {
-			clearInterval(this.intervalId);
-			this.intervalId = null;
+	function stopInterval() {
+		if (intervalId !== null) {
+			clearInterval(intervalId);
+			intervalId = null;
 		}
 	}
 
-	private saveAttemptIfNeeded() {
-		if (this.hasSaved) return;
+	function saveAttemptIfNeeded() {
+		if (hasSaved) return;
 
-		const elapsed = this.elapsedSeconds;
-		const duration = this.mode === "stopwatch" ? elapsed : this.targetTime - elapsed;
+		const elapsed = elapsedSeconds;
+		const duration = mode === "stopwatch" ? elapsed : targetTime - elapsed;
 
 		if (duration > 0) {
 			const attempt: AttemptRecord = {
 				timestamp: Date.now(),
 				duration,
-				mode: this.mode,
-				completed: this.isCompleted,
-				targetTime: this.targetTime,
+				mode: mode,
+				completed: isCompleted,
+				targetTime: targetTime,
 			};
-			saveAttempt(this.questionId as QuestionId, attempt);
-			this.attempts = [...this.attempts, attempt];
-			this.hasSaved = true;
-			this.updateStats();
+			saveAttempt(questionId as QuestionId, attempt);
+			attempts = [...attempts, attempt];
+			hasSaved = true;
+			updateStats();
 		}
 	}
 
-	private playAlertSound() {
+	function playAlertSound() {
 		try {
-			if (!this.audioContext) {
-				this.audioContext = new AudioContext();
+			if (!audioContext) {
+				audioContext = new AudioContext();
 			}
-			const ctx = this.audioContext;
+			const ctx = audioContext;
 
 			if (ctx.state === "suspended") {
 				ctx.resume().catch(() => {});
@@ -394,7 +390,7 @@ class QuestionTimer extends HTMLElement {
 			osc1.start();
 			osc1.stop(ctx.currentTime + ALERT_SOUND.DURATION);
 
-			this.alertTimeout = setTimeout(() => {
+			alertTimeout = setTimeout(() => {
 				const osc2 = ctx.createOscillator();
 				const gain2 = ctx.createGain();
 				osc2.connect(gain2);
@@ -410,84 +406,84 @@ class QuestionTimer extends HTMLElement {
 		}
 	}
 
-	private handleModeChange(nextMode: TimerMode) {
-		if (nextMode === this.mode) return;
-		this.mode = nextMode;
-		this.reset();
+	function handleModeChange(nextMode: TimerMode) {
+		if (nextMode === mode) return;
+		mode = nextMode;
+		reset();
 	}
 
-	private handleTargetTimeChange(value: number) {
-		if (this.isRunning) return;
-		this.targetTime = value;
-		if (this.mode === "countdown") {
-			this.elapsedSeconds = value;
+	function handleTargetTimeChange(value: number) {
+		if (isRunning) return;
+		targetTime = value;
+		if (mode === "countdown") {
+			elapsedSeconds = value;
 		}
-		this.updateDisplay();
+		updateDisplay();
 	}
 
-	private handleClearRecords() {
-		clearQuestionRecords(this.questionId as QuestionId);
-		this.attempts = [];
-		this.updateStats();
+	function handleClearRecords() {
+		clearQuestionRecords(questionId as QuestionId);
+		attempts = [];
+		updateStats();
 	}
 
-	private toggleSettingsPopover() {
-		if (this.settingsOpen) {
-			this.closePopover();
+	function toggleSettingsPopover() {
+		if (settingsOpen) {
+			closePopover();
 		} else {
-			this.openPopover();
+			openPopover();
 		}
 	}
 
-	private openPopover() {
-		this.settingsOpen = true;
-		this.popoverEl.classList.remove("hidden");
-		this.popoverBackdrop.classList.remove("hidden");
-		this.gearIcon.classList.add("rotate-45");
-		this.positionPopover();
-		this.updatePopoverContent();
+	function openPopover() {
+		settingsOpen = true;
+		popoverEl.classList.remove("hidden");
+		popoverBackdrop.classList.remove("hidden");
+		gearIcon.classList.add("rotate-45");
+		positionPopover();
+		updatePopoverContent();
 	}
 
-	private positionPopover() {
-		const rect = this.settingsBtn.getBoundingClientRect();
-		const popoverHeight = this.popoverEl.offsetHeight;
-		this.popoverEl.style.top = `${rect.top - popoverHeight - 8}px`;
-		this.popoverEl.style.left = `${Math.max(8, rect.right - this.popoverEl.offsetWidth)}px`;
+	function positionPopover() {
+		const rect = settingsBtn.getBoundingClientRect();
+		const popoverHeight = popoverEl.offsetHeight;
+		popoverEl.style.top = `${rect.top - popoverHeight - 8}px`;
+		popoverEl.style.left = `${Math.max(8, rect.right - popoverEl.offsetWidth)}px`;
 	}
 
-	private closePopover() {
-		this.settingsOpen = false;
-		this.popoverEl.classList.add("hidden");
-		this.popoverBackdrop.classList.add("hidden");
-		this.gearIcon.classList.remove("rotate-45");
+	function closePopover() {
+		settingsOpen = false;
+		popoverEl.classList.add("hidden");
+		popoverBackdrop.classList.add("hidden");
+		gearIcon.classList.remove("rotate-45");
 	}
 
-	private updateDisplay() {
+	function updateDisplay() {
 		// Start/Stop button
-		if (this.isRunning) {
-			this.startStopBtn.textContent = "停止";
-			this.startStopBtn.className =
+		if (isRunning) {
+			startStopBtn.textContent = "停止";
+			startStopBtn.className =
 				"min-w-max whitespace-nowrap rounded-xl bg-red-600 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-red-700";
 		} else {
-			this.startStopBtn.textContent = "開始";
-			this.startStopBtn.className =
+			startStopBtn.textContent = "開始";
+			startStopBtn.className =
 				"min-w-max whitespace-nowrap rounded-xl bg-green-600 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-green-700";
 		}
 
 		// Reset button visibility
-		if (this.isRunning) {
-			this.resetBtn.classList.remove("hidden");
+		if (isRunning) {
+			resetBtn.classList.remove("hidden");
 		} else {
-			this.resetBtn.classList.add("hidden");
+			resetBtn.classList.add("hidden");
 		}
 
 		// Timer display styling
 		let bgClass: string;
 		let textClass: string;
-		if (this.isCompleted) {
+		if (isCompleted) {
 			bgClass = "bg-red-100 border-red-500 animate-pulse";
 			textClass = "text-red-700 font-bold";
-		} else if (this.isRunning) {
+		} else if (isRunning) {
 			bgClass = "bg-blue-100 border-blue-400";
 			textClass = "text-blue-700";
 		} else {
@@ -495,37 +491,37 @@ class QuestionTimer extends HTMLElement {
 			textClass = "text-slate-700";
 		}
 
-		this.timerDisplay.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors ${bgClass}`;
-		this.clockIcon.className = `w-4 h-4 shrink-0 ${textClass} inline-flex`;
+		timerDisplay.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors ${bgClass}`;
+		clockIcon.className = `w-4 h-4 shrink-0 ${textClass} inline-flex`;
 
 		// Time text
-		let timeStr = formatTime(this.elapsedSeconds);
-		if (this.mode === "countdown" && !this.isRunning && !this.isCompleted) {
-			timeStr += ` / ${formatTime(this.targetTime)}`;
+		let timeStr = formatTime(elapsedSeconds);
+		if (mode === "countdown" && !isRunning && !isCompleted) {
+			timeStr += ` / ${formatTime(targetTime)}`;
 		}
-		this.timeText.textContent = timeStr;
-		this.timeText.className = `text-sm font-mono font-semibold tabular-nums whitespace-nowrap ${textClass}`;
+		timeText.textContent = timeStr;
+		timeText.className = `text-sm font-mono font-semibold tabular-nums whitespace-nowrap ${textClass}`;
 
 		// Popover content if open
-		if (this.settingsOpen) {
-			this.updatePopoverContent();
+		if (settingsOpen) {
+			updatePopoverContent();
 		}
 	}
 
-	private updatePopoverContent() {
+	function updatePopoverContent() {
 		const activeBtn =
 			"px-3 py-1.5 text-sm font-medium rounded-xl text-white bg-blue-600 hover:bg-blue-700 transition-colors";
 		const inactiveBtn =
 			"px-3 py-1.5 text-sm font-medium rounded-xl text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors";
 
-		this.modeStopwatchBtn.className = this.mode === "stopwatch" ? activeBtn : inactiveBtn;
-		this.modeCountdownBtn.className = this.mode === "countdown" ? activeBtn : inactiveBtn;
+		modeStopwatchBtn.className = mode === "stopwatch" ? activeBtn : inactiveBtn;
+		modeCountdownBtn.className = mode === "countdown" ? activeBtn : inactiveBtn;
 
 		// Target time section
-		if (this.mode === "countdown") {
-			this.targetTimeContainer.classList.remove("hidden");
+		if (mode === "countdown") {
+			targetTimeContainer.classList.remove("hidden");
 		} else {
-			this.targetTimeContainer.classList.add("hidden");
+			targetTimeContainer.classList.add("hidden");
 		}
 
 		// Preset buttons
@@ -536,12 +532,12 @@ class QuestionTimer extends HTMLElement {
 		const presetDisabled =
 			"px-3 py-1.5 text-sm font-medium rounded-xl text-slate-400 border border-slate-200 cursor-not-allowed transition-colors";
 
-		for (const btn of this.presetButtons) {
+		for (const btn of presetButtons) {
 			const value = Number(btn.dataset.value);
-			if (this.isRunning) {
+			if (isRunning) {
 				btn.className = presetDisabled;
 				btn.disabled = true;
-			} else if (this.targetTime === value) {
+			} else if (targetTime === value) {
 				btn.className = presetActive;
 				btn.disabled = false;
 			} else {
@@ -550,30 +546,43 @@ class QuestionTimer extends HTMLElement {
 			}
 		}
 
-		this.updateStats();
+		updateStats();
 	}
 
-	private updateStats() {
-		const lastVal = this.statLast.querySelector("div:last-child") as HTMLDivElement;
-		const avgVal = this.statAvg.querySelector("div:last-child") as HTMLDivElement;
-		const countVal = this.statCount.querySelector("div:last-child") as HTMLDivElement;
+	function updateStats() {
+		const lastVal = statLast.querySelector("div:last-child") as HTMLDivElement;
+		const avgVal = statAvg.querySelector("div:last-child") as HTMLDivElement;
+		const countVal = statCount.querySelector("div:last-child") as HTMLDivElement;
 
-		if (this.attempts.length > 0) {
-			const last = this.attempts[this.attempts.length - 1].duration;
+		if (attempts.length > 0) {
+			const last = attempts[attempts.length - 1].duration;
 			lastVal.textContent = formatTime(last);
 
-			const avg = this.attempts.reduce((sum, a) => sum + a.duration, 0) / this.attempts.length;
+			const avg = attempts.reduce((sum, a) => sum + a.duration, 0) / attempts.length;
 			avgVal.textContent = formatTime(Math.round(avg));
 		} else {
 			lastVal.textContent = "--:--";
 			avgVal.textContent = "--:--";
 		}
 
-		countVal.textContent = `${this.attempts.length}回`;
+		countVal.textContent = `${attempts.length}回`;
 
 		// Clear button disabled state
-		this.clearBtn.disabled = this.attempts.length === 0;
+		clearBtn.disabled = attempts.length === 0;
 	}
+
+	// 初期化（関数宣言は巻き上げられるので末尾呼び出しで全 DOM が構築される）
+	loadRecords();
+	buildDOM();
+	updateDisplay();
+	// destroy はページ寿命のタイマーでは通常呼ばれない（必要時の手動 cleanup 用）
+	void destroy;
 }
 
-customElements.define("question-timer", QuestionTimer);
+/** `[data-question-timer]` 要素すべてにタイマーを設定する。 */
+export function initQuestionTimer(): void {
+	const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-question-timer]"));
+	for (const el of elements) {
+		setupQuestionTimer(el);
+	}
+}

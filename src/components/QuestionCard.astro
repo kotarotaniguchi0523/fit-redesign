@@ -141,7 +141,7 @@ const hasOptions = !!question.options && question.options.length > 0;
 
 		{/* 6. ツール（控えめなフッター） */}
 		<footer class="q-footer">
-			<question-timer data-question-id={question.id}></question-timer>
+			<div data-question-timer data-question-id={question.id}></div>
 			<button
 				data-copy-button
 				data-copy-text={markdownText}

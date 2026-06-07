@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Custom Element を登録（モジュール読み込み時に customElements.define が実行される）
-import "./question-timer";
+import { setupQuestionTimer } from "./question-timer";
 
 // AudioContext モック
 class MockOscillatorNode {
@@ -44,13 +43,15 @@ class MockAudioContext {
 vi.stubGlobal("AudioContext", MockAudioContext);
 
 function createElement(questionId = "exam1-2013-q1"): HTMLElement {
-	const el = document.createElement("question-timer");
+	const el = document.createElement("div");
+	el.setAttribute("data-question-timer", "");
 	el.setAttribute("question-id", questionId);
 	return el;
 }
 
 function mount(el: HTMLElement): HTMLElement {
 	document.body.appendChild(el);
+	setupQuestionTimer(el);
 	return el;
 }
 
