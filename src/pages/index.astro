@@ -49,7 +49,7 @@ const jsonLd = {
 	<Header />
 	<main class="study-shell">
 		<div class="container mx-auto max-w-4xl px-4 py-8">
-			<study-home>
+			<div data-study-home>
 				<script data-manifest type="application/json" is:inline set:html={manifestJson} />
 
 				{/* ヒーロー */}
@@ -115,11 +115,13 @@ const jsonLd = {
 						年度ごとに問題を見たいときは、各単元の演習ページ内から選べます。
 					</p>
 				</section>
-			</study-home>
+			</div>
 		</div>
 	</main>
 
 	<script>
-		import "../scripts/study-home";
+		import { initStudyHome } from "../features/study/studyHome";
+
+		initStudyHome();
 	</script>
 </Layout>
