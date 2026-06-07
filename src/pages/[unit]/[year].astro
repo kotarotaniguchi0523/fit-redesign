@@ -301,7 +301,9 @@ const jsonLd = {
 		import "../../features/timer/question-timer";
 		import "../../scripts/copy-button";
 		import "../../scripts/answer-selector";
-		import "../../scripts/self-grade";
+		import { initSelfGrade } from "../../features/answer/SelfGrade";
 		import "../../scripts/srs-recorder";
+
+		initSelfGrade();
 	</script>
 </Layout>

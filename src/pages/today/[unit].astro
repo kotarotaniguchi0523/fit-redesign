@@ -86,8 +86,10 @@ const pageDescription = `${unit.name}の今日の演習。間隔反復で「忘�
 		import "../../features/timer/question-timer";
 		import "../../scripts/copy-button";
 		import "../../scripts/answer-selector";
-		import "../../scripts/self-grade";
+		import { initSelfGrade } from "../../features/answer/SelfGrade";
 		import "../../scripts/srs-recorder";
 		import "../../scripts/daily-session";
+
+		initSelfGrade();
 	</script>
 </Layout>

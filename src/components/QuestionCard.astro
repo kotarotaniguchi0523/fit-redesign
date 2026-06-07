@@ -119,11 +119,8 @@ const hasOptions = !!question.options && question.options.length > 0;
 					))}
 				</answer-selector>
 			) : (
-				<self-grade class="mt-4 block" data-question-id={question.id}>
-					<button type="button" data-reveal class="q-btn-primary">
-						答え合わせをする
-					</button>
-				</self-grade>
+				<div class="mt-4 block" data-self-grade data-question-id={question.id} />
+
 			)
 		}
 
