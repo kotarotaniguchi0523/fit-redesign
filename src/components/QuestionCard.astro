@@ -103,8 +103,9 @@ const hasOptions = !!question.options && question.options.length > 0;
 		{/* 4. 回答（選択式 or 記述式の自己採点） */}
 		{
 			hasOptions ? (
-				<answer-selector
+				<div
 					class="q-options"
+					data-answer-selector
 					data-question-id={question.id}
 					data-correct-label={question.answer}
 				>
@@ -117,7 +118,7 @@ const hasOptions = !!question.options && question.options.length > 0;
 							/>
 						</div>
 					))}
-				</answer-selector>
+				</div>
 			) : (
 				<div class="mt-4 block" data-self-grade data-question-id={question.id} />
 
