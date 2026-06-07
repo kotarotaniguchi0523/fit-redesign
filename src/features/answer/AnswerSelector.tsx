@@ -1,11 +1,12 @@
-import { render, useActionState, useFormStatus } from "hono/jsx/dom";
-import { fetchAnswerStatuses, readTimerDuration, saveAnswer } from "../../scripts/answerClient";
+import { render, useActionState } from "hono/jsx/dom";
+import { fetchAnswerStatuses } from "../../scripts/answerClient";
 import {
 	clearStatusChip,
 	hideSolution,
 	revealSolution,
 	setStatusChip,
 } from "../../scripts/questionCardUi";
+import { recordAnswer, SavingIndicator } from "./answerActions";
 
 /**
  * 選択式（MCQ）問題の回答。旧 answer-selector Web Component の hono/jsx/dom 版。
@@ -36,16 +37,6 @@ function optionClass(label: string, state: State, correctLabel: string): string 
 	if (label === correctLabel) return "q-option is-correct";
 	if (label === state.selected && !state.isCorrect) return "q-option is-wrong";
 	return "q-option is-muted";
-}
-
-/** form 内で「採点中…」を useFormStatus で購読する（Async React の pending）。 */
-function SavingIndicator() {
-	const { pending } = useFormStatus();
-	return pending ? (
-		<span data-pending class="q-saving">
-			採点中…
-		</span>
-	) : null;
 }
 
 /**
@@ -84,14 +75,14 @@ function AnswerSelectorPanel(props: {
 					const isCorrect = selected === correctLabel;
 					revealSolution(card);
 					setStatusChip(card, isCorrect ? "correct" : "review");
-					const next = recorded || (await record(questionId, card, selected, isCorrect));
+					const next = recorded || (await recordAnswer(questionId, card, selected, isCorrect));
 					return { phase: "submitted", selected, isCorrect, recorded: next };
 				}
 				case "peek": {
 					// 「わからない」= 解けなかったとして正直に扱う。
 					revealSolution(card);
 					setStatusChip(card, "review");
-					const next = recorded || (await record(questionId, card, "peek", false));
+					const next = recorded || (await recordAnswer(questionId, card, "peek", false));
 					return { phase: "submitted", selected: "", isCorrect: false, recorded: next };
 				}
 				case "retry":
@@ -141,7 +132,7 @@ function AnswerSelectorPanel(props: {
 					<button type="submit" class="q-btn-primary mt-3">
 						この答えで確かめる
 					</button>
-					<SavingIndicator />
+					<SavingIndicator label="採点中…" />
 				</form>
 			) : null}
 
@@ -152,7 +143,7 @@ function AnswerSelectorPanel(props: {
 					<button type="submit" class="q-btn-peek">
 						わからない… 解き方を見る
 					</button>
-					<SavingIndicator />
+					<SavingIndicator label="採点中…" />
 				</form>
 			) : null}
 
@@ -167,26 +158,6 @@ function AnswerSelectorPanel(props: {
 			) : null}
 		</>
 	);
-}
-
-/** 最初の採点をサーバーへ記録する。成功で true、失敗で false（再試行可能）を返す。 */
-async function record(
-	questionId: string,
-	card: Element | null,
-	selectedLabel: string,
-	isCorrect: boolean,
-): Promise<boolean> {
-	try {
-		await saveAnswer({
-			questionId,
-			selectedLabel,
-			isCorrect,
-			duration: readTimerDuration(card),
-		});
-		return true;
-	} catch {
-		return false;
-	}
 }
 
 /** サーバー描画済みの `[data-option]` から選択肢データを読む。 */

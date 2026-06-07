@@ -5,6 +5,7 @@ import {
 	TIMER_INTERVAL_MS,
 } from "../../constants";
 import type { QuestionId } from "../../types/index";
+import { mountAll } from "../../utils/mountAll";
 import { formatTime } from "./timeFormat";
 import { clearQuestionRecords, loadTimerData, saveAttempt } from "./timerStorage";
 import type { AttemptRecord, TimerMode } from "./types";
@@ -301,11 +302,8 @@ export function setupQuestionTimer(el: HTMLElement): void {
 	}
 
 	function handleReset() {
-		stopInterval();
-		isRunning = false;
-		isCompleted = false;
-		elapsedSeconds = mode === "countdown" ? targetTime : 0;
-		updateDisplay();
+		// resetBtn は isRunning 中のみ表示され、その時 hasSaved は必ず false なので reset() に委譲できる
+		reset();
 	}
 
 	function reset(nextMode?: TimerMode) {
@@ -581,8 +579,5 @@ export function setupQuestionTimer(el: HTMLElement): void {
 
 /** `[data-question-timer]` 要素すべてにタイマーを設定する。 */
 export function initQuestionTimer(): void {
-	const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-question-timer]"));
-	for (const el of elements) {
-		setupQuestionTimer(el);
-	}
+	mountAll("[data-question-timer]", setupQuestionTimer);
 }

@@ -1,6 +1,7 @@
 import { QUESTION_GRADED_EVENT } from "../../constants";
 import { readEmbeddedManifest, type UnitManifestEntry } from "../../scripts/progressClient";
 import { buildDailySet, loadSrsState, unitReadiness } from "../../scripts/srs";
+import { mountAll } from "../../utils/mountAll";
 
 /**
  * ホームのハブ。試験本番メーター・今日の道・単元別習熟度を、埋め込みマニフェスト＋
@@ -101,11 +102,10 @@ function renderCta(el: HTMLElement, target: UnitStat | undefined): void {
 
 /** `[data-study-home]` 要素を初期描画し、採点イベントで再描画する。 */
 export function initStudyHome(): void {
-	const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-study-home]"));
-	for (const el of elements) {
+	mountAll("[data-study-home]", (el) => {
 		const rerender = () => render(el);
 		rerender();
 		// 他タブ等で採点された場合に備えて更新（同一ページでは通常発火しない）
 		document.addEventListener(QUESTION_GRADED_EVENT, rerender);
-	}
+	});
 }

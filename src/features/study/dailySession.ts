@@ -6,6 +6,7 @@ import {
 	unitReadiness,
 } from "../../scripts/srs";
 import { createLogger } from "../../utils/logger";
+import { mountAll } from "../../utils/mountAll";
 
 const logger = createLogger("[DailySession]");
 
@@ -140,8 +141,5 @@ function setupSession(el: HTMLElement): void {
 
 /** `[data-daily-session]` 要素それぞれにセッションプレイヤーを設定する。 */
 export function initDailySession(): void {
-	const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-daily-session]"));
-	for (const el of elements) {
-		setupSession(el);
-	}
+	mountAll("[data-daily-session]", setupSession);
 }

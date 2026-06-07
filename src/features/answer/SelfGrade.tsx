@@ -1,11 +1,12 @@
-import { render, useActionState, useFormStatus } from "hono/jsx/dom";
-import { fetchAnswerStatuses, readTimerDuration, saveAnswer } from "../../scripts/answerClient";
+import { render, useActionState } from "hono/jsx/dom";
+import { fetchAnswerStatuses } from "../../scripts/answerClient";
 import {
 	clearStatusChip,
 	hideSolution,
 	revealSolution,
 	setStatusChip,
 } from "../../scripts/questionCardUi";
+import { recordAnswer, SavingIndicator } from "./answerActions";
 
 /**
  * 記述式（選択肢なし）問題の自己採点。旧 self-grade Web Component の hono/jsx/dom 版。
@@ -15,16 +16,14 @@ import {
  * 宣言的に導出し、遷移は `<form action={dispatch}>` の submit で起こす。採点の非同期保存中は
  * useFormStatus().pending が true になる。カードの解説/チップは外部 DOM なので命令的に同期する。
  *
+ * 可変 state（recorded）は hono の stale-prev を避けるため hidden input から読む（AnswerSelector と同様）。
  * selectedLabel に "self-correct" / "self-incorrect" を入れ、既存集計（isCorrect ベース）と整合させる。
  */
 
 type Phase = "initial" | "revealed" | "graded";
 
 // 状態は discriminated union（phase が判別子）。recorded は最初の採点だけ記録するためのフラグ。
-type State =
-	| { phase: "initial"; recorded: boolean }
-	| { phase: "revealed"; recorded: boolean }
-	| { phase: "graded"; recorded: boolean };
+type State = { phase: Phase; recorded: boolean };
 
 // 採点イベント（form の hidden input で渡す）。hono の form は submit ボタンの value を
 // FormData に含めないため、value ではなく hidden input で event を渡す。
@@ -55,35 +54,33 @@ const PHASE_UI: Record<Phase, { wrapClass: string; actions: ActionDef[] }> = {
 	},
 };
 
-/** form 内で保存中インジケータを useFormStatus で購読する（Async React の pending）。 */
-function SavingIndicator() {
-	const { pending } = useFormStatus();
-	return pending ? (
-		<span data-pending class="q-saving">
-			保存中…
-		</span>
-	) : null;
-}
-
 function SelfGradePanel(props: { questionId: string; card: Element | null; initial: State }) {
 	const { questionId, card } = props;
 
 	const [state, dispatch] = useActionState(
 		async (prev: State, formData: FormData): Promise<State> => {
+			const recorded = formData.get("recorded") === "true";
 			switch (formData.get("event") as Event) {
 				case "reveal":
 					revealSolution(card);
-					return { phase: "revealed", recorded: prev.recorded };
+					return { phase: "revealed", recorded };
 				case "retry":
 					hideSolution(card);
 					clearStatusChip(card);
-					return { phase: "initial", recorded: prev.recorded };
+					return { phase: "initial", recorded };
 				case "correct":
 				case "review": {
 					const isCorrect = formData.get("event") === "correct";
 					setStatusChip(card, isCorrect ? "correct" : "review");
-					const recorded = prev.recorded || (await record(questionId, card, isCorrect));
-					return { phase: "graded", recorded };
+					const next =
+						recorded ||
+						(await recordAnswer(
+							questionId,
+							card,
+							isCorrect ? "self-correct" : "self-incorrect",
+							isCorrect,
+						));
+					return { phase: "graded", recorded: next };
 				}
 				default:
 					return prev;
@@ -98,33 +95,15 @@ function SelfGradePanel(props: { questionId: string; card: Element | null; initi
 			{ui.actions.map((action) => (
 				<form action={dispatch} class="q-self-grade-form">
 					<input type="hidden" name="event" value={action.event} />
+					<input type="hidden" name="recorded" value={String(state.recorded)} />
 					<button type="submit" class={action.btnClass}>
 						{action.label}
 					</button>
-					{action.pending ? <SavingIndicator /> : null}
+					{action.pending ? <SavingIndicator label="保存中…" /> : null}
 				</form>
 			))}
 		</div>
 	);
-}
-
-/** 最初の採点をサーバーへ記録する。成功で true（記録済み）、失敗で false（再試行可能）を返す。 */
-async function record(
-	questionId: string,
-	card: Element | null,
-	isCorrect: boolean,
-): Promise<boolean> {
-	try {
-		await saveAnswer({
-			questionId,
-			selectedLabel: isCorrect ? "self-correct" : "self-incorrect",
-			isCorrect,
-			duration: readTimerDuration(card),
-		});
-		return true;
-	} catch {
-		return false;
-	}
 }
 
 /**
