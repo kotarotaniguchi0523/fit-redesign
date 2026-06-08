@@ -2,8 +2,8 @@
 	"id": "exam5-2017",
 	"number": 5,
 	"title": "データ構造・符号理論 (2017)",
-	"pdfPath": "/pdf/Exam8d-Stack.pdf",
-	"answerPdfPath": "/pdf/Exam2017-Ans.html",
+	"pdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam8d-Stack.pdf",
+	"answerPdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam2017-Ans.html",
 	"questions": [
 		{
 			"id": "exam8-2017-q1",

@@ -2,8 +2,8 @@
 	"id": "exam8-2014",
 	"number": 8,
 	"title": "データ構造 (2014)",
-	"pdfPath": "/pdf/Exam8b-Stack.pdf",
-	"answerPdfPath": "/pdf/Exam2014-Ans.html",
+	"pdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam8b-Stack.pdf",
+	"answerPdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam2014-Ans.html",
 	"questions": [
 		{
 			"id": "exam8-2014-q1",

@@ -2,8 +2,8 @@
 	"id": "exam3-2013",
 	"number": 3,
 	"title": "浮動小数点 (2013)",
-	"pdfPath": "/pdf/Exam3-Float.pdf",
-	"answerPdfPath": "/pdf/Exam2013-Ans.html",
+	"pdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam3-Float.pdf",
+	"answerPdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam2013-Ans.html",
 	"questions": [
 		{
 			"id": "exam3-2013-q1",

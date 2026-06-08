@@ -2,8 +2,8 @@
 	"id": "exam7-2015",
 	"number": 7,
 	"title": "符号理論 (2015)",
-	"pdfPath": "/pdf/Exam7c-ECC.pdf",
-	"answerPdfPath": "/pdf/Exam2015-Ans.html",
+	"pdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam7c-ECC.pdf",
+	"answerPdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam2015-Ans.html",
 	"questions": [
 		{
 			"id": "exam7-2015-q1",

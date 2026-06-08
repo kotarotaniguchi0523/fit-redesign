@@ -2,8 +2,8 @@
 	"id": "exam1-2015",
 	"number": 1,
 	"title": "基数変換 (2015)",
-	"pdfPath": "/pdf/Exam1c-Base.pdf",
-	"answerPdfPath": "/pdf/Exam2015-Ans.html",
+	"pdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam1c-Base.pdf",
+	"answerPdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam2015-Ans.html",
 	"questions": [
 		{
 			"id": "exam1-2015-q1",

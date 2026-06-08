@@ -78,8 +78,8 @@ describe("exams loader schema validation (rejection path)", () => {
 		id: "exam1-2099",
 		number: 1,
 		title: "テスト試験",
-		pdfPath: "/pdf/test.pdf",
-		answerPdfPath: "/pdf/test-answer.pdf",
+		pdfPath: "https://www.isc.meiji.ac.jp/~kikn/FIT/test.pdf",
+		answerPdfPath: "https://www.isc.meiji.ac.jp/~kikn/FIT/test-answer.pdf",
 		questions: [
 			{
 				id: "q1",
@@ -122,9 +122,9 @@ describe("exams loader schema validation (rejection path)", () => {
 		).toThrow();
 	});
 
-	it("rejects a pdfPath outside /pdf/", () => {
+	it("rejects a pdfPath outside the 明治 配信 base", () => {
 		// Arrange
-		const bad = { ...baseValidExam, pdfPath: "/other/test.pdf" };
+		const bad = { ...baseValidExam, pdfPath: "https://evil.example.com/test.pdf" };
 
 		// Act / Assert
 		expect(() => safeParseOrThrow(ExamJsonSchema, bad, "bad pdf path")).toThrow();

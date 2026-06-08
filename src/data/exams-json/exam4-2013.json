@@ -2,8 +2,8 @@
 	"id": "exam4-2013",
 	"number": 4,
 	"title": "集合と論理 (2013)",
-	"pdfPath": "/pdf/Exam4-logic.pdf",
-	"answerPdfPath": "/pdf/Exam2013-Ans.html",
+	"pdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam4-logic.pdf",
+	"answerPdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam2013-Ans.html",
 	"questions": [
 		{
 			"id": "exam4-2013-q1",

@@ -2,8 +2,8 @@
 	"id": "exam6-2015",
 	"number": 6,
 	"title": "FSM・確率 (2015)",
-	"pdfPath": "/pdf/Exam6c-FSM.pdf",
-	"answerPdfPath": "/pdf/Exam2015-Ans.html",
+	"pdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam6c-FSM.pdf",
+	"answerPdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam2015-Ans.html",
 	"questions": [
 		{
 			"id": "exam6-2015-q1",

@@ -2,8 +2,8 @@
 	"id": "exam2-2013",
 	"number": 2,
 	"title": "負数表現 (2013)",
-	"pdfPath": "/pdf/Exam2-Negative.pdf",
-	"answerPdfPath": "/pdf/Exam2013-Ans.html",
+	"pdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam2-Negative.pdf",
+	"answerPdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam2013-Ans.html",
 	"questions": [
 		{
 			"id": "exam2-2013-q1",

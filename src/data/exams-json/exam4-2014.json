@@ -2,8 +2,8 @@
 	"id": "exam4-2014",
 	"number": 4,
 	"title": "負数表現・論理演算 (2014)",
-	"pdfPath": "/pdf/Exam2b-Negative.pdf",
-	"answerPdfPath": "/pdf/Exam2014-Ans.html",
+	"pdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam2b-Negative.pdf",
+	"answerPdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam2014-Ans.html",
 	"questions": [
 		{
 			"id": "exam4-2014-q1",

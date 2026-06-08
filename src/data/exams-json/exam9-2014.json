@@ -2,8 +2,8 @@
 	"id": "exam9-2014",
 	"number": 9,
 	"title": "ソート・探索 (2014)",
-	"pdfPath": "/pdf/Exam9b-Sort.pdf",
-	"answerPdfPath": "/pdf/Exam2014-Ans.html",
+	"pdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam9b-Sort.pdf",
+	"answerPdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam2014-Ans.html",
 	"questions": [
 		{
 			"id": "exam9-2014-q1",

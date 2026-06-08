@@ -1,7 +1,5 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
 import { describe, expect, it } from "vitest";
-import type { ExamByYear, ExamNumber } from "../../types";
+import { type ExamByYear, type ExamNumber, MEIJI_FIT_BASE } from "../../types";
 import { unitBasedTabs } from "../units";
 import { assembleExamsByYear } from "./assemble";
 import { ExamJsonSchema, ExamsMetaSchema, ParsedJsonExamFilePathSchema } from "./schema";
@@ -80,15 +78,20 @@ describe("exam data integrity", () => {
 		expect(allExams.length).toBeGreaterThan(0);
 	});
 
-	it("all pdf paths exist under public directory", () => {
+	it("all pdf/answer paths are well-formed 明治 配信 URL", () => {
 		for (const examByYear of allExams) {
 			for (const exam of Object.values(examByYear.exams)) {
 				if (!exam) continue;
-				const cwd = (globalThis as { process?: { cwd: () => string } }).process?.cwd() ?? "";
-				const pdfPath = path.join(cwd, "public", exam.pdfPath.replace(/^\//, ""));
-				const answerPath = path.join(cwd, "public", exam.answerPdfPath.replace(/^\//, ""));
-				expect(existsSync(pdfPath), `missing pdfPath: ${exam.pdfPath}`).toBe(true);
-				expect(existsSync(answerPath), `missing answerPdfPath: ${exam.answerPdfPath}`).toBe(true);
+				// 配布資料は明治大学の公開ページを直接参照する（ローカル配信しない）
+				expect(exam.pdfPath.startsWith(`${MEIJI_FIT_BASE}/`), `bad pdfPath: ${exam.pdfPath}`).toBe(
+					true,
+				);
+				expect(
+					exam.answerPdfPath.startsWith(`${MEIJI_FIT_BASE}/`),
+					`bad answerPdfPath: ${exam.answerPdfPath}`,
+				).toBe(true);
+				expect(() => new URL(exam.pdfPath)).not.toThrow();
+				expect(() => new URL(exam.answerPdfPath)).not.toThrow();
 			}
 		}
 	});

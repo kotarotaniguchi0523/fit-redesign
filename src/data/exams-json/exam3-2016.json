@@ -2,8 +2,8 @@
 	"id": "exam3-2016",
 	"number": 3,
 	"title": "集合・論理演算 (2016)",
-	"pdfPath": "/pdf/Exam4d-logic.pdf",
-	"answerPdfPath": "/pdf/Exam2016-Ans.html",
+	"pdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam4d-logic.pdf",
+	"answerPdfPath": "https://www.isc.meiji.ac.jp/~kikn/FIT/Exam2016-Ans.html",
 	"questions": [
 		{
 			"id": "exam3-2016-q1",

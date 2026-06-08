@@ -26,7 +26,9 @@ export const EXAM_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 // 年度の型
 export type Year = (typeof YEARS)[number];
 export type ExamNumber = (typeof EXAM_NUMBERS)[number];
-export type PdfPath = `/pdf/${string}`;
+/** 配布資料(問題 PDF / 解答 HTML)の配信元。明治大学の公開ページを直接参照する。 */
+export const MEIJI_FIT_BASE = "https://www.isc.meiji.ac.jp/~kikn/FIT" as const;
+export type PdfPath = `${typeof MEIJI_FIT_BASE}/${string}`;
 export type ExamId = `exam${ExamNumber}-${Year}`;
 export type QuestionId = `${ExamId}-q${number}`;
 export type SlideId = `slide-${number}`;

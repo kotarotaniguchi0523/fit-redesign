@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { YEARS } from "../../types";
+import { MEIJI_FIT_BASE, YEARS } from "../../types";
 
 const YearSchema = z.enum(YEARS);
 const ExamNumberSchema = z.number().int().min(1).max(9);
@@ -187,8 +187,8 @@ export const ExamJsonSchema = z.object({
 	id: z.string().regex(/^exam\d+-\d{4}$/),
 	number: ExamNumberSchema,
 	title: z.string().min(1),
-	pdfPath: z.string().startsWith("/pdf/"),
-	answerPdfPath: z.string().startsWith("/pdf/"),
+	pdfPath: z.string().startsWith(`${MEIJI_FIT_BASE}/`),
+	answerPdfPath: z.string().startsWith(`${MEIJI_FIT_BASE}/`),
 	questions: z.array(QuestionSchema),
 });
 
