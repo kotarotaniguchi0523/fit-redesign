@@ -9,7 +9,7 @@ export function Header({ currentPath }: HeaderProps) {
 
 	return (
 		<>
-			<nav class="w-full bg-linear-to-r from-[#1e3a5f] to-[#152a45] text-white border-b-2 border-[#c9a227]">
+			<nav class="sticky top-0 z-50 w-full bg-linear-to-r from-[#1e3a5f] to-[#152a45] text-white border-b-2 border-[#c9a227] shadow-md">
 				<div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
 					<a href="/" class="flex items-center gap-4 no-underline text-white">
 						<div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
