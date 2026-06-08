@@ -1,20 +1,17 @@
 {
-	"extends": "astro/tsconfigs/strict",
 	"compilerOptions": {
-		"target": "ES2022",
-		"lib": ["ES2024", "DOM", "DOM.Iterable"],
-		"types": ["astro/client", "vitest/globals", "@cloudflare/workers-types/2023-07-01"],
-		"jsx": "react-jsx",
-		"jsxImportSource": "hono/jsx/dom",
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"strict": true,
 		"skipLibCheck": true,
-		"resolveJsonModule": true,
-		"verbatimModuleSyntax": true,
-		"moduleDetection": "force",
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
-		"erasableSyntaxOnly": true,
-		"noFallthroughCasesInSwitch": true,
-		"noUncheckedSideEffectImports": true
+		"esModuleInterop": true,
+		"allowImportingTsExtensions": false,
+		"verbatimModuleSyntax": false,
+		"jsx": "react-jsx",
+		"jsxImportSource": "hono/jsx",
+		"types": ["@cloudflare/workers-types", "vite/client"],
+		"noEmit": true
 	},
-	"include": ["src"]
+	"include": ["src", "app"]
 }

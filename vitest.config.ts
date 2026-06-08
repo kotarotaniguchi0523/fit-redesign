@@ -1,19 +1,13 @@
-import { fileURLToPath } from "node:url";
+import { islandComponents } from "honox/vite";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-	// .tsx を hono/jsx/dom ランタイムで変換する（astro.config.mjs の vite.esbuild と揃える）
+	// honox の island 変換を vitest にも適用し、app/islands/* を本番同様 <honox-island>
+	// プレースホルダとして SSR する（島の DOM フック useActionState 等を server 描画しない）。
+	plugins: [islandComponents()],
 	esbuild: {
 		jsx: "automatic",
-		jsxImportSource: "hono/jsx/dom",
-	},
-	resolve: {
-		alias: {
-			// astro:content（仮想モジュール）は vitest で解決できないためスタブに差し替える
-			"astro:content": fileURLToPath(
-				new URL("./src/types/test/astroContentStub.ts", import.meta.url),
-			),
-		},
+		jsxImportSource: "hono/jsx",
 	},
 	test: {
 		globals: true,

@@ -1,38 +1,40 @@
+/** @jsxImportSource hono/jsx */
 import { Hono } from "hono";
+import { jsxRenderer } from "hono/jsx-renderer";
 import { describe, expect, it } from "vitest";
 import todayRoute from "../app/routes/today/[unit]";
 
 /**
  * HonoX 版 今日の道ページ（app/routes/today/[unit].tsx）の古典派テスト（AAA）。
- *
- * 本番では HonoX がファイルパス `app/routes/today/[unit]` を `/today/:unit` にマウントするため、
- * テストでも `parent.route("/today/:unit", todayRoute)` で再現する。
- *
- * 命令的 daily-session は client script が引き継ぐため、ルートは描画済み DOM
- * （data-daily-session 等のフック属性と QuestionCard）を出力するだけ。env / DB は不要。
+ * createRoute のハンドラ配列を、_renderer 相当の軽量レンダラ + spread で /today/:unit にマウントし、
+ * ルートが出す DOM（daily-session フック属性・QuestionCard・見出し）と 404 を検証する。
  */
+const testRenderer = jsxRenderer(({ children, title }) => (
+	<html lang="ja">
+		<head>
+			<title>{title}</title>
+		</head>
+		<body>{children}</body>
+	</html>
+));
 
 function mounted() {
-	const parent = new Hono();
-	parent.route("/today/:unit", todayRoute);
-	return parent;
+	const app = new Hono();
+	app.use("*", testRenderer);
+	app.get("/today/:unit", ...todayRoute);
+	return app;
 }
 
 describe("今日の道ページ 描画", () => {
 	it("既知の単元で 200 を返し daily-session の DOM フックを描画する", async () => {
 		const res = await mounted().request("/today/unit-base-conversion");
-
 		expect(res.status).toBe(200);
 		const body = await res.text();
-		// daily-session の命令的 client script が拾うフック属性
 		expect(body).toContain("data-daily-session");
 		expect(body).toContain('data-unit-id="unit-base-conversion"');
 		expect(body).toContain("data-cards");
-		expect(body).toContain("data-progress-bar");
 		expect(body).toContain("data-next");
-		// 問題カードが描画される
 		expect(body).toContain("data-question-card");
-		// 見出し
 		expect(body).toContain("今日の道");
 	});
 

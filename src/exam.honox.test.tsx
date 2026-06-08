@@ -1,4 +1,6 @@
+/** @jsxImportSource hono/jsx */
 import { Hono } from "hono";
+import { jsxRenderer } from "hono/jsx-renderer";
 import { describe, expect, it } from "vitest";
 import examRoute from "../app/routes/[unit]/[year]";
 
@@ -13,10 +15,20 @@ import examRoute from "../app/routes/[unit]/[year]";
  * JSON-LD（title/jsonLd の props）は _renderer 不在のため本文には現れない点に注意。
  */
 
+const testRenderer = jsxRenderer(({ children, title }) => (
+	<html lang="ja">
+		<head>
+			<title>{title}</title>
+		</head>
+		<body>{children}</body>
+	</html>
+));
+
 function mounted() {
-	const parent = new Hono();
-	parent.route("/:unit/:year", examRoute);
-	return parent;
+	const app = new Hono();
+	app.use("*", testRenderer);
+	app.get("/:unit/:year", ...examRoute);
+	return app;
 }
 
 describe("単元ページ 描画", () => {

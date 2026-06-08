@@ -1,26 +1,15 @@
 {
+	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "fit-redesign",
-	"main": "@astrojs/cloudflare/entrypoints/server",
-	"compatibility_date": "2025-01-01",
+	"main": "./dist/index.js",
+	"compatibility_date": "2025-08-03",
 	"compatibility_flags": ["nodejs_compat"],
-	"observability": {
-		"enabled": true
-	},
-	"assets": {
-		"directory": "./dist",
-		"binding": "ASSETS"
-	},
+	"assets": { "directory": "./dist", "binding": "ASSETS" },
+	"observability": { "enabled": true },
 	"d1_databases": [
-		{
-			"binding": "DB",
-			"database_name": "fit-timer-db",
-			"database_id": "57532062-e9cf-4a86-a89f-fc6fdb1e3ba5"
-		}
+		{ "binding": "DB", "database_name": "fit-timer-db", "database_id": "57532062-e9cf-4a86-a89f-fc6fdb1e3ba5" }
 	],
 	"kv_namespaces": [
-		{
-			"binding": "CACHE",
-			"id": "3c8eaee5ccf74b93b8fcf51e35728d57"
-		}
+		{ "binding": "CACHE", "id": "3c8eaee5ccf74b93b8fcf51e35728d57" }
 	]
 }

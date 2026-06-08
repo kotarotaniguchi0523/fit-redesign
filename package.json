@@ -5,13 +5,13 @@
 	"type": "module",
 	"packageManager": "pnpm@11.5.0",
 	"scripts": {
-		"dev": "astro dev",
-		"build": "astro build",
-		"preview": "astro preview",
+		"dev": "vite",
+		"build": "vite build --mode client && vite build",
+		"preview": "wrangler dev",
 		"format": "biome format --write .",
 		"check": "biome ci .",
 		"typecheck": "tsgo --noEmit",
-		"typecheck:full": "astro check && tsgo --noEmit",
+		"typecheck:full": "tsgo --noEmit",
 		"knip": "knip",
 		"add-year": "node scripts/add-year.mjs",
 		"apply-year-mapping": "node scripts/apply-year-mapping.mjs",
@@ -21,12 +21,13 @@
 		"db:query:local": "wrangler d1 execute fit-timer-db --local --command",
 		"test": "vitest",
 		"test:run": "vitest run",
-		"test:coverage": "vitest run --coverage"
+		"test:coverage": "vitest run --coverage",
+		"deploy": "wrangler deploy"
 	},
 	"devDependencies": {
-		"@astrojs/check": "^0.9.9",
 		"@biomejs/biome": "^2.4.16",
 		"@cloudflare/workers-types": "^4.20260601.1",
+		"@hono/cli": "^0.1.10",
 		"@hono/vite-build": "^1.11.1",
 		"@hono/vite-dev-server": "^0.26.0",
 		"@tailwindcss/vite": "^4.3.0",
@@ -41,10 +42,7 @@
 		"wrangler": "^4.95.0"
 	},
 	"dependencies": {
-		"@astrojs/cloudflare": "^13.6.0",
-		"@astrojs/sitemap": "^3.7.3",
 		"@hono/zod-validator": "^0.8.0",
-		"astro": "6.4.2",
 		"chart.js": "^4.5.1",
 		"hono": "^4.12.23",
 		"honox": "^0.1.56",

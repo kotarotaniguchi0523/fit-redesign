@@ -1,3 +1,4 @@
+/** @jsxImportSource hono/jsx/dom */
 import { render } from "hono/jsx/dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import AnswerSelector from "../../../app/islands/AnswerSelector";

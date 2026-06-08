@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
-import api from "../app/routes/api/[[...route]]";
+import api from "../app/api";
 
 /**
  * HonoX 版 API（app/routes/api/[[...route]].ts）の古典派 integration テスト（AAA）。
