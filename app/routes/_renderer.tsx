@@ -3,13 +3,12 @@ import { Link } from "honox/server";
 import { ClientScript } from "../client-script";
 import { SITE_URL } from "../../src/data/site";
 
-const SITE = SITE_URL;
 const SITE_NAME = "基本情報技術 I - 明治大学";
 const DEFAULT_DESC = "明治大学 基本情報技術 I 演習問題サイト";
 
 export default jsxRenderer(({ children, title, description, jsonLd, noindex }) => {
 	const c = useRequestContext();
-	const canonical = new URL(c.req.path, SITE).href;
+	const canonical = new URL(c.req.path, SITE_URL).href;
 	const desc = description ?? DEFAULT_DESC;
 	return (
 		<html lang="ja">
