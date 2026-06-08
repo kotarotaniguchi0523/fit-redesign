@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { Exam } from "../../types";
 import { safeParseOrThrow } from "../../utils/zod";
-import { ExamJsonSchema } from "./schema";
 import { getAllExams, getExamByNumber } from "./index";
+import { ExamJsonSchema } from "./schema";
 
 /**
  * loader の public API（getAllExams / getExamByNumber）の古典派ユニットテスト。
@@ -117,7 +117,9 @@ describe("exams loader schema validation (rejection path)", () => {
 		const { questions: _omitted, ...bad } = baseValidExam;
 
 		// Act / Assert
-		expect(() => safeParseOrThrow(ExamJsonSchema, bad as unknown as Exam, "missing questions")).toThrow();
+		expect(() =>
+			safeParseOrThrow(ExamJsonSchema, bad as unknown as Exam, "missing questions"),
+		).toThrow();
 	});
 
 	it("rejects a pdfPath outside /pdf/", () => {

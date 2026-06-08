@@ -1,11 +1,12 @@
 /** @jsxImportSource hono/jsx */
 import { Hono } from "hono";
+import { raw } from "hono/html";
 import { jsxRenderer } from "hono/jsx-renderer";
 import { describe, expect, it } from "vitest";
-import index from "../app/routes/index";
-import guide from "../app/routes/guide";
 import notFound from "../app/routes/_404";
 import dashboardIndex from "../app/routes/dashboard/index";
+import guide from "../app/routes/guide";
+import index from "../app/routes/index";
 import slideOnly from "../app/routes/slide-only";
 
 /**
@@ -29,10 +30,7 @@ const testRenderer = jsxRenderer(({ children, title, jsonLd, noindex }) => (
 		<head>
 			<title>{title}</title>
 			{noindex ? <meta name="robots" content="noindex, follow" /> : null}
-			{jsonLd ? (
-				// biome-ignore lint/security/noDangerouslySetInnerHtml: テスト用 JSON-LD 注入
-				<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-			) : null}
+			{jsonLd ? <script type="application/ld+json">{raw(JSON.stringify(jsonLd))}</script> : null}
 		</head>
 		<body>{children}</body>
 	</html>
