@@ -1,0 +1,16 @@
+[project]
+name = "pdf-to-questions"
+version = "0.1.0"
+description = "PDFから問題データを抽出するスクリプト"
+requires-python = ">=3.10"
+dependencies = [
+    "docling>=2.0.0",
+    "pillow>=10.0.0",
+]
+
+[tool.uv]
+dev-dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

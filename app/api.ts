@@ -6,16 +6,16 @@ import { logger } from "hono/logger";
 import { requestId } from "hono/request-id";
 import { timing } from "hono/timing";
 import { z } from "zod";
-import { renderMarkdown } from "../../../src/features/markdown/markdownContent";
+import { renderMarkdown } from "../src/features/markdown/markdownContent";
 import {
 	clearUserQuestionRecords,
 	loadUserAttempts,
 	syncAttempts,
-} from "../../../src/features/timer/timerRepository";
-import { getAnswerStatuses, updateAnswerStatus } from "../../../src/server/answerCache";
-import { getUserAnswerHistory, insertAnswer } from "../../../src/server/answerRepository";
-import { upsertUser } from "../../../src/server/userRepository";
-import { AnswerSubmitSchema } from "../../../src/types/answer";
+} from "../src/features/timer/timerRepository";
+import { getAnswerStatuses, updateAnswerStatus } from "../src/server/answerCache";
+import { getUserAnswerHistory, insertAnswer } from "../src/server/answerRepository";
+import { upsertUser } from "../src/server/userRepository";
+import { AnswerSubmitSchema } from "../src/types/answer";
 
 /**
  * Hono RPC API（HonoX 版）。answer / timer / markdown / health の 7 ルートを定義する。
