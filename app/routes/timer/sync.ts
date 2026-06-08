@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { syncAttempts } from "../../../features/timer/timerRepository";
+import { syncAttempts } from "../../features/timer/timerRepository";
 import { apiRoute, invalid, postBodyLimit, SyncRequestSchema } from "../_lib";
 
 export const POST = apiRoute(

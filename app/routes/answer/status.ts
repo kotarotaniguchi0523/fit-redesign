@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { getUserAnswerHistory } from "../../../server/answerRepository";
+import { getAnswerStatuses } from "../../server/answerCache";
 import { apiRoute, invalid, UserIdQuerySchema } from "../_lib";
 
 export default apiRoute(
@@ -8,7 +8,7 @@ export default apiRoute(
 	}),
 	async (c) => {
 		const { userId } = c.req.valid("query");
-		const answers = await getUserAnswerHistory(c.env.DB, userId);
-		return c.json({ answers });
+		const statuses = await getAnswerStatuses(c.env.CACHE, c.env.DB, userId);
+		return c.json({ statuses });
 	},
 );

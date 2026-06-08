@@ -1,7 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
-import { updateAnswerStatus } from "../../../server/answerCache";
-import { insertAnswer } from "../../../server/answerRepository";
-import { AnswerSubmitSchema } from "../../../types/answer";
+import { updateAnswerStatus } from "../../server/answerCache";
+import { insertAnswer } from "../../server/answerRepository";
+import { AnswerSubmitSchema } from "../../types/answer";
 import { apiRoute, invalid, postBodyLimit } from "../_lib";
 
 export const POST = apiRoute(

@@ -2,15 +2,16 @@ import type { Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { createFactory } from "hono/factory";
 import { z } from "zod";
-import { renderMarkdown } from "../../features/markdown/markdownContent";
+import { renderMarkdown } from "../features/markdown/markdownContent";
 
 /**
- * API ルート群（app/routes/api/**）の共有基盤。`_` 接頭辞のため HonoX のルーティング対象外。
+ * API エンドポイント（health / answer / timer / markdown）の共有基盤。`_` 接頭辞のため
+ * HonoX のルーティング対象外。API は /api プレフィックス無しで root 直下に置く。
  *
  * `apiRoute` は Bindings(D1/KV) を型付けした createRoute。各エンドポイントファイルは
  * `export default apiRoute(...)`（GET）/ `export const POST = apiRoute(...)` のように使う。
- * cross-cutting middleware は app/routes/api/_middleware.ts（logger/request-id/timing）と
- * app/routes/api/markdown/_middleware.ts（etag）に置く。
+ * cross-cutting middleware は app/routes/_middleware.ts（logger/request-id/timing、全ルート適用）。
+ * markdown の etag は markdown.ts の sub-app 内にスコープする。
  */
 export type Env = { Bindings: Cloudflare.Env };
 

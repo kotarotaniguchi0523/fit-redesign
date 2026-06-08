@@ -1,21 +1,21 @@
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
-import apiMiddleware from "./routes/api/_middleware";
-import answerHistory from "./routes/api/answer/history";
-import answerStatus from "./routes/api/answer/status";
-import { POST as answerSubmit } from "./routes/api/answer/submit";
-import health from "./routes/api/health";
-import markdown from "./routes/api/markdown";
-import { DELETE as timerClear } from "./routes/api/timer/clear";
-import timerLoad from "./routes/api/timer/load";
-import { POST as timerSync } from "./routes/api/timer/sync";
+import apiMiddleware from "./routes/_middleware";
+import answerHistory from "./routes/answer/history";
+import answerStatus from "./routes/answer/status";
+import { POST as answerSubmit } from "./routes/answer/submit";
+import health from "./routes/health";
+import markdown from "./routes/markdown";
+import { DELETE as timerClear } from "./routes/timer/clear";
+import timerLoad from "./routes/timer/load";
+import { POST as timerSync } from "./routes/timer/sync";
 
 /**
- * 分解した API ファイルルート（app/routes/api/**）の古典派 integration テスト（AAA）。
+ * 分解した API ファイルルート（app/routes/**）の古典派 integration テスト（AAA）。
  *
  * 本番では HonoX がディレクトリごとに sub-app を作り、_middleware.ts を `subApp.use("*")` で
  * 適用してネストマウントする。vitest では createApp()（import.meta.glob 依存）が動かないため、
- * 同じネスト構造（/api に共通 mw、/api/markdown に etag）を手で再現し、外部 URL の HTTP 振る舞い
+ * 同じネスト構造（/api に共通 mw、/markdown に etag）を手で再現し、外部 URL の HTTP 振る舞い
  * （status・レスポンス形状・400/413/304・middleware ヘッダ）を app.request() で検証する。
  *
  * out-of-process 依存（D1 / KV）は空データを返す fake を注入する。
@@ -50,46 +50,47 @@ function mountedApp() {
 	// biome-ignore lint/suspicious/noExplicitAny: テスト用に分解ハンドラ配列を spread マウントする
 	const spread = (handlers: unknown) => handlers as any;
 
-	const apiApp = new Hono();
-	apiApp.use("*", ...spread(apiMiddleware));
-	apiApp.get("/health", ...spread(health));
-	apiApp.post("/answer/submit", ...spread(answerSubmit));
-	apiApp.get("/answer/status", ...spread(answerStatus));
-	apiApp.get("/answer/history", ...spread(answerHistory));
-	apiApp.post("/timer/sync", ...spread(timerSync));
-	apiApp.get("/timer/load", ...spread(timerLoad));
-	apiApp.delete("/timer/clear", ...spread(timerClear));
-	apiApp.route("/markdown", markdown);
+	// API は /api プレフィックス無しで root 直下にマウントされる。_middleware は全ルートへ。
+	const app = new Hono();
+	app.use("*", ...spread(apiMiddleware));
+	app.get("/health", ...spread(health));
+	app.post("/answer/submit", ...spread(answerSubmit));
+	app.get("/answer/status", ...spread(answerStatus));
+	app.get("/answer/history", ...spread(answerHistory));
+	app.post("/timer/sync", ...spread(timerSync));
+	app.get("/timer/load", ...spread(timerLoad));
+	app.delete("/timer/clear", ...spread(timerClear));
+	app.route("/markdown", markdown);
 
-	return new Hono().route("/api", apiApp);
+	return app;
 }
 
 describe("外部 URL の一致（HonoX マウント越し）", () => {
-	it("GET /api/health は { status: 'ok' } を返す", async () => {
-		const res = await mountedApp().request("/api/health", {}, env());
+	it("GET /health は { status: 'ok' } を返す", async () => {
+		const res = await mountedApp().request("/health", {}, env());
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({ status: "ok" });
 	});
 });
 
 describe("answer routes", () => {
-	it("GET /api/answer/status は { statuses } を返す（D1 空→空マップ）", async () => {
-		const res = await mountedApp().request("/api/answer/status?userId=u1", {}, env());
+	it("GET /answer/status は { statuses } を返す（D1 空→空マップ）", async () => {
+		const res = await mountedApp().request("/answer/status?userId=u1", {}, env());
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({ statuses: {} });
 	});
 
-	it("GET /api/answer/status は userId 無しで 400（{ error, details } 形状）", async () => {
-		const res = await mountedApp().request("/api/answer/status", {}, env());
+	it("GET /answer/status は userId 無しで 400（{ error, details } 形状）", async () => {
+		const res = await mountedApp().request("/answer/status", {}, env());
 		expect(res.status).toBe(400);
 		const body = (await res.json()) as { error: string; details: unknown };
 		expect(body.error).toBe("Invalid request");
 		expect(Array.isArray(body.details)).toBe(true);
 	});
 
-	it("POST /api/answer/submit は { ok, answerId } を返す", async () => {
+	it("POST /answer/submit は { ok, answerId } を返す", async () => {
 		const res = await mountedApp().request(
-			"/api/answer/submit",
+			"/answer/submit",
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -107,9 +108,9 @@ describe("answer routes", () => {
 		expect(await res.json()).toEqual({ ok: true, answerId: 1 });
 	});
 
-	it("POST /api/answer/submit は不正な questionId で 400", async () => {
+	it("POST /answer/submit は不正な questionId で 400", async () => {
 		const res = await mountedApp().request(
-			"/api/answer/submit",
+			"/answer/submit",
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -126,25 +127,25 @@ describe("answer routes", () => {
 		expect(res.status).toBe(400);
 	});
 
-	it("GET /api/answer/history は { answers } を返す", async () => {
-		const res = await mountedApp().request("/api/answer/history?userId=u1", {}, env());
+	it("GET /answer/history は { answers } を返す", async () => {
+		const res = await mountedApp().request("/answer/history?userId=u1", {}, env());
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({ answers: {} });
 	});
 });
 
 describe("timer routes", () => {
-	it("GET /api/timer/load は { records, syncedAt } を返す", async () => {
-		const res = await mountedApp().request("/api/timer/load?userId=u1", {}, env());
+	it("GET /timer/load は { records, syncedAt } を返す", async () => {
+		const res = await mountedApp().request("/timer/load?userId=u1", {}, env());
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as { records: unknown; syncedAt: number };
 		expect(body.records).toEqual({});
 		expect(typeof body.syncedAt).toBe("number");
 	});
 
-	it("POST /api/timer/sync は { records, syncedAt } を返す", async () => {
+	it("POST /timer/sync は { records, syncedAt } を返す", async () => {
 		const res = await mountedApp().request(
-			"/api/timer/sync",
+			"/timer/sync",
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -158,9 +159,9 @@ describe("timer routes", () => {
 		expect(typeof body.syncedAt).toBe("number");
 	});
 
-	it("DELETE /api/timer/clear は { success: true } を返す", async () => {
+	it("DELETE /timer/clear は { success: true } を返す", async () => {
 		const res = await mountedApp().request(
-			"/api/timer/clear?userId=u1&questionId=exam1-2013-q1",
+			"/timer/clear?userId=u1&questionId=exam1-2013-q1",
 			{ method: "DELETE" },
 			env(),
 		);
@@ -168,19 +169,15 @@ describe("timer routes", () => {
 		expect(await res.json()).toEqual({ success: true });
 	});
 
-	it("DELETE /api/timer/clear は questionId 無しで 400", async () => {
-		const res = await mountedApp().request(
-			"/api/timer/clear?userId=u1",
-			{ method: "DELETE" },
-			env(),
-		);
+	it("DELETE /timer/clear は questionId 無しで 400", async () => {
+		const res = await mountedApp().request("/timer/clear?userId=u1", { method: "DELETE" }, env());
 		expect(res.status).toBe(400);
 	});
 });
 
 describe("markdown route", () => {
-	it("GET /api/markdown はサイト概要を text/markdown で返す", async () => {
-		const res = await mountedApp().request("/api/markdown", {}, env());
+	it("GET /markdown はサイト概要を text/markdown で返す", async () => {
+		const res = await mountedApp().request("/markdown", {}, env());
 		expect(res.status).toBe(200);
 		expect(res.headers.get("Content-Type")).toBe("text/markdown; charset=utf-8");
 		expect(res.headers.get("Cache-Control")).toBe("public, max-age=86400");
@@ -188,13 +185,13 @@ describe("markdown route", () => {
 		expect(body.startsWith("# 基本情報技術 I - 明治大学 演習問題サイト")).toBe(true);
 	});
 
-	it("GET /api/markdown/不正パス は 404", async () => {
-		const res = await mountedApp().request("/api/markdown/not-a-unit", {}, env());
+	it("GET /markdown/不正パス は 404", async () => {
+		const res = await mountedApp().request("/markdown/not-a-unit", {}, env());
 		expect(res.status).toBe(404);
 	});
 
-	it("GET /api/markdown/unit-base-conversion/2013 は単元 Markdown を返す", async () => {
-		const res = await mountedApp().request("/api/markdown/unit-base-conversion/2013", {}, env());
+	it("GET /markdown/unit-base-conversion/2013 は単元 Markdown を返す", async () => {
+		const res = await mountedApp().request("/markdown/unit-base-conversion/2013", {}, env());
 		expect(res.status).toBe(200);
 		const body = await res.text();
 		expect(body.startsWith("# ")).toBe(true);
@@ -205,7 +202,7 @@ describe("markdown route", () => {
 describe("middleware（hono-mw）", () => {
 	it("body-limit: 過大な POST ペイロードは 413", async () => {
 		const res = await mountedApp().request(
-			"/api/answer/submit",
+			"/answer/submit",
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -223,12 +220,12 @@ describe("middleware（hono-mw）", () => {
 	});
 
 	it("etag: markdown は ETag を付与し、If-None-Match 一致で 304", async () => {
-		const first = await mountedApp().request("/api/markdown", {}, env());
+		const first = await mountedApp().request("/markdown", {}, env());
 		const tag = first.headers.get("ETag");
 		expect(tag).toBeTruthy();
 
 		const second = await mountedApp().request(
-			"/api/markdown",
+			"/markdown",
 			{ headers: { "If-None-Match": tag ?? "" } },
 			env(),
 		);
@@ -236,12 +233,12 @@ describe("middleware（hono-mw）", () => {
 	});
 
 	it("request-id: レスポンスに X-Request-Id ヘッダが付く", async () => {
-		const res = await mountedApp().request("/api/answer/status?userId=u1", {}, env());
+		const res = await mountedApp().request("/answer/status?userId=u1", {}, env());
 		expect(res.headers.get("X-Request-Id")).toBeTruthy();
 	});
 
 	it("timing: レスポンスに Server-Timing ヘッダが付く", async () => {
-		const res = await mountedApp().request("/api/answer/status?userId=u1", {}, env());
+		const res = await mountedApp().request("/answer/status?userId=u1", {}, env());
 		expect(res.headers.get("Server-Timing")).toBeTruthy();
 	});
 });

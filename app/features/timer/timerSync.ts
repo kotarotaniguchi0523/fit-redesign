@@ -11,7 +11,7 @@ export function syncToServer(userId: string, data: TimerStorageData): void {
 	const records = Object.fromEntries(
 		Object.entries(data.records).flatMap(([qid, record]) => (record ? [[qid, record]] : [])),
 	);
-	fetch("/api/timer/sync", {
+	fetch("/timer/sync", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ userId, records }),
@@ -33,7 +33,7 @@ export function syncToServer(userId: string, data: TimerStorageData): void {
  */
 export async function loadFromServer(userId: string): Promise<TimerStorageData | null> {
 	try {
-		const res = await fetch(`/api/timer/load?userId=${encodeURIComponent(userId)}`);
+		const res = await fetch(`/timer/load?userId=${encodeURIComponent(userId)}`);
 		if (!res.ok) {
 			logger.warn(`Load from server failed with status ${res.status}`);
 			return null;
@@ -90,7 +90,7 @@ export function mergeData(local: TimerStorageData, remote: TimerStorageData): Ti
  */
 export function clearOnServer(userId: string, questionId: string): void {
 	const query = `userId=${encodeURIComponent(userId)}&questionId=${encodeURIComponent(questionId)}`;
-	fetch(`/api/timer/clear?${query}`, { method: "DELETE" })
+	fetch(`/timer/clear?${query}`, { method: "DELETE" })
 		.then((res) => {
 			if (!res.ok) {
 				logger.warn(`Clear on server failed with status ${res.status}`);

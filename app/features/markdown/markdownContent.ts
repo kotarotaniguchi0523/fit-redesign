@@ -4,7 +4,7 @@ import type { ExamNumber, Year } from "../../types";
 
 /**
  * AI エージェント向け Markdown コンテンツ生成（純粋ロジック）。
- * Hono ルート（/api/markdown/*）から呼ばれ、Response 生成は呼び出し側が担う。
+ * Hono ルート（/markdown/*）から呼ばれ、Response 生成は呼び出し側が担う。
  */
 
 export interface MarkdownResult {
@@ -72,9 +72,7 @@ export function generateSiteOverview(): string {
 
 	for (const unit of unitBasedTabs) {
 		for (const mapping of unit.examMapping) {
-			lines.push(
-				`- \`/api/markdown/${unit.id}/${mapping.year}\` - ${unit.name} (${mapping.year}年度)`,
-			);
+			lines.push(`- \`/markdown/${unit.id}/${mapping.year}\` - ${unit.name} (${mapping.year}年度)`);
 		}
 	}
 

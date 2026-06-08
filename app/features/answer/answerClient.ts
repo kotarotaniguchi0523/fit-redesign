@@ -25,7 +25,7 @@ export function fetchAnswerStatuses(): Promise<AnswerStatusMap> {
 		return statusPromise;
 	}
 
-	statusPromise = fetch(`/api/answer/status?userId=${encodeURIComponent(userId)}`)
+	statusPromise = fetch(`/answer/status?userId=${encodeURIComponent(userId)}`)
 		.then((res) => (res.ok ? (res.json() as Promise<unknown>) : null))
 		.then((data) =>
 			data && typeof data === "object" && "statuses" in data
@@ -57,7 +57,7 @@ export async function saveAnswer(params: {
 	if (userId === "anonymous") return;
 
 	try {
-		await fetch("/api/answer/submit", {
+		await fetch("/answer/submit", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({

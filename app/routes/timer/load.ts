@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
-import { loadUserAttempts } from "../../../features/timer/timerRepository";
-import { upsertUser } from "../../../server/userRepository";
+import { loadUserAttempts } from "../../features/timer/timerRepository";
+import { upsertUser } from "../../server/userRepository";
 import { apiRoute, invalid, UserIdQuerySchema } from "../_lib";
 
 export default apiRoute(
