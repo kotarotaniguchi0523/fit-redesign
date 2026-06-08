@@ -1,5 +1,10 @@
 import type { StateNode, Transition } from "../../types";
 
+export interface Point {
+	x: number;
+	y: number;
+}
+
 export const STATE_DEFAULTS = {
 	NODE_RADIUS: 20,
 	ACCEPTING_NODE_RADIUS: 25,
@@ -7,13 +12,9 @@ export const STATE_DEFAULTS = {
 	SELF_LOOP_RADIUS: 15,
 } as const;
 
-export function getArrowPath(
-	fromX: number,
-	fromY: number,
-	toX: number,
-	toY: number,
-	curveOffset = 0,
-): string {
+export function getArrowPath(from: Point, to: Point, curveOffset = 0): string {
+	const { x: fromX, y: fromY } = from;
+	const { x: toX, y: toY } = to;
 	if (curveOffset === 0) {
 		return `M ${fromX} ${fromY} L ${toX} ${toY}`;
 	}
@@ -30,13 +31,13 @@ export function getArrowPath(
 }
 
 export function getArrowHead(
-	fromX: number,
-	fromY: number,
-	toX: number,
-	toY: number,
+	from: Point,
+	to: Point,
 	curveOffset = 0,
 	nodeRadius = STATE_DEFAULTS.NODE_RADIUS,
 ): string {
+	const { x: fromX, y: fromY } = from;
+	const { x: toX, y: toY } = to;
 	const arrowSize = STATE_DEFAULTS.ARROW_SIZE;
 	let angle: number;
 
@@ -66,13 +67,9 @@ export function getArrowHead(
 	return `M ${endX} ${endY} L ${x1} ${y1} M ${endX} ${endY} L ${x2} ${y2}`;
 }
 
-export function getLabelPosition(
-	fromX: number,
-	fromY: number,
-	toX: number,
-	toY: number,
-	curveOffset = 0,
-): { x: number; y: number } {
+export function getLabelPosition(from: Point, to: Point, curveOffset = 0): Point {
+	const { x: fromX, y: fromY } = from;
+	const { x: toX, y: toY } = to;
 	if (curveOffset === 0) {
 		return {
 			x: (fromX + toX) / 2,
@@ -117,7 +114,7 @@ export function buildTransitionData(
 	for (const transition of transitions) {
 		const fromNode = nodeMap.get(transition.from);
 		const toNode = nodeMap.get(transition.to);
-		if (!fromNode || !toNode) continue;
+		if (!(fromNode && toNode)) continue;
 
 		if (transition.from === transition.to) {
 			const radius = fromNode.isAccepting ? acceptingNodeRadius : nodeRadius;
@@ -136,7 +133,11 @@ export function buildTransitionData(
 			});
 		} else {
 			const curveOffset = transition.curveOffset || 0;
-			const labelPos = getLabelPosition(fromNode.x, fromNode.y, toNode.x, toNode.y, curveOffset);
+			const labelPos = getLabelPosition(
+				{ x: fromNode.x, y: fromNode.y },
+				{ x: toNode.x, y: toNode.y },
+				curveOffset,
+			);
 			const angle = Math.atan2(toNode.y - fromNode.y, toNode.x - fromNode.x);
 			let startX: number;
 			let startY: number;
@@ -158,8 +159,13 @@ export function buildTransitionData(
 			result.push({
 				type: "normal",
 				label: transition.label,
-				pathD: getArrowPath(startX, startY, endX, endY, curveOffset),
-				arrowHeadD: getArrowHead(startX, startY, endX, endY, curveOffset, nodeRadius),
+				pathD: getArrowPath({ x: startX, y: startY }, { x: endX, y: endY }, curveOffset),
+				arrowHeadD: getArrowHead(
+					{ x: startX, y: startY },
+					{ x: endX, y: endY },
+					curveOffset,
+					nodeRadius,
+				),
 				labelX: labelPos.x,
 				labelY: labelPos.y,
 			});

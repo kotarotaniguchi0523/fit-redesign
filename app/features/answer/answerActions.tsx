@@ -21,13 +21,16 @@ export function SavingIndicator({ label }: { label: string }) {
 // await の前に同期的にマークし、進行中なら skip して重複 INSERT / SRS の二重加算を防ぐ。
 const inFlight = new Set<string>();
 
+export interface RecordAnswerInput {
+	questionId: string;
+	card: Element | null;
+	selectedLabel: string;
+	isCorrect: boolean;
+}
+
 /** 採点結果をサーバーへ記録する。成功で true（記録済み）、失敗/重複 skip で false を返す。 */
-export async function recordAnswer(
-	questionId: string,
-	card: Element | null,
-	selectedLabel: string,
-	isCorrect: boolean,
-): Promise<boolean> {
+export async function recordAnswer(input: RecordAnswerInput): Promise<boolean> {
+	const { questionId, card, selectedLabel, isCorrect } = input;
 	if (inFlight.has(questionId)) return false;
 	inFlight.add(questionId);
 	try {

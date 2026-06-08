@@ -54,3 +54,25 @@ export const TimerStorageDataSchema = z.object({
 export type TimerStorageData = Omit<z.infer<typeof TimerStorageDataSchema>, "records"> & {
 	records: Partial<Record<QuestionId, QuestionTimeRecord>>;
 };
+
+// /timer/sync・/timer/clear の API リクエストスキーマ（ワイヤ形式）。
+// クライアント localStorage の生データを受けるため questionId は緩い文字列で受ける。
+const SyncAttemptSchema = z.object({
+	timestamp: z.number(),
+	duration: z.number().nonnegative(),
+	mode: z.enum(["stopwatch", "countdown"]),
+	completed: z.boolean(),
+	targetTime: z.number().optional(),
+});
+const SyncRecordSchema = z.object({
+	questionId: z.string(),
+	attempts: z.array(SyncAttemptSchema),
+});
+export const SyncRequestSchema = z.object({
+	userId: z.string().min(1),
+	records: z.record(z.string(), SyncRecordSchema),
+});
+export const ClearQuerySchema = z.object({
+	userId: z.string().min(1),
+	questionId: z.string().min(1),
+});

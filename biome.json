@@ -26,11 +26,43 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true,
+			"complexity": {
+				"noForEach": "error",
+				"noUselessFragments": "error",
+				"useOptionalChain": "error",
+				"useFlatMap": "error",
+				"useSimplifiedLogicExpression": "error"
+			},
+			"correctness": {
+				"noUnusedImports": "error",
+				"noUnusedVariables": "error",
+				"noUnusedFunctionParameters": "error",
+				"useHookAtTopLevel": "error"
+			},
 			"suspicious": {
-				"noArrayIndexKey": "warn"
+				"noArrayIndexKey": "error",
+				"noExplicitAny": "error",
+				"noConsole": {
+					"level": "error",
+					"options": { "allow": ["error", "warn", "info"] }
+				}
 			},
 			"style": {
-				"useShorthandFunctionType": "off"
+				"useShorthandFunctionType": "off",
+				"useImportType": "error",
+				"useExportType": "error",
+				"noNonNullAssertion": "error",
+				"noParameterAssign": "error",
+				"useTemplate": "error",
+				"useNodejsImportProtocol": "error",
+				"useNumberNamespace": "error",
+				"noUselessElse": "error",
+				"useCollapsedElseIf": "error",
+				"useConsistentArrayType": { "level": "error", "options": { "syntax": "shorthand" } }
+			},
+			"performance": {
+				"noAccumulatingSpread": "error",
+				"noDelete": "error"
 			},
 			"security": {
 				"noBlankTarget": {

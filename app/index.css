@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* MDX/Markdown 本文（使い方ガイド）の prose スタイル用。 */
+@plugin "@tailwindcss/typography";
 
 /* CSS Variables */
 :root {

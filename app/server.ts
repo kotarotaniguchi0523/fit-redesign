@@ -8,7 +8,7 @@ import { createApp } from "honox/server";
 // （静的アセットは引き続き public/_headers が担当する。）
 const SECURITY_HEADERS: Record<string, string> = {
 	"Content-Security-Policy":
-		"default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' https://hacknock.github.io; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://hacknock.github.io; img-src 'self' data:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://hacknock.github.io",
+		"default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self'",
 	"Referrer-Policy": "strict-origin-when-cross-origin",
 	"X-Content-Type-Options": "nosniff",
 	"X-Frame-Options": "DENY",

@@ -96,7 +96,7 @@ export function buildEdgeRenderData(
 	for (const edge of edges) {
 		const fromNode = nodeMap.get(edge.from);
 		const toNode = nodeMap.get(edge.to);
-		if (!fromNode || !toNode) continue;
+		if (!(fromNode && toNode)) continue;
 
 		const fromSide = edge.fromSide ?? "bottom";
 		const toSide = edge.toSide ?? "top";

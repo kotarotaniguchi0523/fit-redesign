@@ -12,15 +12,14 @@ export const POST = apiRoute(
 	async (c) => {
 		const { userId, questionId, selectedLabel, isCorrect, duration, timestamp } =
 			c.req.valid("json");
-		const answerId = await insertAnswer(
-			c.env.DB,
+		const answerId = await insertAnswer(c.env.DB, {
 			userId,
 			questionId,
 			selectedLabel,
 			isCorrect,
-			duration ?? null,
+			duration: duration ?? null,
 			timestamp,
-		);
+		});
 		try {
 			await updateAnswerStatus(c.env.CACHE, userId);
 		} catch {

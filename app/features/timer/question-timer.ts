@@ -52,9 +52,11 @@ export function setupQuestionTimer(el: HTMLElement): void {
 	let modeCountdownBtn: HTMLButtonElement;
 	let targetTimeContainer: HTMLDivElement;
 	let presetButtons: HTMLButtonElement[] = [];
-	let statLast: HTMLDivElement;
-	let statAvg: HTMLDivElement;
-	let statCount: HTMLDivElement;
+	// 統計カードの value 要素は buildDOM で 1 回だけ確定し、updateStats はそれを更新する
+	// （毎回 querySelector("div:last-child") で引かない）。
+	let statLastValue: HTMLDivElement;
+	let statAvgValue: HTMLDivElement;
+	let statCountValue: HTMLDivElement;
 	let clearBtn: HTMLButtonElement;
 	let settingsOpen = false;
 
@@ -234,13 +236,16 @@ export function setupQuestionTimer(el: HTMLElement): void {
 		const statsGrid = document.createElement("div");
 		statsGrid.className = "grid grid-cols-3 gap-1";
 
-		statLast = createStatCard("前回", "--:--");
-		statAvg = createStatCard("平均", "--:--");
-		statCount = createStatCard("回数", "0回");
+		const last = createStatCard("前回", "--:--");
+		const avg = createStatCard("平均", "--:--");
+		const count = createStatCard("回数", "0回");
+		statLastValue = last.valueEl;
+		statAvgValue = avg.valueEl;
+		statCountValue = count.valueEl;
 
-		statsGrid.appendChild(statLast);
-		statsGrid.appendChild(statAvg);
-		statsGrid.appendChild(statCount);
+		statsGrid.appendChild(last.card);
+		statsGrid.appendChild(avg.card);
+		statsGrid.appendChild(count.card);
 		statsSection.appendChild(statsLabel);
 		statsSection.appendChild(statsGrid);
 
@@ -264,7 +269,10 @@ export function setupQuestionTimer(el: HTMLElement): void {
 		document.body.appendChild(popoverEl);
 	}
 
-	function createStatCard(label: string, value: string): HTMLDivElement {
+	function createStatCard(
+		label: string,
+		value: string,
+	): { card: HTMLDivElement; valueEl: HTMLDivElement } {
 		const card = document.createElement("div");
 		card.className = "bg-slate-50 rounded p-2 text-center";
 		const labelEl = document.createElement("div");
@@ -275,7 +283,7 @@ export function setupQuestionTimer(el: HTMLElement): void {
 		valueEl.textContent = value;
 		card.appendChild(labelEl);
 		card.appendChild(valueEl);
-		return card;
+		return { card, valueEl };
 	}
 
 	function handleStartStop() {
@@ -552,22 +560,18 @@ export function setupQuestionTimer(el: HTMLElement): void {
 	}
 
 	function updateStats() {
-		const lastVal = statLast.querySelector("div:last-child") as HTMLDivElement;
-		const avgVal = statAvg.querySelector("div:last-child") as HTMLDivElement;
-		const countVal = statCount.querySelector("div:last-child") as HTMLDivElement;
-
 		if (attempts.length > 0) {
 			const last = attempts[attempts.length - 1].duration;
-			lastVal.textContent = formatTime(last);
+			statLastValue.textContent = formatTime(last);
 
 			const avg = attempts.reduce((sum, a) => sum + a.duration, 0) / attempts.length;
-			avgVal.textContent = formatTime(Math.round(avg));
+			statAvgValue.textContent = formatTime(Math.round(avg));
 		} else {
-			lastVal.textContent = "--:--";
-			avgVal.textContent = "--:--";
+			statLastValue.textContent = "--:--";
+			statAvgValue.textContent = "--:--";
 		}
 
-		countVal.textContent = `${attempts.length}回`;
+		statCountValue.textContent = `${attempts.length}回`;
 
 		// Clear button disabled state
 		clearBtn.disabled = attempts.length === 0;

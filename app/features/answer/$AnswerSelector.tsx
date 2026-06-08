@@ -70,14 +70,18 @@ function AnswerSelectorPanel(props: {
 					const isCorrect = selected === correctLabel;
 					revealSolution(card);
 					setStatusChip(card, isCorrect ? "correct" : "review");
-					const next = recorded || (await recordAnswer(questionId, card, selected, isCorrect));
+					const next =
+						recorded ||
+						(await recordAnswer({ questionId, card, selectedLabel: selected, isCorrect }));
 					return { phase: "submitted", selected, isCorrect, recorded: next };
 				}
 				case "peek": {
 					// 「わからない」= 解けなかったとして正直に扱う。
 					revealSolution(card);
 					setStatusChip(card, "review");
-					const next = recorded || (await recordAnswer(questionId, card, "peek", false));
+					const next =
+						recorded ||
+						(await recordAnswer({ questionId, card, selectedLabel: "peek", isCorrect: false }));
 					return { phase: "submitted", selected: "", isCorrect: false, recorded: next };
 				}
 				case "retry":

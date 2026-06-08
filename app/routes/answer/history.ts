@@ -1,6 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
 import { getUserAnswerHistory } from "../../server/answerRepository";
-import { apiRoute, invalid, UserIdQuerySchema } from "../_lib";
+import { UserIdQuerySchema } from "../../types/api";
+import { apiRoute, invalid } from "../_lib";
 
 export default apiRoute(
 	zValidator("query", UserIdQuerySchema, (r, c) => {

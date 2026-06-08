@@ -1,6 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
 import { clearUserQuestionRecords } from "../../features/timer/timerRepository";
-import { apiRoute, ClearQuerySchema, invalid } from "../_lib";
+import { ClearQuerySchema } from "../../features/timer/types";
+import { apiRoute, invalid } from "../_lib";
 
 export const DELETE = apiRoute(
 	zValidator("query", ClearQuerySchema, (r, c) => {

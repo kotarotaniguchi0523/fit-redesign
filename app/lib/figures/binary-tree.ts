@@ -56,7 +56,7 @@ export function getEdgeLines(positions: NodePosition[], nodeRadius: number): Edg
 	const edges: Array<{ from: NodePosition; to: NodePosition }> = [];
 
 	const collectEdges = (node: TreeNode | undefined, parentPos: NodePosition | null) => {
-		if (!node || !parentPos) return;
+		if (!(node && parentPos)) return;
 
 		const currentPos = positionMap.get(node);
 		if (!currentPos) return;

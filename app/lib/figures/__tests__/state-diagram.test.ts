@@ -4,17 +4,17 @@ import { buildTransitionData, getArrowPath, getLabelPosition } from "../state-di
 
 describe("getArrowPath", () => {
 	it("returns a straight line path when curveOffset is 0", () => {
-		const path = getArrowPath(10, 20, 100, 200, 0);
+		const path = getArrowPath({ x: 10, y: 20 }, { x: 100, y: 200 }, 0);
 		expect(path).toBe("M 10 20 L 100 200");
 	});
 
 	it("returns a straight line path when curveOffset is omitted", () => {
-		const path = getArrowPath(0, 0, 50, 50);
+		const path = getArrowPath({ x: 0, y: 0 }, { x: 50, y: 50 });
 		expect(path).toBe("M 0 0 L 50 50");
 	});
 
 	it("returns a quadratic bezier path when curveOffset is non-zero", () => {
-		const path = getArrowPath(0, 0, 100, 0, 30);
+		const path = getArrowPath({ x: 0, y: 0 }, { x: 100, y: 0 }, 30);
 		expect(path).toMatch(/^M 0 0 Q .+ 100 0$/);
 		expect(path).not.toContain("L");
 	});
@@ -22,14 +22,14 @@ describe("getArrowPath", () => {
 
 describe("getLabelPosition", () => {
 	it("returns midpoint for a straight line (curveOffset=0)", () => {
-		const pos = getLabelPosition(0, 0, 100, 200, 0);
+		const pos = getLabelPosition({ x: 0, y: 0 }, { x: 100, y: 200 }, 0);
 		expect(pos.x).toBe(50);
 		expect(pos.y).toBe(100 - 5); // midY - 5
 	});
 
 	it("returns offset position for a curved line", () => {
-		const straightPos = getLabelPosition(0, 0, 100, 0, 0);
-		const curvedPos = getLabelPosition(0, 0, 100, 0, 30);
+		const straightPos = getLabelPosition({ x: 0, y: 0 }, { x: 100, y: 0 }, 0);
+		const curvedPos = getLabelPosition({ x: 0, y: 0 }, { x: 100, y: 0 }, 30);
 		// Curved label should be offset from the straight midpoint
 		expect(curvedPos.y).not.toBe(straightPos.y);
 	});

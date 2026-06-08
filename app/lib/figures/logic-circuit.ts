@@ -61,7 +61,7 @@ export function getWirePath(
 	const elementMap = new Map([...inputs, ...gates, ...outputs].map((el) => [el.id, el]));
 	const fromElement = elementMap.get(wire.from);
 	const toElement = elementMap.get(wire.to);
-	if (!fromElement || !toElement) return null;
+	if (!(fromElement && toElement)) return null;
 
 	let startX: number;
 	let startY: number;

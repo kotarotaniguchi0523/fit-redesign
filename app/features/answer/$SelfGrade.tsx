@@ -69,12 +69,12 @@ function SelfGradePanel(props: { questionId: string; card: Element | null; initi
 					setStatusChip(card, isCorrect ? "correct" : "review");
 					const next =
 						recorded ||
-						(await recordAnswer(
+						(await recordAnswer({
 							questionId,
 							card,
-							isCorrect ? "self-correct" : "self-incorrect",
+							selectedLabel: isCorrect ? "self-correct" : "self-incorrect",
 							isCorrect,
-						));
+						}));
 					return { phase: "graded", recorded: next };
 				}
 				default:

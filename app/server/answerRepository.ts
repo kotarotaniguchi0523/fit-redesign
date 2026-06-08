@@ -25,15 +25,17 @@ function rowToRecord(row: AnswerRow): AnswerRecord {
 	};
 }
 
-export async function insertAnswer(
-	db: D1Database,
-	userId: string,
-	questionId: string,
-	selectedLabel: string,
-	isCorrect: boolean,
-	duration: number | null,
-	timestamp: number,
-): Promise<number> {
+export interface InsertAnswerInput {
+	userId: string;
+	questionId: string;
+	selectedLabel: string;
+	isCorrect: boolean;
+	duration: number | null;
+	timestamp: number;
+}
+
+export async function insertAnswer(db: D1Database, input: InsertAnswerInput): Promise<number> {
+	const { userId, questionId, selectedLabel, isCorrect, duration, timestamp } = input;
 	await upsertUser(db, userId);
 
 	const result = await db

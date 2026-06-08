@@ -96,13 +96,17 @@ describe("exercises（/exercises）", () => {
 });
 
 describe("guide（/guide）", () => {
-	it("200・タイトル・lobster.js ローダを描画する", async () => {
+	it("200・タイトル・MDX 本文を SSR で描画する（外部 lobster.js 非依存）", async () => {
 		const res = await mountGet(guide).request("/");
 		expect(res.status).toBe(200);
 		const html = await res.text();
 		expect(html).toContain("<title>使い方ガイド - 基本情報技術 I</title>");
-		expect(html).toContain("hacknock.github.io/lobsterjs/lobster.js");
-		expect(html).toContain('id="guide-content"');
+		// MDX 本文がサーバー側で HTML 化されている（見出し・GFM テーブル）。
+		expect(html).toContain("はじめに");
+		expect(html).toContain("基数変換");
+		expect(html).toContain("<table");
+		// 外部 CDN（lobster.js）への依存が無いこと。
+		expect(html).not.toContain("hacknock.github.io");
 	});
 });
 

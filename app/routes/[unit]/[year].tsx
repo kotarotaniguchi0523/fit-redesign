@@ -30,7 +30,7 @@ export default createRoute(async (c) => {
 	const year = YEARS.find((y) => y === yearParam) as Year | undefined;
 	const examMapping = unit && year ? unit.examMapping.find((m) => m.year === year) : undefined;
 
-	if (!unit || !year || !examMapping) {
+	if (!(unit && year && examMapping)) {
 		return c.notFound();
 	}
 

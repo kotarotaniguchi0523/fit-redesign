@@ -152,20 +152,21 @@ function init() {
 		console.error("Dashboard init error:", e);
 	}
 
-	// 単元カードの展開トグル
-	document.querySelectorAll<HTMLButtonElement>("[data-unit-toggle]").forEach((btn) => {
+	// 単元カードの展開トグル（addEventListener の副作用ループ）
+	for (const btn of document.querySelectorAll<HTMLButtonElement>("[data-unit-toggle]")) {
+		// 矢印要素は登録時に 1 回だけ引く（click ごとに querySelector しない）。
+		const arrow = btn.querySelector("[data-arrow]");
 		btn.addEventListener("click", () => {
 			const targetId = btn.dataset.unitToggle;
 			const target = document.getElementById(`unit-detail-${targetId}`);
 			if (target) {
 				target.classList.toggle("hidden");
-				const arrow = btn.querySelector("[data-arrow]");
 				if (arrow) {
 					arrow.textContent = target.classList.contains("hidden") ? "▶" : "▼";
 				}
 			}
 		});
-	});
+	}
 }
 
 if (document.readyState === "loading") {

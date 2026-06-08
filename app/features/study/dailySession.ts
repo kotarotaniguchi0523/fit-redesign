@@ -1,6 +1,5 @@
 import { QUESTION_GRADED_EVENT } from "../../constants";
 import { createLogger } from "../../lib/logger";
-import { mountAll } from "../../lib/mountAll";
 import { buildDailySet, loadSrsState, type QuestionGradedDetail, unitReadiness } from "../srs/srs";
 
 const logger = createLogger("[DailySession]");
@@ -11,7 +10,11 @@ const logger = createLogger("[DailySession]");
  * カードの採点 UI（self-grade / answer-selector）はそのまま再利用し、本モジュールは
  * 出題順・進捗・サマリのみ司る DOM コントローラ。セッション状態はクロージャに保持する。
  */
-function setupSession(el: HTMLElement): void {
+/**
+ * セッションを設定し、採点イベントハンドラを返す。空セッション（今日出す分なし）は
+ * 採点に反応しないので undefined を返す（document リスナを張らない＝従来挙動を維持）。
+ */
+function setupSession(el: HTMLElement): ((event: Event) => void) | undefined {
 	const cardsWrap = el.querySelector<HTMLElement>("[data-cards]");
 	const progressLabel = el.querySelector<HTMLElement>("[data-progress-label]");
 	const progressBar = el.querySelector<HTMLElement>("[data-progress-bar]");
@@ -59,7 +62,7 @@ function setupSession(el: HTMLElement): void {
 
 	if (queue.length === 0) {
 		showEmpty();
-		return;
+		return undefined;
 	}
 
 	function updateProgress(): void {
@@ -129,14 +132,25 @@ function setupSession(el: HTMLElement): void {
 	};
 
 	nextButton?.addEventListener("click", advance);
-	// document リスナは解除しない（mountAll のライフサイクル契約: ページ寿命まで生存。
-	// SSG フルページロードのため要素削除＝ページ遷移でドキュメントごと破棄される）。
-	document.addEventListener(QUESTION_GRADED_EVENT, handleGraded);
 
 	showCurrent();
+
+	// 採点イベントの document リスナは init 側で 1 回だけ登録する（要素ごとに張ると
+	// 複数セッション時に多重発火する）。ハンドラを返して init に集約させる。
+	return handleGraded;
 }
 
 /** `[data-daily-session]` 要素それぞれにセッションプレイヤーを設定する。 */
 export function initDailySession(): void {
-	mountAll("[data-daily-session]", setupSession);
+	const handlers = Array.from(document.querySelectorAll<HTMLElement>("[data-daily-session]"))
+		.map(setupSession)
+		.filter((handler): handler is (event: Event) => void => handler !== undefined);
+
+	if (handlers.length === 0) return;
+
+	// document リスナは解除しない（mountAll のライフサイクル契約: ページ寿命まで生存。
+	// SSG フルページロードのため要素削除＝ページ遷移でドキュメントごと破棄される）。
+	document.addEventListener(QUESTION_GRADED_EVENT, (event) => {
+		handlers.map((handler) => handler(event));
+	});
 }
