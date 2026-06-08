@@ -374,7 +374,7 @@ describe("QuestionTimer Custom Element", () => {
 			expect(() => el.remove()).not.toThrow();
 		});
 
-		it("DOMから削除するとインターバルが停止する", () => {
+		it("DOMから削除後にタイマーが発火してもクラッシュしない", () => {
 			const el = mount(createElement());
 
 			getStartStopBtn(el).click();
@@ -382,7 +382,8 @@ describe("QuestionTimer Custom Element", () => {
 
 			el.remove();
 
-			// インターバルが停止しているので追加のタイマーイベントは発生しない
+			// SSG のフルページ遷移で破棄される前提のため明示的な teardown（disconnectedCallback）は
+			// 持たず、インターバルは走り続ける。デタッチ済みノードへの更新で例外を投げないことを保証する。
 			expect(() => vi.advanceTimersByTime(5000)).not.toThrow();
 		});
 	});

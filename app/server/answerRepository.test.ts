@@ -93,11 +93,15 @@ describe("insertAnswer", () => {
 		// Act
 		await insertAnswer(db, BASE_INPUT);
 
-		// Assert: users 行の存在保証が対象ユーザーで行われる（prepare 回数のような内部実装は検証しない）
-		const usersCall = calls.find((c) => c.sql.includes("INSERT INTO users"));
-		expect(usersCall).toBeDefined();
-		// users 行の存在保証が対象ユーザーで行われる（timestamp は upsertUser 内部依存なので検証しない）
-		expect(usersCall?.args[0]).toBe("user-1");
+		// Assert: users upsert が answers insert より前に、対象ユーザーで発火する
+		// （FK 依存の契約。prepare 回数のような内部実装は検証しない）
+		const usersIdx = calls.findIndex((c) => c.sql.includes("INSERT INTO users"));
+		const answersIdx = calls.findIndex((c) => c.sql.includes("INSERT INTO answers"));
+		expect(usersIdx).toBeGreaterThanOrEqual(0);
+		expect(answersIdx).toBeGreaterThanOrEqual(0);
+		expect(usersIdx).toBeLessThan(answersIdx);
+		// timestamp は upsertUser 内部依存なので検証しない
+		expect(calls[usersIdx].args[0]).toBe("user-1");
 	});
 
 	it("duration が数値のとき、その値をそのまま bind する", async () => {

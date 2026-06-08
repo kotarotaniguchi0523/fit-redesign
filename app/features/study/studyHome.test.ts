@@ -74,6 +74,9 @@ describe("initStudyHome（描画・再描画・単一リスナ）", () => {
 	afterEach(() => {
 		document.body.innerHTML = "";
 		vi.restoreAllMocks();
+		// initStudyHome の document リスナは cleanup 関数を返さない（mountAll の page-lifetime
+		// 契約: フルページ遷移で破棄）。テスト間で残るが、再描画先は上で空にした detached ノード
+		// なので無害。spy-count テストは spy 設置後の登録のみ数えるため影響を受けない。
 	});
 
 	it("mount 時に SRS state に基づく overall / unit の値が描画される", () => {

@@ -31,7 +31,7 @@ export const FEEDBACK_DURATION = 2000;
 
 export const QUESTION_GRADED_EVENT = "question-graded";
 
-// --- Validation (keep in sync with src/types/timer.ts schemas) ---
+// --- Validation (keep in sync with app/features/timer/types.ts schemas) ---
 
 export const QUESTION_ID_RE = /^exam[1-9]-\d{4}-q\d+$/;
 export const TIMER_MODES = new Set(["stopwatch", "countdown"]);
