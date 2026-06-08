@@ -1,4 +1,4 @@
-import { useActionState, useEffect, useRef, useState } from "hono/jsx";
+import { useActionState, useEffect, useRef } from "hono/jsx";
 import { recordAnswer, SavingIndicator } from "./answerActions";
 import { fetchAnswerStatuses } from "./answerClient";
 import { clearStatusChip, hideSolution, revealSolution, setStatusChip } from "./questionCardUi";
@@ -10,10 +10,13 @@ import { clearStatusChip, hideSolution, revealSolution, setStatusChip } from "./
  * init 関数」は honox のオートハイドレーションに置き換わるため持ち込まない。代わりに island は
  * JSON シリアライズ可能な props（questionId / correctLabel / options）をルート JSX から受け取る。
  *
- * カード（[data-question-card]）とその解説/チップは island の subtree 外にあるため island の DOM が
- * 持てない。外側の AnswerSelector が closest() で親カードを解決し、回答済み状態を 1 回だけ取得して
- * 初期 phase を確定させてから、内側 Panel（useActionState を持つ）をマウントする。これで
- * useActionState の initial（マウント時にキャプチャされる）が確定値になり、復元と整合する。
+ * チラつき対策（SSR-first）: Panel を最初から selecting 状態で即マウントし、選択肢内容は
+ * dangerouslySetInnerHTML で SSR HTML に直接描画する（ref-innerHTML 注入をやめる）。これで SSR 出力と
+ * client 初期描画が一致しハイドレーションがズレない。
+ *
+ * カード（[data-question-card]）とその解説/チップは island の subtree 外にあるため rootRef（安定 ref）
+ * から dispatch 時点で closest() で解決する。回答済み状態は useEffect で 1 回取得し、saved があれば
+ * "restore" を dispatch して submitted へ「格下げ」する（記録はしない）。
  */
 
 interface Option {
@@ -26,7 +29,7 @@ type State =
 	| { phase: "selecting"; selected: string | null; recorded: boolean }
 	| { phase: "submitted"; selected: string; isCorrect: boolean; recorded: boolean };
 
-type Event = "select" | "submit" | "peek" | "retry";
+type Event = "restore" | "select" | "submit" | "peek" | "retry";
 
 /** 選択肢ボタンの状態クラスを状態から宣言的に導出する。 */
 function optionClass(label: string, state: State, correctLabel: string): string {
@@ -39,29 +42,47 @@ function optionClass(label: string, state: State, correctLabel: string): string 
 }
 
 /**
- * 選択肢ボタン。サーバー生成済みの選択肢 HTML（overline 等）を ref で innerHTML に設定する
- * （dangerouslySetInnerHTML を避け、内容はマウント時 1 回だけ流し込む）。
+ * 選択肢ボタン。サーバー生成済みの選択肢 HTML（overline 等）を SSR HTML に直接描画する
+ * （ref-innerHTML 注入をやめ SSR-first にしてチラつきを防ぐ）。
  */
 function OptionButton(props: { html: string; className: string; disabled: boolean }) {
-	const setHtml = (el: HTMLButtonElement | null) => {
-		if (el && el.innerHTML !== props.html) el.innerHTML = props.html;
-	};
-	return <button type="submit" class={props.className} disabled={props.disabled} ref={setHtml} />;
+	return (
+		<button
+			type="submit"
+			class={props.className}
+			disabled={props.disabled}
+			// biome-ignore lint/security/noDangerouslySetInnerHtml: サーバー生成済みの信頼済み選択肢HTML(overline等)を SSR-first で描画
+			dangerouslySetInnerHTML={{ __html: props.html }}
+		/>
+	);
 }
 
-function AnswerSelectorPanel(props: {
+const INITIAL_STATE: State = { phase: "selecting", selected: null, recorded: false };
+
+export interface AnswerSelectorProps {
 	questionId: string;
 	correctLabel: string;
 	options: Option[];
-	card: Element | null;
-	initial: State;
-}) {
-	const { questionId, correctLabel, options, card } = props;
+}
+
+export default function AnswerSelector(props: AnswerSelectorProps) {
+	const { questionId, correctLabel, options } = props;
+	// rootRef は安定参照。reducer は dispatch 時に rootRef から closest() で親カードを解決する。
+	const rootRef = useRef<HTMLDivElement | null>(null);
 
 	const [state, dispatch] = useActionState(
 		async (prev: State, formData: FormData): Promise<State> => {
+			const card = rootRef.current?.closest("[data-question-card]") ?? null;
 			const recorded = formData.get("recorded") === "true";
 			switch (formData.get("event") as Event) {
+				case "restore": {
+					// fetch 後の格下げ: saved を submitted へ反映する（記録はしない＝既存挙動）。
+					const selected = String(formData.get("selected"));
+					const isCorrect = formData.get("isCorrect") === "true";
+					revealSolution(card);
+					setStatusChip(card, isCorrect ? "correct" : "review");
+					return { phase: "submitted", selected, isCorrect, recorded: true };
+				}
 				case "select":
 					return { phase: "selecting", selected: String(formData.get("label")), recorded };
 				case "submit": {
@@ -92,13 +113,32 @@ function AnswerSelectorPanel(props: {
 					return prev;
 			}
 		},
-		props.initial,
+		INITIAL_STATE,
 	);
+
+	useEffect(() => {
+		let cancelled = false;
+		fetchAnswerStatuses().then((statuses) => {
+			if (cancelled) return;
+			const saved = statuses[questionId];
+			if (!saved) return; // 未回答なら selecting のまま（SSR-first）。
+			// 回答済みは "restore" で submitted へ格下げ（記録はしない）。
+			const formData = new FormData();
+			formData.set("event", "restore");
+			formData.set("selected", saved.label);
+			formData.set("isCorrect", String(saved.isCorrect));
+			dispatch(formData);
+		});
+		return () => {
+			cancelled = true;
+		};
+		// マウント時に 1 回だけ回答済み状態を取得して復元する。
+	}, [questionId]);
 
 	const submitted = state.phase === "submitted";
 
 	return (
-		<>
+		<div ref={rootRef} class="contents">
 			{options.map((option) => (
 				<form action={dispatch} class="q-answer-option-form">
 					<input type="hidden" name="event" value="select" />
@@ -154,61 +194,6 @@ function AnswerSelectorPanel(props: {
 						もう一度解く
 					</button>
 				</form>
-			) : null}
-		</>
-	);
-}
-
-export interface AnswerSelectorProps {
-	questionId: string;
-	correctLabel: string;
-	options: Option[];
-}
-
-export default function AnswerSelector(props: AnswerSelectorProps) {
-	const { questionId, correctLabel, options } = props;
-
-	const rootRef = useRef<HTMLDivElement | null>(null);
-	// card 解決 + 回答済み状態取得が完了するまで Panel をマウントしない（initial を確定させるため）。
-	const [resolved, setResolved] = useState<{ card: Element | null; initial: State } | null>(null);
-
-	useEffect(() => {
-		const card = rootRef.current?.closest("[data-question-card]") ?? null;
-		let cancelled = false;
-		fetchAnswerStatuses().then((statuses) => {
-			if (cancelled) return;
-			const saved = statuses[questionId];
-			if (saved) {
-				revealSolution(card);
-				setStatusChip(card, saved.isCorrect ? "correct" : "review");
-				setResolved({
-					card,
-					initial: {
-						phase: "submitted",
-						selected: saved.label,
-						isCorrect: saved.isCorrect,
-						recorded: true,
-					},
-				});
-			} else {
-				setResolved({ card, initial: { phase: "selecting", selected: null, recorded: false } });
-			}
-		});
-		return () => {
-			cancelled = true;
-		};
-	}, [questionId]);
-
-	return (
-		<div ref={rootRef} class="contents">
-			{resolved ? (
-				<AnswerSelectorPanel
-					questionId={questionId}
-					correctLabel={correctLabel}
-					options={options}
-					card={resolved.card}
-					initial={resolved.initial}
-				/>
 			) : null}
 		</div>
 	);

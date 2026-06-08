@@ -14,10 +14,17 @@ import SelfGrade from "./$SelfGrade";
  * ポーリングする」settle() で待つ（async React のレンダ完了を観測ベースで待つ）。
  */
 
-// 回答済み状態の取得はネットワークなので mock し、未回答（initial 開始）に固定する。
+// 回答済み状態の取得はネットワークなので mock する。saved 復元テスト用の固定 status は factory に
+// 直書きし（questionId が一意なので未回答テストは undefined → initial のまま）、2 islands のテストが
+// 同一モジュールレジストリを共有してもどちらの mock instance が勝っても整合させる。
 vi.mock("./answerClient", async () => {
 	const actual = await vi.importActual<typeof import("./answerClient")>("./answerClient");
-	return { ...actual, fetchAnswerStatuses: vi.fn(async () => ({})) };
+	return {
+		...actual,
+		fetchAnswerStatuses: vi.fn(async () => ({
+			"q-self-saved": { label: "self-correct", isCorrect: true },
+		})),
+	};
 });
 
 /** 条件が満たされるまで（または上限まで）マクロタスクをまたいで待つ。 */
@@ -127,5 +134,31 @@ describe("SelfGrade island", () => {
 		await settle(() => events.length === 1);
 		document.removeEventListener("question-graded", handler);
 		expect(events).toEqual([{ questionId: "q-self-4", isCorrect: false }]);
+	});
+
+	it("fetch 解決前でも「答え合わせをする」が即描画される（SSR-first）", async () => {
+		// Arrange: fetchAnswerStatuses を未解決のまま保留し、fetch を待たず描画されることを検証する。
+		const { fetchAnswerStatuses } = await import("./answerClient");
+		vi.mocked(fetchAnswerStatuses).mockImplementationOnce(
+			() => new Promise<never>(() => undefined),
+		);
+
+		// Act
+		const { root, solution } = mountSelfGrade("q-self-pending");
+
+		// Assert: fetch 未解決でも初期アクションが出る（resolved ゲート廃止の回帰防止）
+		await settle(() => root.querySelectorAll("button").length === 1);
+		expect(buttonLabels(root)).toEqual(["答え合わせをする"]);
+		expect(solution.hidden).toBe(true);
+	});
+
+	it("回答済みは fetch 後に graded へ格下げされ、解説とチップが復元される", async () => {
+		// Arrange & Act: q-self-saved は factory mock が saved（正解）を返す。
+		const { root, solution, chip } = mountSelfGrade("q-self-saved");
+
+		// Assert: graded（やり直しボタン1つ）＋ 解説表示 ＋ チップ correct
+		await settle(() => root.querySelector("button")?.textContent === "もう一度この問題を解く");
+		expect(solution.hidden).toBe(false);
+		expect(chip.classList.contains("q-chip--correct")).toBe(true);
 	});
 });

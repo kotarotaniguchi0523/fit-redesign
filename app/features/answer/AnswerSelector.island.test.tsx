@@ -11,9 +11,17 @@ import AnswerSelector from "./$AnswerSelector";
  * 宣言的/命令的に反映されることを確認する。hono/jsx/dom の非同期更新は settle() で観測待ちする。
  */
 
+// fetchAnswerStatuses は saved 復元テスト用に固定 status を返す（questionId が一意なので未回答テストは
+// statuses[id] が undefined → selecting のまま）。2 islands のテストが同一モジュールレジストリを共有し
+// うるため、saved キーは factory に直書きしてどちらの mock instance が勝っても整合させる。
 vi.mock("./answerClient", async () => {
 	const actual = await vi.importActual<typeof import("./answerClient")>("./answerClient");
-	return { ...actual, fetchAnswerStatuses: vi.fn(async () => ({})) };
+	return {
+		...actual,
+		fetchAnswerStatuses: vi.fn(async () => ({
+			"q-mcq-saved": { label: "ア", isCorrect: true },
+		})),
+	};
 });
 
 async function settle(predicate: () => boolean): Promise<void> {
@@ -125,5 +133,33 @@ describe("AnswerSelector island", () => {
 		await settle(() => optionButtons(root)[1].className.includes("is-wrong"));
 		expect(chip.classList.contains("q-chip--review")).toBe(true);
 		expect(optionButtons(root)[0].className).toContain("is-correct");
+	});
+
+	it("fetch 解決前でも選択肢ボタンが即描画される（SSR-first）", async () => {
+		// Arrange: fetchAnswerStatuses を未解決のまま保留し、fetch を待たず描画されることを検証する。
+		// Panel は無条件マウントなので、fetch が永久に pending でも選択肢が出る（resolved ゲート廃止の回帰防止）。
+		const { fetchAnswerStatuses } = await import("./answerClient");
+		vi.mocked(fetchAnswerStatuses).mockImplementationOnce(
+			() => new Promise<never>(() => undefined),
+		);
+
+		// Act: q-mcq-pending は factory saved に無いので、解決しても selecting のまま（二重の安全）。
+		const { root, solution } = mountSelector("q-mcq-pending", "ア");
+
+		// Assert: fetch 未解決でも選択肢・「わからない」が出る
+		await settle(() => optionButtons(root).length === 2);
+		expect(root.textContent).toContain("わからない");
+		expect(solution.hidden).toBe(true);
+	});
+
+	it("回答済みは fetch 後に submitted へ格下げされ、解説とチップが復元される", async () => {
+		// Arrange & Act: q-mcq-saved は factory mock が saved（正解 ア）を返す。
+		const { root, solution, chip } = mountSelector("q-mcq-saved", "ア");
+
+		// Assert: 解説が開き、チップ correct、選択肢が確定表示（is-correct）になる
+		await settle(() => optionButtons(root)[0].className.includes("is-correct"));
+		expect(solution.hidden).toBe(false);
+		expect(chip.classList.contains("q-chip--correct")).toBe(true);
+		expect(root.textContent).toContain("もう一度解く");
 	});
 });

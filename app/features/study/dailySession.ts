@@ -81,7 +81,9 @@ function setupSession(el: HTMLElement): ((event: Event) => void) | undefined {
 		nextButton.classList.toggle("is-ready", graded.has(currentId));
 	}
 
-	function showCurrent(): void {
+	// scroll=false は初回 reveal 専用（ロード直後の不要な scrollIntoView を抑制）。
+	// advance() 経由の遷移は従来どおり smooth scroll する。
+	function showCurrent(scroll = true): void {
 		for (const id of queue) {
 			const card = cardsById.get(id);
 			if (card) card.hidden = true;
@@ -89,7 +91,7 @@ function setupSession(el: HTMLElement): ((event: Event) => void) | undefined {
 		const card = cardsById.get(queue[index]);
 		if (card) {
 			card.hidden = false;
-			card.scrollIntoView({ block: "start", behavior: "smooth" });
+			if (scroll) card.scrollIntoView({ block: "start", behavior: "smooth" });
 		}
 		updateProgress();
 		reflectNextButton();
@@ -133,7 +135,8 @@ function setupSession(el: HTMLElement): ((event: Event) => void) | undefined {
 
 	nextButton?.addEventListener("click", advance);
 
-	showCurrent();
+	// 初回 reveal はスクロールしない（ロード直後のガタつき防止）。
+	showCurrent(false);
 
 	// 採点イベントの document リスナは init 側で 1 回だけ登録する（要素ごとに張ると
 	// 複数セッション時に多重発火する）。ハンドラを返して init に集約させる。

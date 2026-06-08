@@ -29,15 +29,22 @@ import { TruthTable } from "./figures/TruthTable";
 
 interface Props {
 	question: Question;
+	/**
+	 * 初期 SSR で `hidden` 属性を付けるか。today（dailySession）は全カードを
+	 * `hidden` で出力し、初回ペイントの「全部見え→1枚に畳む」崩壊を消す。
+	 * 未指定時は属性を出さない（hono/jsx は `hidden={undefined}` で属性を省く）ため
+	 * 年度別ページ / ExamSection には無影響。
+	 */
+	hidden?: boolean;
 }
 
-export function QuestionCard({ question }: Props) {
+export function QuestionCard({ question, hidden }: Props) {
 	const markdownText = questionToMarkdown(question);
 	const hasOptions = !!question.options && question.options.length > 0;
 	const figureData = question.figureData;
 
 	return (
-		<article data-question-card data-question-id={question.id} class="q-card">
+		<article data-question-card data-question-id={question.id} class="q-card" hidden={hidden}>
 			{/* 進捗チップ（回答後に island が表示） */}
 			<div data-status-chip hidden class="q-chip" />
 

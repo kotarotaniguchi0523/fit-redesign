@@ -61,7 +61,7 @@ export default createRoute(async (c) => {
 
 						<div data-cards class="session-cards">
 							{questions.map((question) => (
-								<QuestionCard question={question} />
+								<QuestionCard question={question} hidden />
 							))}
 						</div>
 

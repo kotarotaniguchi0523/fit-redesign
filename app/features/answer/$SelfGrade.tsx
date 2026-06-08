@@ -1,4 +1,4 @@
-import { useActionState, useEffect, useRef, useState } from "hono/jsx";
+import { useActionState, useEffect, useRef } from "hono/jsx";
 import { recordAnswer, SavingIndicator } from "./answerActions";
 import { fetchAnswerStatuses } from "./answerClient";
 import { clearStatusChip, hideSolution, revealSolution, setStatusChip } from "./questionCardUi";
@@ -6,9 +6,12 @@ import { clearStatusChip, hideSolution, revealSolution, setStatusChip } from "./
 /**
  * 記述式（選択肢なし）問題の自己採点 island。
  *
- * AnswerSelector island と同じ構造: ルート JSX から JSON シリアライズ可能な props（questionId）を
- * 受け取り、外側コンポーネントが closest() で親カードを解決・回答済み状態を 1 回取得して初期 phase を
- * 確定してから、useActionState を持つ内側 Panel をマウントする。
+ * AnswerSelector island と同じ構造（SSR-first）: Panel を最初から initial 状態で即マウントし、
+ * 回答済み状態は useEffect で 1 回取得して saved があれば "restore" を dispatch し graded へ「格下げ」する
+ * （記録はしない）。これで SSR 出力と client 初期描画が一致しチラつかない。
+ *
+ * カード（[data-question-card]）とその解説/チップは island の subtree 外にあるため rootRef（安定 ref）
+ * から dispatch 時点で closest() で解決する。
  *
  * 純粋 Async React（discriminated union）。各 phase の UI は phase から宣言的に導出し、遷移は
  * <form action={dispatch}> の submit で起こす。採点の非同期保存中は useFormStatus().pending。
@@ -22,7 +25,7 @@ type State = { phase: Phase; recorded: boolean };
 
 // 採点イベント（form の hidden input で渡す）。hono の form は submit ボタンの value を
 // FormData に含めないため、value ではなく hidden input で event を渡す。
-type Event = "reveal" | "correct" | "review" | "retry";
+type Event = "restore" | "reveal" | "correct" | "review" | "retry";
 
 /** 各 phase に表示するアクションフォームの宣言的定義（条件分岐の代わりに DU からの導出）。 */
 interface ActionDef {
@@ -49,13 +52,29 @@ const PHASE_UI: Record<Phase, { wrapClass: string; actions: ActionDef[] }> = {
 	},
 };
 
-function SelfGradePanel(props: { questionId: string; card: Element | null; initial: State }) {
-	const { questionId, card } = props;
+const INITIAL_STATE: State = { phase: "initial", recorded: false };
+
+export interface SelfGradeProps {
+	questionId: string;
+}
+
+export default function SelfGrade(props: SelfGradeProps) {
+	const { questionId } = props;
+	// rootRef は安定参照。reducer は dispatch 時に rootRef から closest() で親カードを解決する。
+	const rootRef = useRef<HTMLDivElement | null>(null);
 
 	const [state, dispatch] = useActionState(
 		async (prev: State, formData: FormData): Promise<State> => {
+			const card = rootRef.current?.closest("[data-question-card]") ?? null;
 			const recorded = formData.get("recorded") === "true";
 			switch (formData.get("event") as Event) {
+				case "restore": {
+					// fetch 後の格下げ: saved を graded へ反映する（記録はしない＝既存挙動）。
+					const isCorrect = formData.get("isCorrect") === "true";
+					revealSolution(card);
+					setStatusChip(card, isCorrect ? "correct" : "review");
+					return { phase: "graded", recorded: true };
+				}
 				case "reveal":
 					revealSolution(card);
 					return { phase: "revealed", recorded };
@@ -81,61 +100,42 @@ function SelfGradePanel(props: { questionId: string; card: Element | null; initi
 					return prev;
 			}
 		},
-		props.initial,
+		INITIAL_STATE,
 	);
-
-	const ui = PHASE_UI[state.phase];
-	return (
-		<div class={ui.wrapClass}>
-			{ui.actions.map((action) => (
-				<form action={dispatch} class="q-self-grade-form">
-					<input type="hidden" name="event" value={action.event} />
-					<input type="hidden" name="recorded" value={String(state.recorded)} />
-					<button type="submit" class={action.btnClass}>
-						{action.label}
-					</button>
-					{action.pending ? <SavingIndicator label="保存中…" /> : null}
-				</form>
-			))}
-		</div>
-	);
-}
-
-export interface SelfGradeProps {
-	questionId: string;
-}
-
-export default function SelfGrade(props: SelfGradeProps) {
-	const { questionId } = props;
-
-	const rootRef = useRef<HTMLDivElement | null>(null);
-	// card 解決 + 回答済み状態取得が完了するまで Panel をマウントしない（initial を確定させるため）。
-	const [resolved, setResolved] = useState<{ card: Element | null; initial: State } | null>(null);
 
 	useEffect(() => {
-		const card = rootRef.current?.closest("[data-question-card]") ?? null;
 		let cancelled = false;
 		fetchAnswerStatuses().then((statuses) => {
 			if (cancelled) return;
 			const saved = statuses[questionId];
-			if (saved) {
-				revealSolution(card);
-				setStatusChip(card, saved.isCorrect ? "correct" : "review");
-				setResolved({ card, initial: { phase: "graded", recorded: true } });
-			} else {
-				setResolved({ card, initial: { phase: "initial", recorded: false } });
-			}
+			if (!saved) return; // 未回答なら initial のまま（SSR-first）。
+			// 回答済みは "restore" で graded へ格下げ（記録はしない）。
+			const formData = new FormData();
+			formData.set("event", "restore");
+			formData.set("isCorrect", String(saved.isCorrect));
+			dispatch(formData);
 		});
 		return () => {
 			cancelled = true;
 		};
+		// マウント時に 1 回だけ回答済み状態を取得して復元する。
 	}, [questionId]);
 
+	const ui = PHASE_UI[state.phase];
 	return (
 		<div ref={rootRef} class="contents">
-			{resolved ? (
-				<SelfGradePanel questionId={questionId} card={resolved.card} initial={resolved.initial} />
-			) : null}
+			<div class={ui.wrapClass}>
+				{ui.actions.map((action) => (
+					<form action={dispatch} class="q-self-grade-form">
+						<input type="hidden" name="event" value={action.event} />
+						<input type="hidden" name="recorded" value={String(state.recorded)} />
+						<button type="submit" class={action.btnClass}>
+							{action.label}
+						</button>
+						{action.pending ? <SavingIndicator label="保存中…" /> : null}
+					</form>
+				))}
+			</div>
 		</div>
 	);
 }
