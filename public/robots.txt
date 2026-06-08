@@ -28,4 +28,4 @@ Allow: /
 Disallow: /api/
 Disallow: /dashboard/
 
-Sitemap: https://fit-redesign.pages.dev/sitemap-index.xml
+Sitemap: https://fit-redesign.r02takako.workers.dev/sitemap.xml

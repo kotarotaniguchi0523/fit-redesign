@@ -3,7 +3,7 @@
 明治大学「基本情報技術 I」のインタラクティブ学習プラットフォーム。
 過去の小テスト（2013〜2017年度）を Web 上で演習し、間隔反復（SRS）で定着させるアプリケーションです。
 
-**本番 URL**: https://fit-redesign.pages.dev
+**本番 URL**: https://fit-redesign.r02takako.workers.dev
 
 ## 機能
 

@@ -1,6 +1,7 @@
 /** @jsxImportSource hono/jsx */
 import { createRoute } from "honox/factory";
 import { Header } from "../components/Header";
+import { SITE_URL } from "../../src/data/site";
 import { buildUnitManifest } from "../../src/utils/questionManifest";
 import { YEARS } from "../../src/types/index";
 
@@ -20,7 +21,7 @@ export default createRoute(async (c) => {
 			{
 				"@type": "WebSite",
 				name: "基本情報技術 I - 明治大学",
-				url: "https://fit-redesign.pages.dev/",
+				url: `${SITE_URL}/`,
 				description:
 					"明治大学の基本情報技術 I 講義の演習問題サイト。2013〜2017年度の9単元・全問題を掲載。",
 				inLanguage: "ja",

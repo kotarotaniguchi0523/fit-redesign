@@ -1,8 +1,9 @@
 import { createRoute } from "honox/factory";
+import { SITE_URL } from "../../src/data/site";
 import { unitBasedTabs } from "../../src/data/units";
 
 /** sitemap.xml（旧 @astrojs/sitemap の代替）。全静的/単元×年度ルートを列挙。 */
-const BASE = "https://fit-redesign.pages.dev";
+const BASE = SITE_URL;
 
 export default createRoute((c) => {
 	const urls = new Set<string>(["/", "/guide", "/slide-only"]);

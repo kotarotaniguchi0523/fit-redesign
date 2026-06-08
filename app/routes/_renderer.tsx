@@ -1,7 +1,8 @@
 import { jsxRenderer, useRequestContext } from "hono/jsx-renderer";
 import { Link, Script } from "honox/server";
+import { SITE_URL } from "../../src/data/site";
 
-const SITE = "https://fit-redesign.pages.dev";
+const SITE = SITE_URL;
 const SITE_NAME = "基本情報技術 I - 明治大学";
 const DEFAULT_DESC = "明治大学 基本情報技術 I 演習問題サイト";
 
