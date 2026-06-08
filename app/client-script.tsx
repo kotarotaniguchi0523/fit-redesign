@@ -25,13 +25,28 @@ function resolveManifest(): Manifest | undefined {
 	return mod?.default;
 }
 
+/**
+ * 本番ビルドの vite manifest から、エントリ src（例 "/app/client.ts"）のハッシュ付き
+ * 実体パス（例 "/static/client-abc123.js"）を解決する純関数。manifest にエントリが
+ * 無ければ undefined（= ClientScript が空を返す silent 失敗パス）。BASE_URL の末尾
+ * スラッシュ有無を吸収する。env・glob に依存しないため単体テスト可能。
+ */
+export function resolveClientSrc(
+	manifest: Manifest | undefined,
+	src: string,
+	baseUrl: string,
+): string | undefined {
+	const entry = manifest?.[src.replace(/^\//, "")];
+	if (!entry) return undefined;
+	const prefix = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+	return `${prefix}${entry.file}`;
+}
+
 export function ClientScript({ src }: { src: string }) {
 	if (!import.meta.env.PROD) {
 		return <script type="module" src={src} />;
 	}
-	const entry = resolveManifest()?.[src.replace(/^\//, "")];
-	if (!entry) return <></>;
-	const base = import.meta.env.BASE_URL || "/";
-	const prefix = base.endsWith("/") ? base : `${base}/`;
-	return <script type="module" src={`${prefix}${entry.file}`} />;
+	const resolved = resolveClientSrc(resolveManifest(), src, import.meta.env.BASE_URL || "/");
+	if (!resolved) return <></>;
+	return <script type="module" src={resolved} />;
 }
