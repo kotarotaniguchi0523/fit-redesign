@@ -55,7 +55,9 @@ function mountSelfGrade(questionId: string): {
 	chip.hidden = true;
 
 	const root = document.createElement("div");
-	card.append(solution, chip, root);
+	card.append(solution);
+	card.append(chip);
+	card.append(root);
 	document.body.appendChild(card);
 
 	render(<SelfGrade questionId={questionId} />, root);

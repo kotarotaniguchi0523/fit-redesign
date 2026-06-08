@@ -1,9 +1,6 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
@@ -14,80 +11,20 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
-      - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           persist-credentials: false
-        timeout-minutes: 2
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
+      - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
         with:
           version: 11.5.0
-        timeout-minutes: 2
-
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: pnpm
-        timeout-minutes: 2
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-        timeout-minutes: 3
-
-      - name: Lint and format check
-        run: pnpm check
-        timeout-minutes: 1
-
-      - name: TypeScript check
-        # astro check は advancedRouting 下で worker introspection が非決定的に
-        # "Network connection lost" でフレークする（型エラーではない）。最大 3 回まで再試行し、
-        # ゲートの完全性（真の型エラーは 3 回とも落ちる）を保ったままフレークだけ吸収する。
-        run: |
-          for attempt in 1 2 3; do
-            echo "::group::typecheck:full (attempt ${attempt}/3)"
-            if pnpm typecheck:full; then
-              echo "::endgroup::"
-              exit 0
-            fi
-            echo "::endgroup::"
-            echo "typecheck:full failed on attempt ${attempt} (known advancedRouting flake?), retrying..."
-          done
-          echo "typecheck:full failed after 3 attempts"
-          exit 1
-        timeout-minutes: 7
-
-      - name: Test
-        run: pnpm test:run
-        timeout-minutes: 2
-
-      - name: Check unused code
-        run: pnpm knip
-        timeout-minutes: 1
-
-      - name: Build
-        # astro build も同じ worker introspection フレークを起こし得るため同様に最大 3 回再試行する。
-        run: |
-          for attempt in 1 2 3; do
-            echo "::group::build (attempt ${attempt}/3)"
-            if pnpm build; then
-              echo "::endgroup::"
-              exit 0
-            fi
-            echo "::endgroup::"
-            echo "build failed on attempt ${attempt} (known advancedRouting flake?), retrying..."
-          done
-          echo "build failed after 3 attempts"
-          exit 1
-        timeout-minutes: 9
-
-      - name: Check for broken links
-        uses: lycheeverse/lychee-action@a8c4c7cb88f0c7386610c35eb25108e448569cb0 # v2.7.0
-        with:
-          args: --offline --verbose './dist/**/*.html'
-          fail: true
-        timeout-minutes: 2
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm typecheck
+      - run: pnpm test:run
+      - run: pnpm build

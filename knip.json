@@ -1,13 +1,14 @@
 {
 	"$schema": "https://unpkg.com/knip@5/schema.json",
 	"entry": [
-		"src/pages/**/*.astro",
-		"src/app.ts",
-		"src/features/study/studyHome.ts",
-		"src/features/dashboard/dashboard.ts"
+		"app/server.ts",
+		"app/client.ts",
+		"app/routes/**/*.{ts,tsx}",
+		"app/api.ts"
 	],
 	"project": [
-		"src/**/*.{ts,tsx,astro}"
+		"app/**/*.{ts,tsx}",
+		"src/**/*.{ts,tsx}"
 	],
 	"ignore": [
 		"src/constants.ts",

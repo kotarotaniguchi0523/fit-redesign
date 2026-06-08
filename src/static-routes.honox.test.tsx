@@ -39,11 +39,11 @@ const testRenderer = jsxRenderer(({ children, title, jsonLd, noindex }) => (
 ));
 
 // createRoute の戻り値はハンドラのタプル。honox 本番と同様に "/" へ spread マウントする。
-type RouteHandlers = Parameters<Hono["get"]>[1][];
+type RouteHandlers = readonly [unknown, ...unknown[]];
 function mountGet(handlers: RouteHandlers) {
 	const app = new Hono();
 	app.use("*", testRenderer);
-	app.get("/", ...handlers);
+	app.get("/", ...(handlers as never));
 	return app;
 }
 
