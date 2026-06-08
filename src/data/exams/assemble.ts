@@ -21,8 +21,8 @@ export interface ParsedExamEntry {
 
 /**
  * メタ情報とパース済み試験エントリから ExamByYear[] を組み立てる。
- * loader.ts (astro:content 経由) と integrity test (import.meta.glob 経由) の
- * 両方から利用される共通ロジック。
+ * loader.ts と integrity test の両方（どちらも import.meta.glob 経由）から
+ * 利用される共通ロジック。
  */
 export function assembleExamsByYear(
 	metaExams: ExamMetaEntry[],
