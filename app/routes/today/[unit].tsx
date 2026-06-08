@@ -6,12 +6,12 @@ import { unitBasedTabs } from "../../data/units";
 import { getUnitQuestions } from "../../features/srs/questionManifest";
 
 /**
- * 今日の道（旧 src/pages/today/[unit].astro の HonoX 移植）。
+ * 今日の道（SRS デイリーセッション）。
  *
  * 命令的な daily-session ロジックは client script（app/client.ts が配線）が引き継ぐため、
  * このルートは描画済み DOM（data-daily-session / data-cards / data-progress-bar 等の
  * フック属性付き要素と、各問題の QuestionCard）を出力するだけにする。
- * noindex（旧 Astro の noindex）。
+ * noindex。
  */
 
 export default createRoute(async (c) => {

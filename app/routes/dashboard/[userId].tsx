@@ -11,15 +11,14 @@ import { getUserAnswerHistory } from "../../server/answerRepository";
 /**
  * 学習ダッシュボード（HonoX 動的ルート）。
  *
- * 旧 src/pages/dashboard/[userId].astro の SSR を移植。
+ * ユーザー別ダッシュボード（D1 集計の SSR）。
  * - c.env.DB から回答履歴を読み dashboardAggregator で集計する。
- * - userId が無ければ "/" にリダイレクト（旧 Astro.redirect("/") と一致）。
+ * - userId が無ければ "/" にリダイレクト。
  * - SSG 対象外にするため disableSSG() を付ける（SSR 専用）。
  *
- * NOTE: Layout.astro / Header.astro は Astro コンポーネントで hono/jsx へ import 不可のため、
- *   メインコンテンツのみを JSX で再現し _renderer.tsx 経由で描画する。
- *   Chart.js / dashboard island の client wiring（旧 <script>）は client.ts が凍結のため
- *   このスライスでは未対応（follow-up）。集計データは #dashboard-data に埋め込んで橋渡し可能にしておく。
+ * メインコンテンツを JSX で組み、共有レイアウト（Header 等）は _renderer.tsx 経由で描画する。
+ * Chart.js は集計データを #dashboard-data に埋め込み、app/client.ts が同要素を検出した時だけ
+ * dashboard チャートモジュールを遅延 import して描画する。
  */
 
 type Env = { Bindings: Cloudflare.Env };
@@ -244,7 +243,7 @@ app.get("/", disableSSG(), async (c) => {
 			<script
 				id="dashboard-data"
 				type="application/json"
-				// biome-ignore lint/security/noDangerouslySetInnerHtml: Chart.js 用の集計データ受け渡し（旧 Astro set:html と同等）
+				// biome-ignore lint/security/noDangerouslySetInnerHtml: Chart.js 用の集計データ受け渡し（クライアントの Chart.js へ受け渡し）
 				dangerouslySetInnerHTML={{ __html: JSON.stringify(dashboardData) }}
 			/>
 		</main>,

@@ -6,7 +6,7 @@ import { ExamJsonSchema } from "./schema";
 
 /**
  * loader の public API（getAllExams / getExamByNumber）の古典派ユニットテスト。
- * astro:content には依存せず、import.meta.glob 経由で実データを読み込む純粋ロジックを
+ * import.meta.glob 経由で実データを読み込む純粋ロジックを
  * 直接呼び出して入出力（AAA）を検証する。
  */
 describe("exams loader public API", () => {

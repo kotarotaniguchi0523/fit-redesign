@@ -16,7 +16,7 @@ const SECURITY_HEADERS: Record<string, string> = {
 	"Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
 };
 
-// 末尾スラッシュ付き URL（旧 Astro は /dashboard/ 形式で出力していた）を正規化。
+// 末尾スラッシュ付き URL（以前は /dashboard/ 形式の URL を出力していた）を正規化。
 // honox/Workers のファイルルートは末尾スラッシュを別パス扱いで 404 にするため、
 // /path/ → /path へ 301 して既存ブックマーク・内部リンクを救済する（"/" は対象外）。
 const app = new Hono();

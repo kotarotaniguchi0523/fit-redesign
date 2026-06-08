@@ -31,7 +31,6 @@ function parseExamEntries(): ParsedExamEntry[] {
  * 試験データを framework 非依存に読み込む。
  * `import.meta.glob` で `src/data/exams-json/*.json` を eager import し、
  * 既存 Zod スキーマで検証してから `assembleExamsByYear` で組み立てる。
- * astro:content には依存しない。
  *
  * シグネチャは consumer（index.ts の `await getAllExams()`）が壊れないよう
  * Promise を返す async のまま維持する。

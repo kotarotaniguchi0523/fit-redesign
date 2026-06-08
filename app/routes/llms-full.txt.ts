@@ -4,7 +4,7 @@ import { unitBasedTabs } from "../data/units";
 import type { Year } from "../types";
 
 /**
- * AI エージェント向け全問題 Markdown（旧 src/pages/llms-full.txt.ts の HonoX 版）。
+ * AI エージェント向け全問題 Markdown。
  * SSR + Cache-Control でエッジキャッシュ。
  */
 export default createRoute(async (c) => {

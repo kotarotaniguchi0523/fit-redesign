@@ -6,7 +6,7 @@ import { slideOnlyUnits, unitBasedTabs } from "../data/units";
 import type { Unit } from "../types";
 import { YEARS } from "../types";
 
-// 旧 src/pages/slide-only.astro を HonoX ルートへ移植。
+// 講義資料のみ（単元タブ + 講義スライド一覧）。
 const defaultYear = YEARS[0];
 
 export default createRoute((c) =>

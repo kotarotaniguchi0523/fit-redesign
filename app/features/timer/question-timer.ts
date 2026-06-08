@@ -579,7 +579,7 @@ export function setupQuestionTimer(el: HTMLElement): void {
 	updateDisplay();
 	// destroy（interval 解除）は呼ばない。mountAll のライフサイクル契約により、要素は
 	// ページ寿命まで生存し、削除＝ページ遷移でドキュメントごと破棄されるため。
-	// View Transitions 導入時に astro:before-swap から呼ぶ手動 cleanup として温存する。
+	// View Transitions 導入時に呼ぶ手動 cleanup として温存する。
 	void destroy;
 }
 

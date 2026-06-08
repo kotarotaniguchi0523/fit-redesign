@@ -10,7 +10,7 @@ import examRoute from "./routes/[unit]/[year]";
  * 本番では HonoX がファイルパス `app/routes/[unit]/[year]` を `/:unit/:year` にマウントするため、
  * テストでも `parent.route("/:unit/:year", examRoute)` で再現する（c.req.param が解決される）。
  *
- * 試験データは loader（src/data/exams、astro:content 非依存）から取得されるため env や DB は不要。
+ * 試験データは loader（app/data/exams）から取得されるため env や DB は不要。
  * _renderer.tsx は無いため出力は Hono 既定 renderer = c.html() で本文 JSX のみ描画される。
  * JSON-LD（title/jsonLd の props）は _renderer 不在のため本文には現れない点に注意。
  */

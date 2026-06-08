@@ -19,8 +19,8 @@ function getJsonValue(module: unknown): unknown {
 }
 
 /**
- * Build allExams from glob-loaded JSON, bypassing Astro Content Collections.
- * This keeps the test runnable in plain Vitest (no astro:content virtual module).
+ * Build allExams from glob-loaded JSON, using import.meta.glob.
+ * Runnable in plain Vitest.
  */
 function buildAllExams(): ExamByYear[] {
 	const meta = ExamsMetaSchema.parse(getJsonValue(Object.values(metaModule)[0]));

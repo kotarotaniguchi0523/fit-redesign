@@ -3,7 +3,7 @@ import { createRoute } from "honox/factory";
 import { Header } from "../../components/Header";
 import { USER_ID_KEY } from "../../constants";
 
-// 旧 src/pages/dashboard/index.astro を HonoX ルートへ移植。
+// ダッシュボード入口（localStorage の userId へリダイレクト）。
 // userId があれば個別ダッシュボード（/dashboard/{userId}/）へ、なければ空状態を見せる。
 // 判定は localStorage 依存のため inline script（ルート HTML）として出力する。
 const REDIRECT_SCRIPT = `const userId = (() => {

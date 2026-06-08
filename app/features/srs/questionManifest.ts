@@ -40,7 +40,7 @@ export async function getUnitQuestions(unit: UnitBasedTab): Promise<Question[]> 
 
 /**
  * 既存の単元定義＋試験データから単元マニフェストを組み立てる。
- * Astro のページ frontmatter（ビルド時）で呼び出す想定。
+ * SSR ルート（index/today）とクライアントの進捗計算（progressClient）から呼び出す。
  */
 export async function buildUnitManifest(): Promise<UnitManifestEntry[]> {
 	return Promise.all(

@@ -14,7 +14,7 @@ import { TableRenderer } from "./figures/TableRenderer";
 import { TruthTable } from "./figures/TruthTable";
 
 /**
- * 問題カード（旧 src/components/QuestionCard.astro の HonoX 移植）。
+ * 問題カード。
  *
  * 回答 UI は island（AnswerSelector / SelfGrade）に置き換え、props を直接渡す
  * （旧 data 属性スクレイプは廃止）。island は closest("[data-question-card]") で

@@ -9,11 +9,11 @@ import type { ExamByYear, ExamNumber, Year } from "../../types";
 import { YEARS } from "../../types";
 
 /**
- * 単元ページ（旧 src/pages/[unit]/[year].astro の HonoX 移植）。
+ * 単元ページ（単元 × 年度の演習）。
  *
- * Astro の getStaticPaths（SSG）は使わず、Workers の SSR + エッジキャッシュで配信する。
+ * SSG は使わず、Workers の SSR + エッジキャッシュで配信する。
  * - c.req.param("unit") / ("year") でパラメータを取得し、
- * - loader（src/data/exams の getExamByNumber, astro:content 排除済）から試験データを取得して描画。
+ * - loader（app/data/exams の getExamByNumber）から試験データを取得して描画。
  * - JSON-LD（Quiz / LearningResource）は c.render の props で _renderer.tsx に渡す。
  * - パラメータが既知の単元・年度に一致しなければ 404。
  *
@@ -37,7 +37,7 @@ export default createRoute(async (c) => {
 	const unitNumber = unitBasedTabs.findIndex((tab) => tab.id === unit.id) + 1;
 	const examNumbers = examMapping.examNumbers;
 
-	// 各試験のデータを取得（loader 経由、astro:content 非依存）
+	// 各試験のデータを取得（loader 経由）
 	const loaded = await Promise.all(
 		examNumbers.map(async (examNumber) => {
 			const examByYear = await getExamByNumber(examNumber);

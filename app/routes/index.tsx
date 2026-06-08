@@ -5,7 +5,7 @@ import { SITE_URL } from "../data/site";
 import { buildUnitManifest } from "../features/srs/questionManifest";
 import { YEARS } from "../types";
 
-// 旧 src/pages/index.astro（学習ホーム）を HonoX ルートへ移植。
+// 学習ホーム。
 // study-home の進捗計算は app/client.ts の命令的 client script（別オーナー）が
 // data-study-home / data-manifest を読んで配線する。ここは描画済み DOM を出力するだけ。
 export default createRoute(async (c) => {
@@ -58,7 +58,7 @@ export default createRoute(async (c) => {
 						<script
 							data-manifest
 							type="application/json"
-							// biome-ignore lint/security/noDangerouslySetInnerHtml: 進捗計算用マニフェストの埋め込み（旧 Astro set:html と同等）
+							// biome-ignore lint/security/noDangerouslySetInnerHtml: 進捗計算用マニフェストの埋め込み（クライアントの進捗計算用）
 							dangerouslySetInnerHTML={{ __html: manifestJson }}
 						/>
 

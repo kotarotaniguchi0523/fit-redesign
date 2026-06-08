@@ -2,7 +2,7 @@
 import type { NotFoundHandler } from "hono";
 import { Header } from "../components/Header";
 
-// 旧 src/pages/404.astro を HonoX の 404 規約（_404.tsx + NotFoundHandler）へ移植。
+// 404 ページ（HonoX の _404.tsx + NotFoundHandler 規約）。
 const handler: NotFoundHandler = (c) =>
 	c.render(
 		<>
