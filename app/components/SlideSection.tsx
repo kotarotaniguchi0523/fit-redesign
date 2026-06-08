@@ -1,4 +1,4 @@
-import type { Slide } from "../../src/types/index";
+import type { Slide } from "../types";
 
 interface SlideSectionProps {
 	slides: Slide[];

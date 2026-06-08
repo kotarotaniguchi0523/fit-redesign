@@ -1,9 +1,10 @@
 /** @jsxImportSource hono/jsx */
-import type { Question } from "../../src/types/index";
-import { overlineToHtml } from "../../src/utils/overline";
-import { questionToMarkdown } from "../../src/utils/questionToMarkdown";
-import AnswerSelector from "../islands/AnswerSelector";
-import SelfGrade from "../islands/SelfGrade";
+
+import AnswerSelector from "../features/answer/$AnswerSelector";
+import SelfGrade from "../features/answer/$SelfGrade";
+import type { Question } from "../types";
+import { overlineToHtml } from "../utils/overline";
+import { questionToMarkdown } from "../utils/questionToMarkdown";
 import { BinaryTree } from "./figures/BinaryTree";
 import { Flowchart } from "./figures/Flowchart";
 import { LogicCircuit } from "./figures/LogicCircuit";
@@ -66,7 +67,11 @@ export function QuestionCard({ question }: Props) {
 							<StateDiagram nodes={figureData.nodes} transitions={figureData.transitions} />
 						) : null}
 						{figureData.type === "binaryTree" ? (
-							<BinaryTree root={figureData.root} width={figureData.width} height={figureData.height} />
+							<BinaryTree
+								root={figureData.root}
+								width={figureData.width}
+								height={figureData.height}
+							/>
 						) : null}
 						{figureData.type === "truthTable" ? (
 							<TruthTable columns={figureData.columns} rows={figureData.rows} />

@@ -1,7 +1,8 @@
+import { raw } from "hono/html";
 import { jsxRenderer, useRequestContext } from "hono/jsx-renderer";
 import { Link } from "honox/server";
 import { ClientScript } from "../client-script";
-import { SITE_URL } from "../../src/data/site";
+import { SITE_URL } from "../data/site";
 
 const SITE_NAME = "基本情報技術 I - 明治大学";
 const DEFAULT_DESC = "明治大学 基本情報技術 I 演習問題サイト";
@@ -34,10 +35,7 @@ export default jsxRenderer(({ children, title, description, jsonLd, noindex }) =
 					href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap"
 					rel="stylesheet"
 				/>
-				{jsonLd ? (
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD 構造化データの注入
-					<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-				) : null}
+				{jsonLd ? <script type="application/ld+json">{raw(JSON.stringify(jsonLd))}</script> : null}
 				<Link href="/app/style.css" rel="stylesheet" />
 				<ClientScript src="/app/client.ts" />
 				<title>{title}</title>

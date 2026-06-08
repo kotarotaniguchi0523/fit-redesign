@@ -1,4 +1,4 @@
-import { calculateParity } from "../../../src/lib/figures/parity-check";
+import { calculateParity } from "../../lib/figures/parity-check";
 
 interface ParityCheckProps {
 	data: number[][];
@@ -7,12 +7,7 @@ interface ParityCheckProps {
 	cellSize?: number;
 }
 
-export function ParityCheck({
-	data,
-	width = 300,
-	height = 300,
-	cellSize = 40,
-}: ParityCheckProps) {
+export function ParityCheck({ data, width = 300, height = 300, cellSize = 40 }: ParityCheckProps) {
 	const parity = calculateParity(data, cellSize);
 
 	return (

@@ -1,7 +1,24 @@
+import { raw } from "hono/html";
+
 interface HeaderProps {
-	/** 現在のパス名（Astro.url.pathname の代替。ルート側で c.req.path を渡す）。 */
+	/** 現在のパス名。ルート側で c.req.path を渡す。 */
 	currentPath: string;
 }
+
+// ダッシュボードリンクに localStorage の userId を付与するクライアントスクリプト。
+const DASHBOARD_LINK_SCRIPT = `
+	const link = document.getElementById("dashboard-link");
+	if (link) {
+		try {
+			const userId = localStorage.getItem("fit-exam-user-id");
+			if (userId) {
+				link.href = \`/dashboard/\${userId}\`;
+			}
+		} catch {
+			// localStorage 未対応の場合は /dashboard のまま
+		}
+	}
+`;
 
 export function Header({ currentPath }: HeaderProps) {
 	const isGuide = currentPath === "/guide" || currentPath === "/guide/";
@@ -82,25 +99,7 @@ export function Header({ currentPath }: HeaderProps) {
 				</div>
 			</nav>
 
-			{/* biome-ignore lint/security/noDangerouslySetInnerHtml: ダッシュボードリンクに localStorage の userId を付与するクライアントスクリプト */}
-			<script
-				dangerouslySetInnerHTML={{
-					__html: `
-	// ダッシュボードリンクに userId を付与
-	const link = document.getElementById("dashboard-link");
-	if (link) {
-		try {
-			const userId = localStorage.getItem("fit-exam-user-id");
-			if (userId) {
-				link.href = \`/dashboard/\${userId}\`;
-			}
-		} catch {
-			// localStorage 未対応の場合は /dashboard のまま
-		}
-	}
-`,
-				}}
-			/>
+			<script>{raw(DASHBOARD_LINK_SCRIPT)}</script>
 		</>
 	);
 }

@@ -1,5 +1,5 @@
-import { calculatePositions, getEdgeLines } from "../../../src/lib/figures/binary-tree";
-import type { TreeNode } from "../../../src/types/index";
+import { calculatePositions, getEdgeLines } from "../../lib/figures/binary-tree";
+import type { TreeNode } from "../../types";
 
 interface BinaryTreeProps {
 	root: TreeNode;
@@ -25,12 +25,26 @@ export function BinaryTree({ root, width = 300, height = 200, nodeRadius = 20 }:
 			<title>Binary tree diagram</title>
 
 			{edgeLines.map((line) => (
-				<line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="black" stroke-width="1.5" />
+				<line
+					x1={line.x1}
+					y1={line.y1}
+					x2={line.x2}
+					y2={line.y2}
+					stroke="black"
+					stroke-width="1.5"
+				/>
 			))}
 
 			{positions.map((pos) => (
 				<g>
-					<circle cx={pos.x} cy={pos.y} r={nodeRadius} fill="white" stroke="black" stroke-width="1.5" />
+					<circle
+						cx={pos.x}
+						cy={pos.y}
+						r={nodeRadius}
+						fill="white"
+						stroke="black"
+						stroke-width="1.5"
+					/>
 					<text
 						x={pos.x}
 						y={pos.y}

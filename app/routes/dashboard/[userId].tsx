@@ -1,12 +1,12 @@
 /** @jsxImportSource hono/jsx */
 import { Hono } from "hono";
 import { disableSSG } from "hono/ssg";
-import { getUserAnswerHistory } from "../../../src/server/answerRepository";
+import { getUserAnswerHistory } from "../../server/answerRepository";
 import {
 	aggregateStats,
 	type DashboardData,
 	type UnitStats,
-} from "../../../src/utils/dashboardAggregator";
+} from "../../utils/dashboardAggregator";
 
 /**
  * 学習ダッシュボード（HonoX 動的ルート）。
@@ -79,10 +79,7 @@ app.get("/", disableSSG(), async (c) => {
 	return render(
 		<main class="max-w-4xl mx-auto px-4 py-8">
 			<div class="mb-8">
-				<h1
-					class="text-2xl font-bold text-[#1e3a5f] mb-2"
-					style="font-family: var(--font-serif)"
-				>
+				<h1 class="text-2xl font-bold text-[#1e3a5f] mb-2" style="font-family: var(--font-serif)">
 					学習ダッシュボード
 				</h1>
 				<div class="flex items-center gap-2 text-sm text-gray-500">
@@ -179,7 +176,9 @@ app.get("/", disableSSG(), async (c) => {
 												</div>
 												<div class="text-xs text-gray-500 text-right mt-0.5">{unit.accuracy}%</div>
 											</div>
-											<span class={`text-lg ${trendColor(unit.trend)}`}>{trendIcon(unit.trend)}</span>
+											<span class={`text-lg ${trendColor(unit.trend)}`}>
+												{trendIcon(unit.trend)}
+											</span>
 											<span data-arrow class="text-gray-400 text-sm">
 												▶
 											</span>
@@ -206,7 +205,9 @@ app.get("/", disableSSG(), async (c) => {
 															<td class="py-1.5 text-center text-gray-600">{q.answers.length}</td>
 															<td class="py-1.5 text-center">
 																{latest ? (
-																	<span class={latest.isCorrect ? "text-emerald-600" : "text-red-600"}>
+																	<span
+																		class={latest.isCorrect ? "text-emerald-600" : "text-red-600"}
+																	>
 																		{latest.selectedLabel} {latest.isCorrect ? "○" : "×"}
 																	</span>
 																) : (

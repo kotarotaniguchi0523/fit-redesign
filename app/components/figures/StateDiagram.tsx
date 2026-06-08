@@ -1,5 +1,5 @@
-import { buildTransitionData, STATE_DEFAULTS } from "../../../src/lib/figures/state-diagram";
-import type { StateNode, Transition } from "../../../src/types/index";
+import { buildTransitionData, STATE_DEFAULTS } from "../../lib/figures/state-diagram";
+import type { StateNode, Transition } from "../../types";
 
 interface StateDiagramProps {
 	nodes: StateNode[];
@@ -58,7 +58,14 @@ export function StateDiagram({ nodes, transitions, width = 400, height = 150 }: 
 							stroke-width="1.5"
 						/>
 					)}
-					<circle cx={node.x} cy={node.y} r={nodeRadius} fill="white" stroke="black" stroke-width="1.5" />
+					<circle
+						cx={node.x}
+						cy={node.y}
+						r={nodeRadius}
+						fill="white"
+						stroke="black"
+						stroke-width="1.5"
+					/>
 					<text
 						x={node.x}
 						y={node.y}

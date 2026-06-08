@@ -22,12 +22,11 @@
 		]
 	},
 	"include": [
-		"src",
 		"app"
 	],
 	"exclude": [
-		"src/**/*.test.ts",
-		"src/**/*.test.tsx",
-		"src/types/test/**"
+		"app/**/*.test.ts",
+		"app/**/*.test.tsx",
+		"app/types/test/**"
 	]
 }

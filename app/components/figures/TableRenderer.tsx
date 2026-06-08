@@ -1,4 +1,4 @@
-import { buildTableConfig, type TableFigureData } from "../../../src/lib/figures/table-renderer";
+import { buildTableConfig, type TableFigureData } from "../../lib/figures/table-renderer";
 
 interface TableRendererProps {
 	figureData: TableFigureData;

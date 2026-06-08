@@ -1,7 +1,7 @@
 import { createRoute } from "honox/factory";
-import { getExamByNumber } from "../../src/data/exams";
-import { unitBasedTabs } from "../../src/data/units";
-import type { Year } from "../../src/types/index";
+import { getExamByNumber } from "../data/exams";
+import { unitBasedTabs } from "../data/units";
+import type { Year } from "../types";
 
 /**
  * AI エージェント向け全問題 Markdown（旧 src/pages/llms-full.txt.ts の HonoX 版）。

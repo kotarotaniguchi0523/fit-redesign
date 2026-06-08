@@ -2,8 +2,8 @@ import {
 	buildEdgeRenderData,
 	buildNodeRenderData,
 	FLOWCHART_DEFAULTS,
-} from "../../../src/lib/figures/flowchart";
-import type { FlowchartEdge, FlowchartNode } from "../../../src/types/index";
+} from "../../lib/figures/flowchart";
+import type { FlowchartEdge, FlowchartNode } from "../../types";
 
 interface FlowchartProps {
 	nodes: FlowchartNode[];

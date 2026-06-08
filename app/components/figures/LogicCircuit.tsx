@@ -1,9 +1,5 @@
-import {
-	getGateSymbolPath,
-	getWirePath,
-	LOGIC_DEFAULTS,
-} from "../../../src/lib/figures/logic-circuit";
-import type { LogicGate, LogicInput, LogicOutput, LogicWire } from "../../../src/types/index";
+import { getGateSymbolPath, getWirePath, LOGIC_DEFAULTS } from "../../lib/figures/logic-circuit";
+import type { LogicGate, LogicInput, LogicOutput, LogicWire } from "../../types";
 
 interface LogicCircuitProps {
 	inputs: LogicInput[];

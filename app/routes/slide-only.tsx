@@ -2,9 +2,9 @@
 import { createRoute } from "honox/factory";
 import { Header } from "../components/Header";
 import { SlideSection } from "../components/SlideSection";
-import { slideOnlyUnits, unitBasedTabs } from "../../src/data/units";
-import { YEARS } from "../../src/types/index";
-import type { Unit } from "../../src/types/index";
+import { slideOnlyUnits, unitBasedTabs } from "../data/units";
+import type { Unit } from "../types";
+import { YEARS } from "../types";
 
 // 旧 src/pages/slide-only.astro を HonoX ルートへ移植。
 const defaultYear = YEARS[0];

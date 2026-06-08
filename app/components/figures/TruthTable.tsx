@@ -1,4 +1,4 @@
-import type { TruthTableColumn, TruthTableRow } from "../../../src/types/index";
+import type { TruthTableColumn, TruthTableRow } from "../../types";
 
 interface TruthTableProps {
 	columns: TruthTableColumn[];

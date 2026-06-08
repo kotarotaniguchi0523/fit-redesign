@@ -1,9 +1,9 @@
 /** @jsxImportSource hono/jsx */
 import { createRoute } from "honox/factory";
-import { unitBasedTabs } from "../../../src/data/units";
-import { getUnitQuestions } from "../../../src/utils/questionManifest";
 import { Header } from "../../components/Header";
 import { QuestionCard } from "../../components/QuestionCard";
+import { unitBasedTabs } from "../../data/units";
+import { getUnitQuestions } from "../../utils/questionManifest";
 
 /**
  * 今日の道（旧 src/pages/today/[unit].astro の HonoX 移植）。

@@ -1,4 +1,4 @@
-import type { Exam } from "../../src/types/index";
+import type { Exam } from "../types";
 import { QuestionCard } from "./QuestionCard";
 
 interface ExamSectionProps {
@@ -39,7 +39,9 @@ export function ExamSection({ title, exam }: ExamSectionProps) {
 				</div>
 			</div>
 			<div class="space-y-4 p-4 sm:p-5">
-				{exam?.questions.map((q) => <QuestionCard question={q} />)}
+				{exam?.questions.map((q) => (
+					<QuestionCard question={q} />
+				))}
 				{(!exam || exam.questions.length === 0) && (
 					<p class="text-gray-500 italic">
 						この年度の問題データはまだ準備中です。

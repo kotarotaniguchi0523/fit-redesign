@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { createApp } from "honox/server";
-import api from "./api";
 
 // セキュリティヘッダー（public/_headers と同一内容）。
 // Cloudflare の _headers は静的アセット応答にしか適用されず、Worker が生成する SSR HTML
@@ -29,9 +28,6 @@ app.use(async (c, next) => {
 	}
 });
 
-// Hono RPC API(app/api.ts)を /api に明示マウントしてから、honox のファイルルートを合成する。
-// (honox のファイルルート経由での Hono インスタンスマウントはパス導出が噛み合わないため、
-//  composition root で明示的に app.route する。)
-app.route("/api", api);
-
+// API は HonoX のファイルルート app/routes/api.ts（Hono インスタンスの default export）として
+// /api/* に自動マウントされる。ここでは composition root の共通ミドルウェアのみ適用する。
 export default createApp({ app });

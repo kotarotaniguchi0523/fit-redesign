@@ -1,8 +1,8 @@
 /** @jsxImportSource hono/jsx */
 import { createRoute } from "honox/factory";
 import { Header } from "../components/Header";
-import { unitBasedTabs } from "../../src/data/units";
-import { YEARS } from "../../src/types/index";
+import { unitBasedTabs } from "../data/units";
+import { YEARS } from "../types";
 
 // 年度・単元別の演習問題一覧。全単元(unitBasedTabs)×全年度(YEARS)のマトリクスで、
 // 各単元が出題された年度のセルから /unit-x/{year} の演習ページへ遷移する。

@@ -1,9 +1,9 @@
 /** @jsxImportSource hono/jsx */
 import { createRoute } from "honox/factory";
 import { Header } from "../components/Header";
-import { SITE_URL } from "../../src/data/site";
-import { buildUnitManifest } from "../../src/utils/questionManifest";
-import { YEARS } from "../../src/types/index";
+import { SITE_URL } from "../data/site";
+import { YEARS } from "../types";
+import { buildUnitManifest } from "../utils/questionManifest";
 
 // 旧 src/pages/index.astro（学習ホーム）を HonoX ルートへ移植。
 // study-home の進捗計算は app/client.ts の命令的 client script（別オーナー）が

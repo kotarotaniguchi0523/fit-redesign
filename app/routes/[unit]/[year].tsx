@@ -1,12 +1,12 @@
 /** @jsxImportSource hono/jsx */
 import { createRoute } from "honox/factory";
-import { getExamByNumber } from "../../../src/data/exams";
-import { unitBasedTabs } from "../../../src/data/units";
-import type { ExamByYear, ExamNumber, Year } from "../../../src/types/index";
-import { YEARS } from "../../../src/types/index";
 import { ExamSection } from "../../components/ExamSection";
 import { Header } from "../../components/Header";
 import { SlideSection } from "../../components/SlideSection";
+import { getExamByNumber } from "../../data/exams";
+import { unitBasedTabs } from "../../data/units";
+import type { ExamByYear, ExamNumber, Year } from "../../types";
+import { YEARS } from "../../types";
 
 /**
  * 単元ページ（旧 src/pages/[unit]/[year].astro の HonoX 移植）。

@@ -1,6 +1,6 @@
 import { createRoute } from "honox/factory";
-import { SITE_URL } from "../../src/data/site";
-import { unitBasedTabs } from "../../src/data/units";
+import { SITE_URL } from "../data/site";
+import { unitBasedTabs } from "../data/units";
 
 /** sitemap.xml（旧 @astrojs/sitemap の代替）。全静的/単元×年度ルートを列挙。 */
 const BASE = SITE_URL;
@@ -13,7 +13,9 @@ export default createRoute((c) => {
 		}
 		urls.add(`/today/${tab.id}`);
 	}
-	const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...urls]
+	const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[
+		...urls,
+	]
 		.map((u) => `  <url><loc>${BASE}${u}</loc></url>`)
 		.join("\n")}\n</urlset>\n`;
 	c.header("Content-Type", "application/xml; charset=utf-8");

@@ -47,6 +47,6 @@ export function ClientScript({ src }: { src: string }) {
 		return <script type="module" src={src} />;
 	}
 	const resolved = resolveClientSrc(resolveManifest(), src, import.meta.env.BASE_URL || "/");
-	if (!resolved) return <></>;
+	if (!resolved) return null;
 	return <script type="module" src={resolved} />;
 }

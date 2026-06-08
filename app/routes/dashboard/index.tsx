@@ -1,7 +1,7 @@
 /** @jsxImportSource hono/jsx */
 import { createRoute } from "honox/factory";
 import { Header } from "../../components/Header";
-import { USER_ID_KEY } from "../../../src/constants";
+import { USER_ID_KEY } from "../../constants";
 
 // 旧 src/pages/dashboard/index.astro を HonoX ルートへ移植。
 // userId があれば個別ダッシュボード（/dashboard/{userId}/）へ、なければ空状態を見せる。
