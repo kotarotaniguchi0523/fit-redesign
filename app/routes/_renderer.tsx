@@ -1,5 +1,6 @@
 import { jsxRenderer, useRequestContext } from "hono/jsx-renderer";
-import { Link, Script } from "honox/server";
+import { Link } from "honox/server";
+import { ClientScript } from "../client-script";
 import { SITE_URL } from "../../src/data/site";
 
 const SITE = SITE_URL;
@@ -39,7 +40,7 @@ export default jsxRenderer(({ children, title, description, jsonLd, noindex }) =
 					<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 				) : null}
 				<Link href="/app/style.css" rel="stylesheet" />
-				<Script src="/app/client.ts" />
+				<ClientScript src="/app/client.ts" />
 				<title>{title}</title>
 			</head>
 			<body class="min-h-screen bg-[#faf9f7] bg-texture">{children}</body>

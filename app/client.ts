@@ -14,3 +14,9 @@ createClient();
 initQuestionTimer();
 initStudyHome();
 initDailySession();
+
+// dashboard の chart.js は重いため、dashboard ページ（#dashboard-data あり）でのみ遅延ロード。
+// import 時に自己初期化（DOMContentLoaded / 即時）する。
+if (document.getElementById("dashboard-data")) {
+	import("../src/features/dashboard/dashboard");
+}
