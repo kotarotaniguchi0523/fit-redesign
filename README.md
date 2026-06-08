@@ -111,7 +111,6 @@ npx wrangler pages dev dist
 | `pnpm test` | テスト実行（watch モード） |
 | `pnpm test:run` | テスト実行（1 回のみ、CI 用） |
 | `pnpm test:coverage` | カバレッジ付きテスト実行 |
-| `pnpm data:convert` | 試験データ JSON を再生成 |
 | `pnpm db:migrate:local` | ローカル D1 へマイグレーション適用 |
 | `pnpm db:query:local "SQL"` | ローカル D1 へ任意 SQL を実行 |
 
@@ -184,14 +183,12 @@ fit-redesign/
 
 ## 試験データの管理
 
-試験データは Content Collections として `src/content/exams/` に JSON で格納し、
-`src/content.config.ts` の `glob` ローダーで読み込みます（ビルド時に worker バンドルへインライン化）。
+試験データは `src/data/exams-json/` に JSON で格納し、`src/data/exams/loader.ts` が
+`import.meta.glob` で読み込みます（ビルド時に worker バンドルへインライン化）。各 JSON は
+Zod スキーマ（`src/data/exams/schema.ts`）でバリデーションされ、型安全が保証されます。
 
-各 JSON は Zod スキーマでバリデーションされ、型安全が保証されます。更新手順:
-
-1. ソースデータを更新する
-2. `pnpm data:convert` で JSON を再生成する
-3. `pnpm test:run` で整合性テストを実行する
+データは静的にコミット済みです。JSON を編集したら `pnpm test:run` で整合性テストを
+実行してください。
 
 ### 図表コンポーネント
 
