@@ -6,7 +6,8 @@ import { getUserId } from "../../lib/userId";
  * 「確実に身につく（忘れた頃に再出題）」をペルソナ向けに最小実装する。
  */
 
-const SRS_KEY_PREFIX = "fit-srs-v1";
+// localStorage キーのプレフィックス（テストが本番と同一キーを使えるよう公開）。
+export const SRS_KEY_PREFIX = "fit-srs-v1";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // box(1..5) → 次回出題までの間隔。box が上がるほど間隔が伸びる。

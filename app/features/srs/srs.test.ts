@@ -187,6 +187,29 @@ describe("buildDailySet", () => {
 			newCount: 0,
 		});
 	});
+
+	it("due が now と同時刻なら出題対象（境界 due <= now）", () => {
+		// Arrange: q1 の due はちょうど now
+		const state: SrsState = { q1: card(2, NOW) };
+
+		// Act
+		const set = buildDailySet(state, ["q1"], NOW);
+
+		// Assert: 復習として出題される
+		expect(set.questionIds).toEqual(["q1"]);
+		expect(set.dueReviewCount).toBe(1);
+		expect(set.newCount).toBe(0);
+	});
+
+	it("maxNew の既定は 6（オプション無指定で 7件中 6件に絞る）", () => {
+		// Act: options を渡さず既定値を効かせる
+		const set = buildDailySet({}, ["n1", "n2", "n3", "n4", "n5", "n6", "n7"], NOW);
+
+		// Assert
+		expect(set.questionIds).toEqual(["n1", "n2", "n3", "n4", "n5", "n6"]);
+		expect(set.newCount).toBe(6);
+		expect(set.dueReviewCount).toBe(0);
+	});
 });
 
 describe("unitReadiness", () => {
@@ -207,5 +230,10 @@ describe("unitReadiness", () => {
 	it("box が MAX_BOX を超える壊れた状態でも 100 で頭打ち", () => {
 		const state: SrsState = { q1: card(99, NOW) };
 		expect(unitReadiness(state, ["q1"])).toBe(100);
+	});
+
+	it("端数は四捨五入する（3問中1問が box1 → 1/15 = 6.67% → 7）", () => {
+		const state: SrsState = { q1: card(1, NOW) };
+		expect(unitReadiness(state, ["q1", "q2", "q3"])).toBe(7);
 	});
 });

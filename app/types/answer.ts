@@ -10,7 +10,6 @@ export const AnswerSubmitSchema = z.object({
 	duration: z.number().nonnegative().optional(),
 	timestamp: z.number(),
 });
-export type AnswerSubmit = z.infer<typeof AnswerSubmitSchema>;
 
 export interface AnswerRecord {
 	id: number;

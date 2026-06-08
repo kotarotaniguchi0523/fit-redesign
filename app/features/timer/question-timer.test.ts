@@ -336,6 +336,32 @@ describe("QuestionTimer Custom Element", () => {
 			expect(statTexts).toContain("00:30");
 			expect(statTexts.some((t) => t?.includes("1回"))).toBe(true);
 		});
+
+		it("前回・平均・回数が位置どおりに更新される（ref キャッシュ化の取り違え検出）", () => {
+			const el = mount(createElement("exam1-2013-q2"));
+
+			// 1回目: 30秒で停止 → 記録 duration=30（00:30）
+			getStartStopBtn(el).click();
+			vi.advanceTimersByTime(30_000);
+			getStartStopBtn(el).click();
+
+			// 再開して計測続行（stopwatch は累積）し 120秒で停止 → 記録 duration=120（02:00）
+			getStartStopBtn(el).click();
+			vi.advanceTimersByTime(90_000);
+			getStartStopBtn(el).click();
+
+			getSettingsBtn(el).click();
+			// statsGrid の子カードは 前回 / 平均 / 回数 の順。各カードの value は .font-mono.font-semibold。
+			// 前回=02:00, 平均=(30+120)/2=75s=01:15, 回数=2回 で 3 値が全て異なる
+			// → ref を取り違えると必ず落ちる（toContain では検出できない）。
+			const statValues = Array.from(
+				getPopover(el).querySelectorAll(".font-mono.font-semibold"),
+			).map((e) => e.textContent);
+
+			expect(statValues[0]).toBe("02:00"); // 前回
+			expect(statValues[1]).toBe("01:15"); // 平均
+			expect(statValues[2]).toBe("2回"); // 回数
+		});
 	});
 
 	describe("disconnectedCallback", () => {
