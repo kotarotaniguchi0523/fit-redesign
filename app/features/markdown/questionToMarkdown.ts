@@ -56,9 +56,10 @@ function figureDataToMarkdown(figureData: FigureData): string {
 				const markerStr = markers.length > 0 ? ` (${markers.join(", ")})` : "";
 				return `- ${node.label}${markerStr}`;
 			});
+			const nodeById = new Map(nodes.map((n) => [n.id, n]));
 			const transLines = transitions.map((t) => {
-				const fromNode = nodes.find((n) => n.id === t.from);
-				const toNode = nodes.find((n) => n.id === t.to);
+				const fromNode = nodeById.get(t.from);
+				const toNode = nodeById.get(t.to);
 				return `- ${fromNode?.label ?? t.from} --[${t.label}]--> ${toNode?.label ?? t.to}`;
 			});
 			return ["**状態遷移図**", "", "状態:"]
@@ -92,9 +93,10 @@ function figureDataToMarkdown(figureData: FigureData): string {
 		case "flowchart": {
 			const { nodes, edges } = figureData;
 			const nodeLines = nodes.map((node) => `- [${node.type}] ${node.label}`);
+			const nodeById = new Map(nodes.map((n) => [n.id, n]));
 			const edgeLines = edges.map((edge) => {
-				const fromNode = nodes.find((n) => n.id === edge.from);
-				const toNode = nodes.find((n) => n.id === edge.to);
+				const fromNode = nodeById.get(edge.from);
+				const toNode = nodeById.get(edge.to);
 				const label = edge.label ? ` (${edge.label})` : "";
 				return `- ${fromNode?.label ?? edge.from} --> ${toNode?.label ?? edge.to}${label}`;
 			});

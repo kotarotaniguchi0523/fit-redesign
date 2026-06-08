@@ -38,21 +38,28 @@ export async function getUnitQuestions(unit: UnitBasedTab): Promise<Question[]> 
 	});
 }
 
+let _manifestPromise: Promise<UnitManifestEntry[]> | null = null;
+
 /**
  * 既存の単元定義＋試験データから単元マニフェストを組み立てる。
  * SSR ルート（index/today）とクライアントの進捗計算（progressClient）から呼び出す。
+ * 入力（unitBasedTabs / 試験データ）は不変なため結果は決定的。リクエストごとに
+ * 再計算しないよう load promise をメモ化する（getAllExams の `_loadPromise` に倣う）。
  */
-export async function buildUnitManifest(): Promise<UnitManifestEntry[]> {
-	return Promise.all(
-		unitBasedTabs.map(async (unit) => {
-			const questions = await getUnitQuestions(unit);
-			return {
-				id: unit.id,
-				name: unit.name,
-				description: unit.description,
-				primaryYear: unit.examMapping[0]?.year ?? unitBasedTabs[0].examMapping[0].year,
-				questionIds: questions.map((q) => q.id),
-			};
-		}),
-	);
+export function buildUnitManifest(): Promise<UnitManifestEntry[]> {
+	if (!_manifestPromise) {
+		_manifestPromise = Promise.all(
+			unitBasedTabs.map(async (unit) => {
+				const questions = await getUnitQuestions(unit);
+				return {
+					id: unit.id,
+					name: unit.name,
+					description: unit.description,
+					primaryYear: unit.examMapping[0]?.year ?? unitBasedTabs[0].examMapping[0].year,
+					questionIds: questions.map((q) => q.id),
+				};
+			}),
+		);
+	}
+	return _manifestPromise;
 }

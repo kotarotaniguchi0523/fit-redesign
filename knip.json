@@ -1,6 +1,6 @@
 {
 	"$schema": "https://unpkg.com/knip@5/schema.json",
-	"entry": ["app/server.ts", "app/client.ts", "app/routes/**/*.{ts,tsx}"],
+	"entry": ["app/server.ts", "app/client.ts", "app/routes/**/*.{ts,tsx}", "app/**/*.bench.ts"],
 	"project": ["app/**/*.{ts,tsx}"],
 	"ignoreDependencies": ["tailwindcss", "@tailwindcss/typography", "@hono/cli", "workerd"],
 	"ignoreExportsUsedInFile": true,
