@@ -55,10 +55,74 @@ export interface DashboardData {
 	trend: "improving" | "stable" | "declining";
 }
 
-export function aggregateStats(answerHistory: Record<string, AnswerRecord[]>): DashboardData {
-	const allAnswers = Object.values(answerHistory).flat();
+// 月バケットの集計アキュムレータ（aggregateStats の 1 パスで蓄積する）。
+interface MonthAccumulator {
+	total: number;
+	correct: number;
+	durationSum: number;
+	durationCount: number;
+}
 
-	if (allAnswers.length === 0) {
+/**
+ * ダッシュボードの主要集計。
+ *
+ * 旧実装は allAnswers を ~4 回走査していた（Object.values().flat() でフルコピー →
+ * latest map / durations / 月次 / 単元 を各々再走査）。本実装は grouped な answerHistory を
+ * 1 パスで走査し、correctCount・duration 合計/件数・月バケットを同時に蓄積する
+ * （allAnswers の materialize を排除）。単元集計は grouped をそのまま aggregateByUnit に渡す。
+ *
+ * 出力は旧実装と完全同値（avgDuration の 0→null truthiness 分岐も含めて保存）。
+ */
+export function aggregateStats(answerHistory: Record<string, AnswerRecord[]>): DashboardData {
+	const latestByQuestion = new Map<string, AnswerRecord>();
+	const monthAccumulators = new Map<string, MonthAccumulator>();
+	let totalAttempts = 0;
+	let latestCorrectCount = 0;
+	let durationSum = 0;
+	let durationCount = 0;
+
+	// 1 パスで複数構造（latest map・月バケット・duration 集計・件数）を同時構築するため for...of。
+	// 旧実装の flat→filter→reduce→aggregateByMonth の 4 走査を 1 走査に統合する正当なケース。
+	for (const records of Object.values(answerHistory)) {
+		const length = records.length;
+		if (length === 0) continue;
+
+		// 最新回答（配列末尾）。旧 latestByQuestion.set(qid, records.at(-1)) と同値。
+		const latest = records[length - 1];
+		latestByQuestion.set(latest.questionId, latest);
+		if (latest.isCorrect) latestCorrectCount++;
+
+		for (let i = 0; i < length; i++) {
+			const answer = records[i];
+			totalAttempts++;
+
+			if (answer.duration != null) {
+				durationSum += answer.duration;
+				durationCount++;
+			}
+
+			const date = new Date(answer.timestamp);
+			const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+			const bucket = monthAccumulators.get(month);
+			if (bucket) {
+				bucket.total++;
+				if (answer.isCorrect) bucket.correct++;
+				if (answer.duration != null) {
+					bucket.durationSum += answer.duration;
+					bucket.durationCount++;
+				}
+			} else {
+				monthAccumulators.set(month, {
+					total: 1,
+					correct: answer.isCorrect ? 1 : 0,
+					durationSum: answer.duration != null ? answer.duration : 0,
+					durationCount: answer.duration != null ? 1 : 0,
+				});
+			}
+		}
+	}
+
+	if (totalAttempts === 0) {
 		return {
 			totalQuestions: getTotalQuestionCount(),
 			totalAnswered: 0,
@@ -71,40 +135,25 @@ export function aggregateStats(answerHistory: Record<string, AnswerRecord[]>): D
 		};
 	}
 
-	// 最新回答ベースの正答率
-	const latestByQuestion = new Map<string, AnswerRecord>();
-	for (const [qid, records] of Object.entries(answerHistory)) {
-		if (records.length > 0) {
-			latestByQuestion.set(qid, records[records.length - 1]);
-		}
-	}
+	const monthlyStats = monthAccumulatorsToStats(monthAccumulators);
 
-	const latestAnswers = Array.from(latestByQuestion.values());
-	const correctCount = latestAnswers.filter((a) => a.isCorrect).length;
-
-	// 平均時間
-	const durationsWithValue = allAnswers.filter((a) => a.duration != null);
-	const avgDuration =
-		durationsWithValue.length > 0
-			? durationsWithValue.reduce((sum, a) => sum + (a.duration ?? 0), 0) /
-				durationsWithValue.length
-			: null;
-
-	// 月ごと集計
-	const monthlyStats = aggregateByMonth(allAnswers);
-
-	// 単元別集計
+	// 単元別集計（grouped な answerHistory をそのまま渡し、再 group しない）
 	const unitStats = aggregateByUnit(answerHistory);
 
 	// 全体トレンド
 	const trend = calculateTrend(monthlyStats.map((m) => m.accuracy));
 
+	// 旧実装の truthiness 分岐を保存: 平均が 0（falsy）なら null を返す。
+	const avgDuration = durationCount > 0 ? durationSum / durationCount : null;
+
 	return {
 		totalQuestions: getTotalQuestionCount(),
 		totalAnswered: latestByQuestion.size,
-		totalAttempts: allAnswers.length,
+		totalAttempts,
 		overallAccuracy:
-			latestAnswers.length > 0 ? Math.round((correctCount / latestAnswers.length) * 100) : 0,
+			latestByQuestion.size > 0
+				? Math.round((latestCorrectCount / latestByQuestion.size) * 100)
+				: 0,
 		avgDuration: avgDuration ? Math.round(avgDuration * 10) / 10 : null,
 		monthlyStats,
 		unitStats,
@@ -112,45 +161,48 @@ export function aggregateStats(answerHistory: Record<string, AnswerRecord[]>): D
 	};
 }
 
-export function aggregateByMonth(answers: AnswerRecord[]): MonthlyStats[] {
-	const byMonth = new Map<string, AnswerRecord[]>();
+// 月バケットを月昇順の MonthlyStats[] に変換する。
+function monthAccumulatorsToStats(accumulators: Map<string, MonthAccumulator>): MonthlyStats[] {
+	return Array.from(accumulators.entries())
+		.sort(([a], [b]) => a.localeCompare(b))
+		.map(([month, bucket]) => ({
+			month,
+			totalAnswers: bucket.total,
+			correctAnswers: bucket.correct,
+			accuracy: Math.round((bucket.correct / bucket.total) * 100),
+			avgDuration:
+				bucket.durationCount > 0
+					? Math.round((bucket.durationSum / bucket.durationCount) * 10) / 10
+					: null,
+		}));
+}
 
+export function aggregateByMonth(answers: AnswerRecord[]): MonthlyStats[] {
+	const byMonth = new Map<string, MonthAccumulator>();
+
+	// 1 パスで月バケットの集計値を直接蓄積する（旧実装は Map<string, AnswerRecord[]> を作り直して再走査）。
 	for (const answer of answers) {
 		const date = new Date(answer.timestamp);
 		const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-		const arr = byMonth.get(month) ?? [];
-		arr.push(answer);
-		byMonth.set(month, arr);
-	}
-
-	const stats: MonthlyStats[] = [];
-	const sortedMonths = Array.from(byMonth.entries()).sort(([a], [b]) => a.localeCompare(b));
-
-	for (const [month, monthAnswers] of sortedMonths) {
-		let correct = 0;
-		let durationSum = 0;
-		let withDurationCount = 0;
-
-		for (let i = 0; i < monthAnswers.length; i++) {
-			const a = monthAnswers[i];
-			if (a.isCorrect) correct++;
-			if (a.duration != null) {
-				durationSum += a.duration;
-				withDurationCount++;
+		const bucket = byMonth.get(month);
+		if (bucket) {
+			bucket.total++;
+			if (answer.isCorrect) bucket.correct++;
+			if (answer.duration != null) {
+				bucket.durationSum += answer.duration;
+				bucket.durationCount++;
 			}
+		} else {
+			byMonth.set(month, {
+				total: 1,
+				correct: answer.isCorrect ? 1 : 0,
+				durationSum: answer.duration != null ? answer.duration : 0,
+				durationCount: answer.duration != null ? 1 : 0,
+			});
 		}
-
-		stats.push({
-			month,
-			totalAnswers: monthAnswers.length,
-			correctAnswers: correct,
-			accuracy: Math.round((correct / monthAnswers.length) * 100),
-			avgDuration:
-				withDurationCount > 0 ? Math.round((durationSum / withDurationCount) * 10) / 10 : null,
-		});
 	}
 
-	return stats;
+	return monthAccumulatorsToStats(byMonth);
 }
 
 function aggregateByUnit(answerHistory: Record<string, AnswerRecord[]>): UnitStats[] {

@@ -75,6 +75,31 @@ export async function getLatestAnswers(
 	);
 }
 
+/**
+ * D1 から取得した行を questionId ごとの AnswerRecord[] にグルーピングする純粋関数。
+ * クエリ結果と分離して getUserAnswerHistory とベンチ（dashboardAggregator.bench.ts）の
+ * 双方が同一実装を呼ぶため export している。
+ *
+ * 1 パスで plain object に push して構築する（旧 reduce の
+ * `history[qid] = [...(history[qid] ?? []), record]` は行ごとに配列を作り直し O(m^2) だった）。
+ * 既存配列に破壊的 push するため push の不変版に戻すと O(m^2) になり、for...of を使う。
+ * first-seen のキー挿入順を保持し、旧 reduce と同じ Record キー順・同値の出力になる。
+ */
+export function groupRowsByQuestion(rows: AnswerRow[]): Record<string, AnswerRecord[]> {
+	const history: Record<string, AnswerRecord[]> = {};
+	// 1 パスで plain object に直接 push（O(m) 構築）。
+	for (const row of rows) {
+		const record = rowToRecord(row);
+		const bucket = history[record.questionId];
+		if (bucket) {
+			bucket.push(record);
+		} else {
+			history[record.questionId] = [record];
+		}
+	}
+	return history;
+}
+
 export async function getUserAnswerHistory(
 	db: D1Database,
 	userId: string,
@@ -89,9 +114,7 @@ export async function getUserAnswerHistory(
 		.bind(userId)
 		.all<AnswerRow>();
 
-	return result.results.reduce<Record<string, AnswerRecord[]>>((history, row) => {
-		const record = rowToRecord(row);
-		history[record.questionId] = [...(history[record.questionId] ?? []), record];
-		return history;
-	}, {});
+	return groupRowsByQuestion(result.results);
 }
+
+export type { AnswerRow };
