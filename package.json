@@ -29,7 +29,6 @@
 		"@cloudflare/workers-types": "^4.20260601.1",
 		"@hono/vite-build": "^1.11.1",
 		"@hono/vite-dev-server": "^0.26.0",
-		"@hono/vite-ssg": "^0.3.3",
 		"@tailwindcss/vite": "^4.3.0",
 		"@typescript/native-preview": "7.0.0-dev.20260527.2",
 		"@vitest/coverage-v8": "^4.1.8",
