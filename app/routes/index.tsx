@@ -108,29 +108,34 @@ export default createRoute(async (c) => {
 
 							<div class="home-unit-list">
 								{manifest.map((unit, index) => (
-									<a data-unit-row={unit.id} href={`/today/${unit.id}`} class="home-unit-row">
-										<span class="home-unit-num">{index + 1}</span>
-										<div class="home-unit-main">
-											<div class="home-unit-titlerow">
-												<span class="home-unit-name">{unit.name}</span>
-												<span data-unit-due hidden class="home-unit-due" />
-											</div>
-											<p class="home-unit-desc">{unit.description}</p>
-											<div class="home-unit-meterrow">
-												<div class="home-unit-track">
-													<div data-unit-bar class="home-unit-fill" style="width:0%" />
+									<div data-unit-row={unit.id} class="home-unit-row">
+										<a href={`/today/${unit.id}`} class="home-unit-link">
+											<span class="home-unit-num">{index + 1}</span>
+											<div class="home-unit-main">
+												<div class="home-unit-titlerow">
+													<span class="home-unit-name">{unit.name}</span>
+													<span data-unit-due hidden class="home-unit-due" />
 												</div>
-												<span data-unit-value class="home-unit-value">
-													0%
-												</span>
+												<p class="home-unit-desc">{unit.description}</p>
+												<div class="home-unit-meterrow">
+													<div class="home-unit-track">
+														<div data-unit-bar class="home-unit-fill" style="width:0%" />
+													</div>
+													<span data-unit-value class="home-unit-value">
+														0%
+													</span>
+												</div>
 											</div>
-										</div>
-									</a>
+										</a>
+										<a href={`/${unit.id}/${unit.primaryYear}`} class="home-unit-practice">
+											演習を見る →
+										</a>
+									</div>
 								))}
 							</div>
 
 							<p class="home-foot-note">
-								年度ごとに問題を見たいときは、各単元の演習ページ内から選べます。
+								「演習を見る」から各単元の演習ページへ。年度ごとの問題はそこで選べます。
 							</p>
 						</section>
 					</div>

@@ -391,13 +391,24 @@ details summary::marker {
 		@apply grid gap-2;
 	}
 	.home-unit-row {
-		@apply flex items-start gap-3 rounded-xl border bg-white p-4 transition-all;
+		@apply flex flex-col gap-1.5 rounded-xl border bg-white p-4 transition-all;
 		border-color: var(--color-border);
 	}
 	.home-unit-row:hover {
 		border-color: var(--color-primary);
 		transform: translateY(-1px);
 		box-shadow: 0 12px 28px rgba(30, 58, 95, 0.1);
+	}
+	.home-unit-link {
+		@apply flex items-start gap-3 no-underline;
+		color: inherit;
+	}
+	.home-unit-practice {
+		@apply self-end rounded-md px-2 py-0.5 text-xs font-bold no-underline transition-colors;
+		color: var(--color-primary);
+	}
+	.home-unit-practice:hover {
+		background: var(--color-primary-soft);
 	}
 	.home-unit-num {
 		@apply flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-black;

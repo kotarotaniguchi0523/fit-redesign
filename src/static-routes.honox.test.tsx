@@ -66,8 +66,11 @@ describe("home（/）", () => {
 	it("単元別マニフェスト（9 単元）を today リンクとして描画する", async () => {
 		const res = await mountGet(index).request("/");
 		const html = await res.text();
-		// 単元行は /today/{unitId} へリンクする
+		// 単元行のメイン導線は /today/{unitId}
 		expect(html).toContain('href="/today/unit-base-conversion"');
+		// 各行に演習ページ /unit-x/{主要年度} への「演習を見る」サブリンクがある
+		expect(html).toContain('href="/unit-base-conversion/2013"');
+		expect(html).toContain("演習を見る");
 		// data-unit-row が複数（マニフェスト件数分）出力される
 		const rowCount = (html.match(/data-unit-row=/g) ?? []).length;
 		expect(rowCount).toBeGreaterThanOrEqual(9);
