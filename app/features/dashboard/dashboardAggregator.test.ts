@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AnswerRecord } from "../types/answer";
+import type { AnswerRecord } from "../../types/answer";
 import {
 	aggregateByMonth,
 	aggregateStats,

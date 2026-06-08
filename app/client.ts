@@ -2,7 +2,7 @@ import { createClient } from "honox/client";
 // 命令的コントローラ（island 不適のため client script として配線）。各 init は対象要素が
 // 無いページでは no-op（mountAll が querySelectorAll で空集合）。
 import "./features/srs/srs-recorder"; // 採点イベントを購読し SRS を更新する document リスナ
-import "./utils/copy-button"; // Markdown コピーボタン（副作用）
+import "./features/markdown/copy-button"; // Markdown コピーボタン（副作用）
 import { initDailySession } from "./features/study/dailySession";
 import { initStudyHome } from "./features/study/studyHome";
 import { initQuestionTimer } from "./features/timer/question-timer";

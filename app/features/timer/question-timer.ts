@@ -4,8 +4,8 @@ import {
 	TARGET_TIME_PRESETS,
 	TIMER_INTERVAL_MS,
 } from "../../constants";
+import { mountAll } from "../../lib/mountAll";
 import type { QuestionId } from "../../types";
-import { mountAll } from "../../utils/mountAll";
 import { formatTime } from "./timeFormat";
 import { clearQuestionRecords, loadTimerData, saveAttempt } from "./timerStorage";
 import type { AttemptRecord, TimerMode } from "./types";
@@ -88,7 +88,7 @@ export function setupQuestionTimer(el: HTMLElement): void {
 	function loadFromServerAndMerge() {
 		import("./timerSync")
 			.then(async ({ loadFromServer, mergeData }) => {
-				const { getUserId } = await import("../../utils/userId");
+				const { getUserId } = await import("../../lib/userId");
 				const userId = getUserId();
 				const remoteData = await loadFromServer(userId);
 				if (!remoteData) return;

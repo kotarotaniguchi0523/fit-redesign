@@ -1,5 +1,5 @@
-import { unitBasedTabs } from "../data/units";
-import type { AnswerRecord } from "../types/answer";
+import { unitBasedTabs } from "../../data/units";
+import type { AnswerRecord } from "../../types/answer";
 
 // questionId → unitId マッピングを構築
 const questionToUnitMap = new Map<string, string>();

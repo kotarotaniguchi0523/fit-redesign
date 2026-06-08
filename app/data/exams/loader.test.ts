@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { safeParseOrThrow } from "../../lib/zod";
 import type { Exam } from "../../types";
-import { safeParseOrThrow } from "../../utils/zod";
 import { getAllExams, getExamByNumber } from "./index";
 import { ExamJsonSchema } from "./schema";
 

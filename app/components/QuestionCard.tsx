@@ -2,9 +2,9 @@
 
 import AnswerSelector from "../features/answer/$AnswerSelector";
 import SelfGrade from "../features/answer/$SelfGrade";
+import { questionToMarkdown } from "../features/markdown/questionToMarkdown";
+import { overlineToHtml } from "../lib/overline";
 import type { Question } from "../types";
-import { overlineToHtml } from "../utils/overline";
-import { questionToMarkdown } from "../utils/questionToMarkdown";
 import { BinaryTree } from "./figures/BinaryTree";
 import { Flowchart } from "./figures/Flowchart";
 import { LogicCircuit } from "./figures/LogicCircuit";

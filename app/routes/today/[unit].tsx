@@ -3,7 +3,7 @@ import { createRoute } from "honox/factory";
 import { Header } from "../../components/Header";
 import { QuestionCard } from "../../components/QuestionCard";
 import { unitBasedTabs } from "../../data/units";
-import { getUnitQuestions } from "../../utils/questionManifest";
+import { getUnitQuestions } from "../../features/srs/questionManifest";
 
 /**
  * 今日の道（旧 src/pages/today/[unit].astro の HonoX 移植）。

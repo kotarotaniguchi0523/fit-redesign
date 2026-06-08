@@ -1,4 +1,4 @@
-import { getUserId } from "../../utils/userId";
+import { getUserId } from "../../lib/userId";
 
 /**
  * 間隔反復(SRS)エンジン。Leitnerボックス方式。

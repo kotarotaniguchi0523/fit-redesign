@@ -1,12 +1,12 @@
 /** @jsxImportSource hono/jsx */
 import { Hono } from "hono";
 import { disableSSG } from "hono/ssg";
-import { getUserAnswerHistory } from "../../server/answerRepository";
 import {
 	aggregateStats,
 	type DashboardData,
 	type UnitStats,
-} from "../../utils/dashboardAggregator";
+} from "../../features/dashboard/dashboardAggregator";
+import { getUserAnswerHistory } from "../../server/answerRepository";
 
 /**
  * 学習ダッシュボード（HonoX 動的ルート）。

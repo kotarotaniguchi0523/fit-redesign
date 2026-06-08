@@ -1,6 +1,6 @@
-import { getExamByNumber } from "../data/exams";
-import { unitBasedTabs } from "../data/units";
-import type { Question, UnitBasedTab, Year } from "../types";
+import { getExamByNumber } from "../../data/exams";
+import { unitBasedTabs } from "../../data/units";
+import type { Question, UnitBasedTab, Year } from "../../types";
 
 /**
  * 単元ごとの問題ID一覧。

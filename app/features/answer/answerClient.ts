@@ -1,6 +1,6 @@
 import { QUESTION_GRADED_EVENT } from "../../constants";
-import { createLogger } from "../../utils/logger";
-import { getUserId } from "../../utils/userId";
+import { createLogger } from "../../lib/logger";
+import { getUserId } from "../../lib/userId";
 
 const logger = createLogger("[AnswerClient]");
 

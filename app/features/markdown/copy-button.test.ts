@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { FEEDBACK_DURATION } from "../constants";
+import { FEEDBACK_DURATION } from "../../constants";
 
 // copy-button.ts をインポートすると initCopyButtons() が実行される
 import "./copy-button";

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { Question } from "../types";
+import type { Question } from "../../types";
 import { questionToMarkdown } from "./questionToMarkdown";
 
 describe("questionToMarkdown", () => {

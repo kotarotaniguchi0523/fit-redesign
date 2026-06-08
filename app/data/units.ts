@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { safeParseOrThrow } from "../lib/zod";
 import {
 	isExamNumber,
 	type Unit,
@@ -7,7 +8,6 @@ import {
 	YEARS,
 	type Year,
 } from "../types";
-import { safeParseOrThrow } from "../utils/zod";
 import { getSlide } from "./slides";
 
 const YearSchema = z.enum(YEARS);

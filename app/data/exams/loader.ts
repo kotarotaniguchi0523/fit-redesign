@@ -1,4 +1,4 @@
-import { safeParseOrThrow } from "../../utils/zod";
+import { safeParseOrThrow } from "../../lib/zod";
 import metaJson from "../exams-json/exams-meta.json";
 import { assembleExamsByYear, type ParsedExamEntry } from "./assemble";
 import { ExamJsonSchema, ExamsMetaSchema } from "./schema";

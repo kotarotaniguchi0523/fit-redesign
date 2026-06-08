@@ -1,4 +1,4 @@
-import type { UnitManifestEntry } from "../../utils/questionManifest";
+import type { UnitManifestEntry } from "../../features/srs/questionManifest";
 
 export type { UnitManifestEntry };
 

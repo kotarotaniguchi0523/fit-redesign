@@ -1,5 +1,5 @@
 import { QUESTION_GRADED_EVENT } from "../../constants";
-import { mountAll } from "../../utils/mountAll";
+import { mountAll } from "../../lib/mountAll";
 import { readEmbeddedManifest, type UnitManifestEntry } from "../srs/progressClient";
 import { buildDailySet, loadSrsState, unitReadiness } from "../srs/srs";
 

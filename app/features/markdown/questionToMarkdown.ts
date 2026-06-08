@@ -1,4 +1,4 @@
-import type { FigureData, Question } from "../types";
+import type { FigureData, Question } from "../../types";
 
 /**
  * テーブルデータを Markdown 文字列に変換するヘルパー関数
