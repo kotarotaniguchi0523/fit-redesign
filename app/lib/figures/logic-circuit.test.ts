@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { LogicGate, LogicInput, LogicOutput, LogicWire } from "../../../types";
-import { getGateSymbolPath, getWirePath } from "../logic-circuit";
+import type { LogicGate, LogicInput, LogicOutput, LogicWire } from "../../types";
+import { getGateSymbolPath, getWirePath } from "./logic-circuit";
 
 describe("getGateSymbolPath", () => {
 	const gateTypes = ["AND", "OR", "NOT", "NAND", "NOR", "XOR", "XNOR"] as const;

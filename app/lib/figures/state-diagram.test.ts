@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { StateNode, Transition } from "../../../types";
+import type { StateNode, Transition } from "../../types";
 import {
 	buildTransitionData,
 	getArrowHead,
 	getArrowPath,
 	getLabelPosition,
 	type Point,
-} from "../state-diagram";
+} from "./state-diagram";
 
 describe("getArrowPath", () => {
 	it("returns a straight line path when curveOffset is 0", () => {

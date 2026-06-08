@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { TreeNode } from "../../../types";
-import { calculatePositions, getEdgeLines, getTreeDepth } from "../binary-tree";
+import type { TreeNode } from "../../types";
+import { calculatePositions, getEdgeLines, getTreeDepth } from "./binary-tree";
 
 describe("getTreeDepth", () => {
 	it("returns 0 for an empty tree (undefined)", () => {

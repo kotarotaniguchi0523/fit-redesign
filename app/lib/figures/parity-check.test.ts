@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateParity } from "../parity-check";
+import { calculateParity } from "./parity-check";
 
 describe("calculateParity", () => {
 	it("calculates correct XOR parity for a known input", () => {

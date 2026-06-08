@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { TableFigureData } from "../table-renderer";
-import { buildTableConfig } from "../table-renderer";
+import type { TableFigureData } from "./table-renderer";
+import { buildTableConfig } from "./table-renderer";
 
 describe("buildTableConfig", () => {
 	describe("dataTable", () => {

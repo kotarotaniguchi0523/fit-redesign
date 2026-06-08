@@ -319,24 +319,6 @@ describe("QuestionTimer Custom Element", () => {
 			expect(record.attempts[0].mode).toBe("stopwatch");
 		});
 
-		it("統計情報がポップオーバーに表示される", () => {
-			const el = mount(createElement("exam2-2014-q1"));
-
-			// 1回目
-			getStartStopBtn(el).click();
-			vi.advanceTimersByTime(30_000);
-			getStartStopBtn(el).click();
-
-			getSettingsBtn(el).click();
-			const statTexts = Array.from(getPopover(el).querySelectorAll(".font-mono.font-semibold")).map(
-				(e) => e.textContent,
-			);
-
-			// 前回: 00:30, 平均: 00:30, 回数: 1回 のいずれかが含まれる
-			expect(statTexts).toContain("00:30");
-			expect(statTexts.some((t) => t?.includes("1回"))).toBe(true);
-		});
-
 		it("前回・平均・回数が位置どおりに更新される（ref キャッシュ化の取り違え検出）", () => {
 			const el = mount(createElement("exam1-2013-q2"));
 

@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { FlowchartEdge, FlowchartNode } from "../../../types";
+import type { FlowchartEdge, FlowchartNode } from "../../types";
 import {
 	buildEdgeRenderData,
 	buildNodeRenderData,
 	FLOWCHART_DEFAULTS,
 	getEdgePoint,
 	getNodeDimensions,
-} from "../flowchart";
+} from "./flowchart";
 
 describe("getNodeDimensions", () => {
 	it("returns default process dimensions for a process node", () => {
