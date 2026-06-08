@@ -46,9 +46,7 @@ export function QuestionCard({ question }: Props) {
 					<span class="q-num">{question.number}</span>
 					<div>
 						<p class="q-eyebrow">問題 {question.number}</p>
-						<p class="q-hint">
-							{hasOptions ? "選択肢を1つ選んで確かめよう" : "答えを出してから、答え合わせしよう"}
-						</p>
+						{hasOptions && <p class="q-hint">選択肢を1つ選んで確かめよう</p>}
 					</div>
 				</header>
 

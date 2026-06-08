@@ -14,7 +14,7 @@ const REDIRECT_SCRIPT = `const userId = (() => {
 	}
 })();
 if (userId) {
-	location.replace("/dashboard/" + userId + "/");
+	location.replace("/dashboard/" + userId);
 } else {
 	document.getElementById("dash-loading")?.setAttribute("hidden", "");
 	document.getElementById("dash-empty")?.removeAttribute("hidden");

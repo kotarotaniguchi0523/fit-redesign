@@ -67,17 +67,8 @@ function renderUnits(el: HTMLElement, stats: UnitStat[]): void {
 
 		const bar = row.querySelector<HTMLElement>("[data-unit-bar]");
 		const value = row.querySelector<HTMLElement>("[data-unit-value]");
-		const due = row.querySelector<HTMLElement>("[data-unit-due]");
 		if (bar) bar.style.width = `${stat.readiness}%`;
 		if (value) value.textContent = `${stat.readiness}%`;
-		if (due) {
-			if (stat.due > 0) {
-				due.textContent = `今日 ${stat.due}問`;
-				due.hidden = false;
-			} else {
-				due.hidden = true;
-			}
-		}
 	}
 }
 

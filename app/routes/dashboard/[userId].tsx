@@ -66,7 +66,7 @@ app.get("/", disableSSG(), async (c) => {
 	}
 
 	const hasData = dashboardData.totalAnswered > 0;
-	const dashboardUrl = `${new URL(c.req.url).origin}/dashboard/${userId}/`;
+	const dashboardUrl = `${new URL(c.req.url).origin}/dashboard/${userId}`;
 
 	// _renderer.tsx（凍結）が title プロップを受け取るが、ContextRenderer は既定で空
 	// interface = 1 引数の DefaultRenderer 型。第 2 引数 { title } を渡すため、ここだけ

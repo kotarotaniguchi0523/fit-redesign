@@ -66,8 +66,8 @@ describe("dashboard 描画", () => {
 		const body = await res.text();
 		expect(body).toContain("学習ダッシュボード");
 		expect(body).toContain("まだ問題を解いていません");
-		// 共有リンクに userId が反映される
-		expect(body).toContain("/dashboard/u1/");
+		// 共有リンクに userId が反映される（末尾スラッシュ無し = trimTrailingSlash 正規化後の形）
+		expect(body).toContain("/dashboard/u1");
 	});
 
 	it("回答履歴があるとき集計サマリーを描画する", async () => {

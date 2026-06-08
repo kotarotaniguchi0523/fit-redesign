@@ -114,7 +114,6 @@ export default createRoute(async (c) => {
 											<div class="home-unit-main">
 												<div class="home-unit-titlerow">
 													<span class="home-unit-name">{unit.name}</span>
-													<span data-unit-due hidden class="home-unit-due" />
 												</div>
 												<p class="home-unit-desc">{unit.description}</p>
 												<div class="home-unit-meterrow">
@@ -128,14 +127,14 @@ export default createRoute(async (c) => {
 											</div>
 										</a>
 										<a href={`/${unit.id}/${unit.primaryYear}`} class="home-unit-practice">
-											演習を見る →
+											この単元の年度ごとに解く →
 										</a>
 									</div>
 								))}
 							</div>
 
 							<p class="home-foot-note">
-								「演習を見る」から各単元の演習ページへ。年度ごとの問題はそこで選べます。
+								全単元×全年度をまとめて見るときは、ヘッダーの「演習一覧」から選べます。
 							</p>
 						</section>
 					</div>

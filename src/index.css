@@ -425,9 +425,6 @@ details summary::marker {
 		@apply font-bold;
 		color: var(--color-primary);
 	}
-	.home-unit-due {
-		@apply shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800;
-	}
 	.home-unit-desc {
 		@apply mt-0.5 text-sm leading-5 text-slate-500;
 	}
@@ -443,6 +440,57 @@ details summary::marker {
 	}
 	.home-unit-value {
 		@apply w-10 shrink-0 text-right text-xs font-bold text-slate-500;
+	}
+}
+
+/* ===== 年度・単元別 演習問題一覧 ===== */
+@layer components {
+	.exercises-table-wrap {
+		@apply mt-6 overflow-x-auto rounded-xl border bg-white;
+		border-color: var(--color-border);
+	}
+	.exercises-table {
+		@apply w-full border-collapse text-sm;
+	}
+	.exercises-th-unit,
+	.exercises-th-year {
+		@apply sticky top-0 whitespace-nowrap p-3 text-xs font-bold;
+		background: var(--color-primary);
+		color: #fff;
+	}
+	.exercises-th-unit {
+		@apply text-left;
+	}
+	.exercises-th-year {
+		@apply text-center;
+	}
+	.exercises-td-unit {
+		@apply flex items-center gap-2 whitespace-nowrap p-3 text-left font-bold;
+		color: var(--color-primary);
+	}
+	.exercises-unit-num {
+		@apply flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-black;
+		background: var(--color-primary-soft);
+		color: var(--color-primary);
+	}
+	.exercises-table tbody tr {
+		@apply border-t;
+		border-color: var(--color-border);
+	}
+	.exercises-td {
+		@apply p-2 text-center;
+	}
+	.exercises-link {
+		@apply inline-block rounded-md px-3 py-1 text-xs font-bold no-underline transition-colors;
+		background: var(--color-primary-soft);
+		color: var(--color-primary);
+	}
+	.exercises-link:hover {
+		background: var(--color-primary);
+		color: #fff;
+	}
+	.exercises-td-empty {
+		@apply text-slate-300;
 	}
 }
 

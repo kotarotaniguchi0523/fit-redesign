@@ -36,11 +36,25 @@ export function Header({ currentPath }: HeaderProps) {
 						</div>
 					</a>
 
-					<div class="flex items-center gap-4">
+					<div class="flex items-center gap-3 sm:gap-4">
+						<a
+							href="/exercises"
+							class="text-sm text-white/80 hover:text-white transition-colors flex items-center gap-1.5"
+						>
+							<span class="hidden sm:inline">演習一覧</span>
+							<span class="sm:hidden">演習</span>
+						</a>
+						<a
+							href="/slide-only"
+							class="text-sm text-white/80 hover:text-white transition-colors flex items-center gap-1.5"
+						>
+							<span class="hidden sm:inline">講義資料</span>
+							<span class="sm:hidden">資料</span>
+						</a>
 						{!isDashboard && (
 							<a
 								id="dashboard-link"
-								href="/dashboard/"
+								href="/dashboard"
 								class="text-sm text-white/80 hover:text-white transition-colors flex items-center gap-1.5"
 							>
 								<span class="hidden sm:inline">学習進捗</span>
@@ -78,10 +92,10 @@ export function Header({ currentPath }: HeaderProps) {
 		try {
 			const userId = localStorage.getItem("fit-exam-user-id");
 			if (userId) {
-				link.href = \`/dashboard/\${userId}/\`;
+				link.href = \`/dashboard/\${userId}\`;
 			}
 		} catch {
-			// localStorage 未対応の場合は /dashboard/ のまま
+			// localStorage 未対応の場合は /dashboard のまま
 		}
 	}
 `,

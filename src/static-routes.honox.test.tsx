@@ -5,6 +5,7 @@ import { jsxRenderer } from "hono/jsx-renderer";
 import { describe, expect, it } from "vitest";
 import notFound from "../app/routes/_404";
 import dashboardIndex from "../app/routes/dashboard/index";
+import exercises from "../app/routes/exercises";
 import guide from "../app/routes/guide";
 import index from "../app/routes/index";
 import slideOnly from "../app/routes/slide-only";
@@ -68,12 +69,29 @@ describe("home（/）", () => {
 		const html = await res.text();
 		// 単元行のメイン導線は /today/{unitId}
 		expect(html).toContain('href="/today/unit-base-conversion"');
-		// 各行に演習ページ /unit-x/{主要年度} への「演習を見る」サブリンクがある
+		// 各行に演習ページ /unit-x/{主要年度} への「年度ごとに解く」サブリンクがある
 		expect(html).toContain('href="/unit-base-conversion/2013"');
-		expect(html).toContain("演習を見る");
+		expect(html).toContain("この単元の年度ごとに解く");
 		// data-unit-row が複数（マニフェスト件数分）出力される
 		const rowCount = (html.match(/data-unit-row=/g) ?? []).length;
 		expect(rowCount).toBeGreaterThanOrEqual(9);
+	});
+});
+
+describe("exercises（/exercises）", () => {
+	it("200・タイトル・年度ヘッダ・単元×年度の演習リンクを描画する", async () => {
+		const res = await mountGet(exercises).request("/");
+		expect(res.status).toBe(200);
+		const html = await res.text();
+		expect(html).toContain("<title>年度・単元別 演習問題一覧 - 基本情報技術 I</title>");
+		// 年度ヘッダ（2013〜2017）
+		expect(html).toContain("2013");
+		expect(html).toContain("2017");
+		// 出題年度のセルは /unit-x/{year} の演習ページへリンクする
+		expect(html).toContain('href="/unit-base-conversion/2013"');
+		expect(html).toContain('href="/unit-base-conversion/2017"');
+		// 浮動小数点は 2014 が無いため欠落セル（— マーカー）が出る
+		expect(html).toContain("exercises-td-empty");
 	});
 });
 
