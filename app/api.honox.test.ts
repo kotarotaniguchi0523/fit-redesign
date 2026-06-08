@@ -1,17 +1,24 @@
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
-import api from "./routes/api";
+import apiMiddleware from "./routes/api/_middleware";
+import answerHistory from "./routes/api/answer/history";
+import answerStatus from "./routes/api/answer/status";
+import { POST as answerSubmit } from "./routes/api/answer/submit";
+import health from "./routes/api/health";
+import markdown from "./routes/api/markdown";
+import { DELETE as timerClear } from "./routes/api/timer/clear";
+import timerLoad from "./routes/api/timer/load";
+import { POST as timerSync } from "./routes/api/timer/sync";
 
 /**
- * HonoX 版 API（app/routes/api/[[...route]].ts）の古典派 integration テスト（AAA）。
+ * 分解した API ファイルルート（app/routes/api/**）の古典派 integration テスト（AAA）。
  *
- * HonoX は本番でファイルパス `app/routes/api/` を `/api` プレフィックスにマウントする。
- * vitest では createApp()（import.meta.glob 依存）が動かないため、同じマウントを
- * `parent.route("/api", api)` で再現し、**外部 URL（/api/answer/submit 等）が現行と一致する**
- * ことを app.request() で検証する。
+ * 本番では HonoX がディレクトリごとに sub-app を作り、_middleware.ts を `subApp.use("*")` で
+ * 適用してネストマウントする。vitest では createApp()（import.meta.glob 依存）が動かないため、
+ * 同じネスト構造（/api に共通 mw、/api/markdown に etag）を手で再現し、外部 URL の HTTP 振る舞い
+ * （status・レスポンス形状・400/413/304・middleware ヘッダ）を app.request() で検証する。
  *
- * out-of-process 依存（D1 / KV）は空データを返す fake を注入し、各ルートの HTTP 振る舞い
- * （status・レスポンス形状・400/413/304・middleware ヘッダ）を旧 src/api.test.ts と同形で検証する。
+ * out-of-process 依存（D1 / KV）は空データを返す fake を注入する。
  */
 
 function makeFakeDb(): D1Database {
@@ -38,11 +45,23 @@ function env() {
 	return { DB: makeFakeDb(), CACHE: makeFakeKv() } as unknown as Cloudflare.Env;
 }
 
-/** HonoX の `/api` マウントを再現した合成アプリ。外部 URL を実際に通す。 */
+/** HonoX のネスト sub-app マウントを忠実に再現した合成アプリ。 */
 function mountedApp() {
-	const parent = new Hono();
-	parent.route("/api", api);
-	return parent;
+	// biome-ignore lint/suspicious/noExplicitAny: テスト用に分解ハンドラ配列を spread マウントする
+	const spread = (handlers: unknown) => handlers as any;
+
+	const apiApp = new Hono();
+	apiApp.use("*", ...spread(apiMiddleware));
+	apiApp.get("/health", ...spread(health));
+	apiApp.post("/answer/submit", ...spread(answerSubmit));
+	apiApp.get("/answer/status", ...spread(answerStatus));
+	apiApp.get("/answer/history", ...spread(answerHistory));
+	apiApp.post("/timer/sync", ...spread(timerSync));
+	apiApp.get("/timer/load", ...spread(timerLoad));
+	apiApp.delete("/timer/clear", ...spread(timerClear));
+	apiApp.route("/markdown", markdown);
+
+	return new Hono().route("/api", apiApp);
 }
 
 describe("外部 URL の一致（HonoX マウント越し）", () => {
@@ -60,7 +79,7 @@ describe("answer routes", () => {
 		expect(await res.json()).toEqual({ statuses: {} });
 	});
 
-	it("GET /api/answer/status は userId 無しで 400（旧 badRequest 形状）", async () => {
+	it("GET /api/answer/status は userId 無しで 400（{ error, details } 形状）", async () => {
 		const res = await mountedApp().request("/api/answer/status", {}, env());
 		expect(res.status).toBe(400);
 		const body = (await res.json()) as { error: string; details: unknown };
@@ -160,8 +179,8 @@ describe("timer routes", () => {
 });
 
 describe("markdown route", () => {
-	it("GET /api/markdown/ はサイト概要を text/markdown で返す", async () => {
-		const res = await mountedApp().request("/api/markdown/", {}, env());
+	it("GET /api/markdown はサイト概要を text/markdown で返す", async () => {
+		const res = await mountedApp().request("/api/markdown", {}, env());
 		expect(res.status).toBe(200);
 		expect(res.headers.get("Content-Type")).toBe("text/markdown; charset=utf-8");
 		expect(res.headers.get("Cache-Control")).toBe("public, max-age=86400");
@@ -185,7 +204,6 @@ describe("markdown route", () => {
 
 describe("middleware（hono-mw）", () => {
 	it("body-limit: 過大な POST ペイロードは 413", async () => {
-		// Arrange: 256KB を超えるボディ
 		const res = await mountedApp().request(
 			"/api/answer/submit",
 			{
@@ -201,25 +219,19 @@ describe("middleware（hono-mw）", () => {
 			},
 			env(),
 		);
-
-		// Assert
 		expect(res.status).toBe(413);
 	});
 
 	it("etag: markdown は ETag を付与し、If-None-Match 一致で 304", async () => {
-		// Arrange: 1 回目で ETag を取得
-		const first = await mountedApp().request("/api/markdown/", {}, env());
+		const first = await mountedApp().request("/api/markdown", {}, env());
 		const tag = first.headers.get("ETag");
 		expect(tag).toBeTruthy();
 
-		// Act: If-None-Match を付けて再リクエスト
 		const second = await mountedApp().request(
-			"/api/markdown/",
+			"/api/markdown",
 			{ headers: { "If-None-Match": tag ?? "" } },
 			env(),
 		);
-
-		// Assert
 		expect(second.status).toBe(304);
 	});
 

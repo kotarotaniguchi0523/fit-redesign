@@ -29,6 +29,9 @@
 			"suspicious": {
 				"noArrayIndexKey": "warn"
 			},
+			"style": {
+				"useShorthandFunctionType": "off"
+			},
 			"security": {
 				"noBlankTarget": {
 					"level": "error",
