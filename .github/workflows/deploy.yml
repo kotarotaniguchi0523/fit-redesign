@@ -37,23 +37,11 @@ jobs:
       - run: pnpm test:run
       - run: pnpm build
 
-      - name: Detect D1 migration changes
-        id: d1-migrations
-        env:
-          BEFORE_SHA: ${{ github.event.before }}
-          CURRENT_SHA: ${{ github.sha }}
-        run: |
-          if ! git cat-file -e "$BEFORE_SHA^{commit}" 2>/dev/null; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"; exit 0
-          fi
-          if git diff --quiet "$BEFORE_SHA" "$CURRENT_SHA" -- migrations/; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
-
+      # 無条件で実行する（wrangler d1 migrations apply は冪等: 未適用のみ適用、無ければ no-op）。
+      # 旧実装は push 差分で migration 変更を検出した時だけ適用していたが、migration 付きデプロイが
+      # apply で失敗した後に非 migration push が来ると apply を skip し、migration が未適用のまま
+      # 新コードだけ進む欠陥があった。無条件適用にして self-heal させる。
       - name: Apply D1 migrations
-        if: steps.d1-migrations.outputs.changed == 'true'
         uses: cloudflare/wrangler-action@9681c2997648301493e78cacbfb790a9f19c833f # v3.9.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
