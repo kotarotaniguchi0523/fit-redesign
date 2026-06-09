@@ -56,7 +56,7 @@ describe("単元ページ 描画", () => {
 		// 選択式問題は AnswerSelector island、記述式は SelfGrade island。
 		// どちらかは必ず描画され、問題タイマーのフックも出力される。
 		expect(body).toContain("data-question-timer");
-		expect(body).toContain("data-solution");
+		expect(body).toContain("答え合わせをする");
 	});
 
 	it("統合試験の年度では integratedTitle の注意が描画される", async () => {

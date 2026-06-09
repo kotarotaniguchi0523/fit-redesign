@@ -1,11 +1,9 @@
 /** @jsxImportSource hono/jsx */
 import { Hono } from "hono";
 import { disableSSG } from "hono/ssg";
-import {
-	aggregateStats,
-	type DashboardData,
-	type UnitStats,
-} from "../../features/dashboard/dashboardAggregator";
+import UnitDetails from "../../features/dashboard/$UnitDetails";
+import { aggregateStats, type DashboardData } from "../../features/dashboard/dashboardAggregator";
+import CopyButton from "../../features/markdown/$CopyButton";
 import { getUserAnswerHistory } from "../../server/answerRepository";
 
 /**
@@ -84,26 +82,12 @@ app.get("/", disableSSG(), async (c) => {
 				<div class="flex items-center gap-2 text-sm text-gray-500">
 					<span>共有リンク:</span>
 					<code class="bg-gray-100 px-2 py-0.5 rounded text-xs break-all">{dashboardUrl}</code>
-					<button
-						type="button"
-						id="copy-dashboard-url"
-						data-url={dashboardUrl}
-						class="text-[#1e3a5f] hover:text-[#2d4a6f] transition-colors"
+					<CopyButton
+						text={dashboardUrl}
+						className="text-[#1e3a5f] hover:text-[#2d4a6f] transition-colors"
+						ariaLabel="URLをコピー"
 						title="URLをコピー"
-					>
-						<svg
-							class="w-4 h-4"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							aria-hidden="true"
-						>
-							<title>copy</title>
-							<rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-							<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-						</svg>
-					</button>
+					/>
 				</div>
 			</div>
 
@@ -151,75 +135,12 @@ app.get("/", disableSSG(), async (c) => {
 					{dashboardData.unitStats.length > 0 && (
 						<div class="space-y-3">
 							<h2 class="text-lg font-bold text-[#1e3a5f]">単元別</h2>
-							{dashboardData.unitStats.map((unit: UnitStats) => (
-								<div class="bg-white rounded-lg shadow-sm overflow-hidden">
-									<button
-										type="button"
-										data-unit-toggle={unit.unitId}
-										class="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
-									>
-										<div class="flex items-center gap-3">
-											<span class="text-xl">{unit.unitIcon}</span>
-											<div>
-												<div class="font-medium text-gray-900">{unit.unitName}</div>
-												<div class="text-sm text-gray-500">{unit.totalAnswers}回 回答</div>
-											</div>
-										</div>
-										<div class="flex items-center gap-4">
-											<div class="w-24 hidden sm:block">
-												<div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-													<div
-														class="h-full bg-emerald-500 rounded-full transition-all"
-														style={`width: ${unit.accuracy}%`}
-													/>
-												</div>
-												<div class="text-xs text-gray-500 text-right mt-0.5">{unit.accuracy}%</div>
-											</div>
-											<span class={`text-lg ${trendColor(unit.trend)}`}>
-												{trendIcon(unit.trend)}
-											</span>
-											<span data-arrow class="text-gray-400 text-sm">
-												▶
-											</span>
-										</div>
-									</button>
-									<div
-										id={`unit-detail-${unit.unitId}`}
-										class="hidden border-t border-gray-100 p-4"
-									>
-										<table class="w-full text-sm">
-											<thead>
-												<tr class="text-gray-500 border-b">
-													<th class="text-left py-1 font-medium">問題</th>
-													<th class="text-center py-1 font-medium">回答数</th>
-													<th class="text-center py-1 font-medium">最新</th>
-												</tr>
-											</thead>
-											<tbody>
-												{unit.questionDetails.map((q) => {
-													const latest = q.answers[q.answers.length - 1];
-													return (
-														<tr class="border-b border-gray-50">
-															<td class="py-1.5 text-gray-700">{q.questionId}</td>
-															<td class="py-1.5 text-center text-gray-600">{q.answers.length}</td>
-															<td class="py-1.5 text-center">
-																{latest ? (
-																	<span
-																		class={latest.isCorrect ? "text-emerald-600" : "text-red-600"}
-																	>
-																		{latest.selectedLabel} {latest.isCorrect ? "○" : "×"}
-																	</span>
-																) : (
-																	<span class="text-gray-400">-</span>
-																)}
-															</td>
-														</tr>
-													);
-												})}
-											</tbody>
-										</table>
-									</div>
-								</div>
+							{dashboardData.unitStats.map((unit) => (
+								<UnitDetails
+									unit={unit}
+									trendIcon={trendIcon(unit.trend)}
+									trendClass={trendColor(unit.trend)}
+								/>
 							))}
 						</div>
 					)}

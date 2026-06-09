@@ -32,8 +32,8 @@ describe("今日の道ページ 描画", () => {
 		const body = await res.text();
 		expect(body).toContain("data-daily-session");
 		expect(body).toContain('data-unit-id="unit-base-conversion"');
-		expect(body).toContain("data-cards");
-		expect(body).toContain("data-next");
+		expect(body).toContain("session-cards");
+		expect(body).toContain("session-next");
 		expect(body).toContain("data-question-card");
 		expect(body).toContain("今日の道");
 	});

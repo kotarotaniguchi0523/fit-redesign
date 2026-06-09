@@ -1,7 +1,6 @@
 import { useActionState, useEffect, useRef } from "hono/jsx";
 import { recordAnswer, SavingIndicator } from "./answerActions";
 import { fetchAnswerStatuses } from "./answerClient";
-import { type CardView, reflectCard } from "./questionCardUi";
 
 /**
  * 記述式（選択肢なし）問題の自己採点 island。
@@ -30,6 +29,17 @@ type State =
 // 採点イベント（form の hidden input で渡す）。hono の form は submit ボタンの value を
 // FormData に含めないため、value ではなく hidden input で event を渡す。
 type Event = "restore" | "reveal" | "correct" | "review" | "retry";
+type Chip = "correct" | "review";
+
+interface CardView {
+	solution: boolean;
+	chip: Chip | null;
+}
+
+const CHIP_TEXT: Record<Chip, string> = {
+	correct: "✓ できた",
+	review: "あとで復習",
+};
 
 /** 各 phase に表示するアクションフォームの宣言的定義（条件分岐の代わりに DU からの導出）。 */
 interface ActionDef {
@@ -58,7 +68,7 @@ const PHASE_UI: Record<Phase, { wrapClass: string; actions: ActionDef[] }> = {
 
 const INITIAL_STATE: State = { phase: "initial", recorded: false };
 
-/** 状態からカード（解説/チップ）のあるべき見た目を導出する（reflectCard で一括反映する）。 */
+/** 状態から採点チップと解説パネルの表示を導出する。 */
 function cardView(state: State): CardView {
 	if (state.phase === "initial") return { solution: false, chip: null };
 	if (state.phase === "revealed") return { solution: true, chip: null };
@@ -67,10 +77,12 @@ function cardView(state: State): CardView {
 
 export interface SelfGradeProps {
 	questionId: string;
+	answerHtml: string;
+	explanationHtml?: string;
 }
 
 export default function SelfGrade(props: SelfGradeProps) {
-	const { questionId } = props;
+	const { questionId, answerHtml, explanationHtml } = props;
 	// rootRef は安定参照。reducer は dispatch 時に rootRef から closest() で親カードを解決する。
 	const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -86,24 +98,20 @@ export default function SelfGrade(props: SelfGradeProps) {
 						isCorrect: formData.get("isCorrect") === "true",
 						recorded: true,
 					};
-					reflectCard(card, cardView(next));
 					return next;
 				}
 				case "reveal": {
 					const next: State = { phase: "revealed", recorded };
-					reflectCard(card, cardView(next));
 					return next;
 				}
 				case "retry": {
 					const next: State = { phase: "initial", recorded };
-					reflectCard(card, cardView(next));
 					return next;
 				}
 				case "correct":
 				case "review": {
 					const isCorrect = formData.get("event") === "correct";
 					const next: State = { phase: "graded", isCorrect, recorded };
-					reflectCard(card, cardView(next));
 					return {
 						...next,
 						recorded:
@@ -142,8 +150,15 @@ export default function SelfGrade(props: SelfGradeProps) {
 	}, [questionId]);
 
 	const ui = PHASE_UI[state.phase];
+	const view = cardView(state);
 	return (
 		<div ref={rootRef} class="contents">
+			{view.chip ? (
+				<div class={`q-chip ${view.chip === "correct" ? "q-chip--correct" : "q-chip--review"}`}>
+					{CHIP_TEXT[view.chip]}
+				</div>
+			) : null}
+
 			<div class={ui.wrapClass}>
 				{ui.actions.map((action) => (
 					<form action={dispatch} class="q-self-grade-form">
@@ -156,6 +171,32 @@ export default function SelfGrade(props: SelfGradeProps) {
 					</form>
 				))}
 			</div>
+			{view.solution ? (
+				<SolutionPanel answerHtml={answerHtml} explanationHtml={explanationHtml} />
+			) : null}
+		</div>
+	);
+}
+
+function SolutionPanel(props: { answerHtml: string; explanationHtml?: string }) {
+	return (
+		<div class="q-solution solution-reveal">
+			<p class="q-solution__title">解き方</p>
+			<div class="q-solution__answer">
+				<span class="q-solution__answer-label">答え</span>
+				<span
+					class="q-solution__answer-value"
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: サーバー生成済みの信頼済みHTML(overline等)を描画
+					dangerouslySetInnerHTML={{ __html: props.answerHtml }}
+				/>
+			</div>
+			{props.explanationHtml ? (
+				<p
+					class="q-solution__explanation"
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: サーバー生成済みの信頼済みHTML(overline等)を描画
+					dangerouslySetInnerHTML={{ __html: props.explanationHtml }}
+				/>
+			) : null}
 		</div>
 	);
 }

@@ -7,8 +7,7 @@ import SelfGrade from "./$SelfGrade";
  * SelfGrade island の観測可能な振る舞いを検証する（AAA）。
  *
  * 純粋ロジック（srs / timeFormat）は既存テストが担保するため重複させない。ここでは island の
- * phase 遷移（initial → revealed → graded）が DOM に宣言的に反映され、親カード（subtree 外の
- * [data-question-card]）の解説/チップへ命令的副作用が届くことを確認する。
+ * phase 遷移（initial → revealed → graded）が DOM に宣言的に反映されることを確認する。
  *
  * hono/jsx/dom の更新は非同期スケジュールのため、固定回数の flush ではなく「期待状態になるまで
  * ポーリングする」settle() で待つ（async React のレンダ完了を観測ベースで待つ）。
@@ -44,47 +43,42 @@ afterEach(() => {
 	vi.clearAllMocks();
 });
 
-/** island を [data-question-card]（解説/チップ付き）の中にマウントする。 */
+/** island を [data-question-card] の中にマウントする。 */
 function mountSelfGrade(questionId: string): {
 	root: HTMLElement;
-	solution: HTMLElement;
-	chip: HTMLElement;
 } {
 	const card = document.createElement("div");
 	card.setAttribute("data-question-card", "");
 
-	const solution = document.createElement("div");
-	solution.setAttribute("data-solution", "");
-	solution.hidden = true;
-
-	const chip = document.createElement("div");
-	chip.setAttribute("data-status-chip", "");
-	chip.hidden = true;
-
 	const root = document.createElement("div");
-	card.append(solution);
-	card.append(chip);
 	card.append(root);
 	document.body.appendChild(card);
 
-	render(<SelfGrade questionId={questionId} />, root);
-	return { root, solution, chip };
+	render(
+		<SelfGrade
+			questionId={questionId}
+			answerHtml="<span>正答</span>"
+			explanationHtml="<span>解説</span>"
+		/>,
+		root,
+	);
+	return { root };
 }
 
 describe("SelfGrade island", () => {
 	it("初期表示では「答え合わせをする」だけを出し、解説は隠れている", async () => {
 		// Arrange & Act
-		const { root, solution } = mountSelfGrade("q-self-1");
+		const { root } = mountSelfGrade("q-self-1");
 
 		// Assert
 		await settle(() => root.querySelectorAll("button").length === 1);
 		expect(buttonLabels(root)).toEqual(["答え合わせをする"]);
-		expect(solution.hidden).toBe(true);
+		expect(root.querySelector(".q-solution")).toBeNull();
 	});
 
 	it("答え合わせで解説が開き、採点ボタンが2つ出る", async () => {
 		// Arrange
-		const { root, solution } = mountSelfGrade("q-self-2");
+		const { root } = mountSelfGrade("q-self-2");
 		await settle(() => root.querySelectorAll("button").length === 1);
 
 		// Act: reveal
@@ -93,12 +87,12 @@ describe("SelfGrade island", () => {
 		// Assert
 		await settle(() => root.querySelectorAll("button").length === 2);
 		expect(buttonLabels(root)).toEqual(["合ってた", "もう一度やる"]);
-		expect(solution.hidden).toBe(false);
+		expect(root.querySelector(".q-solution")).not.toBeNull();
 	});
 
 	it("「合ってた」でチップが correct になり graded に進む", async () => {
 		// Arrange
-		const { root, chip } = mountSelfGrade("q-self-3");
+		const { root } = mountSelfGrade("q-self-3");
 		await settle(() => root.querySelectorAll("button").length === 1);
 		root.querySelector("button")?.click(); // reveal
 		await settle(() => root.querySelectorAll("button").length === 2);
@@ -112,8 +106,7 @@ describe("SelfGrade island", () => {
 				root.querySelectorAll("button").length === 1 &&
 				root.querySelector("button")?.textContent === "もう一度この問題を解く",
 		);
-		expect(chip.hidden).toBe(false);
-		expect(chip.classList.contains("q-chip--correct")).toBe(true);
+		expect(root.querySelector(".q-chip")?.classList.contains("q-chip--correct")).toBe(true);
 	});
 
 	it("採点で question-graded イベントが正誤付きで発火する", async () => {
@@ -144,21 +137,21 @@ describe("SelfGrade island", () => {
 		);
 
 		// Act
-		const { root, solution } = mountSelfGrade("q-self-pending");
+		const { root } = mountSelfGrade("q-self-pending");
 
 		// Assert: fetch 未解決でも初期アクションが出る（resolved ゲート廃止の回帰防止）
 		await settle(() => root.querySelectorAll("button").length === 1);
 		expect(buttonLabels(root)).toEqual(["答え合わせをする"]);
-		expect(solution.hidden).toBe(true);
+		expect(root.querySelector(".q-solution")).toBeNull();
 	});
 
 	it("回答済みは fetch 後に graded へ格下げされ、解説とチップが復元される", async () => {
 		// Arrange & Act: q-self-saved は factory mock が saved（正解）を返す。
-		const { root, solution, chip } = mountSelfGrade("q-self-saved");
+		const { root } = mountSelfGrade("q-self-saved");
 
 		// Assert: graded（やり直しボタン1つ）＋ 解説表示 ＋ チップ correct
 		await settle(() => root.querySelector("button")?.textContent === "もう一度この問題を解く");
-		expect(solution.hidden).toBe(false);
-		expect(chip.classList.contains("q-chip--correct")).toBe(true);
+		expect(root.querySelector(".q-solution")).not.toBeNull();
+		expect(root.querySelector(".q-chip")?.classList.contains("q-chip--correct")).toBe(true);
 	});
 });

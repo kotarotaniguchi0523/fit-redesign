@@ -7,8 +7,8 @@ import AnswerSelector from "./$AnswerSelector";
  * AnswerSelector island の観測可能な振る舞いを検証する（AAA）。
  *
  * 純粋ロジック（srs / timeFormat）は既存テストが担保するため重複させない。ここでは MCQ の
- * 状態機械（selecting → submitted）が DOM の選択肢クラス・フィードバック・親カードの解説/チップへ
- * 宣言的/命令的に反映されることを確認する。hono/jsx/dom の非同期更新は settle() で観測待ちする。
+ * 状態機械（selecting → submitted）が DOM の選択肢クラス・フィードバック・解説/チップへ
+ * 宣言的に反映されることを確認する。hono/jsx/dom の非同期更新は settle() で観測待ちする。
  */
 
 // fetchAnswerStatuses は saved 復元テスト用に固定 status を返す（questionId が一意なので未回答テストは
@@ -42,30 +42,26 @@ const OPTIONS = [
 	{ label: "イ", html: "<span>イ</span> 2" },
 ];
 
-/** island を [data-question-card]（解説/チップ付き）の中にマウントする。 */
+/** island を [data-question-card] の中にマウントする。 */
 function mountSelector(questionId: string, correctLabel: string) {
 	const card = document.createElement("div");
 	card.setAttribute("data-question-card", "");
 
-	const solution = document.createElement("div");
-	solution.setAttribute("data-solution", "");
-	solution.hidden = true;
-
-	const chip = document.createElement("div");
-	chip.setAttribute("data-status-chip", "");
-	chip.hidden = true;
-
 	const root = document.createElement("div");
-	card.append(solution);
-	card.append(chip);
 	card.append(root);
 	document.body.appendChild(card);
 
 	render(
-		<AnswerSelector questionId={questionId} correctLabel={correctLabel} options={OPTIONS} />,
+		<AnswerSelector
+			questionId={questionId}
+			correctLabel={correctLabel}
+			options={OPTIONS}
+			answerHtml="<span>ア</span>"
+			explanationHtml="<span>解説</span>"
+		/>,
 		root,
 	);
-	return { root, solution, chip };
+	return { root };
 }
 
 /** 選択肢ボタン（data-status-chip 等を含まない q-option ボタン）を返す。 */
@@ -75,11 +71,11 @@ const optionButtons = (root: HTMLElement): HTMLButtonElement[] =>
 describe("AnswerSelector island", () => {
 	it("初期表示で全選択肢を出し、解説は隠れている", async () => {
 		// Arrange & Act
-		const { root, solution } = mountSelector("q-mcq-1", "ア");
+		const { root } = mountSelector("q-mcq-1", "ア");
 
 		// Assert
 		await settle(() => optionButtons(root).length === 2);
-		expect(solution.hidden).toBe(true);
+		expect(root.querySelector(".q-solution")).toBeNull();
 		// 採点前は確定/わからないボタンが出る（確定は選択後のみ。わからないは常時）
 		expect(root.textContent).toContain("わからない");
 	});
@@ -99,7 +95,7 @@ describe("AnswerSelector island", () => {
 
 	it("正解を確定すると解説が開き、チップが correct・フィードバックが正解になる", async () => {
 		// Arrange
-		const { root, solution, chip } = mountSelector("q-mcq-3", "ア");
+		const { root } = mountSelector("q-mcq-3", "ア");
 		await settle(() => optionButtons(root).length === 2);
 		optionButtons(root)[0].click(); // 正解 ア を選択
 		await settle(() => root.textContent?.includes("この答えで確かめる") ?? false);
@@ -112,14 +108,14 @@ describe("AnswerSelector island", () => {
 
 		// Assert
 		await settle(() => optionButtons(root)[0].className.includes("is-correct"));
-		expect(solution.hidden).toBe(false);
-		expect(chip.classList.contains("q-chip--correct")).toBe(true);
+		expect(root.querySelector(".q-solution")).not.toBeNull();
+		expect(root.querySelector(".q-chip")?.classList.contains("q-chip--correct")).toBe(true);
 		expect(root.textContent).toContain("正解");
 	});
 
 	it("不正解を確定するとチップが review・選択肢が is-wrong になる", async () => {
 		// Arrange: 正解は ア、ユーザーは イ を選ぶ
-		const { root, chip } = mountSelector("q-mcq-4", "ア");
+		const { root } = mountSelector("q-mcq-4", "ア");
 		await settle(() => optionButtons(root).length === 2);
 		optionButtons(root)[1].click(); // 不正解 イ
 		await settle(() => root.textContent?.includes("この答えで確かめる") ?? false);
@@ -131,7 +127,7 @@ describe("AnswerSelector island", () => {
 
 		// Assert
 		await settle(() => optionButtons(root)[1].className.includes("is-wrong"));
-		expect(chip.classList.contains("q-chip--review")).toBe(true);
+		expect(root.querySelector(".q-chip")?.classList.contains("q-chip--review")).toBe(true);
 		expect(optionButtons(root)[0].className).toContain("is-correct");
 	});
 
@@ -144,22 +140,22 @@ describe("AnswerSelector island", () => {
 		);
 
 		// Act: q-mcq-pending は factory saved に無いので、解決しても selecting のまま（二重の安全）。
-		const { root, solution } = mountSelector("q-mcq-pending", "ア");
+		const { root } = mountSelector("q-mcq-pending", "ア");
 
 		// Assert: fetch 未解決でも選択肢・「わからない」が出る
 		await settle(() => optionButtons(root).length === 2);
 		expect(root.textContent).toContain("わからない");
-		expect(solution.hidden).toBe(true);
+		expect(root.querySelector(".q-solution")).toBeNull();
 	});
 
 	it("回答済みは fetch 後に submitted へ格下げされ、解説とチップが復元される", async () => {
 		// Arrange & Act: q-mcq-saved は factory mock が saved（正解 ア）を返す。
-		const { root, solution, chip } = mountSelector("q-mcq-saved", "ア");
+		const { root } = mountSelector("q-mcq-saved", "ア");
 
 		// Assert: 解説が開き、チップ correct、選択肢が確定表示（is-correct）になる
 		await settle(() => optionButtons(root)[0].className.includes("is-correct"));
-		expect(solution.hidden).toBe(false);
-		expect(chip.classList.contains("q-chip--correct")).toBe(true);
+		expect(root.querySelector(".q-solution")).not.toBeNull();
+		expect(root.querySelector(".q-chip")?.classList.contains("q-chip--correct")).toBe(true);
 		expect(root.textContent).toContain("もう一度解く");
 	});
 });

@@ -1,7 +1,6 @@
 import { useActionState, useEffect, useRef } from "hono/jsx";
 import { recordAnswer, SavingIndicator } from "./answerActions";
 import { fetchAnswerStatuses } from "./answerClient";
-import { type CardView, reflectCard } from "./questionCardUi";
 
 /**
  * 選択式（MCQ）問題の回答 island。
@@ -30,6 +29,17 @@ type State =
 	| { phase: "submitted"; selected: string; isCorrect: boolean; recorded: boolean };
 
 type Event = "restore" | "select" | "submit" | "peek" | "retry";
+type Chip = "correct" | "review";
+
+interface CardView {
+	solution: boolean;
+	chip: Chip | null;
+}
+
+const CHIP_TEXT: Record<Chip, string> = {
+	correct: "✓ できた",
+	review: "あとで復習",
+};
 
 /** 選択肢ボタンの状態クラスを状態から宣言的に導出する。 */
 function optionClass(label: string, state: State, correctLabel: string): string {
@@ -41,7 +51,7 @@ function optionClass(label: string, state: State, correctLabel: string): string 
 	return "q-option is-muted";
 }
 
-/** 状態からカード（解説/チップ）のあるべき見た目を導出する（reflectCard で一括反映する）。 */
+/** 状態から採点チップと解説パネルの表示を導出する。 */
 function cardView(state: State): CardView {
 	if (state.phase === "selecting") return { solution: false, chip: null };
 	return { solution: true, chip: state.isCorrect ? "correct" : "review" };
@@ -69,10 +79,12 @@ export interface AnswerSelectorProps {
 	questionId: string;
 	correctLabel: string;
 	options: Option[];
+	answerHtml: string;
+	explanationHtml?: string;
 }
 
 export default function AnswerSelector(props: AnswerSelectorProps) {
-	const { questionId, correctLabel, options } = props;
+	const { questionId, correctLabel, options, answerHtml, explanationHtml } = props;
 	// rootRef は安定参照。reducer は dispatch 時に rootRef から closest() で親カードを解決する。
 	const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -89,7 +101,6 @@ export default function AnswerSelector(props: AnswerSelectorProps) {
 						isCorrect: formData.get("isCorrect") === "true",
 						recorded: true,
 					};
-					reflectCard(card, cardView(next));
 					return next;
 				}
 				case "select": {
@@ -98,7 +109,6 @@ export default function AnswerSelector(props: AnswerSelectorProps) {
 						selected: String(formData.get("label")),
 						recorded,
 					};
-					reflectCard(card, cardView(next));
 					return next;
 				}
 				case "submit": {
@@ -110,8 +120,6 @@ export default function AnswerSelector(props: AnswerSelectorProps) {
 						isCorrect: selected === correctLabel,
 						recorded,
 					};
-					// solution/chip は (phase, isCorrect) のみで決まり await 前に確定 → 即時 reveal を保存。
-					reflectCard(card, cardView(next));
 					return {
 						...next,
 						recorded:
@@ -127,7 +135,6 @@ export default function AnswerSelector(props: AnswerSelectorProps) {
 				case "peek": {
 					// 「わからない」= 解けなかったとして正直に扱う。
 					const next: State = { phase: "submitted", selected: "", isCorrect: false, recorded };
-					reflectCard(card, cardView(next));
 					return {
 						...next,
 						recorded:
@@ -137,7 +144,6 @@ export default function AnswerSelector(props: AnswerSelectorProps) {
 				}
 				case "retry": {
 					const next: State = { phase: "selecting", selected: null, recorded };
-					reflectCard(card, cardView(next));
 					return next;
 				}
 				default:
@@ -167,9 +173,16 @@ export default function AnswerSelector(props: AnswerSelectorProps) {
 	}, [questionId]);
 
 	const submitted = state.phase === "submitted";
+	const view = cardView(state);
 
 	return (
 		<div ref={rootRef} class="contents">
+			{view.chip ? (
+				<div class={`q-chip ${view.chip === "correct" ? "q-chip--correct" : "q-chip--review"}`}>
+					{CHIP_TEXT[view.chip]}
+				</div>
+			) : null}
+
 			{options.map((option) => (
 				<form action={dispatch} class="q-answer-option-form">
 					<input type="hidden" name="event" value="select" />
@@ -225,6 +238,33 @@ export default function AnswerSelector(props: AnswerSelectorProps) {
 						もう一度解く
 					</button>
 				</form>
+			) : null}
+
+			{view.solution ? (
+				<SolutionPanel answerHtml={answerHtml} explanationHtml={explanationHtml} />
+			) : null}
+		</div>
+	);
+}
+
+function SolutionPanel(props: { answerHtml: string; explanationHtml?: string }) {
+	return (
+		<div class="q-solution solution-reveal">
+			<p class="q-solution__title">解き方</p>
+			<div class="q-solution__answer">
+				<span class="q-solution__answer-label">答え</span>
+				<span
+					class="q-solution__answer-value"
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: サーバー生成済みの信頼済みHTML(overline等)を描画
+					dangerouslySetInnerHTML={{ __html: props.answerHtml }}
+				/>
+			</div>
+			{props.explanationHtml ? (
+				<p
+					class="q-solution__explanation"
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: サーバー生成済みの信頼済みHTML(overline等)を描画
+					dangerouslySetInnerHTML={{ __html: props.explanationHtml }}
+				/>
 			) : null}
 		</div>
 	);

@@ -52,7 +52,6 @@ describe("home（/）", () => {
 		expect(res.status).toBe(200);
 		const html = await res.text();
 		expect(html).toContain("data-study-home");
-		expect(html).toContain("data-manifest");
 		expect(html).toContain("勉強が嫌いな日でも、まず今日のぶんだけ。");
 		// JSON-LD（WebSite + Course）が渡されている
 		expect(html).toContain('"@type":"WebSite"');
@@ -72,8 +71,8 @@ describe("home（/）", () => {
 		// 各行に演習ページ /unit-x/{主要年度} への「年度ごとに解く」サブリンクがある
 		expect(html).toContain('href="/unit-base-conversion/2013"');
 		expect(html).toContain("この単元の年度ごとに解く");
-		// data-unit-row が複数（マニフェスト件数分）出力される
-		const rowCount = (html.match(/data-unit-row=/g) ?? []).length;
+		// home-unit-row が複数（マニフェスト件数分）出力される
+		const rowCount = (html.match(/class="home-unit-row"/g) ?? []).length;
 		expect(rowCount).toBeGreaterThanOrEqual(9);
 	});
 });
@@ -144,14 +143,13 @@ describe("404（_404.tsx / NotFoundHandler）", () => {
 });
 
 describe("dashboard index（/dashboard/）", () => {
-	it("200・noindex・空状態 DOM・localStorage リダイレクトスクリプトを描画する", async () => {
+	it("200・noindex・ダッシュボード入口 island を描画する", async () => {
 		const res = await mountGet(dashboardIndex).request("/");
 		expect(res.status).toBe(200);
 		const html = await res.text();
-		expect(html).toContain('id="dash-empty"');
-		expect(html).toContain("まだ記録がありません");
-		// localStorage キー（fit-exam-user-id）を読む inline script が埋め込まれる
-		expect(html).toContain("fit-exam-user-id");
+		expect(html).toContain("読み込み中...");
+		expect(html).toContain('href="/dashboard"');
+		expect(html).not.toContain('id="dash-empty"');
 		expect(html).toContain('name="robots"');
 	});
 });

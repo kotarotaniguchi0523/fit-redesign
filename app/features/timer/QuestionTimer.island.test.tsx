@@ -1,6 +1,7 @@
+import { render } from "hono/jsx/dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { setupQuestionTimer } from "./question-timer";
+import QuestionTimer from "./$QuestionTimer";
 
 // AudioContext モック
 class MockOscillatorNode {
@@ -44,14 +45,13 @@ vi.stubGlobal("AudioContext", MockAudioContext);
 
 function createElement(questionId = "exam1-2013-q1"): HTMLElement {
 	const el = document.createElement("div");
-	el.setAttribute("data-question-timer", "");
-	el.setAttribute("question-id", questionId);
+	el.dataset.questionId = questionId;
 	return el;
 }
 
 function mount(el: HTMLElement): HTMLElement {
 	document.body.appendChild(el);
-	setupQuestionTimer(el);
+	render(<QuestionTimer questionId={el.dataset.questionId ?? "exam1-2013-q1"} />, el);
 	return el;
 }
 
@@ -75,6 +75,16 @@ function getPopover(_el: HTMLElement): HTMLDivElement {
 	return document.body.querySelector(".z-50") as HTMLDivElement;
 }
 
+async function flushEffects(): Promise<void> {
+	await Promise.resolve();
+}
+
+async function advance(ms: number): Promise<void> {
+	await flushEffects();
+	await vi.advanceTimersByTimeAsync(ms);
+	await flushEffects();
+}
+
 describe("QuestionTimer Custom Element", () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
@@ -83,6 +93,7 @@ describe("QuestionTimer Custom Element", () => {
 
 	afterEach(() => {
 		document.body.innerHTML = "";
+		vi.clearAllTimers();
 		vi.useRealTimers();
 	});
 
@@ -125,48 +136,48 @@ describe("QuestionTimer Custom Element", () => {
 			expect(getResetBtn(el).classList.contains("hidden")).toBe(false);
 		});
 
-		it("1秒経過後に 00:01 と表示される", () => {
+		it("1秒経過後に 00:01 と表示される", async () => {
 			const el = mount(createElement());
 
 			getStartStopBtn(el).click();
-			vi.advanceTimersByTime(1000);
+			await advance(1000);
 
 			expect(getTimeText(el).textContent).toBe("00:01");
 		});
 
-		it("65秒経過後に 01:05 と表示される", () => {
+		it("65秒経過後に 01:05 と表示される", async () => {
 			const el = mount(createElement());
 
 			getStartStopBtn(el).click();
-			vi.advanceTimersByTime(65_000);
+			await advance(65_000);
 
 			expect(getTimeText(el).textContent).toBe("01:05");
 		});
 
-		it("停止ボタンで一時停止する", () => {
+		it("停止ボタンで一時停止する", async () => {
 			const el = mount(createElement());
 
 			getStartStopBtn(el).click();
-			vi.advanceTimersByTime(5000);
+			await advance(5000);
 			getStartStopBtn(el).click(); // 停止
 
 			expect(getStartStopBtn(el).textContent).toBe("開始");
 			expect(getTimeText(el).textContent).toBe("00:05");
 
 			// 停止後は進まない
-			vi.advanceTimersByTime(3000);
+			await advance(3000);
 			expect(getTimeText(el).textContent).toBe("00:05");
 		});
 
-		it("停止→再開で計測が続行される", () => {
+		it("停止→再開で計測が続行される", async () => {
 			const el = mount(createElement());
 
 			getStartStopBtn(el).click();
-			vi.advanceTimersByTime(3000);
+			await advance(3000);
 			getStartStopBtn(el).click(); // 停止
 
 			getStartStopBtn(el).click(); // 再開
-			vi.advanceTimersByTime(2000);
+			await advance(2000);
 
 			expect(getTimeText(el).textContent).toBe("00:05");
 		});
@@ -204,24 +215,24 @@ describe("QuestionTimer Custom Element", () => {
 			expect(getTimeText(el).textContent).toContain("01:00");
 		});
 
-		it("カウントダウンが0になるとタイマーが停止する", () => {
+		it("カウントダウンが0になるとタイマーが停止する", async () => {
 			const el = mount(createElement());
 
 			switchToCountdown(el);
 			getStartStopBtn(el).click();
-			vi.advanceTimersByTime(60_000);
+			await advance(60_000);
 
 			expect(getTimeText(el).textContent).toBe("00:00");
 			expect(getStartStopBtn(el).textContent).toBe("開始");
 		});
 
-		it("カウントダウン完了時に完了スタイルが適用される", () => {
+		it("カウントダウン完了時に完了スタイルが適用される", async () => {
 			const el = mount(createElement());
 			const display = el.querySelector(".rounded-full") as HTMLDivElement;
 
 			switchToCountdown(el);
 			getStartStopBtn(el).click();
-			vi.advanceTimersByTime(60_000);
+			await advance(60_000);
 
 			expect(display.className).toContain("bg-red-100");
 			expect(display.className).toContain("animate-pulse");
@@ -244,12 +255,12 @@ describe("QuestionTimer Custom Element", () => {
 			expect(getTimeText(el).textContent).toContain("02:00");
 		});
 
-		it("リセットでカウントダウンが目標時間に戻る", () => {
+		it("リセットでカウントダウンが目標時間に戻る", async () => {
 			const el = mount(createElement());
 
 			switchToCountdown(el);
 			getStartStopBtn(el).click();
-			vi.advanceTimersByTime(10_000); // 10秒進める
+			await advance(10_000); // 10秒進める
 
 			// 50秒残り
 			expect(getTimeText(el).textContent).toBe("00:50");
@@ -300,11 +311,11 @@ describe("QuestionTimer Custom Element", () => {
 	});
 
 	describe("記録保存", () => {
-		it("ストップウォッチ停止時に記録が保存される", () => {
+		it("ストップウォッチ停止時に記録が保存される", async () => {
 			const el = mount(createElement("exam1-2013-q1"));
 
 			getStartStopBtn(el).click();
-			vi.advanceTimersByTime(10_000);
+			await advance(10_000);
 			getStartStopBtn(el).click(); // 停止
 
 			const raw = localStorage.getItem(
@@ -319,17 +330,17 @@ describe("QuestionTimer Custom Element", () => {
 			expect(record.attempts[0].mode).toBe("stopwatch");
 		});
 
-		it("前回・平均・回数が位置どおりに更新される（ref キャッシュ化の取り違え検出）", () => {
+		it("前回・平均・回数が位置どおりに更新される（ref キャッシュ化の取り違え検出）", async () => {
 			const el = mount(createElement("exam1-2013-q2"));
 
 			// 1回目: 30秒で停止 → 記録 duration=30（00:30）
 			getStartStopBtn(el).click();
-			vi.advanceTimersByTime(30_000);
+			await advance(30_000);
 			getStartStopBtn(el).click();
 
 			// 再開して計測続行（stopwatch は累積）し 120秒で停止 → 記録 duration=120（02:00）
 			getStartStopBtn(el).click();
-			vi.advanceTimersByTime(90_000);
+			await advance(90_000);
 			getStartStopBtn(el).click();
 
 			getSettingsBtn(el).click();

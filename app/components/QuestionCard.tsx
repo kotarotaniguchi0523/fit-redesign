@@ -2,7 +2,9 @@
 
 import AnswerSelector from "../features/answer/$AnswerSelector";
 import SelfGrade from "../features/answer/$SelfGrade";
+import CopyButton from "../features/markdown/$CopyButton";
 import { questionToMarkdown } from "../features/markdown/questionToMarkdown";
+import QuestionTimer from "../features/timer/$QuestionTimer";
 import { overlineToHtml } from "../lib/overline";
 import type { Question } from "../types";
 import { BinaryTree } from "./figures/BinaryTree";
@@ -17,12 +19,10 @@ import { TruthTable } from "./figures/TruthTable";
  * 問題カード。
  *
  * 回答 UI は island（AnswerSelector / SelfGrade）に置き換え、props を直接渡す
- * （旧 data 属性スクレイプは廃止）。island は closest("[data-question-card]") で
- * このカードを解決し、`[data-status-chip]` / `[data-solution]` / `[data-question-timer]`
- * を操作するため、これらの DOM フックを正確に再現する。
+ * （旧 data 属性スクレイプは廃止）。採点チップと解説パネルも island の状態から
+ * 宣言的に描画し、カード外 DOM への反映処理を持たない。
  *
- * timer（question-timer）と copy-button は命令的 client script（app/client.ts が配線）
- * なので、`data-question-timer` / `data-copy-button` 属性付き要素を出力するだけにする。
+ * timer と copy button は island が所有する。
  *
  * ExamSection / today ルートが `import { QuestionCard }` で参照するため named export。
  */
@@ -42,12 +42,11 @@ export function QuestionCard({ question, hidden }: Props) {
 	const markdownText = questionToMarkdown(question);
 	const hasOptions = !!question.options && question.options.length > 0;
 	const figureData = question.figureData;
+	const answerHtml = overlineToHtml(question.answer);
+	const explanationHtml = question.explanation ? overlineToHtml(question.explanation) : undefined;
 
 	return (
 		<article data-question-card data-question-id={question.id} class="q-card" hidden={hidden}>
-			{/* 進捗チップ（回答後に island が表示） */}
-			<div data-status-chip hidden class="q-chip" />
-
 			<div class="q-card__body">
 				{/* 1. 問題番号 + 種別 */}
 				<header class="q-head">
@@ -125,6 +124,8 @@ export function QuestionCard({ question, hidden }: Props) {
 						<AnswerSelector
 							questionId={question.id}
 							correctLabel={question.answer}
+							answerHtml={answerHtml}
+							explanationHtml={explanationHtml}
 							options={(question.options ?? []).map((option) => ({
 								label: option.label,
 								html: overlineToHtml(option.value || "(選択肢未入力)"),
@@ -133,65 +134,23 @@ export function QuestionCard({ question, hidden }: Props) {
 					</div>
 				) : (
 					<div class="mt-4 block">
-						<SelfGrade questionId={question.id} />
+						<SelfGrade
+							questionId={question.id}
+							answerHtml={answerHtml}
+							explanationHtml={explanationHtml}
+						/>
 					</div>
 				)}
 
-				{/* 5. 解き方パネル（回答後に island が表示） */}
-				<div data-solution hidden class="q-solution">
-					<p class="q-solution__title">解き方</p>
-					<div class="q-solution__answer">
-						<span class="q-solution__answer-label">答え</span>
-						<span
-							class="q-solution__answer-value"
-							// biome-ignore lint/security/noDangerouslySetInnerHtml: overline 変換済み HTML の注入（旧 set:html と同等）
-							dangerouslySetInnerHTML={{ __html: overlineToHtml(question.answer) }}
-						/>
-					</div>
-					{question.explanation ? (
-						<p
-							class="q-solution__explanation"
-							// biome-ignore lint/security/noDangerouslySetInnerHtml: overline 変換済み HTML の注入（旧 set:html と同等）
-							dangerouslySetInnerHTML={{ __html: overlineToHtml(question.explanation) }}
-						/>
-					) : null}
-				</div>
-
 				{/* 6. ツール（控えめなフッター） */}
 				<footer class="q-footer">
-					<div data-question-timer data-question-id={question.id} />
-					<button
-						type="button"
-						data-copy-button
-						data-copy-text={markdownText}
-						class="q-tool"
-						aria-label="Markdownでコピー"
+					<QuestionTimer questionId={question.id} />
+					<CopyButton
+						text={markdownText}
+						className="q-tool"
+						ariaLabel="Markdownでコピー"
 						title="Markdownでコピー"
-					>
-						<svg
-							class="copy-icon h-4 w-4"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							aria-hidden="true"
-						>
-							<title>copy</title>
-							<rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-							<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-						</svg>
-						<svg
-							class="check-icon hidden h-4 w-4 text-green-600"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							aria-hidden="true"
-						>
-							<title>copied</title>
-							<polyline points="20 6 9 17 4 12" />
-						</svg>
-					</button>
+					/>
 				</footer>
 			</div>
 		</article>
