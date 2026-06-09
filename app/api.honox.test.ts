@@ -1,22 +1,19 @@
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import apiMiddleware from "./routes/_middleware";
-import answerHistory from "./routes/answer/history";
-import answerStatus from "./routes/answer/status";
-import { POST as answerSubmit } from "./routes/answer/submit";
+import answer from "./routes/answer";
 import health from "./routes/health";
 import markdown from "./routes/markdown";
-import { DELETE as timerClear } from "./routes/timer/clear";
-import timerLoad from "./routes/timer/load";
-import { POST as timerSync } from "./routes/timer/sync";
+import timer from "./routes/timer";
 
 /**
  * 分解した API ファイルルート（app/routes/**）の古典派 integration テスト（AAA）。
  *
- * 本番では HonoX がディレクトリごとに sub-app を作り、_middleware.ts を `subApp.use("*")` で
- * 適用してネストマウントする。vitest では createApp()（import.meta.glob 依存）が動かないため、
- * 同じネスト構造（/api に共通 mw、/markdown に etag）を手で再現し、外部 URL の HTTP 振る舞い
- * （status・レスポンス形状・400/413/304・middleware ヘッダ）を app.request() で検証する。
+ * 本番では HonoX が answer.ts / timer.ts（chained Hono sub-app）を /answer・/timer へマウントし、
+ * _middleware.ts を `subApp.use("*")` で全ルートに適用する。vitest では createApp()
+ * （import.meta.glob 依存）が動かないため、同じネスト構造（共通 mw、/markdown に etag）を手で
+ * 再現し、外部 URL の HTTP 振る舞い（status・レスポンス形状・400/413/304・middleware ヘッダ）を
+ * app.request() で検証する。
  *
  * out-of-process 依存（D1 / KV）は空データを返す fake を注入する。
  */
@@ -47,19 +44,16 @@ function env() {
 
 /** HonoX のネスト sub-app マウントを忠実に再現した合成アプリ。 */
 function mountedApp() {
-	// biome-ignore lint/suspicious/noExplicitAny: テスト用に分解ハンドラ配列を spread マウントする
+	// biome-ignore lint/suspicious/noExplicitAny: テスト用に health ハンドラ配列を spread マウントする
 	const spread = (handlers: unknown) => handlers as any;
 
 	// API は /api プレフィックス無しで root 直下にマウントされる。_middleware は全ルートへ。
+	// answer / timer は chained Hono sub-app として /answer・/timer に route マウントする。
 	const app = new Hono();
 	app.use("*", ...spread(apiMiddleware));
 	app.get("/health", ...spread(health));
-	app.post("/answer/submit", ...spread(answerSubmit));
-	app.get("/answer/status", ...spread(answerStatus));
-	app.get("/answer/history", ...spread(answerHistory));
-	app.post("/timer/sync", ...spread(timerSync));
-	app.get("/timer/load", ...spread(timerLoad));
-	app.delete("/timer/clear", ...spread(timerClear));
+	app.route("/answer", answer);
+	app.route("/timer", timer);
 	app.route("/markdown", markdown);
 
 	return app;

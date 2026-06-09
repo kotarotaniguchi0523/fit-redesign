@@ -28,6 +28,7 @@ app.use(async (c, next) => {
 	}
 });
 
-// API は HonoX のファイルルート app/routes/api.ts（Hono インスタンスの default export）として
-// /* に自動マウントされる。ここでは composition root の共通ミドルウェアのみ適用する。
+// API は HonoX のファイルルートとして各パスへ自動マウントされる（answer.ts/timer.ts/markdown.ts =
+// default-export Hono sub-app を各パスへ、health.ts = handler を /health へ）。ここでは composition
+// root の共通ミドルウェアのみ適用する。
 export default createApp({ app });

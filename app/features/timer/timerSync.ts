@@ -1,7 +1,12 @@
+import { hc } from "hono/client";
 import { createLogger } from "../../lib/logger";
+import type { TimerApp } from "../../routes/timer";
 import type { TimerStorageData } from "./types";
 
 const logger = createLogger("[TimerSync]");
+
+// hc RPC クライアント（型は import type で取り込むため zod 等の server コードはバンドルされない）。
+const client = hc<TimerApp>("/timer");
 
 /**
  * サーバーにタイマーデータを同期（fire-and-forget）
@@ -11,16 +16,13 @@ export function syncToServer(userId: string, data: TimerStorageData): void {
 	const records = Object.fromEntries(
 		Object.entries(data.records).flatMap(([qid, record]) => (record ? [[qid, record]] : [])),
 	);
-	fetch("/timer/sync", {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ userId, records }),
-	})
+	client.sync
+		.$post({ json: { userId, records } })
 		.then((res) => {
-			if (!res.ok) {
-				logger.warn(`Sync failed with status ${res.status}`);
-			} else {
+			if (res.ok) {
 				logger.info("Synced to server successfully");
+			} else {
+				logger.warn(`Sync failed with status ${res.status}`);
 			}
 		})
 		.catch((err) => {
@@ -33,16 +35,13 @@ export function syncToServer(userId: string, data: TimerStorageData): void {
  */
 export async function loadFromServer(userId: string): Promise<TimerStorageData | null> {
 	try {
-		const res = await fetch(`/timer/load?userId=${encodeURIComponent(userId)}`);
-		if (!res.ok) {
+		const res = await client.load.$get({ query: { userId } });
+		// status===200 で成功型に絞り、records をキャスト無しで取り出す。
+		if (res.status !== 200) {
 			logger.warn(`Load from server failed with status ${res.status}`);
 			return null;
 		}
-		const json: unknown = await res.json();
-		const records =
-			json && typeof json === "object" && "records" in json
-				? (json as { records: TimerStorageData["records"] }).records
-				: {};
+		const { records } = await res.json();
 		return { version: 1, records };
 	} catch (err) {
 		logger.warn("Load from server failed (offline?)", { error: err });
@@ -89,8 +88,8 @@ export function mergeData(local: TimerStorageData, remote: TimerStorageData): Ti
  * サーバーから特定問題の履歴をクリア
  */
 export function clearOnServer(userId: string, questionId: string): void {
-	const query = `userId=${encodeURIComponent(userId)}&questionId=${encodeURIComponent(questionId)}`;
-	fetch(`/timer/clear?${query}`, { method: "DELETE" })
+	client.clear
+		.$delete({ query: { userId, questionId } })
 		.then((res) => {
 			if (!res.ok) {
 				logger.warn(`Clear on server failed with status ${res.status}`);

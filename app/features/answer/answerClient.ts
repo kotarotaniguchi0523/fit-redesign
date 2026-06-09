@@ -1,8 +1,13 @@
+import { hc } from "hono/client";
 import { QUESTION_GRADED_EVENT } from "../../constants";
 import { createLogger } from "../../lib/logger";
 import { getUserId } from "../../lib/userId";
+import type { AnswerApp } from "../../routes/answer";
 
 const logger = createLogger("[AnswerClient]");
+
+// hc RPC クライアント（型は import type で取り込むため zod 等の server コードはバンドルされない）。
+const client = hc<AnswerApp>("/answer");
 
 export interface AnswerStatus {
 	label: string;
@@ -25,13 +30,10 @@ export function fetchAnswerStatuses(): Promise<AnswerStatusMap> {
 		return statusPromise;
 	}
 
-	statusPromise = fetch(`/answer/status?userId=${encodeURIComponent(userId)}`)
-		.then((res) => (res.ok ? (res.json() as Promise<unknown>) : null))
-		.then((data) =>
-			data && typeof data === "object" && "statuses" in data
-				? ((data as { statuses: AnswerStatusMap }).statuses ?? {})
-				: {},
-		)
+	// res.ok は全レスポンスで boolean のため .json() を成功型へ絞れない。status===200 で判別する。
+	statusPromise = client.status
+		.$get({ query: { userId } })
+		.then(async (res) => (res.status === 200 ? (await res.json()).statuses : {}))
 		.catch(() => ({}));
 
 	return statusPromise;
@@ -57,17 +59,15 @@ export async function saveAnswer(params: {
 	if (userId === "anonymous") return;
 
 	try {
-		await fetch("/answer/submit", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
+		await client.submit.$post({
+			json: {
 				userId,
 				questionId: params.questionId,
 				selectedLabel: params.selectedLabel,
 				isCorrect: params.isCorrect,
 				duration: params.duration,
 				timestamp: Date.now(),
-			}),
+			},
 		});
 	} catch {
 		logger.warn("Failed to save answer to server");
