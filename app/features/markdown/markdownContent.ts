@@ -1,6 +1,6 @@
 import { getExamByNumber } from "../../data/exams";
 import { unitBasedTabs } from "../../data/units";
-import type { ExamNumber, Year } from "../../types";
+import type { ExamNumber, Question, Year } from "../../types";
 
 /**
  * AI エージェント向け Markdown コンテンツ生成（純粋ロジック）。
@@ -47,7 +47,18 @@ export async function renderMarkdown(path: string): Promise<MarkdownResult> {
 }
 
 export function generateSiteOverview(): string {
-	const lines: string[] = [
+	const unitRows = unitBasedTabs.map((unit) => {
+		const years = unit.examMapping.map((m) => m.year).join(", ");
+		return `| ${unit.name} | ${unit.description} | ${years} |`;
+	});
+	const endpointRows = unitBasedTabs.flatMap((unit) =>
+		unit.examMapping.map(
+			(mapping) =>
+				`- \`/markdown/${unit.id}/${mapping.year}\` - ${unit.name} (${mapping.year}年度)`,
+		),
+	);
+
+	return [
 		"# 基本情報技術 I - 明治大学 演習問題サイト",
 		"",
 		"明治大学の「基本情報技術 I」講義の演習問題を単元別・年度別に整理したサイトです。",
@@ -57,26 +68,44 @@ export function generateSiteOverview(): string {
 		"",
 		"| 単元 | 概要 | 年度 |",
 		"|------|------|------|",
+		...unitRows,
+		"",
+		"## エンドポイント",
+		"",
+		"各単元の問題と解答をMarkdownで取得:",
+		"",
+		...endpointRows,
+	].join("\n");
+}
+
+function questionMarkdownLines(question: Question): string[] {
+	const optionLines = question.options?.length
+		? [...question.options.map((option) => `- **${option.label}**: ${option.value}`), ""]
+		: [];
+	const figureLines = question.figureDescription ? [`*図: ${question.figureDescription}*`, ""] : [];
+	const explanationLines = question.explanation ? [`**解説:** ${question.explanation}`, ""] : [];
+
+	return [
+		`### 問題 ${question.number}`,
+		"",
+		question.text,
+		"",
+		...optionLines,
+		...figureLines,
+		`**解答:** ${question.answer}`,
+		"",
+		...explanationLines,
+		"---",
+		"",
 	];
+}
 
-	for (const unit of unitBasedTabs) {
-		const years = unit.examMapping.map((m) => m.year).join(", ");
-		lines.push(`| ${unit.name} | ${unit.description} | ${years} |`);
-	}
+async function examMarkdownLines(examNum: ExamNumber, year: Year): Promise<string[]> {
+	const examByYear = await getExamByNumber(examNum);
+	const exam = examByYear?.exams[year];
+	if (!exam) return [];
 
-	lines.push("");
-	lines.push("## エンドポイント");
-	lines.push("");
-	lines.push("各単元の問題と解答をMarkdownで取得:");
-	lines.push("");
-
-	for (const unit of unitBasedTabs) {
-		for (const mapping of unit.examMapping) {
-			lines.push(`- \`/markdown/${unit.id}/${mapping.year}\` - ${unit.name} (${mapping.year}年度)`);
-		}
-	}
-
-	return lines.join("\n");
+	return [`## ${exam.title}`, "", ...exam.questions.flatMap(questionMarkdownLines)];
 }
 
 async function generateUnitMarkdown(
@@ -84,7 +113,11 @@ async function generateUnitMarkdown(
 	year: Year,
 	examNumbers: ExamNumber[],
 ): Promise<string> {
-	const lines: string[] = [
+	const examLines = (
+		await Promise.all(examNumbers.map((examNum) => examMarkdownLines(examNum, year)))
+	).flat();
+
+	return [
 		`# ${unit.title} (${year}年度)`,
 		"",
 		`> ${unit.description}`,
@@ -93,48 +126,6 @@ async function generateUnitMarkdown(
 		`- 単元: ${unit.name}`,
 		`- 年度: ${year}`,
 		"",
-	];
-
-	for (const examNum of examNumbers) {
-		const examByYear = await getExamByNumber(examNum);
-		if (!examByYear) continue;
-
-		const exam = examByYear.exams[year];
-		if (!exam) continue;
-
-		lines.push(`## ${exam.title}`);
-		lines.push("");
-
-		for (const question of exam.questions) {
-			lines.push(`### 問題 ${question.number}`);
-			lines.push("");
-			lines.push(question.text);
-			lines.push("");
-
-			if (question.options && question.options.length > 0) {
-				for (const option of question.options) {
-					lines.push(`- **${option.label}**: ${option.value}`);
-				}
-				lines.push("");
-			}
-
-			if (question.figureDescription) {
-				lines.push(`*図: ${question.figureDescription}*`);
-				lines.push("");
-			}
-
-			lines.push(`**解答:** ${question.answer}`);
-			lines.push("");
-
-			if (question.explanation) {
-				lines.push(`**解説:** ${question.explanation}`);
-				lines.push("");
-			}
-
-			lines.push("---");
-			lines.push("");
-		}
-	}
-
-	return lines.join("\n");
+		...examLines,
+	].join("\n");
 }

@@ -16,7 +16,7 @@ import {
 } from "../../constants";
 import type { QuestionId } from "../../types";
 import { formatTime } from "./timeFormat";
-import { clearQuestionRecords, loadTimerData, saveAttempt } from "./timerStorage";
+import { clearQuestionRecords, loadTimerData, saveAttempt, saveTimerData } from "./timerStorage";
 import type { AttemptRecord, TimerMode } from "./types";
 
 interface QuestionTimerProps {
@@ -352,9 +352,7 @@ export default function QuestionTimer({ questionId }: QuestionTimerProps) {
 
 		startTransition(async () => {
 			const { loadFromServer, mergeData } = await import("./timerSync");
-			const { getUserId } = await import("../../lib/userId");
-			const { saveTimerData } = await import("./timerStorage");
-			const remoteData = await loadFromServer(getUserId());
+			const remoteData = await loadFromServer();
 			if (cancelled) return;
 			if (!remoteData) return;
 			const localResult = loadTimerData();

@@ -1,9 +1,8 @@
 import { Hono } from "hono";
 import { getAnswerStatuses, updateAnswerStatus } from "../server/answerCache";
 import { getUserAnswerHistory, insertAnswer } from "../server/answerRepository";
-import { AnswerSubmitSchema } from "../types/answer";
-import { UserIdQuerySchema } from "../types/api";
 import { type Env, postBodyLimit, validate } from "./_lib";
+import { AnswerSubmitSchema } from "./_schemas";
 
 /**
  * 回答 API の sub-app。HonoX に `/answer` へマウントされ、hc RPC の型基盤 `AnswerApp` を提供する。
@@ -13,8 +12,8 @@ import { type Env, postBodyLimit, validate } from "./_lib";
  */
 const answer = new Hono<Env>()
 	.post("/submit", postBodyLimit, validate("json", AnswerSubmitSchema), async (c) => {
-		const { userId, questionId, selectedLabel, isCorrect, duration, timestamp } =
-			c.req.valid("json");
+		const userId = c.var.userId;
+		const { questionId, selectedLabel, isCorrect, duration, timestamp } = c.req.valid("json");
 		const answerId = await insertAnswer(c.env.DB, {
 			userId,
 			questionId,
@@ -30,13 +29,13 @@ const answer = new Hono<Env>()
 		}
 		return c.json({ ok: true, answerId });
 	})
-	.get("/status", validate("query", UserIdQuerySchema), async (c) => {
-		const { userId } = c.req.valid("query");
+	.get("/status", async (c) => {
+		const userId = c.var.userId;
 		const statuses = await getAnswerStatuses(c.env.CACHE, c.env.DB, userId);
 		return c.json({ statuses });
 	})
-	.get("/history", validate("query", UserIdQuerySchema), async (c) => {
-		const { userId } = c.req.valid("query");
+	.get("/history", async (c) => {
+		const userId = c.var.userId;
 		const answers = await getUserAnswerHistory(c.env.DB, userId);
 		return c.json({ answers });
 	});

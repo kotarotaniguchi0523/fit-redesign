@@ -1,4 +1,5 @@
 import type { FlowchartEdge, FlowchartNode } from "../../types";
+import { pointsToPolyline } from "./svg-path";
 
 export const FLOWCHART_DEFAULTS = {
 	WIDTH: 300,
@@ -91,38 +92,24 @@ export function buildEdgeRenderData(
 	edges: FlowchartEdge[],
 ): EdgeRenderData[] {
 	const nodeMap = new Map(nodes.map((n) => [n.id, n]));
-	const result: EdgeRenderData[] = [];
-
-	for (const edge of edges) {
+	return edges.flatMap((edge) => {
 		const fromNode = nodeMap.get(edge.from);
 		const toNode = nodeMap.get(edge.to);
-		if (!(fromNode && toNode)) continue;
+		if (!(fromNode && toNode)) return [];
 
 		const fromSide = edge.fromSide ?? "bottom";
 		const toSide = edge.toSide ?? "top";
 		const start = getEdgePoint(fromNode, fromSide);
 		const end = getEdgePoint(toNode, toSide);
 
-		let pathD: string;
-		if (edge.points && edge.points.length > 0) {
-			const points = [start, ...edge.points, end];
-			pathD = `M ${points[0].x} ${points[0].y}`;
-			for (let j = 1; j < points.length; j++) {
-				pathD += ` L ${points[j].x} ${points[j].y}`;
-			}
-		} else {
-			pathD = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
-		}
+		const manualPoints = edge.points ?? [];
+		const hasManualPoints = manualPoints.length > 0;
+		const points = hasManualPoints ? [start, ...manualPoints, end] : [start, end];
+		const pathD = pointsToPolyline(points);
+		const labelPoint = hasManualPoints
+			? manualPoints[0]
+			: { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
 
-		let labelX = (start.x + end.x) / 2;
-		let labelY = (start.y + end.y) / 2;
-		if (edge.points && edge.points.length > 0) {
-			labelX = edge.points[0].x;
-			labelY = edge.points[0].y;
-		}
-
-		result.push({ pathD, label: edge.label, labelX, labelY });
-	}
-
-	return result;
+		return [{ pathD, label: edge.label, labelX: labelPoint.x, labelY: labelPoint.y }];
+	});
 }

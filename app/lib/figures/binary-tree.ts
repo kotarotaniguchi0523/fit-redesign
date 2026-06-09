@@ -25,62 +25,56 @@ export function calculatePositions(
 	nodeRadius: number,
 ): NodePosition[] {
 	const depth = getTreeDepth(root);
-	const positions: NodePosition[] = [];
 
-	const walk = (node: TreeNode | undefined, level: number, left: number, right: number) => {
-		if (!node) return;
+	const walk = (
+		node: TreeNode | undefined,
+		level: number,
+		left: number,
+		right: number,
+	): NodePosition[] => {
+		if (!node) return [];
 
 		const x = node.x !== undefined ? node.x : (left + right) / 2;
 		const y = node.y !== undefined ? node.y : ((level + 1) / (depth + 1)) * height;
+		const current = { x, y, node };
+		const leftPositions = node.left ? walk(node.left, level + 1, left, x) : [];
+		const rightPositions = node.right ? walk(node.right, level + 1, x, right) : [];
 
-		positions.push({ x, y, node });
-
-		if (node.left) {
-			walk(node.left, level + 1, left, x);
-		}
-		if (node.right) {
-			walk(node.right, level + 1, x, right);
-		}
+		return [current, ...leftPositions, ...rightPositions];
 	};
 
-	walk(root, 0, nodeRadius * 2, width - nodeRadius * 2);
-	return positions;
+	return walk(root, 0, nodeRadius * 2, width - nodeRadius * 2);
 }
 
 export function getEdgeLines(positions: NodePosition[], nodeRadius: number): EdgeLine[] {
-	const positionMap = new Map<TreeNode, NodePosition>();
-	for (const pos of positions) {
-		positionMap.set(pos.node, pos);
-	}
+	const positionMap = new Map(positions.map((pos) => [pos.node, pos]));
 
-	const edges: Array<{ from: NodePosition; to: NodePosition }> = [];
-
-	const collectEdges = (node: TreeNode | undefined, parentPos: NodePosition | null) => {
-		if (!(node && parentPos)) return;
+	const collectEdges = (
+		node: TreeNode | undefined,
+		parentPos: NodePosition | null,
+	): Array<{ from: NodePosition; to: NodePosition }> => {
+		if (!(node && parentPos)) return [];
 
 		const currentPos = positionMap.get(node);
-		if (!currentPos) return;
+		if (!currentPos) return [];
 
-		edges.push({ from: parentPos, to: currentPos });
+		const childEdges = [
+			...(node.left ? collectEdges(node.left, currentPos) : []),
+			...(node.right ? collectEdges(node.right, currentPos) : []),
+		];
 
-		if (node.left) {
-			collectEdges(node.left, currentPos);
-		}
-		if (node.right) {
-			collectEdges(node.right, currentPos);
-		}
+		return [{ from: parentPos, to: currentPos }, ...childEdges];
 	};
 
 	const root = positions[0]?.node;
 	const rootPos = root ? positionMap.get(root) : undefined;
-	if (root && rootPos) {
-		if (root.left) {
-			collectEdges(root.left, rootPos);
-		}
-		if (root.right) {
-			collectEdges(root.right, rootPos);
-		}
-	}
+	const edges =
+		root && rootPos
+			? [
+					...(root.left ? collectEdges(root.left, rootPos) : []),
+					...(root.right ? collectEdges(root.right, rootPos) : []),
+				]
+			: [];
 
 	return edges.map((edge) => {
 		const dx = edge.to.x - edge.from.x;

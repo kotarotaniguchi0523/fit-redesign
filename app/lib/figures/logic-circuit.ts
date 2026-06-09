@@ -1,4 +1,5 @@
 import type { LogicGate, LogicInput, LogicOutput, LogicWire } from "../../types";
+import { pointsToPolyline } from "./svg-path";
 
 export const LOGIC_DEFAULTS = {
 	GATE_WIDTH: 50,
@@ -63,39 +64,15 @@ export function getWirePath(
 	const toElement = elementMap.get(wire.to);
 	if (!(fromElement && toElement)) return null;
 
-	let startX: number;
-	let startY: number;
-	let endX: number;
-	let endY: number;
+	const start =
+		"label" in fromElement && inputs.includes(fromElement as LogicInput)
+			? { x: fromElement.x + 20, y: fromElement.y }
+			: { x: (fromElement as LogicGate).x + gateWidth / 2, y: (fromElement as LogicGate).y };
+	const end =
+		"label" in toElement && outputs.includes(toElement as LogicOutput)
+			? { x: toElement.x - 20, y: toElement.y }
+			: { x: (toElement as LogicGate).x - gateWidth / 2, y: (toElement as LogicGate).y };
+	const points = wire.points?.length ? [start, ...wire.points, end] : [start, end];
 
-	if ("label" in fromElement && inputs.includes(fromElement as LogicInput)) {
-		startX = fromElement.x + 20;
-		startY = fromElement.y;
-	} else {
-		const gate = fromElement as LogicGate;
-		startX = gate.x + gateWidth / 2;
-		startY = gate.y;
-	}
-
-	if ("label" in toElement && outputs.includes(toElement as LogicOutput)) {
-		endX = toElement.x - 20;
-		endY = toElement.y;
-	} else {
-		const gate = toElement as LogicGate;
-		endX = gate.x - gateWidth / 2;
-		endY = gate.y;
-	}
-
-	let pathData: string;
-	if (wire.points && wire.points.length > 0) {
-		pathData = `M ${startX} ${startY}`;
-		for (const point of wire.points) {
-			pathData += ` L ${point.x} ${point.y}`;
-		}
-		pathData += ` L ${endX} ${endY}`;
-	} else {
-		pathData = `M ${startX} ${startY} L ${endX} ${endY}`;
-	}
-
-	return pathData;
+	return pointsToPolyline(points);
 }

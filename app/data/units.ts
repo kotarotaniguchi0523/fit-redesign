@@ -1,42 +1,37 @@
 import { z } from "zod";
 import { safeParseOrThrow } from "../lib/zod";
 import {
-	isExamNumber,
+	type ExamNumber,
+	ExamNumberSchema,
+	type Slide,
 	type Unit,
 	type UnitBasedTab,
 	type UnitTabId,
-	YEARS,
+	UnitTabIdSchema,
 	type Year,
+	YearSchema,
 } from "../types";
 import { getSlide } from "./slides";
 
-const YearSchema = z.enum(YEARS);
-const ExamNumberSchema = z
-	.number()
-	.int()
-	.refine((value) => isExamNumber(value), {
-		error: "exam number must be between 1 and 9",
-	});
-const UnitTabIdSchema = z.custom<UnitTabId>(
-	(value) => typeof value === "string" && /^unit-[a-z0-9-]+$/.test(value),
-	{ error: "unit tab id must match unit-*" },
-);
-
-const SlideOnlyUnitSchema = z.object({
-	id: z
-		.string()
-		.regex(/^slide-only-\d+$/, { error: "slide-only unit id must match slide-only-{n}" }),
-	number: z.number().int().nonnegative(),
-	name: z.string().min(1),
-	slides: z.array(z.unknown()).min(1),
-});
+const SlideOnlyUnitSchema = z
+	.object({
+		id: z
+			.string()
+			.regex(/^slide-only-\d+$/, { error: "slide-only unit id must match slide-only-{n}" }),
+		number: z.number().int().nonnegative(),
+		name: z.string().min(1),
+		slides: z.array(z.unknown()).min(1),
+	})
+	.strict();
 const SlideOnlyUnitsSchema = z.array(SlideOnlyUnitSchema);
 
-const UnitExamMappingSchema = z.object({
-	year: YearSchema,
-	examNumbers: z.array(ExamNumberSchema).min(1),
-	integratedTitle: z.string().min(1).optional(),
-});
+const UnitExamMappingSchema = z
+	.object({
+		year: YearSchema,
+		examNumbers: z.array(ExamNumberSchema).min(1),
+		integratedTitle: z.string().min(1).optional(),
+	})
+	.strict();
 
 const UnitBasedTabSchema = z
 	.object({
@@ -71,6 +66,16 @@ const UnitBasedTabsSchema = z.array(UnitBasedTabSchema).superRefine((tabs, ctx) 
 		});
 	}
 });
+
+type UnitBasedTabInput = Omit<UnitBasedTab, "id" | "slides" | "examMapping"> & {
+	id: string;
+	slides: Slide[];
+	examMapping: {
+		year: Year;
+		examNumbers: ExamNumber[];
+		integratedTitle?: string;
+	}[];
+};
 
 // 講義資料のみの単元
 const slideOnlyUnitsData: Unit[] = [
@@ -127,7 +132,7 @@ export const slideOnlyUnits: Unit[] = safeParseOrThrow(
  *   - オートマトン+符号理論 → exam6, exam7 (2016-2017はexam4)
  *   - データ構造+ソート → exam8, exam9 (2016-2017はexam5)
  */
-const unitBasedTabsData: UnitBasedTab[] = [
+const unitBasedTabsData: UnitBasedTabInput[] = [
 	{
 		id: "unit-base-conversion",
 		name: "基数変換",

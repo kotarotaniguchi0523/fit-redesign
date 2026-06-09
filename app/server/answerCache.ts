@@ -1,3 +1,4 @@
+import type { UserId } from "../types";
 import type { AnswerStatus } from "../types/answer";
 import { getLatestAnswers } from "./answerRepository";
 
@@ -12,7 +13,7 @@ import { getLatestAnswers } from "./answerRepository";
 
 const TTL_SECONDS = 86400 * 30; // 30日
 
-export function answerStatusKey(userId: string): string {
+export function answerStatusKey(userId: UserId): string {
 	return `answer:${userId}`;
 }
 
@@ -25,7 +26,7 @@ type StatusMap = Record<string, AnswerStatus>;
 export async function getAnswerStatuses(
 	cache: KVNamespace,
 	db: D1Database,
-	userId: string,
+	userId: UserId,
 ): Promise<StatusMap> {
 	const key = answerStatusKey(userId);
 
@@ -54,6 +55,6 @@ export async function getAnswerStatuses(
  * get→mutate→put だと別 question の並行 submit で取りこぼし（lost-update）が起きるため、
  * D1（信頼源）への再構築に委ねて整合性を保つ。
  */
-export async function updateAnswerStatus(cache: KVNamespace, userId: string): Promise<void> {
+export async function updateAnswerStatus(cache: KVNamespace, userId: UserId): Promise<void> {
 	await cache.delete(answerStatusKey(userId));
 }

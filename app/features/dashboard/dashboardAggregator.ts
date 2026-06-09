@@ -2,18 +2,13 @@ import { unitBasedTabs } from "../../data/units";
 import type { AnswerRecord } from "../../types/answer";
 
 // questionId → unitId マッピングを構築
-const questionToUnitMap = new Map<string, string>();
-
-for (const tab of unitBasedTabs) {
-	for (const mapping of tab.examMapping) {
-		for (const examNum of mapping.examNumbers) {
-			// exam{n}-{year}-q{m} パターンにマッチするキーを生成
-			// 実際のquestionIdは動的なので、examId部分でマッチさせる
-			const examPrefix = `exam${examNum}-${mapping.year}`;
-			questionToUnitMap.set(examPrefix, tab.id);
-		}
-	}
-}
+const questionToUnitMap: Map<string, string> = new Map(
+	unitBasedTabs.flatMap((tab) =>
+		tab.examMapping.flatMap((mapping) =>
+			mapping.examNumbers.map((examNum) => [`exam${examNum}-${mapping.year}`, tab.id] as const),
+		),
+	),
+);
 
 export function mapQuestionToUnit(questionId: string): string | null {
 	// exam1-2013-q1 → exam1-2013
@@ -63,6 +58,84 @@ interface MonthAccumulator {
 	durationCount: number;
 }
 
+interface DashboardAccumulator {
+	latestByQuestion: Map<string, AnswerRecord>;
+	monthAccumulators: Map<string, MonthAccumulator>;
+	totalAttempts: number;
+	durationSum: number;
+	durationCount: number;
+}
+
+const EMPTY_MONTH_ACCUMULATOR: MonthAccumulator = {
+	total: 0,
+	correct: 0,
+	durationSum: 0,
+	durationCount: 0,
+};
+
+function createDashboardAccumulator(): DashboardAccumulator {
+	return {
+		latestByQuestion: new Map(),
+		monthAccumulators: new Map(),
+		totalAttempts: 0,
+		durationSum: 0,
+		durationCount: 0,
+	};
+}
+
+function answerMonth(answer: AnswerRecord): string {
+	const date = new Date(answer.timestamp);
+	return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function addAnswerToMonth(
+	bucket: MonthAccumulator | undefined,
+	answer: AnswerRecord,
+): MonthAccumulator {
+	const current = bucket ?? EMPTY_MONTH_ACCUMULATOR;
+	return {
+		total: current.total + 1,
+		correct: current.correct + (answer.isCorrect ? 1 : 0),
+		durationSum: current.durationSum + (answer.duration ?? 0),
+		durationCount: current.durationCount + (answer.duration != null ? 1 : 0),
+	};
+}
+
+function addAnswerToDashboardAccumulator(
+	accumulator: DashboardAccumulator,
+	answer: AnswerRecord,
+): DashboardAccumulator {
+	const month = answerMonth(answer);
+	const nextBucket = addAnswerToMonth(accumulator.monthAccumulators.get(month), answer);
+	// private accumulator を in-place で更新（Map は既に in-place のため spread を揃える）。
+	accumulator.monthAccumulators.set(month, nextBucket);
+	accumulator.totalAttempts += 1;
+	accumulator.durationSum += answer.duration ?? 0;
+	accumulator.durationCount += answer.duration != null ? 1 : 0;
+	return accumulator;
+}
+
+function addQuestionRecordsToDashboardAccumulator(
+	accumulator: DashboardAccumulator,
+	records: AnswerRecord[],
+): DashboardAccumulator {
+	const latest = records.at(-1);
+	const answerAccumulator = records.reduce(addAnswerToDashboardAccumulator, accumulator);
+	if (!latest) return answerAccumulator;
+
+	answerAccumulator.latestByQuestion.set(latest.questionId, latest);
+	return answerAccumulator;
+}
+
+function collectDashboardAccumulator(
+	answerHistory: Record<string, AnswerRecord[]>,
+): DashboardAccumulator {
+	return Object.values(answerHistory).reduce(
+		addQuestionRecordsToDashboardAccumulator,
+		createDashboardAccumulator(),
+	);
+}
+
 /**
  * ダッシュボードの主要集計。
  *
@@ -74,53 +147,9 @@ interface MonthAccumulator {
  * 出力は旧実装と完全同値（avgDuration の 0→null truthiness 分岐も含めて保存）。
  */
 export function aggregateStats(answerHistory: Record<string, AnswerRecord[]>): DashboardData {
-	const latestByQuestion = new Map<string, AnswerRecord>();
-	const monthAccumulators = new Map<string, MonthAccumulator>();
-	let totalAttempts = 0;
-	let latestCorrectCount = 0;
-	let durationSum = 0;
-	let durationCount = 0;
-
-	// 1 パスで複数構造（latest map・月バケット・duration 集計・件数）を同時構築するため for...of。
-	// 旧実装の flat→filter→reduce→aggregateByMonth の 4 走査を 1 走査に統合する正当なケース。
-	for (const records of Object.values(answerHistory)) {
-		const length = records.length;
-		if (length === 0) continue;
-
-		// 最新回答（配列末尾）。旧 latestByQuestion.set(qid, records.at(-1)) と同値。
-		const latest = records[length - 1];
-		latestByQuestion.set(latest.questionId, latest);
-		if (latest.isCorrect) latestCorrectCount++;
-
-		for (let i = 0; i < length; i++) {
-			const answer = records[i];
-			totalAttempts++;
-
-			if (answer.duration != null) {
-				durationSum += answer.duration;
-				durationCount++;
-			}
-
-			const date = new Date(answer.timestamp);
-			const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-			const bucket = monthAccumulators.get(month);
-			if (bucket) {
-				bucket.total++;
-				if (answer.isCorrect) bucket.correct++;
-				if (answer.duration != null) {
-					bucket.durationSum += answer.duration;
-					bucket.durationCount++;
-				}
-			} else {
-				monthAccumulators.set(month, {
-					total: 1,
-					correct: answer.isCorrect ? 1 : 0,
-					durationSum: answer.duration != null ? answer.duration : 0,
-					durationCount: answer.duration != null ? 1 : 0,
-				});
-			}
-		}
-	}
+	const accumulator = collectDashboardAccumulator(answerHistory);
+	const { latestByQuestion, monthAccumulators, totalAttempts, durationSum, durationCount } =
+		accumulator;
 
 	if (totalAttempts === 0) {
 		return {
@@ -145,6 +174,9 @@ export function aggregateStats(answerHistory: Record<string, AnswerRecord[]>): D
 
 	// 旧実装の truthiness 分岐を保存: 平均が 0（falsy）なら null を返す。
 	const avgDuration = durationCount > 0 ? durationSum / durationCount : null;
+	const latestCorrectCount = Array.from(latestByQuestion.values()).filter(
+		(answer) => answer.isCorrect,
+	).length;
 
 	return {
 		totalQuestions: getTotalQuestionCount(),
@@ -181,50 +213,34 @@ export function aggregateByMonth(answers: AnswerRecord[]): MonthlyStats[] {
 	const byMonth = new Map<string, MonthAccumulator>();
 
 	// 1 パスで月バケットの集計値を直接蓄積する（旧実装は Map<string, AnswerRecord[]> を作り直して再走査）。
-	for (const answer of answers) {
-		const date = new Date(answer.timestamp);
-		const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-		const bucket = byMonth.get(month);
-		if (bucket) {
-			bucket.total++;
-			if (answer.isCorrect) bucket.correct++;
-			if (answer.duration != null) {
-				bucket.durationSum += answer.duration;
-				bucket.durationCount++;
-			}
-		} else {
-			byMonth.set(month, {
-				total: 1,
-				correct: answer.isCorrect ? 1 : 0,
-				durationSum: answer.duration != null ? answer.duration : 0,
-				durationCount: answer.duration != null ? 1 : 0,
-			});
-		}
-	}
+	const monthAccumulators = answers.reduce((accumulators, answer) => {
+		const month = answerMonth(answer);
+		accumulators.set(month, addAnswerToMonth(accumulators.get(month), answer));
+		return accumulators;
+	}, byMonth);
 
-	return monthAccumulatorsToStats(byMonth);
+	return monthAccumulatorsToStats(monthAccumulators);
 }
 
 function aggregateByUnit(answerHistory: Record<string, AnswerRecord[]>): UnitStats[] {
-	const unitMap = new Map<string, { answers: Map<string, AnswerRecord[]> }>();
-
-	for (const [questionId, records] of Object.entries(answerHistory)) {
+	const unitMap = Object.entries(answerHistory).reduce((accumulator, [questionId, records]) => {
 		const unitId = mapQuestionToUnit(questionId);
-		if (!unitId) continue;
+		if (!unitId) return accumulator;
 
-		let unitEntry = unitMap.get(unitId);
-		if (!unitEntry) {
-			unitEntry = { answers: new Map() };
-			unitMap.set(unitId, unitEntry);
+		// accumulator(private)の inner Map を in-place で set（new Map(current) で作り直すと単元
+		// あたり O(q²) になるため避ける）。
+		const unitEntry = accumulator.get(unitId);
+		if (unitEntry) {
+			unitEntry.answers.set(questionId, records);
+		} else {
+			accumulator.set(unitId, { answers: new Map([[questionId, records]]) });
 		}
-		unitEntry.answers.set(questionId, records);
-	}
+		return accumulator;
+	}, new Map<string, { answers: Map<string, AnswerRecord[]> }>());
 
-	const stats: UnitStats[] = [];
-
-	for (const tab of unitBasedTabs) {
+	return unitBasedTabs.flatMap((tab) => {
 		const unitData = unitMap.get(tab.id);
-		if (!unitData) continue;
+		if (!unitData) return [];
 
 		const allAnswers = Array.from(unitData.answers.values()).flat();
 		const correct = allAnswers.filter((a) => a.isCorrect).length;
@@ -242,34 +258,32 @@ function aggregateByUnit(answerHistory: Record<string, AnswerRecord[]>): UnitSta
 			})),
 		}));
 
-		stats.push({
-			unitId: tab.id,
-			unitName: tab.name,
-			unitIcon: tab.icon,
-			totalAnswers: allAnswers.length,
-			correctAnswers: correct,
-			accuracy: allAnswers.length > 0 ? Math.round((correct / allAnswers.length) * 100) : 0,
-			trend,
-			questionDetails,
-		});
-	}
-
-	return stats;
+		return [
+			{
+				unitId: tab.id,
+				unitName: tab.name,
+				unitIcon: tab.icon,
+				totalAnswers: allAnswers.length,
+				correctAnswers: correct,
+				accuracy: allAnswers.length > 0 ? Math.round((correct / allAnswers.length) * 100) : 0,
+				trend,
+				questionDetails,
+			},
+		];
+	});
 }
 
 function getRecentAccuracies(answers: AnswerRecord[], windowSize: number): number[] {
 	if (answers.length < 2) return [];
 
 	const sorted = [...answers].sort((a, b) => a.timestamp - b.timestamp);
-	const accuracies: number[] = [];
-
-	for (let i = windowSize - 1; i < sorted.length; i += windowSize) {
-		const window = sorted.slice(Math.max(0, i - windowSize + 1), i + 1);
+	const windowCount = Math.max(0, Math.floor((sorted.length - windowSize) / windowSize) + 1);
+	return Array.from({ length: windowCount }, (_, index) => {
+		const end = index * windowSize + windowSize - 1;
+		const window = sorted.slice(Math.max(0, end - windowSize + 1), end + 1);
 		const correct = window.filter((a) => a.isCorrect).length;
-		accuracies.push((correct / window.length) * 100);
-	}
-
-	return accuracies;
+		return (correct / window.length) * 100;
+	});
 }
 
 export function calculateTrend(values: number[]): "improving" | "stable" | "declining" {
@@ -277,19 +291,17 @@ export function calculateTrend(values: number[]): "improving" | "stable" | "decl
 
 	// 線形回帰の傾き
 	const n = values.length;
-	let sumX = 0;
-	let sumY = 0;
-	let sumXY = 0;
-	let sumX2 = 0;
+	const sums = values.reduce(
+		(acc, value, index) => ({
+			sumX: acc.sumX + index,
+			sumY: acc.sumY + value,
+			sumXY: acc.sumXY + index * value,
+			sumX2: acc.sumX2 + index * index,
+		}),
+		{ sumX: 0, sumY: 0, sumXY: 0, sumX2: 0 },
+	);
 
-	for (let i = 0; i < n; i++) {
-		sumX += i;
-		sumY += values[i];
-		sumXY += i * values[i];
-		sumX2 += i * i;
-	}
-
-	const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+	const slope = (n * sums.sumXY - sums.sumX * sums.sumY) / (n * sums.sumX2 - sums.sumX * sums.sumX);
 
 	if (slope > 3) return "improving";
 	if (slope < -3) return "declining";
@@ -297,22 +309,11 @@ export function calculateTrend(values: number[]): "improving" | "stable" | "decl
 }
 
 function getTotalQuestionCount(): number {
-	let count = 0;
-	const seen = new Set<string>();
-
-	for (const tab of unitBasedTabs) {
-		for (const mapping of tab.examMapping) {
-			for (const examNum of mapping.examNumbers) {
-				const key = `exam${examNum}-${mapping.year}`;
-				if (!seen.has(key)) {
-					seen.add(key);
-					// 各試験は複数問題を含む可能性があるが、正確な数はデータ読み込みが必要
-					// ここでは examMapping のエントリ数を近似値として使用
-					count++;
-				}
-			}
-		}
-	}
-
-	return count;
+	return new Set(
+		unitBasedTabs.flatMap((tab) =>
+			tab.examMapping.flatMap((mapping) =>
+				mapping.examNumbers.map((examNum) => `exam${examNum}-${mapping.year}`),
+			),
+		),
+	).size;
 }

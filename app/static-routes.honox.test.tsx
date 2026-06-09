@@ -143,13 +143,18 @@ describe("404（_404.tsx / NotFoundHandler）", () => {
 });
 
 describe("dashboard index（/dashboard/）", () => {
-	it("200・noindex・ダッシュボード入口 island を描画する", async () => {
-		const res = await mountGet(dashboardIndex).request("/");
-		expect(res.status).toBe(200);
-		const html = await res.text();
-		expect(html).toContain("読み込み中...");
-		expect(html).toContain('href="/dashboard"');
-		expect(html).not.toContain('id="dash-empty"');
-		expect(html).toContain('name="robots"');
+	it("Cookie userId のダッシュボードへリダイレクトする", async () => {
+		const app = new Hono();
+		app.use("*", testRenderer);
+		app.use("*", async (c, next) => {
+			c.set("userId", "550e8400-e29b-41d4-a716-446655440000");
+			c.set("userIdCookieIssued", false);
+			await next();
+		});
+		app.get("/", ...(dashboardIndex as never));
+
+		const res = await app.request("/");
+		expect(res.status).toBe(302);
+		expect(res.headers.get("Location")).toBe("/dashboard/550e8400-e29b-41d4-a716-446655440000");
 	});
 });

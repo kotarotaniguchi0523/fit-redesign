@@ -1,3 +1,4 @@
+import { type QuestionId, QuestionIdSchema, type UserId, UserIdSchema } from "../types";
 import type { AnswerRecord, AnswerStatus } from "../types/answer";
 import { upsertUser } from "./userRepository";
 
@@ -15,8 +16,8 @@ interface AnswerRow {
 function rowToRecord(row: AnswerRow): AnswerRecord {
 	return {
 		id: row.id,
-		userId: row.user_id,
-		questionId: row.question_id,
+		userId: UserIdSchema.parse(row.user_id),
+		questionId: QuestionIdSchema.parse(row.question_id),
 		selectedLabel: row.selected_label,
 		isCorrect: row.is_correct === 1,
 		duration: row.duration,
@@ -26,8 +27,8 @@ function rowToRecord(row: AnswerRow): AnswerRecord {
 }
 
 export interface InsertAnswerInput {
-	userId: string;
-	questionId: string;
+	userId: UserId;
+	questionId: QuestionId;
 	selectedLabel: string;
 	isCorrect: boolean;
 	duration: number | null;
@@ -51,7 +52,7 @@ export async function insertAnswer(db: D1Database, input: InsertAnswerInput): Pr
 
 export async function getLatestAnswers(
 	db: D1Database,
-	userId: string,
+	userId: UserId,
 ): Promise<Record<string, AnswerStatus>> {
 	const result = await db
 		.prepare(
@@ -80,29 +81,29 @@ export async function getLatestAnswers(
  * クエリ結果と分離して getUserAnswerHistory とベンチ（dashboardAggregator.bench.ts）の
  * 双方が同一実装を呼ぶため export している。
  *
- * 1 パスで plain object に push して構築する（旧 reduce の
- * `history[qid] = [...(history[qid] ?? []), record]` は行ごとに配列を作り直し O(m^2) だった）。
- * 既存配列に破壊的 push するため push の不変版に戻すと O(m^2) になり、for...of を使う。
- * first-seen のキー挿入順を保持し、旧 reduce と同じ Record キー順・同値の出力になる。
+ * Map はこの関数内の accumulator としてだけ使い、返す値は新しい Record に変換する。
+ * first-seen のキー挿入順を保持し、旧実装と同じ Record キー順・同値の出力になる。
  */
 export function groupRowsByQuestion(rows: AnswerRow[]): Record<string, AnswerRecord[]> {
-	const history: Record<string, AnswerRecord[]> = {};
-	// 1 パスで plain object に直接 push（O(m) 構築）。
-	for (const row of rows) {
+	// accumulator(private Map)の配列を in-place で push する。[...prev, record] で作り直すと
+	// 問題あたり O(k²)（全体 O(m²)）になるため避ける。Map 挿入順 = first-seen キー順は維持される。
+	const groupedRows = rows.reduce((history, row) => {
 		const record = rowToRecord(row);
-		const bucket = history[record.questionId];
+		const bucket = history.get(record.questionId);
 		if (bucket) {
 			bucket.push(record);
 		} else {
-			history[record.questionId] = [record];
+			history.set(record.questionId, [record]);
 		}
-	}
-	return history;
+		return history;
+	}, new Map<string, AnswerRecord[]>());
+
+	return Object.fromEntries(groupedRows);
 }
 
 export async function getUserAnswerHistory(
 	db: D1Database,
-	userId: string,
+	userId: UserId,
 ): Promise<Record<string, AnswerRecord[]>> {
 	const result = await db
 		.prepare(

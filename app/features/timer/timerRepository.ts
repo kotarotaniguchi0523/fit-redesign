@@ -1,6 +1,6 @@
 import { MAX_ATTEMPTS_PER_QUESTION } from "../../constants";
 import { upsertUser } from "../../server/userRepository";
-import type { QuestionId } from "../../types";
+import { type QuestionId, QuestionIdSchema, type UserId } from "../../types";
 import type { AttemptRecord, TimerStorageData } from "./types";
 
 /** D1 の batch 上限（1 バッチあたりの最大ステートメント数）。 */
@@ -15,7 +15,7 @@ interface AttemptRow {
 	completed: number;
 }
 
-export async function loadUserAttempts(db: D1Database, userId: string): Promise<TimerStorageData> {
+export async function loadUserAttempts(db: D1Database, userId: UserId): Promise<TimerStorageData> {
 	const result = await db
 		.prepare(
 			"SELECT question_id, timestamp, duration, mode, target_time, completed FROM attempts WHERE user_id = ? ORDER BY timestamp ASC",
@@ -23,15 +23,8 @@ export async function loadUserAttempts(db: D1Database, userId: string): Promise<
 		.bind(userId)
 		.all<AttemptRow>();
 
-	const records: TimerStorageData["records"] = {};
-
-	for (const row of result.results) {
-		const qid = row.question_id as QuestionId;
-		let record = records[qid];
-		if (!record) {
-			record = { questionId: qid, attempts: [] };
-			records[qid] = record;
-		}
+	const groupedRows = result.results.reduce((records, row) => {
+		const qid = QuestionIdSchema.parse(row.question_id);
 		const attempt: AttemptRecord = {
 			timestamp: row.timestamp,
 			duration: row.duration,
@@ -39,21 +32,32 @@ export async function loadUserAttempts(db: D1Database, userId: string): Promise<
 			completed: row.completed === 1,
 			...(row.target_time != null ? { targetTime: row.target_time } : {}),
 		};
-		record.attempts.push(attempt);
-	}
-
-	// 各問題ごとに MAX_ATTEMPTS_PER_QUESTION で切り詰め
-	for (const record of Object.values(records)) {
-		if (record && record.attempts.length > MAX_ATTEMPTS_PER_QUESTION) {
-			record.attempts = record.attempts.slice(-MAX_ATTEMPTS_PER_QUESTION);
+		// accumulator(private Map)の attempts を in-place で push（[...prev, attempt] は問題あたり
+		// O(k²) になるため避ける）。timestamp ASC の SQL 順をそのまま保持する。
+		const currentRecord = records.get(qid);
+		if (currentRecord) {
+			currentRecord.attempts.push(attempt);
+		} else {
+			records.set(qid, { questionId: qid, attempts: [attempt] });
 		}
-	}
+		return records;
+	}, new Map<QuestionId, { questionId: QuestionId; attempts: AttemptRecord[] }>());
+
+	const records = Object.fromEntries(
+		Array.from(groupedRows.entries()).map(([qid, record]) => [
+			qid,
+			{
+				questionId: record.questionId,
+				attempts: record.attempts.slice(-MAX_ATTEMPTS_PER_QUESTION),
+			},
+		]),
+	) as TimerStorageData["records"];
 
 	return { version: 1, records };
 }
 
 interface ClientRecord {
-	questionId: string;
+	questionId: QuestionId;
 	attempts: {
 		timestamp: number;
 		duration: number;
@@ -65,7 +69,7 @@ interface ClientRecord {
 
 export async function syncAttempts(
 	db: D1Database,
-	userId: string,
+	userId: UserId,
 	clientRecords: Record<string, ClientRecord>,
 ): Promise<TimerStorageData> {
 	await upsertUser(db, userId);
@@ -109,8 +113,8 @@ export async function syncAttempts(
 
 export async function clearUserQuestionRecords(
 	db: D1Database,
-	userId: string,
-	questionId: string,
+	userId: UserId,
+	questionId: QuestionId,
 ): Promise<void> {
 	await db
 		.prepare("DELETE FROM attempts WHERE user_id = ? AND question_id = ?")

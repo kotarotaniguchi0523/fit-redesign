@@ -31,6 +31,29 @@ function validateAttempt(v: unknown): v is AttemptRecord {
 	);
 }
 
+function validateStoredAttempt(key: string, attempt: unknown): string | null {
+	return validateAttempt(attempt) ? null : `records[${key}] に不正な attempt があります`;
+}
+
+function validateStoredRecordEntry([key, record]: [string, unknown]): string | null {
+	if (!QUESTION_ID_RE.test(key)) {
+		return `不正な questionId キー: ${key}`;
+	}
+	if (!isRecord(record)) {
+		return `records[${key}] がオブジェクトではありません`;
+	}
+	if (record.questionId !== key) {
+		return `records のキーと questionId が不一致: ${key}`;
+	}
+	if (!Array.isArray(record.attempts)) {
+		return `records[${key}].attempts が配列ではありません`;
+	}
+
+	return (
+		record.attempts.map((attempt) => validateStoredAttempt(key, attempt)).find(Boolean) ?? null
+	);
+}
+
 function validateTimerStorageData(
 	data: unknown,
 ): { success: true; data: TimerStorageData } | { success: false; error: string } {
@@ -39,25 +62,8 @@ function validateTimerStorageData(
 	if (!isRecord(data.records))
 		return { success: false, error: "records がオブジェクトではありません" };
 
-	for (const [key, record] of Object.entries(data.records)) {
-		if (!QUESTION_ID_RE.test(key)) {
-			return { success: false, error: `不正な questionId キー: ${key}` };
-		}
-		if (!isRecord(record)) {
-			return { success: false, error: `records[${key}] がオブジェクトではありません` };
-		}
-		if (record.questionId !== key) {
-			return { success: false, error: `records のキーと questionId が不一致: ${key}` };
-		}
-		if (!Array.isArray(record.attempts)) {
-			return { success: false, error: `records[${key}].attempts が配列ではありません` };
-		}
-		for (const attempt of record.attempts) {
-			if (!validateAttempt(attempt)) {
-				return { success: false, error: `records[${key}] に不正な attempt があります` };
-			}
-		}
-	}
+	const invalidRecord = Object.entries(data.records).map(validateStoredRecordEntry).find(Boolean);
+	if (invalidRecord) return { success: false, error: invalidRecord };
 
 	return { success: true, data: data as TimerStorageData };
 }
@@ -230,9 +236,10 @@ export function saveAttempt(
 			attempts: trimmedAttempts,
 		};
 
-		return Object.assign({}, data, {
-			records: Object.assign({}, data.records, { [questionId]: updatedRecord }),
-		});
+		return {
+			...data,
+			records: { ...data.records, [questionId]: updatedRecord },
+		};
 	});
 
 	if (!result.ok) {
@@ -246,7 +253,7 @@ export function saveAttempt(
 	// Fire-and-forget server sync
 	import("./timerSync")
 		.then(({ syncToServer }) => {
-			syncToServer(getUserId(), result.value);
+			syncToServer(result.value);
 		})
 		.catch(() => {});
 
@@ -256,13 +263,10 @@ export function saveAttempt(
 export function clearQuestionRecords(questionId: QuestionId): Result<void, StorageError> {
 	logger.info("Clearing records for question");
 
-	const result = withTimerData((data) =>
-		Object.assign({}, data, {
-			records: Object.fromEntries(
-				Object.entries(data.records).filter(([key]) => key !== questionId),
-			),
-		}),
-	);
+	const result = withTimerData((data) => ({
+		...data,
+		records: Object.fromEntries(Object.entries(data.records).filter(([key]) => key !== questionId)),
+	}));
 
 	if (result.ok) {
 		logger.info("Records cleared successfully");
@@ -270,7 +274,7 @@ export function clearQuestionRecords(questionId: QuestionId): Result<void, Stora
 		// Fire-and-forget server clear
 		import("./timerSync")
 			.then(({ clearOnServer }) => {
-				clearOnServer(getUserId(), questionId);
+				clearOnServer(questionId);
 			})
 			.catch(() => {});
 

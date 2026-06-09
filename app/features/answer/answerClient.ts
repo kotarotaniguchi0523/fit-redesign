@@ -1,7 +1,6 @@
 import { hc } from "hono/client";
 import { QUESTION_GRADED_EVENT } from "../../constants";
 import { createLogger } from "../../lib/logger";
-import { getUserId } from "../../lib/userId";
 import type { AnswerApp } from "../../routes/answer";
 
 const logger = createLogger("[AnswerClient]");
@@ -24,15 +23,9 @@ let statusPromise: Promise<AnswerStatusMap> | null = null;
 export function fetchAnswerStatuses(): Promise<AnswerStatusMap> {
 	if (statusPromise) return statusPromise;
 
-	const userId = getUserId();
-	if (userId === "anonymous") {
-		statusPromise = Promise.resolve({});
-		return statusPromise;
-	}
-
 	// res.ok は全レスポンスで boolean のため .json() を成功型へ絞れない。status===200 で判別する。
 	statusPromise = client.status
-		.$get({ query: { userId } })
+		.$get()
 		.then(async (res) => (res.status === 200 ? (await res.json()).statuses : {}))
 		.catch(() => ({}));
 
@@ -55,13 +48,9 @@ export async function saveAnswer(params: {
 		}),
 	);
 
-	const userId = getUserId();
-	if (userId === "anonymous") return;
-
 	try {
 		await client.submit.$post({
 			json: {
-				userId,
 				questionId: params.questionId,
 				selectedLabel: params.selectedLabel,
 				isCorrect: params.isCorrect,

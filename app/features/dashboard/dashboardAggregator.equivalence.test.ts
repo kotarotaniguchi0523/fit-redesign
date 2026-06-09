@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { groupRowsByQuestion } from "../../server/answerRepository";
+import { QuestionIdSchema, UserIdSchema } from "../../types";
 import type { AnswerRecord } from "../../types/answer";
 import { aggregateStats } from "./dashboardAggregator";
 import { makeRows, oldAggregateStats, oldGroupRowsByQuestion } from "./dashboardAggregator.golden";
@@ -11,18 +12,21 @@ import { makeRows, oldAggregateStats, oldGroupRowsByQuestion } from "./dashboard
  * 既存 dashboardAggregator.test.ts は unitStats/questionDetails/trend をほぼ触らず
  * fake question ID を使うため、ここで実在 exam ペア + 大量データ + 境界ケースを検証する。
  */
+const TEST_USER_ID = "550e8400-e29b-41d4-a716-446655440000";
 
 function rec(
 	partial: Partial<AnswerRecord> & { questionId: string; timestamp: number },
 ): AnswerRecord {
+	const questionId = QuestionIdSchema.parse(partial.questionId);
 	return {
 		id: 1,
-		userId: "u1",
+		userId: UserIdSchema.parse(TEST_USER_ID),
 		selectedLabel: "ア",
 		isCorrect: true,
 		duration: null,
 		createdAt: partial.timestamp,
 		...partial,
+		questionId,
 	};
 }
 
@@ -104,7 +108,7 @@ describe("aggregateStats 同値性", () => {
 		const history = groupRowsByQuestion([
 			{
 				id: 1,
-				user_id: "u",
+				user_id: TEST_USER_ID,
 				question_id: "exam2-2013-q1",
 				selected_label: "ア",
 				is_correct: 1,
@@ -114,7 +118,7 @@ describe("aggregateStats 同値性", () => {
 			},
 			{
 				id: 2,
-				user_id: "u",
+				user_id: TEST_USER_ID,
 				question_id: "exam2-2013-q1",
 				selected_label: "イ",
 				is_correct: 0,

@@ -5,6 +5,7 @@ import answer from "./routes/answer";
 import health from "./routes/health";
 import markdown from "./routes/markdown";
 import timer from "./routes/timer";
+import { ensureUserIdentity } from "./server/userIdentity";
 
 /**
  * 分解した API ファイルルート（app/routes/**）の古典派 integration テスト（AAA）。
@@ -18,9 +19,12 @@ import timer from "./routes/timer";
  * out-of-process 依存（D1 / KV）は空データを返す fake を注入する。
  */
 
-function makeFakeDb(): D1Database {
+function makeFakeDb(bindCalls: unknown[][] = []): D1Database {
 	const stmt = {
-		bind: () => stmt,
+		bind: (...args: unknown[]) => {
+			bindCalls.push(args);
+			return stmt;
+		},
 		all: () => Promise.resolve({ results: [] }),
 		run: () => Promise.resolve({ meta: { last_row_id: 1 }, success: true }),
 		first: () => Promise.resolve(null),
@@ -38,8 +42,8 @@ function makeFakeKv(): KVNamespace {
 	} as unknown as KVNamespace;
 }
 
-function env() {
-	return { DB: makeFakeDb(), CACHE: makeFakeKv() } as unknown as Cloudflare.Env;
+function env(bindCalls: unknown[][] = []) {
+	return { DB: makeFakeDb(bindCalls), CACHE: makeFakeKv() } as unknown as Cloudflare.Env;
 }
 
 /** HonoX のネスト sub-app マウントを忠実に再現した合成アプリ。 */
@@ -51,6 +55,12 @@ function mountedApp() {
 	// answer / timer は chained Hono sub-app として /answer・/timer に route マウントする。
 	const app = new Hono();
 	app.use("*", ...spread(apiMiddleware));
+	app.use("*", async (c, next) => {
+		const identity = ensureUserIdentity(c);
+		c.set("userId", identity.userId);
+		c.set("userIdCookieIssued", identity.userIdCookieIssued);
+		await next();
+	});
 	app.get("/health", ...spread(health));
 	app.route("/answer", answer);
 	app.route("/timer", timer);
@@ -69,27 +79,84 @@ describe("外部 URL の一致（HonoX マウント越し）", () => {
 
 describe("answer routes", () => {
 	it("GET /answer/status は { statuses } を返す（D1 空→空マップ）", async () => {
-		const res = await mountedApp().request("/answer/status?userId=u1", {}, env());
+		const res = await mountedApp().request("/answer/status", {}, env());
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({ statuses: {} });
 	});
 
-	it("GET /answer/status は userId 無しで 400（{ error, details } 形状）", async () => {
+	it("GET /answer/status は userId Cookie が無い場合も middleware が発行して返す", async () => {
 		const res = await mountedApp().request("/answer/status", {}, env());
-		expect(res.status).toBe(400);
-		const body = (await res.json()) as { error: string; details: unknown };
-		expect(body.error).toBe("Invalid request");
-		expect(Array.isArray(body.details)).toBe(true);
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({ statuses: {} });
+		expect(res.headers.get("Set-Cookie")).toContain("fit-exam-user-id=");
 	});
 
 	it("POST /answer/submit は { ok, answerId } を返す", async () => {
+		const bindCalls: unknown[][] = [];
 		const res = await mountedApp().request(
 			"/answer/submit",
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					userId: "u1",
+					questionId: "exam1-2013-q1",
+					selectedLabel: "ア",
+					isCorrect: true,
+					timestamp: 1700000000000,
+				}),
+			},
+			env(bindCalls),
+		);
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({ ok: true, answerId: 1 });
+		expect(bindCalls[1]?.[0]).toMatch(
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+		);
+	});
+
+	it("POST /answer/submit は body ではなく HttpOnly Cookie の userId で記録する", async () => {
+		const bindCalls: unknown[][] = [];
+		const cookieUserId = "550e8400-e29b-41d4-a716-446655440000";
+		const res = await mountedApp().request(
+			"/answer/submit",
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Cookie: `fit-exam-user-id=${cookieUserId}`,
+				},
+				body: JSON.stringify({
+					questionId: "exam1-2013-q1",
+					selectedLabel: "ア",
+					isCorrect: true,
+					timestamp: 1700000000000,
+				}),
+			},
+			env(bindCalls),
+		);
+
+		expect(res.status).toBe(200);
+		expect(res.headers.get("Set-Cookie")).toBeNull();
+		expect(bindCalls[0]).toEqual([
+			cookieUserId,
+			expect.any(Number),
+			expect.any(Number),
+			expect.any(Number),
+		]);
+		expect(bindCalls[1]?.[0]).toBe(cookieUserId);
+	});
+
+	it("POST /answer/submit は余計な userId body を 400 で拒否する", async () => {
+		const res = await mountedApp().request(
+			"/answer/submit",
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Cookie: "fit-exam-user-id=550e8400-e29b-41d4-a716-446655440000",
+				},
+				body: JSON.stringify({
+					userId: "client-controlled-value",
 					questionId: "exam1-2013-q1",
 					selectedLabel: "ア",
 					isCorrect: true,
@@ -98,8 +165,8 @@ describe("answer routes", () => {
 			},
 			env(),
 		);
-		expect(res.status).toBe(200);
-		expect(await res.json()).toEqual({ ok: true, answerId: 1 });
+
+		expect(res.status).toBe(400);
 	});
 
 	it("POST /answer/submit は不正な questionId で 400", async () => {
@@ -109,7 +176,6 @@ describe("answer routes", () => {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					userId: "u1",
 					questionId: "bad-id",
 					selectedLabel: "ア",
 					isCorrect: true,
@@ -122,7 +188,7 @@ describe("answer routes", () => {
 	});
 
 	it("GET /answer/history は { answers } を返す", async () => {
-		const res = await mountedApp().request("/answer/history?userId=u1", {}, env());
+		const res = await mountedApp().request("/answer/history", {}, env());
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({ answers: {} });
 	});
@@ -130,7 +196,7 @@ describe("answer routes", () => {
 
 describe("timer routes", () => {
 	it("GET /timer/load は { records, syncedAt } を返す", async () => {
-		const res = await mountedApp().request("/timer/load?userId=u1", {}, env());
+		const res = await mountedApp().request("/timer/load", {}, env());
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as { records: unknown; syncedAt: number };
 		expect(body.records).toEqual({});
@@ -143,7 +209,7 @@ describe("timer routes", () => {
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ userId: "u1", records: {} }),
+				body: JSON.stringify({ records: {} }),
 			},
 			env(),
 		);
@@ -155,7 +221,7 @@ describe("timer routes", () => {
 
 	it("DELETE /timer/clear は { success: true } を返す", async () => {
 		const res = await mountedApp().request(
-			"/timer/clear?userId=u1&questionId=exam1-2013-q1",
+			"/timer/clear?questionId=exam1-2013-q1",
 			{ method: "DELETE" },
 			env(),
 		);
@@ -164,7 +230,7 @@ describe("timer routes", () => {
 	});
 
 	it("DELETE /timer/clear は questionId 無しで 400", async () => {
-		const res = await mountedApp().request("/timer/clear?userId=u1", { method: "DELETE" }, env());
+		const res = await mountedApp().request("/timer/clear", { method: "DELETE" }, env());
 		expect(res.status).toBe(400);
 	});
 });
@@ -201,7 +267,6 @@ describe("middleware（hono-mw）", () => {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					userId: "u1",
 					questionId: "exam1-2013-q1",
 					selectedLabel: "x".repeat(300_000),
 					isCorrect: true,
@@ -227,12 +292,12 @@ describe("middleware（hono-mw）", () => {
 	});
 
 	it("request-id: レスポンスに X-Request-Id ヘッダが付く", async () => {
-		const res = await mountedApp().request("/answer/status?userId=u1", {}, env());
+		const res = await mountedApp().request("/answer/status", {}, env());
 		expect(res.headers.get("X-Request-Id")).toBeTruthy();
 	});
 
 	it("timing: レスポンスに Server-Timing ヘッダが付く", async () => {
-		const res = await mountedApp().request("/answer/status?userId=u1", {}, env());
+		const res = await mountedApp().request("/answer/status", {}, env());
 		expect(res.headers.get("Server-Timing")).toBeTruthy();
 	});
 });

@@ -3,6 +3,7 @@ import type { Context, ValidationTargets } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { createFactory } from "hono/factory";
 import type { ZodType } from "zod";
+import type { UserIdentityVariables } from "../server/userIdentity";
 
 /**
  * API エンドポイント（health / answer / timer / markdown）の共有 plumbing。`_` 接頭辞のため
@@ -14,7 +15,7 @@ import type { ZodType } from "zod";
  * cross-cutting middleware は app/routes/_middleware.ts（logger/request-id/timing、全ルート適用）。
  * 機能固有スキーマは features/<x>/、複数機能横断スキーマは types/ に置く（ここには集約しない）。
  */
-export type Env = { Bindings: Cloudflare.Env };
+export type Env = { Bindings: Cloudflare.Env; Variables: UserIdentityVariables };
 
 export const apiRoute = createFactory<Env>().createHandlers;
 

@@ -1,8 +1,11 @@
 import { z } from "zod";
-import { MEIJI_FIT_BASE, YEARS } from "../../types";
-
-const YearSchema = z.enum(YEARS);
-const ExamNumberSchema = z.number().int().min(1).max(9);
+import {
+	ExamIdSchema,
+	ExamNumberSchema,
+	PdfPathSchema,
+	QuestionIdSchema,
+	YearSchema,
+} from "../../types";
 
 export const JsonExamFilePathSchema = z.string().regex(/^..\/exams-json\/exam\d+-\d{4}\.json$/, {
 	error: "exam json path must match ../exams-json/exam{n}-{year}.json",
@@ -25,32 +28,40 @@ export const ParsedJsonExamFilePathSchema = JsonExamFilePathSchema.transform((fi
 	}),
 );
 
-const QuestionOptionSchema = z.object({
-	label: z.string().min(1),
-	value: z.string(),
-	isCorrect: z.boolean().optional(),
-});
+const QuestionOptionSchema = z
+	.object({
+		label: z.string().min(1).max(16),
+		value: z.string().min(1),
+		isCorrect: z.boolean().optional(),
+	})
+	.strict();
 
-const PointSchema = z.object({
-	x: z.number(),
-	y: z.number(),
-});
+const PointSchema = z
+	.object({
+		x: z.number(),
+		y: z.number(),
+	})
+	.strict();
 
-const StateNodeSchema = z.object({
-	id: z.string().min(1),
-	label: z.string().min(1),
-	x: z.number(),
-	y: z.number(),
-	isInitial: z.boolean().optional(),
-	isAccepting: z.boolean().optional(),
-});
+const StateNodeSchema = z
+	.object({
+		id: z.string().min(1),
+		label: z.string().min(1),
+		x: z.number(),
+		y: z.number(),
+		isInitial: z.boolean().optional(),
+		isAccepting: z.boolean().optional(),
+	})
+	.strict();
 
-const TransitionSchema = z.object({
-	from: z.string().min(1),
-	to: z.string().min(1),
-	label: z.string().min(1),
-	curveOffset: z.number().optional(),
-});
+const TransitionSchema = z
+	.object({
+		from: z.string().min(1),
+		to: z.string().min(1),
+		label: z.string().min(1),
+		curveOffset: z.number().optional(),
+	})
+	.strict();
 
 const TreeNodeSchema: z.ZodType<unknown> = z.lazy(() =>
 	z.object({
@@ -172,35 +183,54 @@ const FigureDataSchema = z.discriminatedUnion("type", [
 	}),
 ]);
 
-const QuestionSchema = z.object({
-	id: z.string().min(1),
-	number: z.number().int().positive(),
-	text: z.string().min(1),
-	options: z.array(QuestionOptionSchema).optional(),
-	answer: z.string().min(1),
-	explanation: z.string().optional(),
-	figureDescription: z.string().optional(),
-	figureData: FigureDataSchema.optional(),
-});
+const QuestionSchema = z
+	.object({
+		id: QuestionIdSchema,
+		number: z.number().int().positive(),
+		text: z.string().min(1),
+		options: z.array(QuestionOptionSchema).optional(),
+		answer: z.string().min(1),
+		explanation: z.string().optional(),
+		figureDescription: z.string().optional(),
+		figureData: FigureDataSchema.optional(),
+	})
+	.strict();
 
-export const ExamJsonSchema = z.object({
-	id: z.string().regex(/^exam\d+-\d{4}$/),
-	number: ExamNumberSchema,
-	title: z.string().min(1),
-	pdfPath: z.string().startsWith(`${MEIJI_FIT_BASE}/`),
-	answerPdfPath: z.string().startsWith(`${MEIJI_FIT_BASE}/`),
-	questions: z.array(QuestionSchema),
-});
+export const ExamJsonSchema = z
+	.object({
+		id: ExamIdSchema,
+		number: ExamNumberSchema,
+		title: z.string().min(1),
+		pdfPath: PdfPathSchema,
+		answerPdfPath: PdfPathSchema,
+		questions: z.array(QuestionSchema).min(1),
+	})
+	.strict()
+	.superRefine((exam, ctx) => {
+		const questionIds = exam.questions.map((question) => question.id);
+		const uniqueQuestionIds = new Set(questionIds);
+		if (uniqueQuestionIds.size !== questionIds.length) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["questions"],
+				message: "question ids must be unique within an exam",
+			});
+		}
+	});
 
-export const ExamsMetaSchema = z.object({
-	version: z.literal(1),
-	exams: z.array(
-		z.object({
-			examNumber: ExamNumberSchema,
-			title: z.string().min(1),
-			availableYears: z.array(YearSchema),
-		}),
-	),
-});
+export const ExamsMetaSchema = z
+	.object({
+		version: z.literal(1),
+		exams: z.array(
+			z
+				.object({
+					examNumber: ExamNumberSchema,
+					title: z.string().min(1),
+					availableYears: z.array(YearSchema),
+				})
+				.strict(),
+		),
+	})
+	.strict();
 
 export { YearSchema };

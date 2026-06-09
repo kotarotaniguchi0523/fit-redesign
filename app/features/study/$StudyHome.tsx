@@ -17,12 +17,16 @@ function refreshAction(version: number, _action: "refresh"): number {
 	return version + 1;
 }
 
+function lowerReadiness(current: UnitStat | undefined, candidate: UnitStat): UnitStat {
+	return !current || candidate.readiness < current.readiness ? candidate : current;
+}
+
 function pickTarget(stats: UnitStat[]): UnitStat | undefined {
-	const withDue = stats.filter((u) => u.due > 0).sort((a, b) => a.readiness - b.readiness);
-	const incomplete = stats
+	const dueTarget = stats.filter((u) => u.due > 0).reduce(lowerReadiness, undefined);
+	const incompleteTarget = stats
 		.filter((u) => u.entry.questionIds.length > 0 && u.readiness < 100)
-		.sort((a, b) => a.readiness - b.readiness);
-	return withDue[0] ?? incomplete[0] ?? stats[0];
+		.reduce(lowerReadiness, undefined);
+	return dueTarget ?? incompleteTarget ?? stats[0];
 }
 
 export default function StudyHome({ manifest }: StudyHomeProps) {

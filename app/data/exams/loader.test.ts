@@ -75,14 +75,14 @@ describe("exams loader public API", () => {
 
 describe("exams loader schema validation (rejection path)", () => {
 	const baseValidExam = {
-		id: "exam1-2099",
+		id: "exam1-2013",
 		number: 1,
 		title: "テスト試験",
 		pdfPath: "https://www.isc.meiji.ac.jp/~kikn/FIT/test.pdf",
 		answerPdfPath: "https://www.isc.meiji.ac.jp/~kikn/FIT/test-answer.pdf",
 		questions: [
 			{
-				id: "q1",
+				id: "exam1-2013-q1",
 				number: 1,
 				text: "問題文",
 				answer: "ア",
@@ -93,7 +93,7 @@ describe("exams loader schema validation (rejection path)", () => {
 	it("accepts a well-formed exam object", () => {
 		// Arrange / Act / Assert
 		const parsed = safeParseOrThrow(ExamJsonSchema, baseValidExam, "valid");
-		expect(parsed.id).toBe("exam1-2099");
+		expect(parsed.id).toBe("exam1-2013");
 	});
 
 	it("rejects an exam with a malformed id", () => {

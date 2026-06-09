@@ -1,5 +1,6 @@
 import { unitBasedTabs } from "../../data/units";
 import type { AnswerRow } from "../../server/answerRepository";
+import { QuestionIdSchema, UserIdSchema } from "../../types";
 import type { AnswerRecord } from "../../types/answer";
 
 /**
@@ -13,6 +14,8 @@ import type { AnswerRecord } from "../../types/answer";
 // 実在する exam{n}-{year} ペア（app/data/units.ts の examMapping）。
 // 異なる単元へ写像されるよう年/番号を散らす。mapQuestionToUnit が null を返すと
 // aggregateByUnit（最重量パス）がベンチされないため、必ず実在ペアを使う。
+const BENCH_USER_ID = "550e8400-e29b-41d4-a716-446655440000";
+
 const EXAM_PREFIXES = [
 	"exam1-2013",
 	"exam2-2013",
@@ -49,7 +52,7 @@ export function makeRows(count: number, seed = 42): AnswerRow[] {
 		const hasDuration = rng() > 0.2;
 		return {
 			id: i + 1,
-			user_id: "bench-user",
+			user_id: BENCH_USER_ID,
 			question_id: `${prefix}-q${qNum}`,
 			selected_label: "ア",
 			is_correct: rng() > 0.4 ? 1 : 0,
@@ -65,8 +68,8 @@ export function makeRows(count: number, seed = 42): AnswerRow[] {
 function oldRowToRecord(row: AnswerRow): AnswerRecord {
 	return {
 		id: row.id,
-		userId: row.user_id,
-		questionId: row.question_id,
+		userId: UserIdSchema.parse(row.user_id),
+		questionId: QuestionIdSchema.parse(row.question_id),
 		selectedLabel: row.selected_label,
 		isCorrect: row.is_correct === 1,
 		duration: row.duration,

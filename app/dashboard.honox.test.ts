@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import dashboard from "./routes/dashboard/[userId]";
 
+const USER_ID = "550e8400-e29b-41d4-a716-446655440000";
+
 /**
  * HonoX 版 dashboard 動的ルート（app/routes/dashboard/[userId].tsx）の古典派テスト（AAA）。
  *
@@ -49,17 +51,22 @@ function mountedWithUserId() {
 	return parent;
 }
 
-/** `/dashboard` マウント（userId 未解決 → redirect 分岐用）。 */
-function mountedWithoutUserId() {
+/** `/dashboard/:userId` マウント + Cookie userId 変数。 */
+function mountedWithCookieUserId() {
 	const parent = new Hono();
-	parent.route("/dashboard", dashboard);
+	parent.use("*", async (c, next) => {
+		c.set("userId", USER_ID);
+		c.set("userIdCookieIssued", false);
+		await next();
+	});
+	parent.route("/dashboard/:userId", dashboard);
 	return parent;
 }
 
 describe("dashboard 描画", () => {
 	it("回答履歴が空のとき empty 状態を描画する", async () => {
 		// Arrange: D1 が空配列を返す
-		const res = await mountedWithUserId().request("/dashboard/u1", {}, env([]));
+		const res = await mountedWithUserId().request(`/dashboard/${USER_ID}`, {}, env([]));
 
 		// Assert
 		expect(res.status).toBe(200);
@@ -67,7 +74,7 @@ describe("dashboard 描画", () => {
 		expect(body).toContain("学習ダッシュボード");
 		expect(body).toContain("まだ問題を解いていません");
 		// 共有リンクに userId が反映される（末尾スラッシュ無し = trimTrailingSlash 正規化後の形）
-		expect(body).toContain("/dashboard/u1");
+		expect(body).toContain(`/dashboard/${USER_ID}`);
 	});
 
 	it("回答履歴があるとき集計サマリーを描画する", async () => {
@@ -75,7 +82,7 @@ describe("dashboard 描画", () => {
 		const rows: FakeAnswerRow[] = [
 			{
 				id: 1,
-				user_id: "u1",
+				user_id: USER_ID,
 				question_id: "exam1-2013-q1",
 				selected_label: "ア",
 				is_correct: 1,
@@ -84,7 +91,7 @@ describe("dashboard 描画", () => {
 				created_at: 1700000000000,
 			},
 		];
-		const res = await mountedWithUserId().request("/dashboard/u1", {}, env(rows));
+		const res = await mountedWithUserId().request(`/dashboard/${USER_ID}`, {}, env(rows));
 
 		// Assert
 		expect(res.status).toBe(200);
@@ -107,7 +114,7 @@ describe("dashboard 描画", () => {
 		parent.route("/dashboard/:userId", dashboard);
 
 		// Act
-		const res = await parent.request("/dashboard/u1", {}, brokenEnv);
+		const res = await parent.request(`/dashboard/${USER_ID}`, {}, brokenEnv);
 
 		// Assert
 		expect(res.status).toBe(200);
@@ -117,9 +124,9 @@ describe("dashboard 描画", () => {
 });
 
 describe("dashboard redirect 分岐", () => {
-	it("userId が無いとき '/' へリダイレクトする", async () => {
-		const res = await mountedWithoutUserId().request("/dashboard", {}, env([]));
+	it("URL userId が不正なとき Cookie userId の dashboard へリダイレクトする", async () => {
+		const res = await mountedWithCookieUserId().request("/dashboard/not-a-uuid", {}, env([]));
 		expect(res.status).toBe(302);
-		expect(res.headers.get("Location")).toBe("/");
+		expect(res.headers.get("Location")).toBe(`/dashboard/${USER_ID}`);
 	});
 });

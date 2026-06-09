@@ -39,22 +39,21 @@ export function getArrowHead(
 	const { x: fromX, y: fromY } = from;
 	const { x: toX, y: toY } = to;
 	const arrowSize = STATE_DEFAULTS.ARROW_SIZE;
-	let angle: number;
-
-	if (curveOffset === 0) {
-		angle = Math.atan2(toY - fromY, toX - fromX);
-	} else {
-		const midX = (fromX + toX) / 2;
-		const midY = (fromY + toY) / 2;
-		const dx = toX - fromX;
-		const dy = toY - fromY;
-		const perpX = -dy;
-		const perpY = dx;
-		const length = Math.sqrt(perpX * perpX + perpY * perpY);
-		const controlX = midX + (perpX / length) * curveOffset;
-		const controlY = midY + (perpY / length) * curveOffset;
-		angle = Math.atan2(toY - controlY, toX - controlX);
-	}
+	const angle =
+		curveOffset === 0
+			? Math.atan2(toY - fromY, toX - fromX)
+			: (() => {
+					const midX = (fromX + toX) / 2;
+					const midY = (fromY + toY) / 2;
+					const dx = toX - fromX;
+					const dy = toY - fromY;
+					const perpX = -dy;
+					const perpY = dx;
+					const length = Math.sqrt(perpX * perpX + perpY * perpY);
+					const controlX = midX + (perpX / length) * curveOffset;
+					const controlY = midY + (perpY / length) * curveOffset;
+					return Math.atan2(toY - controlY, toX - controlX);
+				})();
 
 	const endX = toX - nodeRadius * Math.cos(angle);
 	const endY = toY - nodeRadius * Math.sin(angle);
@@ -109,19 +108,17 @@ export function buildTransitionData(
 	acceptingNodeRadius = STATE_DEFAULTS.ACCEPTING_NODE_RADIUS,
 ): TransitionRenderData[] {
 	const nodeMap = new Map(nodes.map((n) => [n.id, n]));
-	const result: TransitionRenderData[] = [];
-
-	for (const transition of transitions) {
+	return transitions.flatMap((transition) => {
 		const fromNode = nodeMap.get(transition.from);
 		const toNode = nodeMap.get(transition.to);
-		if (!(fromNode && toNode)) continue;
+		if (!(fromNode && toNode)) return [];
 
 		if (transition.from === transition.to) {
 			const radius = fromNode.isAccepting ? acceptingNodeRadius : nodeRadius;
 			const cx = fromNode.x;
 			const cy = fromNode.y - radius - STATE_DEFAULTS.SELF_LOOP_RADIUS;
 			const r = STATE_DEFAULTS.SELF_LOOP_RADIUS;
-			result.push({
+			const renderData: TransitionRenderData = {
 				type: "selfLoop",
 				label: transition.label,
 				cx,
@@ -130,47 +127,41 @@ export function buildTransitionData(
 				arrowD: `M ${cx + r * 0.7} ${cy - r * 0.7} l 3 -3 M ${cx + r * 0.7} ${cy - r * 0.7} l 3 3`,
 				labelX: cx,
 				labelY: cy - r - 5,
-			});
-		} else {
-			const curveOffset = transition.curveOffset || 0;
-			const labelPos = getLabelPosition(
-				{ x: fromNode.x, y: fromNode.y },
-				{ x: toNode.x, y: toNode.y },
-				curveOffset,
-			);
-			const angle = Math.atan2(toNode.y - fromNode.y, toNode.x - fromNode.x);
-			let startX: number;
-			let startY: number;
-			let endX: number;
-			let endY: number;
+			};
+			return [renderData];
+		}
 
-			if (curveOffset === 0) {
-				startX = fromNode.x + nodeRadius * Math.cos(angle);
-				startY = fromNode.y + nodeRadius * Math.sin(angle);
-				endX = toNode.x - nodeRadius * Math.cos(angle);
-				endY = toNode.y - nodeRadius * Math.sin(angle);
-			} else {
-				startX = fromNode.x;
-				startY = fromNode.y;
-				endX = toNode.x;
-				endY = toNode.y;
-			}
+		const curveOffset = transition.curveOffset || 0;
+		const labelPos = getLabelPosition(
+			{ x: fromNode.x, y: fromNode.y },
+			{ x: toNode.x, y: toNode.y },
+			curveOffset,
+		);
+		const angle = Math.atan2(toNode.y - fromNode.y, toNode.x - fromNode.x);
+		const start =
+			curveOffset === 0
+				? {
+						x: fromNode.x + nodeRadius * Math.cos(angle),
+						y: fromNode.y + nodeRadius * Math.sin(angle),
+					}
+				: { x: fromNode.x, y: fromNode.y };
+		const end =
+			curveOffset === 0
+				? {
+						x: toNode.x - nodeRadius * Math.cos(angle),
+						y: toNode.y - nodeRadius * Math.sin(angle),
+					}
+				: { x: toNode.x, y: toNode.y };
 
-			result.push({
+		return [
+			{
 				type: "normal",
 				label: transition.label,
-				pathD: getArrowPath({ x: startX, y: startY }, { x: endX, y: endY }, curveOffset),
-				arrowHeadD: getArrowHead(
-					{ x: startX, y: startY },
-					{ x: endX, y: endY },
-					curveOffset,
-					nodeRadius,
-				),
+				pathD: getArrowPath(start, end, curveOffset),
+				arrowHeadD: getArrowHead(start, end, curveOffset, nodeRadius),
 				labelX: labelPos.x,
 				labelY: labelPos.y,
-			});
-		}
-	}
-
-	return result;
+			},
+		];
+	});
 }

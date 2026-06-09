@@ -38,12 +38,70 @@ interface Props {
 	hidden?: boolean;
 }
 
-export function QuestionCard({ question, hidden }: Props) {
-	const markdownText = questionToMarkdown(question);
-	const hasOptions = !!question.options && question.options.length > 0;
-	const figureData = question.figureData;
+function renderFigure(figureData: Question["figureData"]) {
+	if (!figureData) return null;
+
+	switch (figureData.type) {
+		case "stateDiagram":
+			return <StateDiagram nodes={figureData.nodes} transitions={figureData.transitions} />;
+		case "binaryTree":
+			return (
+				<BinaryTree root={figureData.root} width={figureData.width} height={figureData.height} />
+			);
+		case "truthTable":
+			return <TruthTable columns={figureData.columns} rows={figureData.rows} />;
+		case "parityCheck":
+			return <ParityCheck data={figureData.data} />;
+		case "logicCircuit":
+			return (
+				<LogicCircuit
+					inputs={figureData.inputs}
+					outputs={figureData.outputs}
+					gates={figureData.gates}
+					wires={figureData.wires}
+				/>
+			);
+		case "flowchart":
+			return (
+				<Flowchart
+					nodes={figureData.nodes}
+					edges={figureData.edges}
+					width={figureData.width}
+					height={figureData.height}
+				/>
+			);
+		case "dataTable":
+		case "huffmanTable":
+		case "linkedListTable":
+		case "normalDistributionTable":
+			return <TableRenderer figureData={figureData} />;
+		default:
+			return null;
+	}
+}
+
+function buildQuestionView(question: Question) {
+	const hasOptions = !!question.options?.length;
 	const answerHtml = overlineToHtml(question.answer);
 	const explanationHtml = question.explanation ? overlineToHtml(question.explanation) : undefined;
+	const options = (question.options ?? []).map((option) => ({
+		label: option.label,
+		html: overlineToHtml(option.value || "(選択肢未入力)"),
+	}));
+
+	return {
+		markdownText: questionToMarkdown(question),
+		hasOptions,
+		figure: renderFigure(question.figureData),
+		answerHtml,
+		explanationHtml,
+		options,
+	};
+}
+
+export function QuestionCard({ question, hidden }: Props) {
+	const view = buildQuestionView(question);
+	const figureData = question.figureData;
 
 	return (
 		<article data-question-card data-question-id={question.id} class="q-card" hidden={hidden}>
@@ -53,7 +111,7 @@ export function QuestionCard({ question, hidden }: Props) {
 					<span class="q-num">{question.number}</span>
 					<div>
 						<p class="q-eyebrow">問題 {question.number}</p>
-						{hasOptions && <p class="q-hint">選択肢を1つ選んで確かめよう</p>}
+						{view.hasOptions && <p class="q-hint">選択肢を1つ選んで確かめよう</p>}
 					</div>
 				</header>
 
@@ -67,46 +125,7 @@ export function QuestionCard({ question, hidden }: Props) {
 				</div>
 
 				{/* 3. 図表 */}
-				{figureData ? (
-					<div class="q-figure-wrap">
-						{figureData.type === "stateDiagram" ? (
-							<StateDiagram nodes={figureData.nodes} transitions={figureData.transitions} />
-						) : null}
-						{figureData.type === "binaryTree" ? (
-							<BinaryTree
-								root={figureData.root}
-								width={figureData.width}
-								height={figureData.height}
-							/>
-						) : null}
-						{figureData.type === "truthTable" ? (
-							<TruthTable columns={figureData.columns} rows={figureData.rows} />
-						) : null}
-						{figureData.type === "parityCheck" ? <ParityCheck data={figureData.data} /> : null}
-						{figureData.type === "logicCircuit" ? (
-							<LogicCircuit
-								inputs={figureData.inputs}
-								outputs={figureData.outputs}
-								gates={figureData.gates}
-								wires={figureData.wires}
-							/>
-						) : null}
-						{figureData.type === "flowchart" ? (
-							<Flowchart
-								nodes={figureData.nodes}
-								edges={figureData.edges}
-								width={figureData.width}
-								height={figureData.height}
-							/>
-						) : null}
-						{figureData.type === "dataTable" ||
-						figureData.type === "huffmanTable" ||
-						figureData.type === "linkedListTable" ||
-						figureData.type === "normalDistributionTable" ? (
-							<TableRenderer figureData={figureData} />
-						) : null}
-					</div>
-				) : null}
+				{figureData ? <div class="q-figure-wrap">{view.figure}</div> : null}
 
 				{!figureData && question.figureDescription ? (
 					<div class="q-figure-fallback">
@@ -119,25 +138,22 @@ export function QuestionCard({ question, hidden }: Props) {
 				) : null}
 
 				{/* 4. 回答（選択式 island or 記述式の自己採点 island） */}
-				{hasOptions ? (
+				{view.hasOptions ? (
 					<div class="q-options">
 						<AnswerSelector
 							questionId={question.id}
 							correctLabel={question.answer}
-							answerHtml={answerHtml}
-							explanationHtml={explanationHtml}
-							options={(question.options ?? []).map((option) => ({
-								label: option.label,
-								html: overlineToHtml(option.value || "(選択肢未入力)"),
-							}))}
+							answerHtml={view.answerHtml}
+							explanationHtml={view.explanationHtml}
+							options={view.options}
 						/>
 					</div>
 				) : (
 					<div class="mt-4 block">
 						<SelfGrade
 							questionId={question.id}
-							answerHtml={answerHtml}
-							explanationHtml={explanationHtml}
+							answerHtml={view.answerHtml}
+							explanationHtml={view.explanationHtml}
 						/>
 					</div>
 				)}
@@ -146,7 +162,7 @@ export function QuestionCard({ question, hidden }: Props) {
 				<footer class="q-footer">
 					<QuestionTimer questionId={question.id} />
 					<CopyButton
-						text={markdownText}
+						text={view.markdownText}
 						className="q-tool"
 						ariaLabel="Markdownでコピー"
 						title="Markdownでコピー"

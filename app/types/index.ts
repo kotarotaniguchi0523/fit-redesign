@@ -1,4 +1,6 @@
 // 図コンポーネントの型をインポート
+
+import type { ExamId, ExamNumber, PdfPath, QuestionId, SlideId, UnitTabId, Year } from "./domain";
 import type {
 	DataTableColumn,
 	DataTableRow,
@@ -19,28 +21,31 @@ import type {
 	TruthTableRow,
 } from "./figures";
 
-// 年度一覧
-export const YEARS = ["2013", "2014", "2015", "2016", "2017"] as const;
-export const EXAM_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
-
-// 年度の型
-export type Year = (typeof YEARS)[number];
-export type ExamNumber = (typeof EXAM_NUMBERS)[number];
-/** 配布資料(問題 PDF / 解答 HTML)の配信元。明治大学の公開ページを直接参照する。 */
-export const MEIJI_FIT_BASE = "https://www.isc.meiji.ac.jp/~kikn/FIT" as const;
-export type PdfPath = `${typeof MEIJI_FIT_BASE}/${string}`;
-export type ExamId = `exam${ExamNumber}-${Year}`;
-export type QuestionId = `${ExamId}-q${number}`;
-export type SlideId = `slide-${number}`;
-export type UnitTabId = `unit-${string}`;
-
-export function isYear(value: string): value is Year {
-	return YEARS.includes(value as Year);
-}
-
-export function isExamNumber(value: number): value is ExamNumber {
-	return EXAM_NUMBERS.includes(value as ExamNumber);
-}
+export type {
+	ExamId,
+	ExamNumber,
+	PdfPath,
+	QuestionId,
+	SlideId,
+	UnitTabId,
+	UserId,
+	Year,
+} from "./domain";
+export {
+	EXAM_NUMBERS,
+	ExamIdSchema,
+	ExamNumberSchema,
+	isExamNumber,
+	isYear,
+	MEIJI_FIT_BASE,
+	PdfPathSchema,
+	QuestionIdSchema,
+	SlideIdSchema,
+	UnitTabIdSchema,
+	UserIdSchema,
+	YEARS,
+	YearSchema,
+} from "./domain";
 
 // 問題の選択肢
 export interface QuestionOption {

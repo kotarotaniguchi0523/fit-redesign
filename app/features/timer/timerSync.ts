@@ -1,6 +1,7 @@
 import { hc } from "hono/client";
 import { createLogger } from "../../lib/logger";
 import type { TimerApp } from "../../routes/timer";
+import type { QuestionId } from "../../types";
 import type { TimerStorageData } from "./types";
 
 const logger = createLogger("[TimerSync]");
@@ -11,13 +12,13 @@ const client = hc<TimerApp>("/timer");
 /**
  * サーバーにタイマーデータを同期（fire-and-forget）
  */
-export function syncToServer(userId: string, data: TimerStorageData): void {
+export function syncToServer(data: TimerStorageData): void {
 	// Partial<Record<QuestionId, ...>> から undefined 値を除いて RPC 入力型に合わせる
 	const records = Object.fromEntries(
 		Object.entries(data.records).flatMap(([qid, record]) => (record ? [[qid, record]] : [])),
 	);
 	client.sync
-		.$post({ json: { userId, records } })
+		.$post({ json: { records } })
 		.then((res) => {
 			if (res.ok) {
 				logger.info("Synced to server successfully");
@@ -33,9 +34,9 @@ export function syncToServer(userId: string, data: TimerStorageData): void {
 /**
  * サーバーからタイマーデータを取得
  */
-export async function loadFromServer(userId: string): Promise<TimerStorageData | null> {
+export async function loadFromServer(): Promise<TimerStorageData | null> {
 	try {
-		const res = await client.load.$get({ query: { userId } });
+		const res = await client.load.$get();
 		// status===200 で成功型に絞り、records をキャスト無しで取り出す。
 		if (res.status !== 200) {
 			logger.warn(`Load from server failed with status ${res.status}`);
@@ -56,40 +57,39 @@ export async function loadFromServer(userId: string): Promise<TimerStorageData |
 export function mergeData(local: TimerStorageData, remote: TimerStorageData): TimerStorageData {
 	const allQuestionIds = new Set([...Object.keys(local.records), ...Object.keys(remote.records)]);
 
-	const merged: TimerStorageData = { version: 1, records: {} };
+	const records = Object.fromEntries(
+		Array.from(allQuestionIds).map((qid) => {
+			const questionId = qid as QuestionId;
+			const localAttempts = local.records[questionId]?.attempts ?? [];
+			const remoteAttempts = remote.records[questionId]?.attempts ?? [];
 
-	for (const qid of allQuestionIds) {
-		const localAttempts = local.records[qid as keyof typeof local.records]?.attempts ?? [];
-		const remoteAttempts = remote.records[qid as keyof typeof remote.records]?.attempts ?? [];
+			// timestamp をキーにして重複排除。旧実装と同じく先に見つかった試行を採用する。
+			const attemptsByTimestamp = [...localAttempts, ...remoteAttempts].reduce(
+				(seenAttempts, attempt) => {
+					if (!seenAttempts.has(attempt.timestamp)) {
+						seenAttempts.set(attempt.timestamp, attempt);
+					}
+					return seenAttempts;
+				},
+				new Map<number, (typeof localAttempts)[number]>(),
+			);
+			const combined = Array.from(attemptsByTimestamp.values()).sort(
+				(a, b) => a.timestamp - b.timestamp,
+			);
 
-		// timestamp をキーにして重複排除
-		const seen = new Set<number>();
-		const combined = [];
-		for (const a of [...localAttempts, ...remoteAttempts]) {
-			if (!seen.has(a.timestamp)) {
-				seen.add(a.timestamp);
-				combined.push(a);
-			}
-		}
+			return [qid, { questionId, attempts: combined }];
+		}),
+	) as TimerStorageData["records"];
 
-		// timestamp 昇順でソート
-		combined.sort((a, b) => a.timestamp - b.timestamp);
-
-		merged.records[qid as keyof typeof merged.records] = {
-			questionId: qid as keyof typeof merged.records,
-			attempts: combined,
-		};
-	}
-
-	return merged;
+	return { version: 1, records };
 }
 
 /**
  * サーバーから特定問題の履歴をクリア
  */
-export function clearOnServer(userId: string, questionId: string): void {
+export function clearOnServer(questionId: string): void {
 	client.clear
-		.$delete({ query: { userId, questionId } })
+		.$delete({ query: { questionId } })
 		.then((res) => {
 			if (!res.ok) {
 				logger.warn(`Clear on server failed with status ${res.status}`);

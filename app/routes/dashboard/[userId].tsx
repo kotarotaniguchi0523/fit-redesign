@@ -5,6 +5,8 @@ import UnitDetails from "../../features/dashboard/$UnitDetails";
 import { aggregateStats, type DashboardData } from "../../features/dashboard/dashboardAggregator";
 import CopyButton from "../../features/markdown/$CopyButton";
 import { getUserAnswerHistory } from "../../server/answerRepository";
+import type { UserIdentityVariables } from "../../server/userIdentity";
+import { type UserId, UserIdSchema } from "../../types";
 
 /**
  * 学習ダッシュボード（HonoX 動的ルート）。
@@ -19,7 +21,7 @@ import { getUserAnswerHistory } from "../../server/answerRepository";
  * dashboard チャートモジュールを遅延 import して描画する。
  */
 
-type Env = { Bindings: Cloudflare.Env };
+type Env = { Bindings: Cloudflare.Env; Variables: UserIdentityVariables };
 
 const EMPTY_DASHBOARD: DashboardData = {
 	totalQuestions: 0,
@@ -44,24 +46,27 @@ function trendColor(trend: string): string {
 	return "text-gray-500";
 }
 
+async function loadDashboardData(db: D1Database, userId: UserId): Promise<DashboardData> {
+	try {
+		const answerHistory = await getUserAnswerHistory(db, userId);
+		return aggregateStats(answerHistory);
+	} catch (error) {
+		console.error("Dashboard data error:", error);
+		return EMPTY_DASHBOARD;
+	}
+}
+
 const app = new Hono<Env>();
 
 app.get("/", disableSSG(), async (c) => {
-	const userId = c.req.param("userId");
+	const parsedUserId = UserIdSchema.safeParse(c.req.param("userId"));
 
-	if (!userId) {
-		return c.redirect("/");
+	if (!parsedUserId.success) {
+		return c.redirect(`/dashboard/${c.var.userId}`);
 	}
 
-	let dashboardData: DashboardData;
-	try {
-		const answerHistory = await getUserAnswerHistory(c.env.DB, userId);
-		dashboardData = aggregateStats(answerHistory);
-	} catch (error) {
-		console.error("Dashboard data error:", error);
-		dashboardData = EMPTY_DASHBOARD;
-	}
-
+	const userId = parsedUserId.data;
+	const dashboardData = await loadDashboardData(c.env.DB, userId);
 	const hasData = dashboardData.totalAnswered > 0;
 	const dashboardUrl = `${new URL(c.req.url).origin}/dashboard/${userId}`;
 

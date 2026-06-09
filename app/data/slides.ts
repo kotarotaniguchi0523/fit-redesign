@@ -1,7 +1,18 @@
 import { z } from "zod";
-import type { Slide, SlideId } from "../types";
+import { safeParseOrThrow } from "../lib/zod";
+import { PdfPathSchema, type Slide, type SlideId, SlideIdSchema } from "../types";
 
-export const slides: Slide[] = [
+const SlideSchema = z
+	.object({
+		id: SlideIdSchema,
+		title: z.string().min(1),
+		pdfPath: PdfPathSchema,
+	})
+	.strict();
+
+const SlidesSchema = z.array(SlideSchema);
+
+const slidesData = [
 	{
 		id: "slide-0",
 		title: "ガイダンス",
@@ -69,18 +80,13 @@ export const slides: Slide[] = [
 	},
 ];
 
-const SlideIdSchema = z.custom<SlideId>(
-	(value) => typeof value === "string" && /^slide-\d+$/.test(value),
-	{
-		error: "slide id must match slide-{number}",
-	},
-);
+export const slides: Slide[] = safeParseOrThrow(SlidesSchema, slidesData, "Invalid slides");
 
 const slidesById: Record<SlideId, Slide> = Object.fromEntries(
 	slides.map((slide) => [slide.id, slide] as const),
 ) as Record<SlideId, Slide>;
 
-export function getSlide(id: Slide["id"]): Slide {
+export function getSlide(id: string): Slide {
 	const parsedId = SlideIdSchema.safeParse(id);
 	if (!parsedId.success) {
 		throw new Error(`Invalid slide id format: ${id}`);
