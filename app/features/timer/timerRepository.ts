@@ -3,6 +3,9 @@ import { upsertUser } from "../../server/userRepository";
 import type { QuestionId } from "../../types";
 import type { AttemptRecord, TimerStorageData } from "./types";
 
+/** D1 の batch 上限（1 バッチあたりの最大ステートメント数）。 */
+const BATCH_LIMIT = 100;
+
 interface AttemptRow {
 	question_id: string;
 	timestamp: number;
@@ -67,21 +70,19 @@ export async function syncAttempts(
 ): Promise<TimerStorageData> {
 	await upsertUser(db, userId);
 
-	// クライアントの attempts を D1 に挿入（timestamp で重複チェック）
-	const statements: D1PreparedStatement[] = [];
+	// クライアントの attempts を D1 へ挿入。重複は (user_id, question_id, timestamp) の一意
+	// インデックス（migration 0003）+ INSERT OR IGNORE で DB が弾く。旧 'WHERE NOT EXISTS' は
+	// TOCTOU レースで二重挿入されえたが、OR IGNORE は同時 sync でも一意制約で確実に冪等。
 	const now = Date.now();
-
-	for (const record of Object.values(clientRecords)) {
-		if (!record) continue;
-		for (const attempt of record.attempts) {
-			statements.push(
+	const statements = Object.values(clientRecords)
+		.filter((record): record is ClientRecord => record != null)
+		.flatMap((record) =>
+			record.attempts.map((attempt) =>
 				db
 					.prepare(
-						`INSERT INTO attempts (user_id, question_id, timestamp, duration, mode, target_time, completed, synced_at)
-						 SELECT ?, ?, ?, ?, ?, ?, ?, ?
-						 WHERE NOT EXISTS (
-						   SELECT 1 FROM attempts WHERE user_id = ? AND question_id = ? AND timestamp = ?
-						 )`,
+						`INSERT OR IGNORE INTO attempts
+						   (user_id, question_id, timestamp, duration, mode, target_time, completed, synced_at)
+						 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 					)
 					.bind(
 						userId,
@@ -92,20 +93,15 @@ export async function syncAttempts(
 						attempt.targetTime ?? null,
 						attempt.completed ? 1 : 0,
 						now,
-						userId,
-						record.questionId,
-						attempt.timestamp,
 					),
-			);
-		}
-	}
+			),
+		);
 
 	// バッチ実行（D1 は最大100文ずつ）
-	const batchPromises: Promise<D1Result<unknown>[]>[] = [];
-	for (let i = 0; i < statements.length; i += 100) {
-		batchPromises.push(db.batch(statements.slice(i, i + 100)));
-	}
-	await Promise.all(batchPromises);
+	const chunks = Array.from({ length: Math.ceil(statements.length / BATCH_LIMIT) }, (_, i) =>
+		statements.slice(i * BATCH_LIMIT, i * BATCH_LIMIT + BATCH_LIMIT),
+	);
+	await Promise.all(chunks.map((chunk) => db.batch(chunk)));
 
 	// マージ後の全データを返却
 	return loadUserAttempts(db, userId);
