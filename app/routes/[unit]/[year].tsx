@@ -51,7 +51,7 @@ export default createRoute(async (c) => {
 	const availableYears = unit.examMapping.map((m) => m.year);
 	const totalQuestions = examDataList.reduce((sum, item) => {
 		const exam = item.examByYear.exams[year];
-		return sum + (exam?.questions?.length ?? 0);
+		return sum + (exam?.questions.length ?? 0);
 	}, 0);
 
 	// JSON-LD: Quiz + LearningResource
@@ -240,7 +240,7 @@ export default createRoute(async (c) => {
 								<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
 									{examDataList.map((item) => {
 										const exam = item.examByYear.exams[year];
-										const title = exam?.title ?? item.examByYear.title ?? "";
+										const title = exam?.title ?? item.examByYear.title;
 										return (
 											<a
 												href={`#exam-${item.examNumber}`}
@@ -259,7 +259,7 @@ export default createRoute(async (c) => {
 						<div id="questions" class="scroll-mt-20">
 							{examDataList.map((item) => {
 								const exam = item.examByYear.exams[year];
-								const title = exam?.title ?? item.examByYear.title ?? "";
+								const title = exam?.title ?? item.examByYear.title;
 								return (
 									<div id={`exam-${item.examNumber}`} class="scroll-mt-20">
 										<ExamSection exam={exam} title={title} />

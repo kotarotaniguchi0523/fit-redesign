@@ -1,3 +1,4 @@
+import type { JSX } from "hono/jsx/jsx-runtime";
 import { calculatePositions, getEdgeLines } from "../../lib/figures/binary-tree";
 import type { TreeNode } from "../../types";
 
@@ -8,7 +9,12 @@ interface BinaryTreeProps {
 	nodeRadius?: number;
 }
 
-export function BinaryTree({ root, width = 300, height = 200, nodeRadius = 20 }: BinaryTreeProps) {
+export function BinaryTree({
+	root,
+	width = 300,
+	height = 200,
+	nodeRadius = 20,
+}: BinaryTreeProps): JSX.Element {
 	const positions = calculatePositions(root, width, height, nodeRadius);
 	const edgeLines = getEdgeLines(positions, nodeRadius);
 

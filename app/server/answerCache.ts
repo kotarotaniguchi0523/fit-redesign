@@ -1,6 +1,7 @@
 import type { UserId } from "../types";
 import type { AnswerStatus } from "../types/answer";
 import { getLatestAnswers } from "./answerRepository";
+import type { Db } from "./schema";
 
 /**
  * 回答済み状態の read-through キャッシュ（Cloudflare KV）。
@@ -11,7 +12,7 @@ import { getLatestAnswers } from "./answerRepository";
  * - D1 が信頼源。KV は TTL で自己修復させる。
  */
 
-const TTL_SECONDS = 86400 * 30; // 30日
+const TTL_SECONDS = 86_400 * 30; // 30日
 
 export function answerStatusKey(userId: UserId): string {
 	return `answer:${userId}`;
@@ -25,7 +26,7 @@ type StatusMap = Record<string, AnswerStatus>;
  */
 export async function getAnswerStatuses(
 	cache: KVNamespace,
-	db: D1Database,
+	db: Db,
 	userId: UserId,
 ): Promise<StatusMap> {
 	const key = answerStatusKey(userId);

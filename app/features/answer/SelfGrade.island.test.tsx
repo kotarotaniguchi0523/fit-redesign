@@ -29,7 +29,9 @@ vi.mock("./answerClient", async () => {
 /** 条件が満たされるまで（または上限まで）マクロタスクをまたいで待つ。 */
 async function settle(predicate: () => boolean): Promise<void> {
 	for (let i = 0; i < 50; i++) {
-		if (predicate()) return;
+		if (predicate()) {
+			return;
+		}
 		await new Promise((resolve) => setTimeout(resolve, 0));
 	}
 	throw new Error("settle: predicate not satisfied in time");
@@ -117,7 +119,9 @@ describe("SelfGrade island", () => {
 		await settle(() => root.querySelectorAll("button").length === 2);
 
 		const events: { questionId: string; isCorrect: boolean }[] = [];
-		const handler = (e: Event) => events.push((e as CustomEvent).detail);
+		const handler = (e: Event): void => {
+			events.push((e as CustomEvent).detail);
+		};
 		document.addEventListener("question-graded", handler);
 
 		// Act: 「もう一度やる」= self-incorrect

@@ -19,7 +19,9 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 }
 
 function validateAttempt(v: unknown): v is AttemptRecord {
-	if (!isRecord(v)) return false;
+	if (!isRecord(v)) {
+		return false;
+	}
 	return (
 		Number.isFinite(v.timestamp) &&
 		Number.isFinite(v.duration) &&
@@ -57,13 +59,20 @@ function validateStoredRecordEntry([key, record]: [string, unknown]): string | n
 function validateTimerStorageData(
 	data: unknown,
 ): { success: true; data: TimerStorageData } | { success: false; error: string } {
-	if (!isRecord(data)) return { success: false, error: "データがオブジェクトではありません" };
-	if (data.version !== 1) return { success: false, error: "version が 1 ではありません" };
-	if (!isRecord(data.records))
+	if (!isRecord(data)) {
+		return { success: false, error: "データがオブジェクトではありません" };
+	}
+	if (data.version !== 1) {
+		return { success: false, error: "version が 1 ではありません" };
+	}
+	if (!isRecord(data.records)) {
 		return { success: false, error: "records がオブジェクトではありません" };
+	}
 
 	const invalidRecord = Object.entries(data.records).map(validateStoredRecordEntry).find(Boolean);
-	if (invalidRecord) return { success: false, error: invalidRecord };
+	if (invalidRecord) {
+		return { success: false, error: invalidRecord };
+	}
 
 	return { success: true, data: data as TimerStorageData };
 }
@@ -250,13 +259,6 @@ export function saveAttempt(
 	const totalAttempts = result.value.records[questionId]?.attempts.length ?? 0;
 	logger.info(`Attempt saved successfully (total attempts: ${totalAttempts})`);
 
-	// Fire-and-forget server sync
-	import("./timerSync")
-		.then(({ syncToServer }) => {
-			syncToServer(result.value);
-		})
-		.catch(() => {});
-
 	return ok(undefined);
 }
 
@@ -270,14 +272,6 @@ export function clearQuestionRecords(questionId: QuestionId): Result<void, Stora
 
 	if (result.ok) {
 		logger.info("Records cleared successfully");
-
-		// Fire-and-forget server clear
-		import("./timerSync")
-			.then(({ clearOnServer }) => {
-				clearOnServer(questionId);
-			})
-			.catch(() => {});
-
 		return ok(undefined);
 	}
 	logger.warn("Failed to load existing data before clearing records");

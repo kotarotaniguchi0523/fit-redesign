@@ -5,6 +5,7 @@ import UnitDetails from "../../features/dashboard/$UnitDetails";
 import { aggregateStats, type DashboardData } from "../../features/dashboard/dashboardAggregator";
 import CopyButton from "../../features/markdown/$CopyButton";
 import { getUserAnswerHistory } from "../../server/answerRepository";
+import type { Db } from "../../server/schema";
 import type { UserIdentityVariables } from "../../server/userIdentity";
 import { type UserId, UserIdSchema } from "../../types";
 
@@ -12,7 +13,7 @@ import { type UserId, UserIdSchema } from "../../types";
  * 学習ダッシュボード（HonoX 動的ルート）。
  *
  * ユーザー別ダッシュボード（D1 集計の SSR）。
- * - c.env.DB から回答履歴を読み dashboardAggregator で集計する。
+ * - c.var.db（Drizzle）から回答履歴を読み dashboardAggregator で集計する。
  * - userId が無ければ "/" にリダイレクト。
  * - SSG 対象外にするため disableSSG() を付ける（SSR 専用）。
  *
@@ -24,7 +25,6 @@ import { type UserId, UserIdSchema } from "../../types";
 type Env = { Bindings: Cloudflare.Env; Variables: UserIdentityVariables };
 
 const EMPTY_DASHBOARD: DashboardData = {
-	totalQuestions: 0,
 	totalAnswered: 0,
 	totalAttempts: 0,
 	overallAccuracy: 0,
@@ -35,18 +35,26 @@ const EMPTY_DASHBOARD: DashboardData = {
 };
 
 function trendIcon(trend: string): string {
-	if (trend === "improving") return "↗";
-	if (trend === "declining") return "↘";
+	if (trend === "improving") {
+		return "↗";
+	}
+	if (trend === "declining") {
+		return "↘";
+	}
 	return "→";
 }
 
 function trendColor(trend: string): string {
-	if (trend === "improving") return "text-emerald-600";
-	if (trend === "declining") return "text-red-600";
+	if (trend === "improving") {
+		return "text-emerald-600";
+	}
+	if (trend === "declining") {
+		return "text-red-600";
+	}
 	return "text-gray-500";
 }
 
-async function loadDashboardData(db: D1Database, userId: UserId): Promise<DashboardData> {
+async function loadDashboardData(db: Db, userId: UserId): Promise<DashboardData> {
 	try {
 		const answerHistory = await getUserAnswerHistory(db, userId);
 		return aggregateStats(answerHistory);
@@ -66,7 +74,7 @@ app.get("/", disableSSG(), async (c) => {
 	}
 
 	const userId = parsedUserId.data;
-	const dashboardData = await loadDashboardData(c.env.DB, userId);
+	const dashboardData = await loadDashboardData(c.var.db, userId);
 	const hasData = dashboardData.totalAnswered > 0;
 	const dashboardUrl = `${new URL(c.req.url).origin}/dashboard/${userId}`;
 

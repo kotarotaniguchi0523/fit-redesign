@@ -31,6 +31,7 @@
 		"@tailwindcss/vite": "^4.3.0",
 		"@typescript/native-preview": "7.0.0-dev.20260527.2",
 		"@vitest/coverage-v8": "^4.1.8",
+		"drizzle-kit": "1.0.0-beta.22",
 		"jsdom": "^29.1.1",
 		"knip": "^6.16.1",
 		"remark-gfm": "^4.0.1",
@@ -43,6 +44,8 @@
 	"dependencies": {
 		"@hono/zod-validator": "^0.8.0",
 		"chart.js": "^4.5.1",
+		"drizzle-orm": "1.0.0-beta.22",
+		"drizzle-zod": "1.0.0-beta.14-a36c63d",
 		"hono": "^4.12.23",
 		"honox": "^0.1.56",
 		"zod": "^4.4.3"

@@ -60,5 +60,7 @@ export function buildTableConfig(data: TableFigureData): TableConfig {
 					probability: entry.probability,
 				})),
 			};
+		default:
+			throw new Error(`unreachable: unknown table figure type ${(data as { type: string }).type}`);
 	}
 }

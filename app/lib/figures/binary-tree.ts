@@ -14,7 +14,9 @@ export interface EdgeLine {
 }
 
 export function getTreeDepth(node: TreeNode | undefined): number {
-	if (!node) return 0;
+	if (!node) {
+		return 0;
+	}
 	return 1 + Math.max(getTreeDepth(node.left), getTreeDepth(node.right));
 }
 
@@ -32,10 +34,12 @@ export function calculatePositions(
 		left: number,
 		right: number,
 	): NodePosition[] => {
-		if (!node) return [];
+		if (!node) {
+			return [];
+		}
 
-		const x = node.x !== undefined ? node.x : (left + right) / 2;
-		const y = node.y !== undefined ? node.y : ((level + 1) / (depth + 1)) * height;
+		const x = node.x === undefined ? (left + right) / 2 : node.x;
+		const y = node.y === undefined ? ((level + 1) / (depth + 1)) * height : node.y;
 		const current = { x, y, node };
 		const leftPositions = node.left ? walk(node.left, level + 1, left, x) : [];
 		const rightPositions = node.right ? walk(node.right, level + 1, x, right) : [];
@@ -53,10 +57,14 @@ export function getEdgeLines(positions: NodePosition[], nodeRadius: number): Edg
 		node: TreeNode | undefined,
 		parentPos: NodePosition | null,
 	): Array<{ from: NodePosition; to: NodePosition }> => {
-		if (!(node && parentPos)) return [];
+		if (!(node && parentPos)) {
+			return [];
+		}
 
 		const currentPos = positionMap.get(node);
-		if (!currentPos) return [];
+		if (!currentPos) {
+			return [];
+		}
 
 		const childEdges = [
 			...(node.left ? collectEdges(node.left, currentPos) : []),

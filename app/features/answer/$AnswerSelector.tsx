@@ -1,6 +1,8 @@
 import { useActionState, useEffect, useRef } from "hono/jsx";
+import type { JSX } from "hono/jsx/jsx-runtime";
 import { recordAnswer, SavingIndicator } from "./answerActions";
 import { fetchAnswerStatuses } from "./answerClient";
+import { SolutionPanel } from "./SolutionPanel";
 
 /**
  * 選択式（MCQ）問題の回答 island。
@@ -46,14 +48,20 @@ function optionClass(label: string, state: State, correctLabel: string): string 
 	if (state.phase === "selecting") {
 		return state.selected === label ? "q-option is-selected" : "q-option";
 	}
-	if (label === correctLabel) return "q-option is-correct";
-	if (label === state.selected && !state.isCorrect) return "q-option is-wrong";
+	if (label === correctLabel) {
+		return "q-option is-correct";
+	}
+	if (label === state.selected && !state.isCorrect) {
+		return "q-option is-wrong";
+	}
 	return "q-option is-muted";
 }
 
 /** 状態から採点チップと解説パネルの表示を導出する。 */
 function cardView(state: State): CardView {
-	if (state.phase === "selecting") return { solution: false, chip: null };
+	if (state.phase === "selecting") {
+		return { solution: false, chip: null };
+	}
 	return { solution: true, chip: state.isCorrect ? "correct" : "review" };
 }
 
@@ -61,7 +69,7 @@ function cardView(state: State): CardView {
  * 選択肢ボタン。サーバー生成済みの選択肢 HTML（overline 等）を SSR HTML に直接描画する
  * （ref-innerHTML 注入をやめ SSR-first にしてチラつきを防ぐ）。
  */
-function OptionButton(props: { html: string; className: string; disabled: boolean }) {
+function OptionButton(props: { html: string; className: string; disabled: boolean }): JSX.Element {
 	return (
 		<button
 			type="submit"
@@ -83,7 +91,7 @@ export interface AnswerSelectorProps {
 	explanationHtml?: string;
 }
 
-export default function AnswerSelector(props: AnswerSelectorProps) {
+export default function AnswerSelector(props: AnswerSelectorProps): JSX.Element {
 	const { questionId, correctLabel, options, answerHtml, explanationHtml } = props;
 	// rootRef は安定参照。reducer は dispatch 時に rootRef から closest() で親カードを解決する。
 	const rootRef = useRef<HTMLDivElement | null>(null);
@@ -113,7 +121,9 @@ export default function AnswerSelector(props: AnswerSelectorProps) {
 				}
 				case "submit": {
 					const selected = String(formData.get("selected"));
-					if (!selected) return prev;
+					if (!selected) {
+						return prev;
+					}
 					const next: State = {
 						phase: "submitted",
 						selected,
@@ -155,18 +165,26 @@ export default function AnswerSelector(props: AnswerSelectorProps) {
 
 	useEffect(() => {
 		let cancelled = false;
-		fetchAnswerStatuses().then((statuses) => {
-			if (cancelled) return;
-			const saved = statuses[questionId];
-			if (!saved) return; // 未回答なら selecting のまま（SSR-first）。
-			// 回答済みは "restore" で submitted へ格下げ（記録はしない）。
-			const formData = new FormData();
-			formData.set("event", "restore");
-			formData.set("selected", saved.label);
-			formData.set("isCorrect", String(saved.isCorrect));
-			dispatch(formData);
-		});
-		return () => {
+		fetchAnswerStatuses()
+			.then((statuses) => {
+				if (cancelled) {
+					return;
+				}
+				const saved = statuses[questionId];
+				if (!saved) {
+					return; // 未回答なら selecting のまま（SSR-first）。
+				}
+				// 回答済みは "restore" で submitted へ格下げ（記録はしない）。
+				const formData = new FormData();
+				formData.set("event", "restore");
+				formData.set("selected", saved.label);
+				formData.set("isCorrect", String(saved.isCorrect));
+				dispatch(formData);
+			})
+			.catch(() => {
+				/* SSR-first: 取得失敗時は初期状態のまま */
+			});
+		return (): void => {
 			cancelled = true;
 		};
 		// マウント時に 1 回だけ回答済み状態を取得して復元する。
@@ -242,29 +260,6 @@ export default function AnswerSelector(props: AnswerSelectorProps) {
 
 			{view.solution ? (
 				<SolutionPanel answerHtml={answerHtml} explanationHtml={explanationHtml} />
-			) : null}
-		</div>
-	);
-}
-
-function SolutionPanel(props: { answerHtml: string; explanationHtml?: string }) {
-	return (
-		<div class="q-solution solution-reveal">
-			<p class="q-solution__title">解き方</p>
-			<div class="q-solution__answer">
-				<span class="q-solution__answer-label">答え</span>
-				<span
-					class="q-solution__answer-value"
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: サーバー生成済みの信頼済みHTML(overline等)を描画
-					dangerouslySetInnerHTML={{ __html: props.answerHtml }}
-				/>
-			</div>
-			{props.explanationHtml ? (
-				<p
-					class="q-solution__explanation"
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: サーバー生成済みの信頼済みHTML(overline等)を描画
-					dangerouslySetInnerHTML={{ __html: props.explanationHtml }}
-				/>
 			) : null}
 		</div>
 	);

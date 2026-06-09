@@ -21,7 +21,7 @@ import { makeRows, oldAggregateStats, oldGroupRowsByQuestion } from "./dashboard
 const SIZES = [
 	{ label: "small(50)", count: 50 },
 	{ label: "medium(1000)", count: 1000 },
-	{ label: "large(20000)", count: 20000 },
+	{ label: "large(20000)", count: 20_000 },
 ] as const;
 
 for (const { label, count } of SIZES) {

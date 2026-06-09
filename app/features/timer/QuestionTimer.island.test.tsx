@@ -7,16 +7,16 @@ import QuestionTimer from "./$QuestionTimer";
 class MockOscillatorNode {
 	frequency = { value: 0 };
 	type = "sine";
-	connect() {
+	connect(): this {
 		return this;
 	}
-	start() {}
-	stop() {}
+	start(): void {}
+	stop(): void {}
 }
 
 class MockGainNode {
 	gain = { value: 0 };
-	connect() {
+	connect(): this {
 		return this;
 	}
 }
@@ -24,19 +24,19 @@ class MockGainNode {
 class MockAudioContext {
 	state = "running";
 	currentTime = 0;
-	createOscillator() {
+	createOscillator(): MockOscillatorNode {
 		return new MockOscillatorNode();
 	}
-	createGain() {
+	createGain(): MockGainNode {
 		return new MockGainNode();
 	}
-	get destination() {
+	get destination(): object {
 		return {};
 	}
-	resume() {
+	resume(): Promise<void> {
 		return Promise.resolve();
 	}
-	close() {
+	close(): Promise<void> {
 		return Promise.resolve();
 	}
 }
@@ -194,7 +194,7 @@ describe("QuestionTimer Custom Element", () => {
 	});
 
 	describe("カウントダウンモード", () => {
-		function switchToCountdown(el: HTMLElement) {
+		function switchToCountdown(el: HTMLElement): void {
 			getSettingsBtn(el).click();
 			const buttons = getPopover(el).querySelectorAll("button");
 			// "カウントダウン" ボタンを探す

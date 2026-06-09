@@ -39,8 +39,10 @@ interface GradedDetail {
 /** QUESTION_GRADED_EVENT の detail を捕捉する listener を仕込み、捕捉済み配列と解除関数を返す。 */
 function captureGradedEvents(): { events: GradedDetail[]; stop: () => void } {
 	const events: GradedDetail[] = [];
-	const handler = (event: Event) => {
-		if (event instanceof CustomEvent) events.push(event.detail);
+	const handler = (event: Event): void => {
+		if (event instanceof CustomEvent) {
+			events.push(event.detail);
+		}
 	};
 	document.addEventListener(QUESTION_GRADED_EVENT, handler);
 	return { events, stop: () => document.removeEventListener(QUESTION_GRADED_EVENT, handler) };

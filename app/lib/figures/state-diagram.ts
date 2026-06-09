@@ -42,7 +42,7 @@ export function getArrowHead(
 	const angle =
 		curveOffset === 0
 			? Math.atan2(toY - fromY, toX - fromX)
-			: (() => {
+			: ((): number => {
 					const midX = (fromX + toX) / 2;
 					const midY = (fromY + toY) / 2;
 					const dx = toX - fromX;
@@ -111,7 +111,9 @@ export function buildTransitionData(
 	return transitions.flatMap((transition) => {
 		const fromNode = nodeMap.get(transition.from);
 		const toNode = nodeMap.get(transition.to);
-		if (!(fromNode && toNode)) return [];
+		if (!(fromNode && toNode)) {
+			return [];
+		}
 
 		if (transition.from === transition.to) {
 			const radius = fromNode.isAccepting ? acceptingNodeRadius : nodeRadius;

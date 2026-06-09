@@ -1,4 +1,5 @@
 import { safeParseOrThrow } from "../../lib/zod";
+import type { ExamByYear } from "../../types";
 import metaJson from "../exams-json/exams-meta.json";
 import { assembleExamsByYear, type ParsedExamEntry } from "./assemble";
 import { ExamJsonSchema, ExamsMetaSchema } from "./schema";
@@ -6,6 +7,8 @@ import { ExamJsonSchema, ExamsMetaSchema } from "./schema";
 const examModules = import.meta.glob<{ default: unknown }>("../exams-json/exam[0-9]-*.json", {
 	eager: true,
 });
+
+const EXAM_FILE_RE = /exam(\d+)-(\d{4})\.json$/;
 
 function getJsonValue(module: unknown): unknown {
 	if (module && typeof module === "object" && "default" in module) {
@@ -16,8 +19,10 @@ function getJsonValue(module: unknown): unknown {
 
 function parseExamEntries(): ParsedExamEntry[] {
 	return Object.entries(examModules).flatMap(([filePath, module]) => {
-		const match = filePath.match(/exam(\d+)-(\d{4})\.json$/);
-		if (!match) return [];
+		const match = filePath.match(EXAM_FILE_RE);
+		if (!match) {
+			return [];
+		}
 		const data = safeParseOrThrow(
 			ExamJsonSchema,
 			getJsonValue(module),
@@ -35,7 +40,8 @@ function parseExamEntries(): ParsedExamEntry[] {
  * シグネチャは consumer（index.ts の `await getAllExams()`）が壊れないよう
  * Promise を返す async のまま維持する。
  */
-export async function loadExams() {
+// biome-ignore lint/suspicious/useAwait: consumer の Promise シグネチャ安定のため async を維持（中身は同期）
+export async function loadExams(): Promise<ExamByYear[]> {
 	const parsedMeta = safeParseOrThrow(ExamsMetaSchema, metaJson, "Invalid exams meta");
 	const entries = parseExamEntries();
 	return assembleExamsByYear(parsedMeta.exams, entries);

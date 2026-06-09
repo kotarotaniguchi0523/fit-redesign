@@ -1,4 +1,5 @@
 import { render } from "hono/jsx/dom";
+import type { JSX } from "hono/jsx/jsx-runtime";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -8,7 +9,7 @@ import { describe, expect, it } from "vitest";
  * フック（useState 等）の非同期挙動の実証は poc-selfgrade（agent-browser）で行う。
  */
 
-function Greeting({ name }: { name: string }) {
+function Greeting({ name }: { name: string }): JSX.Element {
 	return <p class="greeting">こんにちは、{name}さん</p>;
 }
 

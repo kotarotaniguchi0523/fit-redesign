@@ -8,5 +8,7 @@ createClient();
 // dashboard の chart.js は重いため、dashboard ページ（#dashboard-data あり）でのみ遅延ロード。
 // import 時に自己初期化（DOMContentLoaded / 即時）する。
 if (document.getElementById("dashboard-data")) {
-	import("./features/dashboard/dashboard");
+	import("./features/dashboard/dashboard").catch((error) => {
+		console.error("Failed to load dashboard chart", error);
+	});
 }

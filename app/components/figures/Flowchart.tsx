@@ -1,3 +1,4 @@
+import type { JSX } from "hono/jsx/jsx-runtime";
 import {
 	buildEdgeRenderData,
 	buildNodeRenderData,
@@ -17,7 +18,7 @@ export function Flowchart({
 	edges,
 	width = FLOWCHART_DEFAULTS.WIDTH,
 	height = FLOWCHART_DEFAULTS.HEIGHT,
-}: FlowchartProps) {
+}: FlowchartProps): JSX.Element {
 	const nodeRenderData = buildNodeRenderData(nodes);
 	const edgeRenderData = buildEdgeRenderData(nodes, edges);
 

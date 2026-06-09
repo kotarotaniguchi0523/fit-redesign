@@ -1,3 +1,4 @@
+import type { JSX } from "hono/jsx/jsx-runtime";
 import { buildTransitionData, STATE_DEFAULTS } from "../../lib/figures/state-diagram";
 import type { StateNode, Transition } from "../../types";
 
@@ -8,7 +9,12 @@ interface StateDiagramProps {
 	height?: number;
 }
 
-export function StateDiagram({ nodes, transitions, width = 400, height = 150 }: StateDiagramProps) {
+export function StateDiagram({
+	nodes,
+	transitions,
+	width = 400,
+	height = 150,
+}: StateDiagramProps): JSX.Element {
 	const nodeRadius = STATE_DEFAULTS.NODE_RADIUS;
 	const acceptingNodeRadius = STATE_DEFAULTS.ACCEPTING_NODE_RADIUS;
 

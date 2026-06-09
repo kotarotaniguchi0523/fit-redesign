@@ -32,7 +32,9 @@ export async function getUnitQuestions(unit: UnitBasedTab): Promise<Question[]> 
 	);
 	const seen = new Set<string>();
 	return questionArrays.flat().filter((q) => {
-		if (seen.has(q.id)) return false;
+		if (seen.has(q.id)) {
+			return false;
+		}
 		seen.add(q.id);
 		return true;
 	});

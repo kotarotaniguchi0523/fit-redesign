@@ -13,14 +13,14 @@ import { AnswerSubmitSchema } from "./_schemas";
 const answer = new Hono<Env>()
 	.post("/submit", postBodyLimit, validate("json", AnswerSubmitSchema), async (c) => {
 		const userId = c.var.userId;
-		const { questionId, selectedLabel, isCorrect, duration, timestamp } = c.req.valid("json");
-		const answerId = await insertAnswer(c.env.DB, {
+		const { questionId, selectedLabel, isCorrect, duration } = c.req.valid("json");
+		// 未登録 question は記録されず answerId は null（insert-from-select が 0 行）。
+		const answerId = await insertAnswer(c.var.db, {
 			userId,
 			questionId,
 			selectedLabel,
 			isCorrect,
 			duration: duration ?? null,
-			timestamp,
 		});
 		try {
 			await updateAnswerStatus(c.env.CACHE, userId);
@@ -31,12 +31,12 @@ const answer = new Hono<Env>()
 	})
 	.get("/status", async (c) => {
 		const userId = c.var.userId;
-		const statuses = await getAnswerStatuses(c.env.CACHE, c.env.DB, userId);
+		const statuses = await getAnswerStatuses(c.env.CACHE, c.var.db, userId);
 		return c.json({ statuses });
 	})
 	.get("/history", async (c) => {
 		const userId = c.var.userId;
-		const answers = await getUserAnswerHistory(c.env.DB, userId);
+		const answers = await getUserAnswerHistory(c.var.db, userId);
 		return c.json({ answers });
 	});
 

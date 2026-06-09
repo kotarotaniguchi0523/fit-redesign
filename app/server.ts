@@ -1,6 +1,8 @@
+import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { createApp } from "honox/server";
+import { schema } from "./server/schema";
 import { ensureUserIdentity, type UserIdentityVariables } from "./server/userIdentity";
 
 // セキュリティヘッダー（public/_headers と同一内容）。
@@ -20,7 +22,7 @@ const SECURITY_HEADERS: Record<string, string> = {
 // 末尾スラッシュ付き URL（以前は /dashboard/ 形式の URL を出力していた）を正規化。
 // honox/Workers のファイルルートは末尾スラッシュを別パス扱いで 404 にするため、
 // /path/ → /path へ 301 して既存ブックマーク・内部リンクを救済する（"/" は対象外）。
-type Env = { Variables: UserIdentityVariables };
+type Env = { Bindings: Cloudflare.Env; Variables: UserIdentityVariables };
 
 const app = new Hono<Env>();
 app.use(trimTrailingSlash());
@@ -28,6 +30,8 @@ app.use(async (c, next) => {
 	const identity = ensureUserIdentity(c);
 	c.set("userId", identity.userId);
 	c.set("userIdCookieIssued", identity.userIdCookieIssued);
+	// db はリクエスト毎に生成（Workers の env.DB はリクエストスコープ）。全 Context で c.var.db を使う。
+	c.set("db", drizzle(c.env.DB, { schema }));
 	await next();
 	for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
 		c.header(name, value);

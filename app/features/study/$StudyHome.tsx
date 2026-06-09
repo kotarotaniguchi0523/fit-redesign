@@ -1,4 +1,5 @@
 import { useActionState, useEffect, useMemo } from "hono/jsx/dom";
+import type { JSX } from "hono/jsx/jsx-runtime";
 import { QUESTION_GRADED_EVENT } from "../../constants";
 import type { UnitManifestEntry } from "../srs/questionManifest";
 import { buildDailySet, loadSrsState, unitReadiness } from "../srs/srs";
@@ -29,7 +30,7 @@ function pickTarget(stats: UnitStat[]): UnitStat | undefined {
 	return dueTarget ?? incompleteTarget ?? stats[0];
 }
 
-export default function StudyHome({ manifest }: StudyHomeProps) {
+export default function StudyHome({ manifest }: StudyHomeProps): JSX.Element {
 	const [version, refresh] = useActionState(refreshAction, 0);
 
 	const view = useMemo(() => {
@@ -47,13 +48,23 @@ export default function StudyHome({ manifest }: StudyHomeProps) {
 	}, [manifest, version]);
 
 	useEffect(() => {
-		const onGraded = () => refresh("refresh");
+		const onGraded = (): void => refresh("refresh");
 		document.addEventListener(QUESTION_GRADED_EVENT, onGraded);
-		return () => document.removeEventListener(QUESTION_GRADED_EVENT, onGraded);
+		return (): void => document.removeEventListener(QUESTION_GRADED_EVENT, onGraded);
 	}, []);
 
 	const fallbackCta = manifest[0] ? `/today/${manifest[0].id}` : "/";
 	const target = view.target;
+	const hasDueToday = Boolean(target?.due && target.due > 0);
+	const ctaSubText = ((): string => {
+		if (hasDueToday && target) {
+			return `${target.entry.name}に今日のぶんが ${target.due}問あります`;
+		}
+		if (target) {
+			return `${target.entry.name}から始めましょう`;
+		}
+		return "まずは1問だけでもOK";
+	})();
 
 	return (
 		<div data-study-home>
@@ -80,17 +91,9 @@ export default function StudyHome({ manifest }: StudyHomeProps) {
 				</div>
 				<a href={target ? `/today/${target.entry.id}` : fallbackCta} class="home-cta">
 					<span class="home-cta-label">
-						{target?.due && target.due > 0
-							? `今日の道を始める（${target.entry.name}）`
-							: "復習を始める"}
+						{hasDueToday && target ? `今日の道を始める（${target.entry.name}）` : "復習を始める"}
 					</span>
-					<span class="home-cta-sub">
-						{target?.due && target.due > 0
-							? `${target.entry.name}に今日のぶんが ${target.due}問あります`
-							: target
-								? `${target.entry.name}から始めましょう`
-								: "まずは1問だけでもOK"}
-					</span>
+					<span class="home-cta-sub">{ctaSubText}</span>
 				</a>
 			</section>
 

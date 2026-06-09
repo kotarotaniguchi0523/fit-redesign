@@ -1,3 +1,4 @@
+import type { JSX } from "hono/jsx/jsx-runtime";
 import { getGateSymbolPath, getWirePath, LOGIC_DEFAULTS } from "../../lib/figures/logic-circuit";
 import type { LogicGate, LogicInput, LogicOutput, LogicWire } from "../../types";
 
@@ -17,7 +18,7 @@ export function LogicCircuit({
 	wires,
 	width = 500,
 	height = 300,
-}: LogicCircuitProps) {
+}: LogicCircuitProps): JSX.Element {
 	return (
 		<svg
 			width="100%"

@@ -1,4 +1,5 @@
 import { useActionState, useEffect, useMemo } from "hono/jsx/dom";
+import type { JSX } from "hono/jsx/jsx-runtime";
 import { QuestionCard } from "../../components/QuestionCard";
 import { QUESTION_GRADED_EVENT } from "../../constants";
 import type { Question } from "../../types";
@@ -44,7 +45,7 @@ function reducer(state: DailySessionState, action: DailySessionAction): DailySes
 	}
 }
 
-export default function DailySession(props: DailySessionProps) {
+export default function DailySession(props: DailySessionProps): JSX.Element {
 	const { unitName, unitNumber, questions } = props;
 	const [state, dispatch] = useActionState(reducer, INITIAL_STATE);
 
@@ -61,9 +62,11 @@ export default function DailySession(props: DailySessionProps) {
 	const readiness = state.finished ? unitReadiness(loadSrsState(), questionIds) : 0;
 
 	useEffect(() => {
-		const onGraded = (event: Event) => {
+		const onGraded = (event: Event): void => {
 			const detail = (event as CustomEvent<QuestionGradedDetail>).detail;
-			if (!(detail?.questionId && queueSet.has(detail.questionId))) return;
+			if (!(detail?.questionId && queueSet.has(detail.questionId))) {
+				return;
+			}
 			dispatch({
 				type: "graded",
 				questionId: detail.questionId,
@@ -71,7 +74,7 @@ export default function DailySession(props: DailySessionProps) {
 			});
 		};
 		document.addEventListener(QUESTION_GRADED_EVENT, onGraded);
-		return () => document.removeEventListener(QUESTION_GRADED_EVENT, onGraded);
+		return (): void => document.removeEventListener(QUESTION_GRADED_EVENT, onGraded);
 	}, [queueSet]);
 
 	if (queue.length === 0) {
@@ -83,7 +86,7 @@ export default function DailySession(props: DailySessionProps) {
 			<div class="session-summary">
 				<p class="session-summary-title">今日のぶん、完了！</p>
 				<p class="session-summary-stat">
-					<span>{correctCount}</span> / <span>{gradedCount || queue.length}</span> 問 正解
+					<span>{correctCount}</span> / <span>{gradedCount || queue.length > 0}</span> 問 正解
 				</p>
 				<p class="session-summary-readiness">
 					{unitName}の理解度: <strong>{readiness}%</strong>
@@ -130,8 +133,8 @@ export default function DailySession(props: DailySessionProps) {
 			<div class="session-nav">
 				<button
 					type="button"
-					class={`session-next ${state.graded[currentId] !== undefined ? "is-ready" : ""}`}
-					onClick={() => dispatch({ type: "advance", isLast })}
+					class={`session-next ${state.graded[currentId] === undefined ? "" : "is-ready"}`}
+					onClick={(): void => dispatch({ type: "advance", isLast })}
 				>
 					{isLast ? "今日のぶんを終える" : "次の問題へ"}
 				</button>
@@ -140,7 +143,7 @@ export default function DailySession(props: DailySessionProps) {
 	);
 }
 
-function EmptySession() {
+function EmptySession(): JSX.Element {
 	return (
 		<div class="session-empty">
 			<p class="session-empty-title">今日のぶんは完了！</p>

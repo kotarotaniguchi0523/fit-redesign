@@ -31,13 +31,25 @@
 				"noUselessFragments": "error",
 				"useOptionalChain": "error",
 				"useFlatMap": "error",
-				"useSimplifiedLogicExpression": "error"
+				"useSimplifiedLogicExpression": "error",
+				"noVoid": "error",
+				"noUselessStringConcat": "error",
+				"noUselessUndefinedInitialization": "error",
+				"useDateNow": "error",
+				"noExcessiveCognitiveComplexity": {
+					"level": "error",
+					"options": { "maxAllowedComplexity": 15 }
+				}
 			},
 			"correctness": {
 				"noUnusedImports": "error",
 				"noUnusedVariables": "error",
 				"noUnusedFunctionParameters": "error",
-				"useHookAtTopLevel": "error"
+				"useHookAtTopLevel": "error",
+				"useExhaustiveDependencies": "warn",
+				"noPrivateImports": "error",
+				"noUndeclaredDependencies": "error",
+				"noNodejsModules": "error"
 			},
 			"suspicious": {
 				"noArrayIndexKey": "error",
@@ -45,7 +57,16 @@
 				"noConsole": {
 					"level": "error",
 					"options": { "allow": ["error", "warn", "info"] }
-				}
+				},
+				"noEmptyBlockStatements": "error",
+				"useAwait": "error",
+				"noEvolvingTypes": "error",
+				"useErrorMessage": "error",
+				"noConstEnum": "error",
+				"noMisplacedAssertion": "error",
+				"noFocusedTests": "error",
+				"noImportCycles": "error",
+				"noTsIgnore": "error"
 			},
 			"style": {
 				"useShorthandFunctionType": "off",
@@ -58,11 +79,39 @@
 				"useNumberNamespace": "error",
 				"noUselessElse": "error",
 				"useCollapsedElseIf": "error",
-				"useConsistentArrayType": { "level": "error", "options": { "syntax": "shorthand" } }
+				"useConsistentArrayType": { "level": "error", "options": { "syntax": "shorthand" } },
+				"noEnum": "error",
+				"useBlockStatements": "error",
+				"noNegationElse": "error",
+				"useThrowNewError": "error",
+				"useThrowOnlyError": "error",
+				"noYodaExpression": "error",
+				"useConsistentBuiltinInstantiation": "error",
+				"useDefaultSwitchClause": "error",
+				"useExplicitLengthCheck": "error",
+				"useNamingConvention": {
+					"level": "error",
+					"options": {
+						"strictCase": false,
+						"requireAscii": true,
+						"conventions": [
+							{ "selector": { "kind": "objectLiteralProperty" }, "match": ".*" },
+							{ "selector": { "kind": "typeProperty" }, "match": ".*" }
+						]
+					}
+				},
+				"useNumericSeparators": "error",
+				"useShorthandAssign": "error",
+				"useExponentiationOperator": "error",
+				"noNestedTernary": "error",
+				"noProcessEnv": "error",
+				"useConsistentArrowReturn": "error"
 			},
 			"performance": {
 				"noAccumulatingSpread": "error",
-				"noDelete": "error"
+				"noDelete": "error",
+				"useTopLevelRegex": "error",
+				"noReExportAll": "error"
 			},
 			"security": {
 				"noBlankTarget": {
@@ -75,9 +124,26 @@
 				"noDangerouslySetInnerHtmlWithChildren": "error",
 				"noGlobalEval": "error",
 				"noSecrets": "off"
+			},
+			"nursery": {
+				"noFloatingPromises": "error",
+				"noShadow": "error",
+				"useExplicitReturnType": "error"
 			}
 		}
 	},
+	"overrides": [
+		{
+			"includes": ["**/*.test.ts", "**/*.test.tsx"],
+			"linter": {
+				"rules": {
+					"performance": { "useTopLevelRegex": "off" },
+					"complexity": { "noExcessiveCognitiveComplexity": "off" },
+					"suspicious": { "noEmptyBlockStatements": "off" }
+				}
+			}
+		}
+	],
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab",

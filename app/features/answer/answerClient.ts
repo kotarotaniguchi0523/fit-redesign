@@ -21,7 +21,9 @@ export interface AnswerStatusMap {
 let statusPromise: Promise<AnswerStatusMap> | null = null;
 
 export function fetchAnswerStatuses(): Promise<AnswerStatusMap> {
-	if (statusPromise) return statusPromise;
+	if (statusPromise) {
+		return statusPromise;
+	}
 
 	// res.ok は全レスポンスで boolean のため .json() を成功型へ絞れない。status===200 で判別する。
 	statusPromise = client.status
@@ -55,7 +57,6 @@ export async function saveAnswer(params: {
 				selectedLabel: params.selectedLabel,
 				isCorrect: params.isCorrect,
 				duration: params.duration,
-				timestamp: Date.now(),
 			},
 		});
 	} catch {

@@ -7,12 +7,14 @@ import {
 	YearSchema,
 } from "../../types";
 
+const EXAM_FILE_RE = /exam(\d+)-(\d{4})\.json$/;
+
 export const JsonExamFilePathSchema = z.string().regex(/^..\/exams-json\/exam\d+-\d{4}\.json$/, {
 	error: "exam json path must match ../exams-json/exam{n}-{year}.json",
 });
 
 export const ParsedJsonExamFilePathSchema = JsonExamFilePathSchema.transform((filePath) => {
-	const match = filePath.match(/exam(\d+)-(\d{4})\.json$/);
+	const match = filePath.match(EXAM_FILE_RE);
 	if (!match) {
 		// Defensive fallback. Regex above should guarantee this path.
 		throw new Error(`invalid exam json path: ${filePath}`);

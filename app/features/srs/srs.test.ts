@@ -22,7 +22,11 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const RELEARN_MS = 10 * 60 * 1000;
 const NOW = 1_700_000_000_000; // 固定の基準時刻
 
-const card = (box: number, due: number, last = NOW) => ({ box, due, last });
+const card = (
+	box: number,
+	due: number,
+	last = NOW,
+): { box: number; due: number; last: number } => ({ box, due, last });
 
 describe("recordGrade（localStorage 永続化あり）", () => {
 	afterEach(() => {
