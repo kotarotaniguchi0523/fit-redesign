@@ -1,7 +1,7 @@
 import { useActionState, useEffect, useRef } from "hono/jsx";
 import { recordAnswer, SavingIndicator } from "./answerActions";
 import { fetchAnswerStatuses } from "./answerClient";
-import { clearStatusChip, hideSolution, revealSolution, setStatusChip } from "./questionCardUi";
+import { type CardView, reflectCard } from "./questionCardUi";
 
 /**
  * 選択式（MCQ）問題の回答 island。
@@ -41,6 +41,12 @@ function optionClass(label: string, state: State, correctLabel: string): string 
 	return "q-option is-muted";
 }
 
+/** 状態からカード（解説/チップ）のあるべき見た目を導出する（reflectCard で一括反映する）。 */
+function cardView(state: State): CardView {
+	if (state.phase === "selecting") return { solution: false, chip: null };
+	return { solution: true, chip: state.isCorrect ? "correct" : "review" };
+}
+
 /**
  * 選択肢ボタン。サーバー生成済みの選択肢 HTML（overline 等）を SSR HTML に直接描画する
  * （ref-innerHTML 注入をやめ SSR-first にしてチラつきを防ぐ）。
@@ -77,38 +83,63 @@ export default function AnswerSelector(props: AnswerSelectorProps) {
 			switch (formData.get("event") as Event) {
 				case "restore": {
 					// fetch 後の格下げ: saved を submitted へ反映する（記録はしない＝既存挙動）。
-					const selected = String(formData.get("selected"));
-					const isCorrect = formData.get("isCorrect") === "true";
-					revealSolution(card);
-					setStatusChip(card, isCorrect ? "correct" : "review");
-					return { phase: "submitted", selected, isCorrect, recorded: true };
+					const next: State = {
+						phase: "submitted",
+						selected: String(formData.get("selected")),
+						isCorrect: formData.get("isCorrect") === "true",
+						recorded: true,
+					};
+					reflectCard(card, cardView(next));
+					return next;
 				}
-				case "select":
-					return { phase: "selecting", selected: String(formData.get("label")), recorded };
+				case "select": {
+					const next: State = {
+						phase: "selecting",
+						selected: String(formData.get("label")),
+						recorded,
+					};
+					reflectCard(card, cardView(next));
+					return next;
+				}
 				case "submit": {
 					const selected = String(formData.get("selected"));
 					if (!selected) return prev;
-					const isCorrect = selected === correctLabel;
-					revealSolution(card);
-					setStatusChip(card, isCorrect ? "correct" : "review");
-					const next =
-						recorded ||
-						(await recordAnswer({ questionId, card, selectedLabel: selected, isCorrect }));
-					return { phase: "submitted", selected, isCorrect, recorded: next };
+					const next: State = {
+						phase: "submitted",
+						selected,
+						isCorrect: selected === correctLabel,
+						recorded,
+					};
+					// solution/chip は (phase, isCorrect) のみで決まり await 前に確定 → 即時 reveal を保存。
+					reflectCard(card, cardView(next));
+					return {
+						...next,
+						recorded:
+							recorded ||
+							(await recordAnswer({
+								questionId,
+								card,
+								selectedLabel: selected,
+								isCorrect: next.isCorrect,
+							})),
+					};
 				}
 				case "peek": {
 					// 「わからない」= 解けなかったとして正直に扱う。
-					revealSolution(card);
-					setStatusChip(card, "review");
-					const next =
-						recorded ||
-						(await recordAnswer({ questionId, card, selectedLabel: "peek", isCorrect: false }));
-					return { phase: "submitted", selected: "", isCorrect: false, recorded: next };
+					const next: State = { phase: "submitted", selected: "", isCorrect: false, recorded };
+					reflectCard(card, cardView(next));
+					return {
+						...next,
+						recorded:
+							recorded ||
+							(await recordAnswer({ questionId, card, selectedLabel: "peek", isCorrect: false })),
+					};
 				}
-				case "retry":
-					hideSolution(card);
-					clearStatusChip(card);
-					return { phase: "selecting", selected: null, recorded };
+				case "retry": {
+					const next: State = { phase: "selecting", selected: null, recorded };
+					reflectCard(card, cardView(next));
+					return next;
+				}
 				default:
 					return prev;
 			}

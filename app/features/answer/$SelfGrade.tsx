@@ -1,7 +1,7 @@
 import { useActionState, useEffect, useRef } from "hono/jsx";
 import { recordAnswer, SavingIndicator } from "./answerActions";
 import { fetchAnswerStatuses } from "./answerClient";
-import { clearStatusChip, hideSolution, revealSolution, setStatusChip } from "./questionCardUi";
+import { type CardView, reflectCard } from "./questionCardUi";
 
 /**
  * 記述式（選択肢なし）問題の自己採点 island。
@@ -21,7 +21,11 @@ import { clearStatusChip, hideSolution, revealSolution, setStatusChip } from "./
 type Phase = "initial" | "revealed" | "graded";
 
 // 状態は discriminated union（phase が判別子）。recorded は最初の採点だけ記録するためのフラグ。
-type State = { phase: Phase; recorded: boolean };
+// graded は採点結果（isCorrect）を保持し、チップ表示を状態から純粋に導出できるようにする。
+type State =
+	| { phase: "initial"; recorded: boolean }
+	| { phase: "revealed"; recorded: boolean }
+	| { phase: "graded"; isCorrect: boolean; recorded: boolean };
 
 // 採点イベント（form の hidden input で渡す）。hono の form は submit ボタンの value を
 // FormData に含めないため、value ではなく hidden input で event を渡す。
@@ -54,6 +58,13 @@ const PHASE_UI: Record<Phase, { wrapClass: string; actions: ActionDef[] }> = {
 
 const INITIAL_STATE: State = { phase: "initial", recorded: false };
 
+/** 状態からカード（解説/チップ）のあるべき見た目を導出する（reflectCard で一括反映する）。 */
+function cardView(state: State): CardView {
+	if (state.phase === "initial") return { solution: false, chip: null };
+	if (state.phase === "revealed") return { solution: true, chip: null };
+	return { solution: true, chip: state.isCorrect ? "correct" : "review" };
+}
+
 export interface SelfGradeProps {
 	questionId: string;
 }
@@ -70,31 +81,40 @@ export default function SelfGrade(props: SelfGradeProps) {
 			switch (formData.get("event") as Event) {
 				case "restore": {
 					// fetch 後の格下げ: saved を graded へ反映する（記録はしない＝既存挙動）。
-					const isCorrect = formData.get("isCorrect") === "true";
-					revealSolution(card);
-					setStatusChip(card, isCorrect ? "correct" : "review");
-					return { phase: "graded", recorded: true };
+					const next: State = {
+						phase: "graded",
+						isCorrect: formData.get("isCorrect") === "true",
+						recorded: true,
+					};
+					reflectCard(card, cardView(next));
+					return next;
 				}
-				case "reveal":
-					revealSolution(card);
-					return { phase: "revealed", recorded };
-				case "retry":
-					hideSolution(card);
-					clearStatusChip(card);
-					return { phase: "initial", recorded };
+				case "reveal": {
+					const next: State = { phase: "revealed", recorded };
+					reflectCard(card, cardView(next));
+					return next;
+				}
+				case "retry": {
+					const next: State = { phase: "initial", recorded };
+					reflectCard(card, cardView(next));
+					return next;
+				}
 				case "correct":
 				case "review": {
 					const isCorrect = formData.get("event") === "correct";
-					setStatusChip(card, isCorrect ? "correct" : "review");
-					const next =
-						recorded ||
-						(await recordAnswer({
-							questionId,
-							card,
-							selectedLabel: isCorrect ? "self-correct" : "self-incorrect",
-							isCorrect,
-						}));
-					return { phase: "graded", recorded: next };
+					const next: State = { phase: "graded", isCorrect, recorded };
+					reflectCard(card, cardView(next));
+					return {
+						...next,
+						recorded:
+							recorded ||
+							(await recordAnswer({
+								questionId,
+								card,
+								selectedLabel: isCorrect ? "self-correct" : "self-incorrect",
+								isCorrect,
+							})),
+					};
 				}
 				default:
 					return prev;
