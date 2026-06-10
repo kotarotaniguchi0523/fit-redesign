@@ -26,7 +26,9 @@ vi.mock("./answerClient", async () => {
 
 async function settle(predicate: () => boolean): Promise<void> {
 	for (let i = 0; i < 50; i++) {
-		if (predicate()) return;
+		if (predicate()) {
+			return;
+		}
 		await new Promise((resolve) => setTimeout(resolve, 0));
 	}
 	throw new Error("settle: predicate not satisfied in time");
@@ -43,7 +45,7 @@ const OPTIONS = [
 ];
 
 /** island を [data-question-card] の中にマウントする。 */
-function mountSelector(questionId: string, correctLabel: string) {
+function mountSelector(questionId: string, correctLabel: string): { root: HTMLDivElement } {
 	const card = document.createElement("div");
 	card.setAttribute("data-question-card", "");
 

@@ -8,6 +8,8 @@ import {
 	useRef,
 	useTransition,
 } from "hono/jsx/dom";
+import type { JSX } from "hono/jsx/jsx-runtime";
+import { ClockIcon, GearIcon } from "../../components/icons";
 import {
 	ALERT_SOUND,
 	DEFAULT_TARGET_TIME,
@@ -16,7 +18,7 @@ import {
 } from "../../constants";
 import type { QuestionId } from "../../types";
 import { formatTime } from "./timeFormat";
-import { clearQuestionRecords, loadTimerData, saveAttempt, saveTimerData } from "./timerStorage";
+import { clearQuestionRecords, loadTimerData, saveAttempt } from "./timerStorage";
 import type { AttemptRecord, TimerMode } from "./types";
 
 interface QuestionTimerProps {
@@ -127,60 +129,15 @@ function reducer(state: TimerState, action: TimerAction): TimerState {
 	}
 }
 
-function ClockIcon({ className }: { className: string }) {
-	return (
-		<span class={className}>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke-width="1.5"
-				stroke="currentColor"
-				aria-hidden="true"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-				/>
-			</svg>
-		</span>
-	);
-}
-
-function GearIcon({ className }: { className: string }) {
-	return (
-		<span class={className}>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke-width="1.5"
-				stroke="currentColor"
-				aria-hidden="true"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 0 1 0 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z"
-				/>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-				/>
-			</svg>
-		</span>
-	);
-}
-
 function playAlertSound(): void {
 	try {
 		const ctx = new AudioContext();
 		if (ctx.state === "suspended") {
-			ctx.resume().catch(() => {});
+			ctx.resume().catch(() => {
+				/* AudioContext 未対応環境は無視 */
+			});
 		}
-		const playTone = (frequency: number) => {
+		const playTone = (frequency: number): void => {
 			const osc = ctx.createOscillator();
 			const gain = ctx.createGain();
 			osc.connect(gain);
@@ -194,7 +151,9 @@ function playAlertSound(): void {
 		playTone(ALERT_SOUND.FIRST_FREQUENCY);
 		setTimeout(() => {
 			playTone(ALERT_SOUND.SECOND_FREQUENCY);
-			ctx.close().catch(() => {});
+			ctx.close().catch(() => {
+				/* AudioContext 未対応環境は無視 */
+			});
 		}, ALERT_SOUND.SECOND_DELAY);
 	} catch {
 		// AudioContext not supported.
@@ -203,11 +162,19 @@ function playAlertSound(): void {
 
 function loadAttempts(questionId: string): AttemptRecord[] {
 	const loadResult = loadTimerData();
-	if (!loadResult.ok) return [];
+	if (!loadResult.ok) {
+		return [];
+	}
 	return loadResult.value.records[questionId as QuestionId]?.attempts ?? [];
 }
 
-function displayClasses(isRunning: boolean, isCompleted: boolean) {
+interface TimerDisplayClasses {
+	display: string;
+	icon: string;
+	text: string;
+}
+
+function displayClasses(isRunning: boolean, isCompleted: boolean): TimerDisplayClasses {
 	if (isCompleted) {
 		return {
 			display:
@@ -251,7 +218,7 @@ function presetButtonClass(active: boolean, disabled: boolean): string {
 		: "px-3 py-1.5 text-sm font-medium rounded-xl text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors";
 }
 
-export default function QuestionTimer({ questionId }: QuestionTimerProps) {
+export default function QuestionTimer({ questionId }: QuestionTimerProps): JSX.Element {
 	const rootRef = useRef<HTMLDivElement | null>(null);
 	const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -263,7 +230,7 @@ export default function QuestionTimer({ questionId }: QuestionTimerProps) {
 		state.attempts,
 		(current, attempt) => [...current, attempt],
 	);
-	const apply = (action: TimerAction) => flushSync(() => dispatch(action));
+	const apply = (action: TimerAction): void => flushSync(() => dispatch(action));
 
 	const visibleAttempts = isPending ? optimisticAttempts : state.attempts;
 	const spentSeconds = attemptDuration(state.mode, state.elapsedSeconds, state.targetTime);
@@ -310,7 +277,9 @@ export default function QuestionTimer({ questionId }: QuestionTimerProps) {
 	}
 
 	function persistAttempt(duration: number, completed: boolean): void {
-		if (hasSavedRef.current || duration <= 0) return;
+		if (hasSavedRef.current || duration <= 0) {
+			return;
+		}
 		const attempt: AttemptRecord = {
 			timestamp: Date.now(),
 			duration,
@@ -335,7 +304,9 @@ export default function QuestionTimer({ questionId }: QuestionTimerProps) {
 
 	function updatePopoverPosition(): void {
 		const button = settingsButtonRef.current;
-		if (!button) return;
+		if (!button) {
+			return;
+		}
 		const rect = button.getBoundingClientRect();
 		apply({
 			type: "setPopoverPosition",
@@ -347,27 +318,10 @@ export default function QuestionTimer({ questionId }: QuestionTimerProps) {
 	}
 
 	useEffect(() => {
-		let cancelled = false;
+		// localStorage からの復元のみ（サーバー同期は廃止。タイマーは端末ローカル専用）。
 		apply({ type: "hydrateAttempts", attempts: loadAttempts(questionId) });
 
-		startTransition(async () => {
-			const { loadFromServer, mergeData } = await import("./timerSync");
-			const remoteData = await loadFromServer();
-			if (cancelled) return;
-			if (!remoteData) return;
-			const localResult = loadTimerData();
-			if (!localResult.ok) return;
-			const merged = mergeData(localResult.value, remoteData);
-			saveTimerData(merged);
-			if (cancelled) return;
-			apply({
-				type: "hydrateAttempts",
-				attempts: merged.records[questionId as QuestionId]?.attempts ?? [],
-			});
-		});
-
-		return () => {
-			cancelled = true;
+		return (): void => {
 			stopClock();
 		};
 	}, [questionId]);
@@ -390,11 +344,13 @@ export default function QuestionTimer({ questionId }: QuestionTimerProps) {
 	}, [state.isCompleted, state.mode, state.targetTime]);
 
 	useEffect(() => {
-		if (!state.settingsOpen) return;
+		if (!state.settingsOpen) {
+			return;
+		}
 		updatePopoverPosition();
 		window.addEventListener("resize", updatePopoverPosition);
 		window.addEventListener("scroll", updatePopoverPosition, true);
-		return () => {
+		return (): void => {
 			window.removeEventListener("resize", updatePopoverPosition);
 			window.removeEventListener("scroll", updatePopoverPosition, true);
 		};
@@ -414,7 +370,7 @@ export default function QuestionTimer({ questionId }: QuestionTimerProps) {
 					class={`min-w-max whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-bold text-white transition-colors ${
 						state.isRunning ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
 					}`}
-					onClick={() => {
+					onClick={(): void => {
 						if (state.isRunning) {
 							stopClock();
 							apply({ type: "stop" });
@@ -435,7 +391,7 @@ export default function QuestionTimer({ questionId }: QuestionTimerProps) {
 					class={`rounded-xl bg-amber-500 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-amber-600 ${
 						state.isRunning ? "" : "hidden"
 					}`}
-					onClick={() => reset()}
+					onClick={(): void => reset()}
 				>
 					リセット
 				</button>
@@ -450,7 +406,7 @@ export default function QuestionTimer({ questionId }: QuestionTimerProps) {
 					type="button"
 					class="rounded-lg p-1.5 transition-colors hover:bg-white"
 					aria-label="タイマー設定"
-					onClick={(event) => {
+					onClick={(event): void => {
 						event.stopPropagation();
 						apply({ type: "toggleSettings" });
 					}}
@@ -470,7 +426,7 @@ export default function QuestionTimer({ questionId }: QuestionTimerProps) {
 								type="button"
 								aria-label="タイマー設定を閉じる"
 								class={`fixed inset-0 z-40 ${state.settingsOpen ? "" : "hidden"}`}
-								onClick={() => apply({ type: "closeSettings" })}
+								onClick={(): void => apply({ type: "closeSettings" })}
 							/>
 							<div
 								class={`fixed w-80 p-0 border border-slate-200 shadow-lg rounded-xl bg-white z-50 ${
@@ -485,8 +441,10 @@ export default function QuestionTimer({ questionId }: QuestionTimerProps) {
 											<button
 												type="button"
 												class={modeButtonClass(state.mode === "stopwatch")}
-												onClick={() => {
-													if (state.mode === "stopwatch") return;
+												onClick={(): void => {
+													if (state.mode === "stopwatch") {
+														return;
+													}
 													hasSavedRef.current = false;
 													completedSavedRef.current = false;
 													stopClock();
@@ -498,8 +456,10 @@ export default function QuestionTimer({ questionId }: QuestionTimerProps) {
 											<button
 												type="button"
 												class={modeButtonClass(state.mode === "countdown")}
-												onClick={() => {
-													if (state.mode === "countdown") return;
+												onClick={(): void => {
+													if (state.mode === "countdown") {
+														return;
+													}
 													hasSavedRef.current = false;
 													completedSavedRef.current = false;
 													stopClock();
@@ -522,8 +482,10 @@ export default function QuestionTimer({ questionId }: QuestionTimerProps) {
 														state.isRunning,
 													)}
 													disabled={state.isRunning}
-													onClick={() => {
-														if (state.isRunning) return;
+													onClick={(): void => {
+														if (state.isRunning) {
+															return;
+														}
 														apply({ type: "setTargetTime", targetTime: preset.value });
 													}}
 												>
@@ -546,7 +508,7 @@ export default function QuestionTimer({ questionId }: QuestionTimerProps) {
 										type="button"
 										class="px-3 py-1.5 text-sm font-medium rounded-xl text-red-600 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 										disabled={visibleAttempts.length === 0}
-										onClick={() => {
+										onClick={(): void => {
 											clearQuestionRecords(questionId as QuestionId);
 											startTransition(() => apply({ type: "clearAttempts" }));
 										}}
@@ -563,7 +525,7 @@ export default function QuestionTimer({ questionId }: QuestionTimerProps) {
 	);
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value }: { label: string; value: string }): JSX.Element {
 	return (
 		<div class="bg-slate-50 rounded p-2 text-center">
 			<div class="text-xs text-slate-500">{label}</div>

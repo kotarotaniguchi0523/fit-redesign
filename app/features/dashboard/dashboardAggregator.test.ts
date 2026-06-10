@@ -23,14 +23,16 @@ const feb10 = new Date(2024, 1, 10).getTime();
 function rec(
 	partial: Partial<AnswerRecord> & { questionId: string; timestamp: number },
 ): AnswerRecord {
+	// フィクスチャは時刻を `timestamp` 引数で受け取り createdAt に写す（AnswerRecord は createdAt のみ）。
+	const { timestamp, ...rest } = partial;
 	return {
 		id: 1,
 		userId: "u1",
 		selectedLabel: "ア",
 		isCorrect: true,
 		duration: null,
-		createdAt: partial.timestamp,
-		...partial,
+		...rest,
+		createdAt: rest.createdAt ?? timestamp,
 	};
 }
 

@@ -24,7 +24,7 @@ const testRenderer = jsxRenderer(({ children, title }) => (
 	</html>
 ));
 
-function mounted() {
+function mounted(): Hono {
 	const app = new Hono();
 	app.use("*", testRenderer);
 	app.get("/:unit/:year", ...examRoute);

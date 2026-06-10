@@ -79,9 +79,11 @@ export function generateSiteOverview(): string {
 }
 
 function questionMarkdownLines(question: Question): string[] {
-	const optionLines = question.options?.length
-		? [...question.options.map((option) => `- **${option.label}**: ${option.value}`), ""]
-		: [];
+	const options = question.options ?? [];
+	const optionLines =
+		options.length > 0
+			? [...options.map((option) => `- **${option.label}**: ${option.value}`), ""]
+			: [];
 	const figureLines = question.figureDescription ? [`*図: ${question.figureDescription}*`, ""] : [];
 	const explanationLines = question.explanation ? [`**解説:** ${question.explanation}`, ""] : [];
 
@@ -103,7 +105,9 @@ function questionMarkdownLines(question: Question): string[] {
 async function examMarkdownLines(examNum: ExamNumber, year: Year): Promise<string[]> {
 	const examByYear = await getExamByNumber(examNum);
 	const exam = examByYear?.exams[year];
-	if (!exam) return [];
+	if (!exam) {
+		return [];
+	}
 
 	return [`## ${exam.title}`, "", ...exam.questions.flatMap(questionMarkdownLines)];
 }

@@ -1,3 +1,4 @@
+import type { JSX } from "hono/jsx/jsx-runtime";
 import { calculateParity } from "../../lib/figures/parity-check";
 
 interface ParityCheckProps {
@@ -7,7 +8,12 @@ interface ParityCheckProps {
 	cellSize?: number;
 }
 
-export function ParityCheck({ data, width = 300, height = 300, cellSize = 40 }: ParityCheckProps) {
+export function ParityCheck({
+	data,
+	width = 300,
+	height = 300,
+	cellSize = 40,
+}: ParityCheckProps): JSX.Element {
 	const parity = calculateParity(data, cellSize);
 
 	return (

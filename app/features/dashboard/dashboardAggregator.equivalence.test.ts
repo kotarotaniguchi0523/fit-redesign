@@ -18,21 +18,23 @@ function rec(
 	partial: Partial<AnswerRecord> & { questionId: string; timestamp: number },
 ): AnswerRecord {
 	const questionId = QuestionIdSchema.parse(partial.questionId);
+	// フィクスチャは時刻を `timestamp` 引数で受け取り createdAt に写す（AnswerRecord は createdAt のみ）。
+	const { timestamp, ...rest } = partial;
 	return {
 		id: 1,
 		userId: UserIdSchema.parse(TEST_USER_ID),
 		selectedLabel: "ア",
 		isCorrect: true,
 		duration: null,
-		createdAt: partial.timestamp,
-		...partial,
+		...rest,
+		createdAt: rest.createdAt ?? timestamp,
 		questionId,
 	};
 }
 
 describe("groupRowsByQuestion 同値性", () => {
 	it("small/medium/large の合成行で旧 reduce と deep-equal", () => {
-		for (const count of [50, 1000, 20000]) {
+		for (const count of [50, 1000, 20_000]) {
 			const rows = makeRows(count);
 			expect(groupRowsByQuestion(rows)).toEqual(oldGroupRowsByQuestion(rows));
 		}
@@ -51,7 +53,7 @@ describe("groupRowsByQuestion 同値性", () => {
 
 describe("aggregateStats 同値性", () => {
 	it("small/medium/large の合成履歴で旧実装と deep-equal", () => {
-		for (const count of [50, 1000, 20000]) {
+		for (const count of [50, 1000, 20_000]) {
 			const history = groupRowsByQuestion(makeRows(count));
 			expect(aggregateStats(history)).toEqual(oldAggregateStats(history));
 		}
@@ -108,23 +110,21 @@ describe("aggregateStats 同値性", () => {
 		const history = groupRowsByQuestion([
 			{
 				id: 1,
-				user_id: TEST_USER_ID,
-				question_id: "exam2-2013-q1",
-				selected_label: "ア",
-				is_correct: 1,
+				userId: TEST_USER_ID,
+				jsonId: "exam2-2013-q1",
+				selectedLabel: "ア",
+				isCorrect: 1,
 				duration: null,
-				timestamp: t,
-				created_at: t,
+				createdAt: t,
 			},
 			{
 				id: 2,
-				user_id: TEST_USER_ID,
-				question_id: "exam2-2013-q1",
-				selected_label: "イ",
-				is_correct: 0,
+				userId: TEST_USER_ID,
+				jsonId: "exam2-2013-q1",
+				selectedLabel: "イ",
+				isCorrect: 0,
 				duration: 50,
-				timestamp: t + 1000,
-				created_at: t + 1000,
+				createdAt: t + 1000,
 			},
 		]);
 		expect(aggregateStats(history)).toEqual(oldAggregateStats(history));

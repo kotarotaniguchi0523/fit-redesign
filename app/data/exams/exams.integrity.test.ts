@@ -28,7 +28,9 @@ function buildAllExams(): ExamByYear[] {
 	const entries = Object.entries(examModules).flatMap(([filePath, module]) => {
 		const parsed = ExamJsonSchema.parse(getJsonValue(module));
 		const match = filePath.match(/exam(\d+)-(\d{4})\.json$/);
-		if (!match) return [];
+		if (!match) {
+			return [];
+		}
 		return [{ examNumber: Number(match[1]), year: match[2], data: parsed }];
 	});
 
@@ -65,7 +67,9 @@ describe("exam data integrity", () => {
 	it("question IDs are unique within each exam", () => {
 		for (const examByYear of allExams) {
 			for (const exam of Object.values(examByYear.exams)) {
-				if (!exam) continue;
+				if (!exam) {
+					continue;
+				}
 				const seen = new Set<string>();
 				for (const question of exam.questions) {
 					if (seen.has(question.id)) {
@@ -81,7 +85,9 @@ describe("exam data integrity", () => {
 	it("all pdf/answer paths are well-formed 明治 配信 URL", () => {
 		for (const examByYear of allExams) {
 			for (const exam of Object.values(examByYear.exams)) {
-				if (!exam) continue;
+				if (!exam) {
+					continue;
+				}
 				// 配布資料は明治大学の公開ページを直接参照する（ローカル配信しない）
 				expect(exam.pdfPath.startsWith(`${MEIJI_FIT_BASE}/`), `bad pdfPath: ${exam.pdfPath}`).toBe(
 					true,

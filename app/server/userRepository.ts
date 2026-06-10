@@ -1,18 +1,16 @@
 import type { UserId } from "../types";
+import { type Db, users } from "./schema";
 
 /**
- * users テーブルの upsert。
+ * users テーブルの upsert（Drizzle）。
  *
- * timer / answer など複数機能が「ユーザー行の存在保証」に依存するため、
+ * answer など複数機能が「ユーザー行の存在保証」（FK 整合性）に依存するため、
  * 特定 feature ではなく横断基盤（server/）に置く。
+ * 発行済み identity の登録簿なので `id` + `created_at` のみ保持する。
  */
-export async function upsertUser(db: D1Database, userId: UserId): Promise<void> {
-	const now = Date.now();
+export async function upsertUser(db: Db, userId: UserId): Promise<void> {
 	await db
-		.prepare(
-			`INSERT INTO users (id, created_at, last_seen_at) VALUES (?, ?, ?)
-			 ON CONFLICT(id) DO UPDATE SET last_seen_at = ?`,
-		)
-		.bind(userId, now, now, now)
-		.run();
+		.insert(users)
+		.values({ id: userId, createdAt: Date.now() })
+		.onConflictDoNothing({ target: users.id });
 }

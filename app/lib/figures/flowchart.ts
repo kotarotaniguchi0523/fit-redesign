@@ -39,6 +39,8 @@ export function getEdgePoint(
 			return { x: node.x - w / 2, y: node.y };
 		case "right":
 			return { x: node.x + w / 2, y: node.y };
+		default:
+			throw new Error(`unreachable: unknown edge side ${side}`);
 	}
 }
 
@@ -95,7 +97,9 @@ export function buildEdgeRenderData(
 	return edges.flatMap((edge) => {
 		const fromNode = nodeMap.get(edge.from);
 		const toNode = nodeMap.get(edge.to);
-		if (!(fromNode && toNode)) return [];
+		if (!(fromNode && toNode)) {
+			return [];
+		}
 
 		const fromSide = edge.fromSide ?? "bottom";
 		const toSide = edge.toSide ?? "top";

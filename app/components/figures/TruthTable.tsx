@@ -1,3 +1,4 @@
+import type { JSX } from "hono/jsx/jsx-runtime";
 import type { TruthTableColumn, TruthTableRow } from "../../types";
 
 interface TruthTableProps {
@@ -6,7 +7,11 @@ interface TruthTableProps {
 	ariaLabel?: string;
 }
 
-export function TruthTable({ columns, rows, ariaLabel = "Truth table" }: TruthTableProps) {
+export function TruthTable({
+	columns,
+	rows,
+	ariaLabel = "Truth table",
+}: TruthTableProps): JSX.Element {
 	return (
 		<div class="w-full overflow-x-auto">
 			<table

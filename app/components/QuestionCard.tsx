@@ -1,5 +1,6 @@
 /** @jsxImportSource hono/jsx */
 
+import type { JSX } from "hono/jsx/jsx-runtime";
 import AnswerSelector from "../features/answer/$AnswerSelector";
 import SelfGrade from "../features/answer/$SelfGrade";
 import CopyButton from "../features/markdown/$CopyButton";
@@ -38,8 +39,10 @@ interface Props {
 	hidden?: boolean;
 }
 
-function renderFigure(figureData: Question["figureData"]) {
-	if (!figureData) return null;
+function renderFigure(figureData: Question["figureData"]): JSX.Element | null {
+	if (!figureData) {
+		return null;
+	}
 
 	switch (figureData.type) {
 		case "stateDiagram":
@@ -80,8 +83,17 @@ function renderFigure(figureData: Question["figureData"]) {
 	}
 }
 
-function buildQuestionView(question: Question) {
-	const hasOptions = !!question.options?.length;
+interface QuestionView {
+	markdownText: string;
+	hasOptions: boolean;
+	figure: JSX.Element | null;
+	answerHtml: string;
+	explanationHtml: string | undefined;
+	options: { label: string; html: string }[];
+}
+
+function buildQuestionView(question: Question): QuestionView {
+	const hasOptions = (question.options?.length ?? 0) > 0;
 	const answerHtml = overlineToHtml(question.answer);
 	const explanationHtml = question.explanation ? overlineToHtml(question.explanation) : undefined;
 	const options = (question.options ?? []).map((option) => ({
@@ -99,7 +111,7 @@ function buildQuestionView(question: Question) {
 	};
 }
 
-export function QuestionCard({ question, hidden }: Props) {
+export function QuestionCard({ question, hidden }: Props): JSX.Element {
 	const view = buildQuestionView(question);
 	const figureData = question.figureData;
 

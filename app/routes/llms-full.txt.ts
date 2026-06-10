@@ -4,9 +4,11 @@ import { unitBasedTabs } from "../data/units";
 import type { ExamNumber, Question, Year } from "../types";
 
 function questionLines(question: Question): string[] {
-	const optionLines = question.options?.length
-		? [...question.options.map((option) => `- **${option.label}**: ${option.value}`), ""]
-		: [];
+	const options = question.options ?? [];
+	const optionLines =
+		options.length > 0
+			? [...options.map((option) => `- **${option.label}**: ${option.value}`), ""]
+			: [];
 	const explanationLines = question.explanation ? ["", `**解説:** ${question.explanation}`] : [];
 
 	return [
@@ -26,7 +28,9 @@ function questionLines(question: Question): string[] {
 async function examLines(unitName: string, year: Year, examNum: ExamNumber): Promise<string[]> {
 	const examByYear = await getExamByNumber(examNum);
 	const exam = examByYear?.exams[year];
-	if (!exam) return [];
+	if (!exam) {
+		return [];
+	}
 
 	return [
 		`## ${unitName} - ${year}年度: ${exam.title}`,

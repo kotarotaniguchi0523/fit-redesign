@@ -10,10 +10,14 @@ const questionToUnitMap: Map<string, string> = new Map(
 	),
 );
 
+const QUESTION_ID_RE = /^(exam\d+-\d{4})-q\d+$/;
+
 export function mapQuestionToUnit(questionId: string): string | null {
 	// exam1-2013-q1 → exam1-2013
-	const match = questionId.match(/^(exam\d+-\d{4})-q\d+$/);
-	if (!match) return null;
+	const match = questionId.match(QUESTION_ID_RE);
+	if (!match) {
+		return null;
+	}
 	return questionToUnitMap.get(match[1]) ?? null;
 }
 
@@ -35,12 +39,11 @@ export interface UnitStats {
 	trend: "improving" | "stable" | "declining";
 	questionDetails: {
 		questionId: string;
-		answers: { selectedLabel: string; isCorrect: boolean; timestamp: number }[];
+		answers: { selectedLabel: string; isCorrect: boolean; createdAt: number }[];
 	}[];
 }
 
 export interface DashboardData {
-	totalQuestions: number; // 全問題数（ユニークな questionId）
 	totalAnswered: number; // 回答済み問題数（ユニークな questionId）
 	totalAttempts: number; // 総回答回数
 	overallAccuracy: number; // 全体正答率（最新回答ベース）
@@ -84,7 +87,7 @@ function createDashboardAccumulator(): DashboardAccumulator {
 }
 
 function answerMonth(answer: AnswerRecord): string {
-	const date = new Date(answer.timestamp);
+	const date = new Date(answer.createdAt);
 	return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
@@ -97,7 +100,7 @@ function addAnswerToMonth(
 		total: current.total + 1,
 		correct: current.correct + (answer.isCorrect ? 1 : 0),
 		durationSum: current.durationSum + (answer.duration ?? 0),
-		durationCount: current.durationCount + (answer.duration != null ? 1 : 0),
+		durationCount: current.durationCount + (answer.duration == null ? 0 : 1),
 	};
 }
 
@@ -111,7 +114,7 @@ function addAnswerToDashboardAccumulator(
 	accumulator.monthAccumulators.set(month, nextBucket);
 	accumulator.totalAttempts += 1;
 	accumulator.durationSum += answer.duration ?? 0;
-	accumulator.durationCount += answer.duration != null ? 1 : 0;
+	accumulator.durationCount += answer.duration == null ? 0 : 1;
 	return accumulator;
 }
 
@@ -121,7 +124,9 @@ function addQuestionRecordsToDashboardAccumulator(
 ): DashboardAccumulator {
 	const latest = records.at(-1);
 	const answerAccumulator = records.reduce(addAnswerToDashboardAccumulator, accumulator);
-	if (!latest) return answerAccumulator;
+	if (!latest) {
+		return answerAccumulator;
+	}
 
 	answerAccumulator.latestByQuestion.set(latest.questionId, latest);
 	return answerAccumulator;
@@ -153,7 +158,6 @@ export function aggregateStats(answerHistory: Record<string, AnswerRecord[]>): D
 
 	if (totalAttempts === 0) {
 		return {
-			totalQuestions: getTotalQuestionCount(),
 			totalAnswered: 0,
 			totalAttempts: 0,
 			overallAccuracy: 0,
@@ -179,7 +183,6 @@ export function aggregateStats(answerHistory: Record<string, AnswerRecord[]>): D
 	).length;
 
 	return {
-		totalQuestions: getTotalQuestionCount(),
 		totalAnswered: latestByQuestion.size,
 		totalAttempts,
 		overallAccuracy:
@@ -225,7 +228,9 @@ export function aggregateByMonth(answers: AnswerRecord[]): MonthlyStats[] {
 function aggregateByUnit(answerHistory: Record<string, AnswerRecord[]>): UnitStats[] {
 	const unitMap = Object.entries(answerHistory).reduce((accumulator, [questionId, records]) => {
 		const unitId = mapQuestionToUnit(questionId);
-		if (!unitId) return accumulator;
+		if (!unitId) {
+			return accumulator;
+		}
 
 		// accumulator(private)の inner Map を in-place で set（new Map(current) で作り直すと単元
 		// あたり O(q²) になるため避ける）。
@@ -240,7 +245,9 @@ function aggregateByUnit(answerHistory: Record<string, AnswerRecord[]>): UnitSta
 
 	return unitBasedTabs.flatMap((tab) => {
 		const unitData = unitMap.get(tab.id);
-		if (!unitData) return [];
+		if (!unitData) {
+			return [];
+		}
 
 		const allAnswers = Array.from(unitData.answers.values()).flat();
 		const correct = allAnswers.filter((a) => a.isCorrect).length;
@@ -254,7 +261,7 @@ function aggregateByUnit(answerHistory: Record<string, AnswerRecord[]>): UnitSta
 			answers: records.map((r) => ({
 				selectedLabel: r.selectedLabel,
 				isCorrect: r.isCorrect,
-				timestamp: r.timestamp,
+				createdAt: r.createdAt,
 			})),
 		}));
 
@@ -274,9 +281,11 @@ function aggregateByUnit(answerHistory: Record<string, AnswerRecord[]>): UnitSta
 }
 
 function getRecentAccuracies(answers: AnswerRecord[], windowSize: number): number[] {
-	if (answers.length < 2) return [];
+	if (answers.length < 2) {
+		return [];
+	}
 
-	const sorted = [...answers].sort((a, b) => a.timestamp - b.timestamp);
+	const sorted = [...answers].sort((a, b) => a.createdAt - b.createdAt);
 	const windowCount = Math.max(0, Math.floor((sorted.length - windowSize) / windowSize) + 1);
 	return Array.from({ length: windowCount }, (_, index) => {
 		const end = index * windowSize + windowSize - 1;
@@ -287,7 +296,9 @@ function getRecentAccuracies(answers: AnswerRecord[], windowSize: number): numbe
 }
 
 export function calculateTrend(values: number[]): "improving" | "stable" | "declining" {
-	if (values.length < 2) return "stable";
+	if (values.length < 2) {
+		return "stable";
+	}
 
 	// 線形回帰の傾き
 	const n = values.length;
@@ -303,17 +314,11 @@ export function calculateTrend(values: number[]): "improving" | "stable" | "decl
 
 	const slope = (n * sums.sumXY - sums.sumX * sums.sumY) / (n * sums.sumX2 - sums.sumX * sums.sumX);
 
-	if (slope > 3) return "improving";
-	if (slope < -3) return "declining";
+	if (slope > 3) {
+		return "improving";
+	}
+	if (slope < -3) {
+		return "declining";
+	}
 	return "stable";
-}
-
-function getTotalQuestionCount(): number {
-	return new Set(
-		unitBasedTabs.flatMap((tab) =>
-			tab.examMapping.flatMap((mapping) =>
-				mapping.examNumbers.map((examNum) => `exam${examNum}-${mapping.year}`),
-			),
-		),
-	).size;
 }

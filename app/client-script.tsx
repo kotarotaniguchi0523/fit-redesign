@@ -13,12 +13,16 @@
  * 実体へ解決、dev は src をそのまま module script に）で、HasIslands gate のみ外す。
  */
 
+import type { JSX } from "hono/jsx/jsx-runtime";
+
 type ManifestEntry = { file: string };
 type Manifest = Record<string, ManifestEntry>;
 
 const MANIFEST_MODULES = import.meta.glob<{ default: Manifest }>("/dist/.vite/manifest.json", {
 	eager: true,
 });
+
+const LEADING_SLASH_RE = /^\//;
 
 function resolveManifest(): Manifest | undefined {
 	const mod = Object.values(MANIFEST_MODULES).find((m) => m.default);
@@ -36,17 +40,21 @@ export function resolveClientSrc(
 	src: string,
 	baseUrl: string,
 ): string | undefined {
-	const entry = manifest?.[src.replace(/^\//, "")];
-	if (!entry) return undefined;
+	const entry = manifest?.[src.replace(LEADING_SLASH_RE, "")];
+	if (!entry) {
+		return undefined;
+	}
 	const prefix = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
 	return `${prefix}${entry.file}`;
 }
 
-export function ClientScript({ src }: { src: string }) {
+export function ClientScript({ src }: { src: string }): JSX.Element | null {
 	if (!import.meta.env.PROD) {
 		return <script type="module" src={src} />;
 	}
 	const resolved = resolveClientSrc(resolveManifest(), src, import.meta.env.BASE_URL || "/");
-	if (!resolved) return null;
+	if (!resolved) {
+		return null;
+	}
 	return <script type="module" src={resolved} />;
 }

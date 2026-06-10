@@ -1,8 +1,10 @@
+import type { JSX } from "hono/jsx/jsx-runtime";
+
 interface DashboardLinkProps {
 	className: string;
 }
 
-export default function DashboardLink({ className }: DashboardLinkProps) {
+export default function DashboardLink({ className }: DashboardLinkProps): JSX.Element {
 	return (
 		<a href="/dashboard" class={className}>
 			<span class="hidden sm:inline">学習進捗</span>

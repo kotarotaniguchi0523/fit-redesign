@@ -1,11 +1,12 @@
-import DashboardLink from "../features/dashboard/$DashboardLink";
+import type { JSX } from "hono/jsx/jsx-runtime";
+import DashboardLink from "./DashboardLink";
 
 interface HeaderProps {
 	/** 現在のパス名。ルート側で c.req.path を渡す。 */
 	currentPath: string;
 }
 
-export function Header({ currentPath }: HeaderProps) {
+export function Header({ currentPath }: HeaderProps): JSX.Element {
 	const isGuide = currentPath === "/guide" || currentPath === "/guide/";
 	const isDashboard = currentPath.startsWith("/dashboard");
 

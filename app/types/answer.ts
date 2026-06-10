@@ -7,7 +7,7 @@ export interface AnswerRecord {
 	selectedLabel: string;
 	isCorrect: boolean;
 	duration: number | null;
-	timestamp: number;
+	// server Date.now()(ms)。時系列の基準（月次集計・順序）。
 	createdAt: number;
 }
 

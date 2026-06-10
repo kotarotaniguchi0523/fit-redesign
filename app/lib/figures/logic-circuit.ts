@@ -62,7 +62,9 @@ export function getWirePath(
 	const elementMap = new Map([...inputs, ...gates, ...outputs].map((el) => [el.id, el]));
 	const fromElement = elementMap.get(wire.from);
 	const toElement = elementMap.get(wire.to);
-	if (!(fromElement && toElement)) return null;
+	if (!(fromElement && toElement)) {
+		return null;
+	}
 
 	const start =
 		"label" in fromElement && inputs.includes(fromElement as LogicInput)
@@ -72,7 +74,8 @@ export function getWirePath(
 		"label" in toElement && outputs.includes(toElement as LogicOutput)
 			? { x: toElement.x - 20, y: toElement.y }
 			: { x: (toElement as LogicGate).x - gateWidth / 2, y: (toElement as LogicGate).y };
-	const points = wire.points?.length ? [start, ...wire.points, end] : [start, end];
+	const wirePoints = wire.points ?? [];
+	const points = wirePoints.length > 0 ? [start, ...wirePoints, end] : [start, end];
 
 	return pointsToPolyline(points);
 }

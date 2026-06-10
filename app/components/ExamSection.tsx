@@ -1,3 +1,4 @@
+import type { JSX } from "hono/jsx/jsx-runtime";
 import type { Exam } from "../types";
 import { QuestionCard } from "./QuestionCard";
 
@@ -6,7 +7,7 @@ interface ExamSectionProps {
 	exam: Exam | undefined;
 }
 
-export function ExamSection({ title, exam }: ExamSectionProps) {
+export function ExamSection({ title, exam }: ExamSectionProps): JSX.Element {
 	const questionCount = exam?.questions.length ?? 0;
 
 	return (

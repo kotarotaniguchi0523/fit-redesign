@@ -28,12 +28,15 @@ export function invalid(c: Context, issues: unknown): Response {
  * zValidator + 統一 400（invalid）のラッパ。各 sub-app の検証フックの重複を 1 箇所に集約する。
  * 注意: zValidator に明示型引数を渡すと hc の型推論が落ちるため、schema 引数からの推論に委ねる。
  */
+// biome-ignore lint/nursery/useExplicitReturnType: zValidator の返す MiddlewareHandler 型を明示すると hc の型推論が落ちる（schema からの推論に委ねる）
 export function validate<T extends ZodType, Target extends keyof ValidationTargets>(
 	target: Target,
 	schema: T,
 ) {
 	return zValidator(target, schema, (r, c) => {
-		if (!r.success) return invalid(c, r.error.issues);
+		if (!r.success) {
+			return invalid(c, r.error.issues);
+		}
 	});
 }
 

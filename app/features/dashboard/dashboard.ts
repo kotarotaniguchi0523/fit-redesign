@@ -37,9 +37,11 @@ interface MonthlyStats {
 }
 
 // ドーナツチャート（全体正答率）
-function renderAccuracyDonut(canvasId: string, accuracy: number) {
+function renderAccuracyDonut(canvasId: string, accuracy: number): void {
 	const canvas = document.getElementById(canvasId) as HTMLCanvasElement | null;
-	if (!canvas) return;
+	if (!canvas) {
+		return;
+	}
 
 	new Chart(canvas, {
 		type: "doughnut",
@@ -66,9 +68,11 @@ function renderAccuracyDonut(canvasId: string, accuracy: number) {
 }
 
 // 月ごと推移グラフ（折れ線 + バー複合）
-function renderMonthlyChart(canvasId: string, monthlyStats: MonthlyStats[]) {
+function renderMonthlyChart(canvasId: string, monthlyStats: MonthlyStats[]): void {
 	const canvas = document.getElementById(canvasId) as HTMLCanvasElement | null;
-	if (!canvas) return;
+	if (!canvas) {
+		return;
+	}
 
 	const labels = monthlyStats.map((m) => {
 		const [year, month] = m.month.split("-");
@@ -134,9 +138,11 @@ function renderMonthlyChart(canvasId: string, monthlyStats: MonthlyStats[]) {
 }
 
 // ページ初期化
-function init() {
+function init(): void {
 	const dataEl = document.getElementById("dashboard-data");
-	if (!dataEl) return;
+	if (!dataEl) {
+		return;
+	}
 
 	try {
 		const data = JSON.parse(dataEl.textContent ?? "{}");

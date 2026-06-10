@@ -69,7 +69,9 @@ function figureDataToMarkdown(figureData: FigureData): string {
 
 		case "binaryTree": {
 			const collectNodes = (node: typeof figureData.root | undefined, depth: number): string[] => {
-				if (!node) return [];
+				if (!node) {
+					return [];
+				}
 				const indent = "  ".repeat(depth);
 				return [indent.concat(`- ${node.value}`)].concat(
 					collectNodes(node.left, depth + 1),
@@ -110,17 +112,23 @@ function figureDataToMarkdown(figureData: FigureData): string {
 	}
 }
 
+function buildFigureSection(question: Question): string[] {
+	if (question.figureData) {
+		return ["### 図", "", figureDataToMarkdown(question.figureData), ""];
+	}
+	if (question.figureDescription) {
+		return [`> **図**: ${question.figureDescription}`, ""];
+	}
+	return [];
+}
+
 /**
  * Question オブジェクトを Markdown 文字列に変換する
  */
 export function questionToMarkdown(question: Question): string {
 	const base = [`## 問題 ${question.number}`, "", question.text, ""];
 
-	const figure = question.figureData
-		? ["### 図", "", figureDataToMarkdown(question.figureData), ""]
-		: question.figureDescription
-			? [`> **図**: ${question.figureDescription}`, ""]
-			: [];
+	const figure = buildFigureSection(question);
 
 	const options =
 		question.options && question.options.length > 0

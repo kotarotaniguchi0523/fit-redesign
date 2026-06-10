@@ -1,6 +1,8 @@
 import { useActionState, useEffect, useRef } from "hono/jsx";
+import type { JSX } from "hono/jsx/jsx-runtime";
 import { recordAnswer, SavingIndicator } from "./answerActions";
 import { fetchAnswerStatuses } from "./answerClient";
+import { SolutionPanel } from "./SolutionPanel";
 
 /**
  * 記述式（選択肢なし）問題の自己採点 island。
@@ -70,8 +72,12 @@ const INITIAL_STATE: State = { phase: "initial", recorded: false };
 
 /** 状態から採点チップと解説パネルの表示を導出する。 */
 function cardView(state: State): CardView {
-	if (state.phase === "initial") return { solution: false, chip: null };
-	if (state.phase === "revealed") return { solution: true, chip: null };
+	if (state.phase === "initial") {
+		return { solution: false, chip: null };
+	}
+	if (state.phase === "revealed") {
+		return { solution: true, chip: null };
+	}
 	return { solution: true, chip: state.isCorrect ? "correct" : "review" };
 }
 
@@ -81,7 +87,7 @@ export interface SelfGradeProps {
 	explanationHtml?: string;
 }
 
-export default function SelfGrade(props: SelfGradeProps) {
+export default function SelfGrade(props: SelfGradeProps): JSX.Element {
 	const { questionId, answerHtml, explanationHtml } = props;
 	// rootRef は安定参照。reducer は dispatch 時に rootRef から closest() で親カードを解決する。
 	const rootRef = useRef<HTMLDivElement | null>(null);
@@ -133,17 +139,25 @@ export default function SelfGrade(props: SelfGradeProps) {
 
 	useEffect(() => {
 		let cancelled = false;
-		fetchAnswerStatuses().then((statuses) => {
-			if (cancelled) return;
-			const saved = statuses[questionId];
-			if (!saved) return; // 未回答なら initial のまま（SSR-first）。
-			// 回答済みは "restore" で graded へ格下げ（記録はしない）。
-			const formData = new FormData();
-			formData.set("event", "restore");
-			formData.set("isCorrect", String(saved.isCorrect));
-			dispatch(formData);
-		});
-		return () => {
+		fetchAnswerStatuses()
+			.then((statuses) => {
+				if (cancelled) {
+					return;
+				}
+				const saved = statuses[questionId];
+				if (!saved) {
+					return; // 未回答なら initial のまま（SSR-first）。
+				}
+				// 回答済みは "restore" で graded へ格下げ（記録はしない）。
+				const formData = new FormData();
+				formData.set("event", "restore");
+				formData.set("isCorrect", String(saved.isCorrect));
+				dispatch(formData);
+			})
+			.catch(() => {
+				/* SSR-first: 取得失敗時は初期状態のまま */
+			});
+		return (): void => {
 			cancelled = true;
 		};
 		// マウント時に 1 回だけ回答済み状態を取得して復元する。
@@ -173,29 +187,6 @@ export default function SelfGrade(props: SelfGradeProps) {
 			</div>
 			{view.solution ? (
 				<SolutionPanel answerHtml={answerHtml} explanationHtml={explanationHtml} />
-			) : null}
-		</div>
-	);
-}
-
-function SolutionPanel(props: { answerHtml: string; explanationHtml?: string }) {
-	return (
-		<div class="q-solution solution-reveal">
-			<p class="q-solution__title">解き方</p>
-			<div class="q-solution__answer">
-				<span class="q-solution__answer-label">答え</span>
-				<span
-					class="q-solution__answer-value"
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: サーバー生成済みの信頼済みHTML(overline等)を描画
-					dangerouslySetInnerHTML={{ __html: props.answerHtml }}
-				/>
-			</div>
-			{props.explanationHtml ? (
-				<p
-					class="q-solution__explanation"
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: サーバー生成済みの信頼済みHTML(overline等)を描画
-					dangerouslySetInnerHTML={{ __html: props.explanationHtml }}
-				/>
 			) : null}
 		</div>
 	);

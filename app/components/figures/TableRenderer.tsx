@@ -1,10 +1,11 @@
+import type { JSX } from "hono/jsx/jsx-runtime";
 import { buildTableConfig, type TableFigureData } from "../../lib/figures/table-renderer";
 
 interface TableRendererProps {
 	figureData: TableFigureData;
 }
 
-export function TableRenderer({ figureData }: TableRendererProps) {
+export function TableRenderer({ figureData }: TableRendererProps): JSX.Element {
 	const config = buildTableConfig(figureData);
 
 	return (

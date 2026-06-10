@@ -22,7 +22,9 @@ class Logger {
 	}
 
 	private formatMessage(level: LogLevel, message: string, ...args: unknown[]): void {
-		if (!this.isDev) return;
+		if (!this.isDev) {
+			return;
+		}
 
 		const timestamp = new Date().toISOString().split("T")[1].slice(0, 12); // HH:MM:SS.mmm
 		const formattedPrefix = `[${timestamp}] ${this.prefix}`;
@@ -36,6 +38,8 @@ class Logger {
 				break;
 			case "error":
 				console.error(formattedPrefix, message, ...args);
+				break;
+			default:
 				break;
 		}
 	}

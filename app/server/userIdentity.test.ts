@@ -6,7 +6,7 @@ import {
 	type UserIdentityVariables,
 } from "./userIdentity";
 
-function createIdentityTestApp() {
+function createIdentityTestApp(): Hono<{ Variables: UserIdentityVariables }> {
 	const app = new Hono<{ Variables: UserIdentityVariables }>();
 	app.use("*", async (c, next) => {
 		const identity = ensureUserIdentity(c);

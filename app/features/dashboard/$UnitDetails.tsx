@@ -1,4 +1,5 @@
 import { useActionState } from "hono/jsx/dom";
+import type { JSX } from "hono/jsx/jsx-runtime";
 import type { UnitStats } from "./dashboardAggregator";
 
 interface UnitDetailsProps {
@@ -11,7 +12,11 @@ function toggleReducer(open: boolean, _action: "toggle"): boolean {
 	return !open;
 }
 
-export default function UnitDetails({ unit, trendIcon, trendClass }: UnitDetailsProps) {
+export default function UnitDetails({
+	unit,
+	trendIcon,
+	trendClass,
+}: UnitDetailsProps): JSX.Element {
 	const [open, toggle] = useActionState(toggleReducer, false);
 
 	return (
@@ -19,7 +24,7 @@ export default function UnitDetails({ unit, trendIcon, trendClass }: UnitDetails
 			<button
 				type="button"
 				class="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
-				onClick={() => toggle("toggle")}
+				onClick={(): void => toggle("toggle")}
 				aria-expanded={open ? "true" : "false"}
 			>
 				<div class="flex items-center gap-3">

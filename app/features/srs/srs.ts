@@ -37,7 +37,9 @@ function storageKey(): string {
 export function loadSrsState(): SrsState {
 	try {
 		const raw = localStorage.getItem(storageKey());
-		if (!raw) return {};
+		if (!raw) {
+			return {};
+		}
 		const parsed = JSON.parse(raw);
 		return parsed && typeof parsed === "object" ? (parsed as SrsState) : {};
 	} catch {
@@ -67,7 +69,9 @@ export function recordGrade(questionId: string, isCorrect: boolean, now: number)
 /** 出題対象か（未学習＝新規、または期限到来） */
 export function isDue(state: SrsState, questionId: string, now: number): boolean {
 	const card = state[questionId];
-	if (!card) return true; // 新規
+	if (!card) {
+		return true; // 新規
+	}
 	return card.due <= now;
 }
 
@@ -115,7 +119,9 @@ export function buildDailySet(
  * box が高い（＝間隔をあけても解けている）ほど高い。未学習は0。
  */
 export function unitReadiness(state: SrsState, questionIds: string[]): number {
-	if (questionIds.length === 0) return 0;
+	if (questionIds.length === 0) {
+		return 0;
+	}
 	const score = questionIds.reduce((sum, id) => sum + Math.min(state[id]?.box ?? 0, MAX_BOX), 0);
 	return Math.round((score / (questionIds.length * MAX_BOX)) * 100);
 }

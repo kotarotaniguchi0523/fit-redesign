@@ -8,7 +8,9 @@ import { USER_ID_KEY } from "../constants";
 export function getUserId(): string {
 	try {
 		const existing = localStorage.getItem(USER_ID_KEY);
-		if (existing) return existing;
+		if (existing) {
+			return existing;
+		}
 
 		const newId = crypto.randomUUID();
 		localStorage.setItem(USER_ID_KEY, newId);

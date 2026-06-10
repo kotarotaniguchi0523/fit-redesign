@@ -1,7 +1,9 @@
 import { unitBasedTabs } from "../../data/units";
-import type { AnswerRow } from "../../server/answerRepository";
+import type { AnswerJoinRow } from "../../server/answerRepository";
 import { QuestionIdSchema, UserIdSchema } from "../../types";
 import type { AnswerRecord } from "../../types/answer";
+
+const OLD_QUESTION_ID_RE = /^(exam\d+-\d{4})-q\d+$/;
 
 /**
  * dashboard 最適化の golden（最適化前）実装と合成データ生成。
@@ -34,15 +36,15 @@ function makeRng(seed: number): () => number {
 	let state = seed >>> 0;
 	return () => {
 		state = (state * 1_664_525 + 1_013_904_223) >>> 0;
-		return state / 0xffffffff;
+		return state / 0xff_ff_ff_ff;
 	};
 }
 
-// 合成 AnswerRow[] を count 件生成（D1 取得行のシェイプ）。
-// timestamp は複数月にまたがり、単元横断で交互（interleaved）になるよう散らす。
-export function makeRows(count: number, seed = 42): AnswerRow[] {
+// 合成 AnswerJoinRow[] を count 件生成（leftJoin 取得行のシェイプ）。
+// created_at は複数月にまたがり、単元横断で交互（interleaved）になるよう散らす
+// （月次集計・順序の基準は created_at に一本化）。
+export function makeRows(count: number, seed = 42): AnswerJoinRow[] {
 	const rng = makeRng(seed);
-	const base = new Date(2024, 0, 1).getTime();
 	return Array.from({ length: count }, (_, i) => {
 		const prefix = EXAM_PREFIXES[i % EXAM_PREFIXES.length];
 		const qNum = (i % 7) + 1;
@@ -52,46 +54,59 @@ export function makeRows(count: number, seed = 42): AnswerRow[] {
 		const hasDuration = rng() > 0.2;
 		return {
 			id: i + 1,
-			user_id: BENCH_USER_ID,
-			question_id: `${prefix}-q${qNum}`,
-			selected_label: "ア",
-			is_correct: rng() > 0.4 ? 1 : 0,
+			userId: BENCH_USER_ID,
+			jsonId: `${prefix}-q${qNum}`,
+			selectedLabel: "ア",
+			isCorrect: rng() > 0.4 ? 1 : 0,
 			duration: hasDuration ? Math.floor(rng() * 120) + 1 : null,
-			timestamp: date.getTime() + Math.floor(rng() * 1000),
-			created_at: base + i,
+			createdAt: date.getTime() + Math.floor(rng() * 1000),
 		};
 	});
 }
 
 // ---- 最適化前の実装コピー（before 計測 + equivalence 用） ----
 
-function oldRowToRecord(row: AnswerRow): AnswerRecord {
+function oldRowToRecord(row: AnswerJoinRow): AnswerRecord | null {
+	if (row.jsonId == null) {
+		return null;
+	}
 	return {
 		id: row.id,
-		userId: UserIdSchema.parse(row.user_id),
-		questionId: QuestionIdSchema.parse(row.question_id),
-		selectedLabel: row.selected_label,
-		isCorrect: row.is_correct === 1,
+		userId: UserIdSchema.parse(row.userId),
+		questionId: QuestionIdSchema.parse(row.jsonId),
+		selectedLabel: row.selectedLabel,
+		isCorrect: row.isCorrect === 1,
 		duration: row.duration,
-		timestamp: row.timestamp,
-		createdAt: row.created_at,
+		createdAt: row.createdAt,
 	};
 }
 
-export function oldGroupRowsByQuestion(rows: AnswerRow[]): Record<string, AnswerRecord[]> {
+export function oldGroupRowsByQuestion(rows: AnswerJoinRow[]): Record<string, AnswerRecord[]> {
 	return rows.reduce<Record<string, AnswerRecord[]>>((history, row) => {
 		const record = oldRowToRecord(row);
+		if (record == null) {
+			return history;
+		}
 		history[record.questionId] = [...(history[record.questionId] ?? []), record];
 		return history;
 	}, {});
 }
 
-export function oldAggregateStats(answerHistory: Record<string, AnswerRecord[]>) {
+interface OldDashboardData {
+	totalAnswered: number;
+	totalAttempts: number;
+	overallAccuracy: number;
+	avgDuration: number | null;
+	monthlyStats: OldMonthlyStats[];
+	unitStats: OldUnitStats[];
+	trend: "improving" | "stable" | "declining";
+}
+
+export function oldAggregateStats(answerHistory: Record<string, AnswerRecord[]>): OldDashboardData {
 	const allAnswers = Object.values(answerHistory).flat();
 
 	if (allAnswers.length === 0) {
 		return {
-			totalQuestions: oldGetTotalQuestionCount(),
 			totalAnswered: 0,
 			totalAttempts: 0,
 			overallAccuracy: 0,
@@ -124,7 +139,6 @@ export function oldAggregateStats(answerHistory: Record<string, AnswerRecord[]>)
 	const trend = oldCalculateTrend(monthlyStats.map((m) => m.accuracy));
 
 	return {
-		totalQuestions: oldGetTotalQuestionCount(),
 		totalAnswered: latestByQuestion.size,
 		totalAttempts: allAnswers.length,
 		overallAccuracy:
@@ -148,7 +162,7 @@ function oldAggregateByMonth(answers: AnswerRecord[]): OldMonthlyStats[] {
 	const byMonth = new Map<string, AnswerRecord[]>();
 
 	for (const answer of answers) {
-		const date = new Date(answer.timestamp);
+		const date = new Date(answer.createdAt);
 		const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 		const arr = byMonth.get(month) ?? [];
 		arr.push(answer);
@@ -165,7 +179,9 @@ function oldAggregateByMonth(answers: AnswerRecord[]): OldMonthlyStats[] {
 
 		for (let i = 0; i < monthAnswers.length; i++) {
 			const a = monthAnswers[i];
-			if (a.isCorrect) correct++;
+			if (a.isCorrect) {
+				correct++;
+			}
 			if (a.duration != null) {
 				durationSum += a.duration;
 				withDurationCount++;
@@ -195,8 +211,10 @@ for (const tab of unitBasedTabs) {
 }
 
 function oldMapQuestionToUnit(questionId: string): string | null {
-	const match = questionId.match(/^(exam\d+-\d{4})-q\d+$/);
-	if (!match) return null;
+	const match = questionId.match(OLD_QUESTION_ID_RE);
+	if (!match) {
+		return null;
+	}
 	return oldQuestionToUnitMap.get(match[1]) ?? null;
 }
 
@@ -210,7 +228,7 @@ interface OldUnitStats {
 	trend: "improving" | "stable" | "declining";
 	questionDetails: {
 		questionId: string;
-		answers: { selectedLabel: string; isCorrect: boolean; timestamp: number }[];
+		answers: { selectedLabel: string; isCorrect: boolean; createdAt: number }[];
 	}[];
 }
 
@@ -219,7 +237,9 @@ function oldAggregateByUnit(answerHistory: Record<string, AnswerRecord[]>): OldU
 
 	for (const [questionId, records] of Object.entries(answerHistory)) {
 		const unitId = oldMapQuestionToUnit(questionId);
-		if (!unitId) continue;
+		if (!unitId) {
+			continue;
+		}
 
 		let unitEntry = unitMap.get(unitId);
 		if (!unitEntry) {
@@ -233,7 +253,9 @@ function oldAggregateByUnit(answerHistory: Record<string, AnswerRecord[]>): OldU
 
 	for (const tab of unitBasedTabs) {
 		const unitData = unitMap.get(tab.id);
-		if (!unitData) continue;
+		if (!unitData) {
+			continue;
+		}
 
 		const allAnswers = Array.from(unitData.answers.values()).flat();
 		const correct = allAnswers.filter((a) => a.isCorrect).length;
@@ -246,7 +268,7 @@ function oldAggregateByUnit(answerHistory: Record<string, AnswerRecord[]>): OldU
 			answers: records.map((r) => ({
 				selectedLabel: r.selectedLabel,
 				isCorrect: r.isCorrect,
-				timestamp: r.timestamp,
+				createdAt: r.createdAt,
 			})),
 		}));
 
@@ -266,9 +288,11 @@ function oldAggregateByUnit(answerHistory: Record<string, AnswerRecord[]>): OldU
 }
 
 function oldGetRecentAccuracies(answers: AnswerRecord[], windowSize: number): number[] {
-	if (answers.length < 2) return [];
+	if (answers.length < 2) {
+		return [];
+	}
 
-	const sorted = [...answers].sort((a, b) => a.timestamp - b.timestamp);
+	const sorted = [...answers].sort((a, b) => a.createdAt - b.createdAt);
 	const accuracies: number[] = [];
 
 	for (let i = windowSize - 1; i < sorted.length; i += windowSize) {
@@ -281,7 +305,9 @@ function oldGetRecentAccuracies(answers: AnswerRecord[], windowSize: number): nu
 }
 
 function oldCalculateTrend(values: number[]): "improving" | "stable" | "declining" {
-	if (values.length < 2) return "stable";
+	if (values.length < 2) {
+		return "stable";
+	}
 
 	const n = values.length;
 	let sumX = 0;
@@ -298,26 +324,11 @@ function oldCalculateTrend(values: number[]): "improving" | "stable" | "declinin
 
 	const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
 
-	if (slope > 3) return "improving";
-	if (slope < -3) return "declining";
-	return "stable";
-}
-
-function oldGetTotalQuestionCount(): number {
-	let count = 0;
-	const seen = new Set<string>();
-
-	for (const tab of unitBasedTabs) {
-		for (const mapping of tab.examMapping) {
-			for (const examNum of mapping.examNumbers) {
-				const key = `exam${examNum}-${mapping.year}`;
-				if (!seen.has(key)) {
-					seen.add(key);
-					count++;
-				}
-			}
-		}
+	if (slope > 3) {
+		return "improving";
 	}
-
-	return count;
+	if (slope < -3) {
+		return "declining";
+	}
+	return "stable";
 }

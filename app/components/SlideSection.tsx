@@ -1,10 +1,11 @@
+import type { JSX } from "hono/jsx/jsx-runtime";
 import type { Slide } from "../types";
 
 interface SlideSectionProps {
 	slides: Slide[];
 }
 
-export function SlideSection({ slides }: SlideSectionProps) {
+export function SlideSection({ slides }: SlideSectionProps): JSX.Element {
 	return (
 		<div class="mb-4 rounded-xl border border-blue-100 bg-linear-to-br from-blue-50/50 to-indigo-50/30">
 			<div class="p-5">
