@@ -42,6 +42,7 @@ export async function saveAnswer(params: {
 	selectedLabel: string;
 	isCorrect: boolean;
 	duration?: number;
+	setId?: string;
 }): Promise<void> {
 	// 採点イベントを発火（SRS / セッション / ホームが購読）。サーバー保存可否に関わらず常に通知する。
 	document.dispatchEvent(
@@ -57,6 +58,7 @@ export async function saveAnswer(params: {
 				selectedLabel: params.selectedLabel,
 				isCorrect: params.isCorrect,
 				duration: params.duration,
+				setId: params.setId,
 			},
 		});
 	} catch {
@@ -65,10 +67,16 @@ export async function saveAnswer(params: {
 }
 
 /**
- * 同じカード内の question-timer（[data-question-timer]）が露出する解答時間（秒）を読み取る。
+ * ページ唯一のラップ式ストップウォッチ（[data-lap-stopwatch]）の現在状態を 1 度に読む。
+ * recordAnswer は採点（QUESTION_GRADED_EVENT 発火）前に呼ぶため、その問題のラップ値とセットIDが取れる。
+ * - durationSeconds: 島は進行中ラップが無い場合（idle/done）と 10 分超の外れ値を空文字で出す。空文字・非数値・0 以下は undefined。
+ * - setId: data-set-id が空文字・未定義（セット未開始）なら undefined。
  */
-export function readTimerDuration(card: Element | null): number | undefined {
-	const timer = card?.querySelector<HTMLElement>("[data-question-timer]");
-	const elapsed = Number(timer?.dataset.elapsed);
-	return Number.isFinite(elapsed) && elapsed > 0 ? elapsed : undefined;
+export function readStopwatchSnapshot(): { durationSeconds?: number; setId?: string } {
+	const widget = document.querySelector<HTMLElement>("[data-lap-stopwatch]");
+	const seconds = Number(widget?.dataset.currentLapSeconds);
+	return {
+		durationSeconds: Number.isFinite(seconds) && seconds > 0 ? seconds : undefined,
+		setId: widget?.dataset.setId || undefined,
+	};
 }

@@ -5,7 +5,6 @@ import AnswerSelector from "../features/answer/$AnswerSelector";
 import SelfGrade from "../features/answer/$SelfGrade";
 import CopyButton from "../features/markdown/$CopyButton";
 import { questionToMarkdown } from "../features/markdown/questionToMarkdown";
-import QuestionTimer from "../features/timer/$QuestionTimer";
 import { overlineToHtml } from "../lib/overline";
 import type { Question } from "../types";
 import { BinaryTree } from "./figures/BinaryTree";
@@ -172,7 +171,6 @@ export function QuestionCard({ question, hidden }: Props): JSX.Element {
 
 				{/* 6. ツール（控えめなフッター） */}
 				<footer class="q-footer">
-					<QuestionTimer questionId={question.id} />
 					<CopyButton
 						text={view.markdownText}
 						className="q-tool"

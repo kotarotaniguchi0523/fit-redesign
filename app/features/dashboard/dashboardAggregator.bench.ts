@@ -18,6 +18,9 @@ import { makeRows, oldAggregateStats, oldGroupRowsByQuestion } from "./dashboard
  * （素の vitest は出力が化けるため RTK 迂回必須）
  */
 
+// 集計の現在時刻（日次/週次/ヒートマップ窓の基準）。ベンチでは固定値でよい。
+const BENCH_NOW = 1_900_000_000_000;
+
 const SIZES = [
 	{ label: "small(50)", count: 50 },
 	{ label: "medium(1000)", count: 1000 },
@@ -51,7 +54,7 @@ for (const { label, count } of SIZES) {
 		bench(
 			"new (1-pass)",
 			() => {
-				aggregateStats(history);
+				aggregateStats(history, BENCH_NOW);
 			},
 			{ time: 3000 },
 		);

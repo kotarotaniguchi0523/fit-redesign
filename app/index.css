@@ -580,3 +580,64 @@ details summary::marker {
 		@apply mt-4 inline-block w-auto px-6;
 	}
 }
+
+/* ===== ラップ式ストップウォッチ（フローティング UI） ===== */
+@layer components {
+	/* ルートは fixed。本文を隠さない padding はページ側（Phase4）が確保する。 */
+	.lap-sw {
+		@apply fixed inset-x-0 bottom-0 z-40 sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-72;
+	}
+	/* モバイルは下部バー（safe-area 考慮・背景不透明）、PC は右下のコンパクトカード。 */
+	.lap-sw__inner {
+		@apply flex flex-col gap-2 border-t border-slate-200 bg-white px-4 pt-3 shadow-lg sm:rounded-2xl sm:border;
+		padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+		background-color: var(--color-bg-card);
+	}
+	@media (min-width: 640px) {
+		.lap-sw__inner {
+			padding-bottom: 0.75rem;
+		}
+	}
+	.lap-sw__stats {
+		@apply flex flex-wrap items-baseline gap-x-3 gap-y-1;
+	}
+	.lap-sw__headline {
+		@apply text-base font-bold;
+		color: var(--color-primary);
+	}
+	.lap-sw__progress {
+		@apply text-sm font-bold;
+		color: var(--color-primary);
+	}
+	.lap-sw__current {
+		@apply font-mono text-sm font-semibold tabular-nums text-slate-700;
+	}
+	.lap-sw__total {
+		@apply font-mono text-xs tabular-nums text-slate-400;
+	}
+	.lap-sw__feedback {
+		@apply rounded-full px-2 py-0.5 text-sm font-bold;
+		color: var(--color-accent);
+		background-color: var(--color-accent-soft);
+	}
+	.lap-sw__laps {
+		@apply w-full font-mono text-xs tabular-nums text-slate-400;
+	}
+	.lap-sw__actions {
+		@apply flex items-stretch gap-2;
+	}
+	/* 主ボタンは最大タップ領域（44px 以上）。 */
+	.lap-sw__punch {
+		@apply min-h-11 flex-1 rounded-xl px-4 py-3 text-base font-bold text-white transition-colors;
+		background-color: var(--color-primary);
+	}
+	.lap-sw__punch:hover {
+		background-color: var(--color-primary-light);
+	}
+	.lap-sw__break {
+		@apply min-h-11 rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold text-slate-600 transition-colors;
+	}
+	.lap-sw__break:hover {
+		@apply bg-slate-50;
+	}
+}

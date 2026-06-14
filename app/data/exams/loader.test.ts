@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { safeParseOrThrow } from "../../lib/zod";
 import type { Exam } from "../../types";
-import { getAllExams, getExamByNumber } from "./index";
+import { getAllExams, getExamByNumber, selectVisibleExamNumbers } from "./index";
 import { ExamJsonSchema } from "./schema";
 
 /**
@@ -70,6 +70,176 @@ describe("exams loader public API", () => {
 		// Assert — all 9 numbers present in meta resolve to a group
 		expect(results.every((r) => r !== undefined)).toBe(true);
 		expect(results.map((r) => r?.examNumber)).toEqual([...numbers]);
+	});
+});
+
+describe("selectVisibleExamNumbers", () => {
+	it("exam の問題集合が他候補の真部分集合なら除外する（統合 exam⊇原本 exam）", () => {
+		// Arrange: exam4 が exam6 と exam7 を内包するケース（unit-automaton/2016 相当）
+		const candidates = [
+			{
+				examNumber: 4,
+				questionIds: [
+					"exam6-2016-q1",
+					"exam6-2016-q2",
+					"exam6-2016-q3",
+					"exam6-2016-q4",
+					"exam6-2016-q5",
+					"exam7-2016-q1",
+					"exam7-2016-q2",
+					"exam7-2016-q3",
+					"exam7-2016-q4",
+					"exam7-2016-q5",
+				],
+			},
+			{
+				examNumber: 6,
+				questionIds: [
+					"exam6-2016-q1",
+					"exam6-2016-q2",
+					"exam6-2016-q3",
+					"exam6-2016-q4",
+					"exam6-2016-q5",
+				],
+			},
+		];
+
+		// Act / Assert
+		expect(selectVisibleExamNumbers(candidates)).toEqual([4]);
+	});
+
+	it("exam4⊇exam7 のケースで exam7 を除外する（unit-ecc/2016 相当）", () => {
+		// Arrange
+		const candidates = [
+			{
+				examNumber: 4,
+				questionIds: [
+					"exam6-2016-q1",
+					"exam6-2016-q2",
+					"exam6-2016-q3",
+					"exam6-2016-q4",
+					"exam6-2016-q5",
+					"exam7-2016-q1",
+					"exam7-2016-q2",
+					"exam7-2016-q3",
+					"exam7-2016-q4",
+					"exam7-2016-q5",
+				],
+			},
+			{
+				examNumber: 7,
+				questionIds: [
+					"exam7-2016-q1",
+					"exam7-2016-q2",
+					"exam7-2016-q3",
+					"exam7-2016-q4",
+					"exam7-2016-q5",
+				],
+			},
+		];
+
+		// Act / Assert
+		expect(selectVisibleExamNumbers(candidates)).toEqual([4]);
+	});
+
+	it("問題集合が完全一致の場合は番号が小さい方を残す（unit-data-structure/2016 相当: exam5==exam8 → [5]）", () => {
+		// Arrange
+		const candidates = [
+			{
+				examNumber: 5,
+				questionIds: [
+					"exam8-2016-q1",
+					"exam8-2016-q2",
+					"exam8-2016-q3",
+					"exam8-2016-q4",
+					"exam8-2016-q5",
+				],
+			},
+			{
+				examNumber: 8,
+				questionIds: [
+					"exam8-2016-q1",
+					"exam8-2016-q2",
+					"exam8-2016-q3",
+					"exam8-2016-q4",
+					"exam8-2016-q5",
+				],
+			},
+		];
+
+		// Act / Assert
+		expect(selectVisibleExamNumbers(candidates)).toEqual([5]);
+	});
+
+	it("exam8 が除外されるが exam6 は別内容なので残す（unit-data-structure/2017 相当: [5,6,8] → [5,6]）", () => {
+		// Arrange
+		const candidates = [
+			{
+				examNumber: 5,
+				questionIds: [
+					"exam8-2017-q1",
+					"exam8-2017-q2",
+					"exam8-2017-q3",
+					"exam8-2017-q4",
+					"exam8-2017-q5",
+				],
+			},
+			{
+				examNumber: 6,
+				questionIds: [
+					"exam6-2017-q1",
+					"exam6-2017-q2",
+					"exam6-2017-q3",
+					"exam6-2017-q4",
+					"exam6-2017-q5",
+				],
+			},
+			{
+				examNumber: 8,
+				questionIds: [
+					"exam8-2017-q1",
+					"exam8-2017-q2",
+					"exam8-2017-q3",
+					"exam8-2017-q4",
+					"exam8-2017-q5",
+				],
+			},
+		];
+
+		// Act / Assert
+		expect(selectVisibleExamNumbers(candidates)).toEqual([5, 6]);
+	});
+
+	it("問題集合が互いに素の場合は全候補を残す（unit-set-prob/2013 相当: [5,6]→[5,6]）", () => {
+		// Arrange
+		const candidates = [
+			{ examNumber: 5, questionIds: ["exam5-q1", "exam5-q2"] },
+			{ examNumber: 6, questionIds: ["exam6-q1", "exam6-q2"] },
+		];
+
+		// Act / Assert
+		expect(selectVisibleExamNumbers(candidates)).toEqual([5, 6]);
+	});
+
+	it("候補が単一の場合はそのまま返す", () => {
+		// Arrange
+		const candidates = [{ examNumber: 1, questionIds: ["exam1-q1", "exam1-q2"] }];
+
+		// Act / Assert
+		expect(selectVisibleExamNumbers(candidates)).toEqual([1]);
+	});
+
+	it("空配列の questionIds を持つ候補は他を除外しない", () => {
+		// Arrange: questionIds が空なら部分集合判定が空集合として扱われ、他に含まれることはない
+		const candidates = [
+			{ examNumber: 4, questionIds: [] },
+			{ examNumber: 6, questionIds: ["exam6-q1", "exam6-q2"] },
+		];
+
+		// Act: 空配列はどの集合の部分集合にもなる（every がゼロ要素で true）ため exam4 は除外される
+		// 一方 exam6 は exam4 に含まれないので残る
+		const result = selectVisibleExamNumbers(candidates);
+		expect(result).toContain(6);
 	});
 });
 

@@ -13,11 +13,10 @@ import { recordAnswer } from "./answerActions";
  *   発火する QUESTION_GRADED_EVENT も「本物の経路」で観測でき、payload も spy で捕捉できる。失敗ケース
  *   のみ mockRejectedValueOnce で reject させて catch を踏ませる。
  * - getUserId は "anonymous" 固定。本物の saveAnswer が anonymous 時に /answer/submit の fetch を
- *   skip する（answerClient.ts L57）ため、テストでネットワークノイズが出ない。イベント発火は fetch より
- *   前なので観測に影響しない。
+ *   skip するため、テストでネットワークノイズが出ない。イベント発火は fetch より前なので観測に影響しない。
  *
- * QUESTION_GRADED_EVENT は saveAnswer の await より前で同期 dispatch されるため、DOM レンダ用の
- * settle() ポーリングは不要。listener 登録 → await recordAnswer → 即 assert で観測できる。
+ * duration/setId の取得元は、ページ唯一のラップ式ストップウォッチ（[data-lap-stopwatch]）の
+ * data-current-lap-seconds / data-set-id（readStopwatchSnapshot）。テストは document に widget を置いて経路を確認する。
  */
 
 vi.mock("../../lib/userId", () => ({ getUserId: () => "anonymous" }));
@@ -48,14 +47,15 @@ function captureGradedEvents(): { events: GradedDetail[]; stop: () => void } {
 	return { events, stop: () => document.removeEventListener(QUESTION_GRADED_EVENT, handler) };
 }
 
-/** [data-question-timer] を持つカードを作る（readTimerDuration が経過秒を読み取る経路）。 */
-function cardWithTimer(elapsedSeconds: number): HTMLElement {
-	const card = document.createElement("div");
-	const timer = document.createElement("div");
-	timer.setAttribute("data-question-timer", "");
-	timer.dataset.elapsed = String(elapsedSeconds);
-	card.append(timer);
-	return card;
+/** [data-lap-stopwatch] を document に置く（readStopwatchSnapshot が読む経路）。 */
+function mountStopwatch(currentLapSeconds: string, setId?: string): void {
+	const widget = document.createElement("div");
+	widget.setAttribute("data-lap-stopwatch", "");
+	widget.dataset.currentLapSeconds = currentLapSeconds;
+	if (setId != null) {
+		widget.dataset.setId = setId;
+	}
+	document.body.append(widget);
 }
 
 afterEach(() => {
@@ -64,14 +64,13 @@ afterEach(() => {
 });
 
 describe("recordAnswer", () => {
-	it("成功時は true を返し、saveAnswer を正しい payload で1回呼ぶ", async () => {
-		// Arrange
-		const card = cardWithTimer(42);
+	it("成功時は true を返し、saveAnswer を正しい payload で1回呼ぶ（duration はラップ値）", async () => {
+		// Arrange: ストップウォッチが 42 秒を露出（setId 無し）
+		mountStopwatch("42");
 
 		// Act
 		const recorded = await recordAnswer({
 			questionId: "q-record-1",
-			card,
 			selectedLabel: "ア",
 			isCorrect: true,
 		});
@@ -84,6 +83,29 @@ describe("recordAnswer", () => {
 			selectedLabel: "ア",
 			isCorrect: true,
 			duration: 42,
+			setId: undefined,
+		});
+	});
+
+	it("ストップウォッチに data-set-id があれば saveAnswer に setId を渡す", async () => {
+		// Arrange: ストップウォッチが 30 秒・setId "set-0001" を露出
+		mountStopwatch("30", "set-0001");
+
+		// Act
+		const recorded = await recordAnswer({
+			questionId: "q-setid-1",
+			selectedLabel: "ア",
+			isCorrect: true,
+		});
+
+		// Assert
+		expect(recorded).toBe(true);
+		expect(savedAnswer).toHaveBeenCalledWith({
+			questionId: "q-setid-1",
+			selectedLabel: "ア",
+			isCorrect: true,
+			duration: 30,
+			setId: "set-0001",
 		});
 	});
 
@@ -94,7 +116,6 @@ describe("recordAnswer", () => {
 		// Act
 		await recordAnswer({
 			questionId: "q-record-2",
-			card: null,
 			selectedLabel: "イ",
 			isCorrect: false,
 		});
@@ -104,14 +125,12 @@ describe("recordAnswer", () => {
 		expect(events).toEqual([{ questionId: "q-record-2", isCorrect: false }]);
 	});
 
-	it("card に timer が無ければ duration を undefined にする", async () => {
-		// Arrange
-		const card = document.createElement("div");
+	it("ストップウォッチが無ければ duration/setId ともに undefined にする", async () => {
+		// Arrange: document に [data-lap-stopwatch] を置かない
 
 		// Act
 		const recorded = await recordAnswer({
 			questionId: "q-record-3",
-			card,
 			selectedLabel: "ウ",
 			isCorrect: true,
 		});
@@ -123,6 +142,24 @@ describe("recordAnswer", () => {
 			selectedLabel: "ウ",
 			isCorrect: true,
 			duration: undefined,
+			setId: undefined,
+		});
+	});
+
+	it("進行中ラップが無い（空文字）なら duration を undefined にする", async () => {
+		// Arrange: idle/done 相当で data-current-lap-seconds が空文字
+		mountStopwatch("");
+
+		// Act
+		await recordAnswer({ questionId: "q-record-empty", selectedLabel: "ア", isCorrect: true });
+
+		// Assert
+		expect(savedAnswer).toHaveBeenCalledWith({
+			questionId: "q-record-empty",
+			selectedLabel: "ア",
+			isCorrect: true,
+			duration: undefined,
+			setId: undefined,
 		});
 	});
 
@@ -139,13 +176,11 @@ describe("recordAnswer", () => {
 		// Act: 2 回目を await する前（inFlight.add は await より前の同期処理）に発火する
 		const first = recordAnswer({
 			questionId: "q-dedup",
-			card: null,
 			selectedLabel: "ア",
 			isCorrect: true,
 		});
 		const second = recordAnswer({
 			questionId: "q-dedup",
-			card: null,
 			selectedLabel: "ア",
 			isCorrect: true,
 		});
@@ -163,13 +198,11 @@ describe("recordAnswer", () => {
 		// Arrange & Act: 1 回目を完了させてから 2 回目
 		const firstRecorded = await recordAnswer({
 			questionId: "q-dedup-reset",
-			card: null,
 			selectedLabel: "ア",
 			isCorrect: true,
 		});
 		const secondRecorded = await recordAnswer({
 			questionId: "q-dedup-reset",
-			card: null,
 			selectedLabel: "ア",
 			isCorrect: true,
 		});
@@ -187,7 +220,6 @@ describe("recordAnswer", () => {
 		// Act
 		const recorded = await recordAnswer({
 			questionId: "q-record-fail",
-			card: null,
 			selectedLabel: "ア",
 			isCorrect: true,
 		});

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { groupRowsByQuestion } from "../../server/answerRepository";
 import { QuestionIdSchema, UserIdSchema } from "../../types";
 import type { AnswerRecord } from "../../types/answer";
+import { makeAnswerRecord } from "../../types/test/answerRecord";
 import { aggregateStats } from "./dashboardAggregator";
 import { makeRows, oldAggregateStats, oldGroupRowsByQuestion } from "./dashboardAggregator.golden";
 
@@ -17,19 +18,14 @@ const TEST_USER_ID = "550e8400-e29b-41d4-a716-446655440000";
 function rec(
 	partial: Partial<AnswerRecord> & { questionId: string; timestamp: number },
 ): AnswerRecord {
-	const questionId = QuestionIdSchema.parse(partial.questionId);
-	// フィクスチャは時刻を `timestamp` 引数で受け取り createdAt に写す（AnswerRecord は createdAt のみ）。
+	// 共有フィクスチャに既定を委譲しつつ、userId/questionId は branded 化して時刻糖衣を写す。
 	const { timestamp, ...rest } = partial;
-	return {
-		id: 1,
-		userId: UserIdSchema.parse(TEST_USER_ID),
-		selectedLabel: "ア",
-		isCorrect: true,
-		duration: null,
+	return makeAnswerRecord({
 		...rest,
+		userId: UserIdSchema.parse(TEST_USER_ID),
+		questionId: QuestionIdSchema.parse(partial.questionId),
 		createdAt: rest.createdAt ?? timestamp,
-		questionId,
-	};
+	});
 }
 
 describe("groupRowsByQuestion 同値性", () => {
@@ -52,15 +48,20 @@ describe("groupRowsByQuestion 同値性", () => {
 });
 
 describe("aggregateStats 同値性", () => {
-	it("small/medium/large の合成履歴で旧実装と deep-equal", () => {
+	// Phase2a で dailyStats/weeklyStats/heatmap/todayCount を追加したため、旧実装が持つ
+	// レガシー部分集合（totalAnswered/overallAccuracy/monthlyStats/unitStats/trend 等）を
+	// toMatchObject で比較する（新フィールドは旧実装に無いため無視される）。now は固定。
+	const fixedNow = new Date(2026, 0, 15).getTime();
+
+	it("small/medium/large の合成履歴で旧実装のレガシー部分集合と一致", () => {
 		for (const count of [50, 1000, 20_000]) {
 			const history = groupRowsByQuestion(makeRows(count));
-			expect(aggregateStats(history)).toEqual(oldAggregateStats(history));
+			expect(aggregateStats(history, fixedNow)).toMatchObject(oldAggregateStats(history));
 		}
 	});
 
 	it("回答ゼロ（空 history）", () => {
-		expect(aggregateStats({})).toEqual(oldAggregateStats({}));
+		expect(aggregateStats({}, fixedNow)).toMatchObject(oldAggregateStats({}));
 	});
 
 	it("全 duration が 0 → avgDuration は null（truthiness 分岐を保存）", () => {
@@ -72,9 +73,9 @@ describe("aggregateStats 同値性", () => {
 				rec({ questionId: "exam1-2013-q1", timestamp: t + 1, duration: 0, isCorrect: false }),
 			],
 		};
-		const result = aggregateStats(history);
+		const result = aggregateStats(history, fixedNow);
 		expect(result.avgDuration).toBeNull();
-		expect(result).toEqual(oldAggregateStats(history));
+		expect(result).toMatchObject(oldAggregateStats(history));
 		// 月次側は逆に 0 を emit する（旧実装の差を保存）
 		expect(result.monthlyStats[0].avgDuration).toBe(0);
 	});
@@ -102,7 +103,7 @@ describe("aggregateStats 同値性", () => {
 				}),
 			),
 		};
-		expect(aggregateStats(history)).toEqual(oldAggregateStats(history));
+		expect(aggregateStats(history, fixedNow)).toMatchObject(oldAggregateStats(history));
 	});
 
 	it("duration が null と数値の混在", () => {
@@ -127,6 +128,6 @@ describe("aggregateStats 同値性", () => {
 				createdAt: t + 1000,
 			},
 		]);
-		expect(aggregateStats(history)).toEqual(oldAggregateStats(history));
+		expect(aggregateStats(history, fixedNow)).toMatchObject(oldAggregateStats(history));
 	});
 });

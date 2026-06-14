@@ -15,6 +15,7 @@ interface AnswerJoinRow {
 	selectedLabel: string;
 	isCorrect: number;
 	duration: number | null;
+	setId: string | null;
 	createdAt: number;
 }
 
@@ -30,6 +31,7 @@ function rowToRecord(row: AnswerJoinRow): AnswerRecord | null {
 		selectedLabel: row.selectedLabel,
 		isCorrect: row.isCorrect === 1,
 		duration: row.duration,
+		setId: row.setId,
 		createdAt: row.createdAt,
 	};
 }
@@ -40,36 +42,44 @@ export interface InsertAnswerInput {
 	selectedLabel: string;
 	isCorrect: boolean;
 	duration: number | null;
+	setId: string | null;
 }
 
 /**
- * 採点済み解答を記録する（insert from select）。
+ * 採点済み解答を記録する。
  *
- * クライアントから来る json_id（例 exam1-2013-q1）を questions.id に解決して INSERT する。
- * 未登録の json_id は inner select が 0 行 → 0 行挿入になり、記録されない（門番）。
- * created_at はサーバー時刻（Date.now()）を付与する。記録できた場合は answers.id、
- * 未登録で記録されなかった場合は null を返す。
+ * クライアントから来る json_id（例 exam1-2013-q1）を questions.id に解決してから INSERT する。
+ * 未登録の json_id は解決できず記録しない（門番。null を返す）。created_at はサーバー時刻
+ * （Date.now()）を付与する。記録できた場合は answers.id、未登録なら null を返す。
  */
 export async function insertAnswer(db: Db, input: InsertAnswerInput): Promise<number | null> {
-	const { userId, questionId, selectedLabel, isCorrect, duration } = input;
+	const { userId, questionId, selectedLabel, isCorrect, duration, setId } = input;
 	// FK 整合性のため answers より先に users 行を保証する。
 	await upsertUser(db, userId);
 
+	// json_id → questions.id を解決する門番（未登録なら 0 行＝記録しない）。
+	const matched = await db
+		.select({ id: questions.id })
+		.from(questions)
+		.where(eq(questions.jsonId, questionId))
+		.limit(1);
+	const questionPk = matched[0]?.id;
+	if (questionPk === undefined) {
+		return null;
+	}
+
+	// 列名指定の values() insert（insert-from-select の haveSameKeys 検査・物理列順依存を避ける）。
 	const inserted = await db
 		.insert(answers)
-		.select(
-			db
-				.select({
-					userId: sql<string>`${userId}`.as("user_id"),
-					questionId: questions.id,
-					selectedLabel: sql<string>`${selectedLabel}`.as("selected_label"),
-					isCorrect: sql<number>`${isCorrect ? 1 : 0}`.as("is_correct"),
-					duration: sql<number | null>`${duration}`.as("duration"),
-					createdAt: sql<number>`${Date.now()}`.as("created_at"),
-				})
-				.from(questions)
-				.where(eq(questions.jsonId, questionId)),
-		)
+		.values({
+			userId,
+			questionId: questionPk,
+			selectedLabel,
+			isCorrect: isCorrect ? 1 : 0,
+			duration,
+			setId,
+			createdAt: Date.now(),
+		})
 		.returning({ id: answers.id });
 
 	return inserted[0]?.id ?? null;
@@ -140,6 +150,8 @@ export function groupRowsByQuestion(rows: AnswerJoinRow[]): Record<string, Answe
 /**
  * ユーザーの全 answer を json_id 付き・created_at 昇順で取得し、questionId 毎にグルーピングする。
  * dashboard が aggregateStats で集計する分析ソース。
+ * created_at は Date.now()(ms) 採番のため同一 ms が衝突しうる。SRS リプレイ（replay.ts）は
+ * この並び順を真の時系列として畳むので、id（autoincrement=挿入順）を副キーにして同値時も確定させる。
  */
 export async function getUserAnswerHistory(
 	db: Db,
@@ -153,12 +165,13 @@ export async function getUserAnswerHistory(
 			selectedLabel: answers.selectedLabel,
 			isCorrect: answers.isCorrect,
 			duration: answers.duration,
+			setId: answers.setId,
 			createdAt: answers.createdAt,
 		})
 		.from(answers)
 		.leftJoin(questions, eq(answers.questionId, questions.id))
 		.where(eq(answers.userId, userId))
-		.orderBy(answers.createdAt);
+		.orderBy(answers.createdAt, answers.id);
 
 	return groupRowsByQuestion(rows);
 }

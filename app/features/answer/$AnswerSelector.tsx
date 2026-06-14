@@ -1,4 +1,4 @@
-import { useActionState, useEffect, useRef } from "hono/jsx";
+import { useActionState, useEffect } from "hono/jsx";
 import type { JSX } from "hono/jsx/jsx-runtime";
 import { recordAnswer, SavingIndicator } from "./answerActions";
 import { fetchAnswerStatuses } from "./answerClient";
@@ -15,9 +15,9 @@ import { SolutionPanel } from "./SolutionPanel";
  * dangerouslySetInnerHTML で SSR HTML に直接描画する（ref-innerHTML 注入をやめる）。これで SSR 出力と
  * client 初期描画が一致しハイドレーションがズレない。
  *
- * カード（[data-question-card]）とその解説/チップは island の subtree 外にあるため rootRef（安定 ref）
- * から dispatch 時点で closest() で解決する。回答済み状態は useEffect で 1 回取得し、saved があれば
- * "restore" を dispatch して submitted へ「格下げ」する（記録はしない）。
+ * 回答済み状態は useEffect で 1 回取得し、saved があれば "restore" を dispatch して
+ * submitted へ「格下げ」する（記録はしない）。解答時間はページ唯一のラップ式ストップウォッチ
+ * （[data-lap-stopwatch]）から recordAnswer が読むため、カード要素への参照は持たない。
  */
 
 interface Option {
@@ -93,12 +93,9 @@ export interface AnswerSelectorProps {
 
 export default function AnswerSelector(props: AnswerSelectorProps): JSX.Element {
 	const { questionId, correctLabel, options, answerHtml, explanationHtml } = props;
-	// rootRef は安定参照。reducer は dispatch 時に rootRef から closest() で親カードを解決する。
-	const rootRef = useRef<HTMLDivElement | null>(null);
 
 	const [state, dispatch] = useActionState(
 		async (prev: State, formData: FormData): Promise<State> => {
-			const card = rootRef.current?.closest("[data-question-card]") ?? null;
 			const recorded = formData.get("recorded") === "true";
 			switch (formData.get("event") as Event) {
 				case "restore": {
@@ -136,7 +133,6 @@ export default function AnswerSelector(props: AnswerSelectorProps): JSX.Element 
 							recorded ||
 							(await recordAnswer({
 								questionId,
-								card,
 								selectedLabel: selected,
 								isCorrect: next.isCorrect,
 							})),
@@ -149,7 +145,7 @@ export default function AnswerSelector(props: AnswerSelectorProps): JSX.Element 
 						...next,
 						recorded:
 							recorded ||
-							(await recordAnswer({ questionId, card, selectedLabel: "peek", isCorrect: false })),
+							(await recordAnswer({ questionId, selectedLabel: "peek", isCorrect: false })),
 					};
 				}
 				case "retry": {
@@ -194,7 +190,7 @@ export default function AnswerSelector(props: AnswerSelectorProps): JSX.Element 
 	const view = cardView(state);
 
 	return (
-		<div ref={rootRef} class="contents">
+		<div class="contents">
 			{view.chip ? (
 				<div class={`q-chip ${view.chip === "correct" ? "q-chip--correct" : "q-chip--review"}`}>
 					{CHIP_TEXT[view.chip]}
