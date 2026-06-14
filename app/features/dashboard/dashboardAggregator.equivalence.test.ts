@@ -12,6 +12,11 @@ import { makeRows, oldAggregateStats, oldGroupRowsByQuestion } from "./dashboard
  *
  * 既存 dashboardAggregator.test.ts は unitStats/questionDetails/trend をほぼ触らず
  * fake question ID を使うため、ここで実在 exam ペア + 大量データ + 境界ケースを検証する。
+ *
+ * 注意（golden lock の性質）: 本テストは「リファクタ同値保証」専用で、old コピー（廃止実装）は
+ * 仕様の基準ではない。avgDuration の 0→null など旧挙動も意図的に固定している。仕様そのものを変える
+ * 際は old コピーごと更新するか本テストを廃し、仕様アサーションは dashboardAggregator.test.ts 側に
+ * 書くこと（golden を「正しい挙動」として変更を弾く道具にしない）。
  */
 const TEST_USER_ID = "550e8400-e29b-41d4-a716-446655440000";
 
