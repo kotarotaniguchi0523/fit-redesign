@@ -1,7 +1,7 @@
 import { useActionState } from "hono/jsx/dom";
 import type { JSX } from "hono/jsx/jsx-runtime";
-import { CheckIcon, CopyIcon, ErrorIcon } from "../../components/icons";
-import { FEEDBACK_DURATION } from "../../constants";
+import { FEEDBACK_DURATION } from "../constants";
+import { CheckIcon, CopyIcon, ErrorIcon } from "./icons";
 
 type CopyState = "idle" | "success" | "error";
 

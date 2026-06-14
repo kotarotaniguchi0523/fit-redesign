@@ -3,10 +3,10 @@
 import type { JSX } from "hono/jsx/jsx-runtime";
 import AnswerSelector from "../features/answer/$AnswerSelector";
 import SelfGrade from "../features/answer/$SelfGrade";
-import CopyButton from "../features/markdown/$CopyButton";
 import { questionToMarkdown } from "../features/markdown/questionToMarkdown";
 import { overlineToHtml } from "../lib/overline";
 import type { Question } from "../types";
+import CopyButton from "./$CopyButton";
 import { BinaryTree } from "./figures/BinaryTree";
 import { Flowchart } from "./figures/Flowchart";
 import { LogicCircuit } from "./figures/LogicCircuit";

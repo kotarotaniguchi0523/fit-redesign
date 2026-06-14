@@ -1,6 +1,7 @@
 /** @jsxImportSource hono/jsx */
 import { Hono } from "hono";
 import { disableSSG } from "hono/ssg";
+import CopyButton from "../../components/$CopyButton";
 import { DashboardDataScript } from "../../features/dashboard/DashboardDataScript";
 import { DashboardHero } from "../../features/dashboard/DashboardHero";
 import {
@@ -13,7 +14,6 @@ import { Heatmap } from "../../features/dashboard/Heatmap";
 import { MasteryBreakdown } from "../../features/dashboard/MasteryBreakdown";
 import { TrendCharts } from "../../features/dashboard/TrendCharts";
 import { WeaknessPanel } from "../../features/dashboard/WeaknessPanel";
-import CopyButton from "../../features/markdown/$CopyButton";
 import { deriveSrsFromHistory, type SrsSummary, summarizeSrs } from "../../features/srs/replay";
 import { DAILY_SESSION_MAX } from "../../features/srs/srs";
 import { getUserAnswerHistory } from "../../server/answerRepository";
