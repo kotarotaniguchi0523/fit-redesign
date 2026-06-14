@@ -30,7 +30,6 @@ type State =
 	| { phase: "selecting"; selected: string | null; recorded: boolean }
 	| { phase: "submitted"; selected: string; isCorrect: boolean; recorded: boolean };
 
-type Event = "restore" | "select" | "submit" | "peek" | "retry";
 type Chip = "correct" | "review";
 
 interface CardView {
@@ -97,7 +96,9 @@ export default function AnswerSelector(props: AnswerSelectorProps): JSX.Element 
 	const [state, dispatch] = useActionState(
 		async (prev: State, formData: FormData): Promise<State> => {
 			const recorded = formData.get("recorded") === "true";
-			switch (formData.get("event") as Event) {
+			// FormData の値（string | File | null）を直接 switch する。case のリテラルで型が絞られ、
+			// 不正値・null は default（prev 維持）へ落ちるため as キャストは不要。
+			switch (formData.get("event")) {
 				case "restore": {
 					// fetch 後の格下げ: saved を submitted へ反映する（記録はしない＝既存挙動）。
 					const next: State = {

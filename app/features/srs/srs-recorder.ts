@@ -1,5 +1,4 @@
 import { QUESTION_GRADED_EVENT } from "../../constants";
-import type { QuestionGradedDetail } from "./srs";
 import { recordGrade } from "./srs";
 
 /**
@@ -7,7 +6,7 @@ import { recordGrade } from "./srs";
  * 問題カードを描画するページ（[year], today/[unit]）で1度だけ import する。
  */
 document.addEventListener(QUESTION_GRADED_EVENT, (event) => {
-	const detail = (event as CustomEvent<QuestionGradedDetail>).detail;
+	const detail = event.detail;
 	if (detail?.questionId) {
 		recordGrade(detail.questionId, !!detail.isCorrect, Date.now());
 	}

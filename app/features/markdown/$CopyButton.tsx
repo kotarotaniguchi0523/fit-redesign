@@ -4,7 +4,8 @@ import { CheckIcon, CopyIcon, ErrorIcon } from "../../components/icons";
 import { FEEDBACK_DURATION } from "../../constants";
 
 type CopyState = "idle" | "success" | "error";
-type CopyEvent = "copy" | "reset";
+
+const INITIAL_STATE: CopyState = "idle";
 
 interface CopyButtonProps {
 	text: string;
@@ -41,8 +42,8 @@ export default function CopyButton({
 }: CopyButtonProps): JSX.Element {
 	const [state, dispatch] = useActionState(
 		async (_prev: CopyState, formData: FormData): Promise<CopyState> => {
-			const event = formData.get("event") as CopyEvent;
-			if (event === "reset") {
+			// FormData の値を直接比較する（"copy" 以外＝"reset"/null は idle へ）。as キャスト不要。
+			if (formData.get("event") === "reset") {
 				return "idle";
 			}
 			try {
@@ -55,7 +56,7 @@ export default function CopyButton({
 				return "error";
 			}
 		},
-		"idle" as CopyState,
+		INITIAL_STATE,
 	);
 	const feedbackClass = feedbackClassFor(state);
 

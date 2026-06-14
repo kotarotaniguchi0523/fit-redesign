@@ -1,6 +1,6 @@
 import { getExamByNumber } from "../../data/exams";
 import { unitBasedTabs } from "../../data/units";
-import type { ExamNumber, Question, Year } from "../../types";
+import { type ExamNumber, isYear, type Question, type Year } from "../../types";
 
 /**
  * AI エージェント向け Markdown コンテンツ生成（純粋ロジック）。
@@ -36,7 +36,11 @@ export async function renderMarkdown(path: string): Promise<MarkdownResult> {
 		return { status: 404, body: "Unit not found" };
 	}
 
-	const year = yearStr as Year;
+	// 4桁マッチでも Year(2013..2017) とは限らないため型ガードで絞る（as キャストを排除）。
+	if (!(yearStr && isYear(yearStr))) {
+		return { status: 404, body: "Year not available for this unit" };
+	}
+	const year = yearStr;
 	const examMapping = unit.examMapping.find((m) => m.year === year);
 	if (!examMapping) {
 		return { status: 404, body: "Year not available for this unit" };

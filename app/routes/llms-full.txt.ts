@@ -42,7 +42,7 @@ async function examLines(unitName: string, year: Year, examNum: ExamNumber): Pro
 async function unitLines(unit: (typeof unitBasedTabs)[number]): Promise<string[]> {
 	const nestedExamLines = await Promise.all(
 		unit.examMapping.flatMap((mapping) =>
-			mapping.examNumbers.map((examNum) => examLines(unit.name, mapping.year as Year, examNum)),
+			mapping.examNumbers.map((examNum) => examLines(unit.name, mapping.year, examNum)),
 		),
 	);
 

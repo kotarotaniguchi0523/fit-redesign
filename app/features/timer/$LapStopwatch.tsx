@@ -110,8 +110,8 @@ export default function LapStopwatch({ questionIds }: LapStopwatchProps): JSX.El
 
 	// 採点イベントの自動打刻フォールバック。対象が未採点なら grade を dispatch し、直近ラップを一瞬強調する。
 	useEffect(() => {
-		const onGraded = (event: Event): void => {
-			const detail = (event as CustomEvent<QuestionGradedDetail>).detail;
+		const onGraded = (event: CustomEvent<QuestionGradedDetail>): void => {
+			const detail = event.detail;
 			if (!(detail && state.remaining.includes(detail.questionId))) {
 				return;
 			}
