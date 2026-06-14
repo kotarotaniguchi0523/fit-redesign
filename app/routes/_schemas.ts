@@ -7,5 +7,6 @@ export const AnswerSubmitSchema = z
 		selectedLabel: z.string().min(1).max(32),
 		isCorrect: z.boolean(),
 		duration: z.number().int().nonnegative().optional(),
+		setId: z.string().min(1).max(64).optional(),
 	})
 	.strict();

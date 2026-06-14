@@ -32,6 +32,8 @@ export const answers = sqliteTable(
 		selectedLabel: text("selected_label").notNull(),
 		isCorrect: integer("is_correct").notNull(),
 		duration: integer("duration"),
+		// ラップ式ストップウォッチのセットID（exam 単位の通しタイム集計用）。NULL 許容。
+		setId: text("set_id"),
 		// server Date.now()(ms)。月次集計・順序の基準。
 		createdAt: integer("created_at").notNull(),
 	},

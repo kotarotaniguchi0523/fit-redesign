@@ -52,6 +52,8 @@ export function makeRows(count: number, seed = 42): AnswerJoinRow[] {
 		const dayOffset = Math.floor(rng() * 25) + 1;
 		const date = new Date(2024, monthOffset, dayOffset);
 		const hasDuration = rng() > 0.2;
+		// setId: 5問ごとに同じセットIDを割り当て（実際のラップ式ストップウォッチの挙動を模倣）。
+		const setIndex = Math.floor(i / 5);
 		return {
 			id: i + 1,
 			userId: BENCH_USER_ID,
@@ -59,6 +61,7 @@ export function makeRows(count: number, seed = 42): AnswerJoinRow[] {
 			selectedLabel: "ア",
 			isCorrect: rng() > 0.4 ? 1 : 0,
 			duration: hasDuration ? Math.floor(rng() * 120) + 1 : null,
+			setId: `set-${setIndex.toString().padStart(4, "0")}`,
 			createdAt: date.getTime() + Math.floor(rng() * 1000),
 		};
 	});
@@ -77,6 +80,7 @@ function oldRowToRecord(row: AnswerJoinRow): AnswerRecord | null {
 		selectedLabel: row.selectedLabel,
 		isCorrect: row.isCorrect === 1,
 		duration: row.duration,
+		setId: row.setId,
 		createdAt: row.createdAt,
 	};
 }
@@ -158,12 +162,18 @@ interface OldMonthlyStats {
 	avgDuration: number | null;
 }
 
+// JST(UTC+9) 基準の "YYYY-MM"（real の jstDayKey と同一基準。golden は private を import 不可のため自前定義）。
+const GOLDEN_JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+function goldenJstMonth(createdAt: number): string {
+	const date = new Date(createdAt + GOLDEN_JST_OFFSET_MS);
+	return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
 function oldAggregateByMonth(answers: AnswerRecord[]): OldMonthlyStats[] {
 	const byMonth = new Map<string, AnswerRecord[]>();
 
 	for (const answer of answers) {
-		const date = new Date(answer.createdAt);
-		const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+		const month = goldenJstMonth(answer.createdAt);
 		const arr = byMonth.get(month) ?? [];
 		arr.push(answer);
 		byMonth.set(month, arr);

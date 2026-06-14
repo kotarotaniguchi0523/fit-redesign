@@ -1,34 +1,21 @@
 import { getUserId } from "../../lib/userId";
+import { isValidSrsCard, MAX_BOX, nextCard, type SrsState } from "./leitner";
 
 /**
  * 間隔反復(SRS)エンジン。Leitnerボックス方式。
+ * box 遷移コアのみ leitner.ts に分離。このモジュールは localStorage 永続化（recordGrade/load）と
+ * 出題編成（buildDailySet/isDue/unitReadiness 等の純関数）を担う。
  * スケジュール状態は localStorage に userId 別で保持し、バックエンドは増やさない。
  * 「確実に身につく（忘れた頃に再出題）」をペルソナ向けに最小実装する。
  */
 
 // localStorage キーのプレフィックス（テストが本番と同一キーを使えるよう公開）。
 export const SRS_KEY_PREFIX = "fit-srs-v1";
-const DAY_MS = 24 * 60 * 60 * 1000;
 
-// box(1..5) → 次回出題までの間隔。box が上がるほど間隔が伸びる。
-const BOX_INTERVAL_MS: Record<number, number> = {
-	1: DAY_MS,
-	2: 2 * DAY_MS,
-	3: 4 * DAY_MS,
-	4: 8 * DAY_MS,
-	5: 16 * DAY_MS,
-};
-const MAX_BOX = 5;
-// 不正解時に「すぐまた出す」ための短い猶予
-const RELEARN_MS = 10 * 60 * 1000;
+// 1日の出題上限＝ダッシュボード目標リング分母と buildDailySet の既定 maxTotal の単一真実源
+export const DAILY_SESSION_MAX = 15;
 
-export interface SrsCard {
-	box: number;
-	due: number; // 次回出題予定 (epoch ms)
-	last: number; // 最終回答 (epoch ms)
-}
-
-export type SrsState = Record<string, SrsCard>;
+export type { SrsCard, SrsState } from "./leitner";
 
 function storageKey(): string {
 	return `${SRS_KEY_PREFIX}:${getUserId()}`;
@@ -40,8 +27,17 @@ export function loadSrsState(): SrsState {
 		if (!raw) {
 			return {};
 		}
-		const parsed = JSON.parse(raw);
-		return parsed && typeof parsed === "object" ? (parsed as SrsState) : {};
+		const parsed: unknown = JSON.parse(raw);
+		// 配列・プリミティブ等は拒否（オブジェクトのみ受け入れる）
+		if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+			return {};
+		}
+		// フィールドごとに検証し、壊れたカードはサイレントに落とす（新規扱いで次回出題される）
+		return Object.fromEntries(
+			Object.entries(parsed as Record<string, unknown>).flatMap(([questionId, card]) =>
+				isValidSrsCard(card) ? [[questionId, card] as const] : [],
+			),
+		);
 	} catch {
 		return {};
 	}
@@ -58,10 +54,7 @@ function saveSrsState(state: SrsState): void {
 /** 回答結果を記録し、次回出題日を更新する */
 export function recordGrade(questionId: string, isCorrect: boolean, now: number): SrsState {
 	const state = loadSrsState();
-	const current = state[questionId];
-	const box = isCorrect ? Math.min((current?.box ?? 0) + 1, MAX_BOX) : 1;
-	const due = isCorrect ? now + BOX_INTERVAL_MS[box] : now + RELEARN_MS;
-	state[questionId] = { box, due, last: now };
+	state[questionId] = nextCard(state[questionId], isCorrect, now);
 	saveSrsState(state);
 	return state;
 }
@@ -99,7 +92,7 @@ export function buildDailySet(
 	options: { maxNew?: number; maxTotal?: number } = {},
 ): DailySet {
 	const maxNew = options.maxNew ?? 6;
-	const maxTotal = options.maxTotal ?? 15;
+	const maxTotal = options.maxTotal ?? DAILY_SESSION_MAX;
 
 	const reviews = questionIds.filter((id) => !isNew(state, id) && isDue(state, id, now));
 	const news = questionIds.filter((id) => isNew(state, id)).slice(0, maxNew);

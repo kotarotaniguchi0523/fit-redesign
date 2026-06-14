@@ -1,4 +1,4 @@
-import { useActionState, useEffect, useRef } from "hono/jsx";
+import { useActionState, useEffect } from "hono/jsx";
 import type { JSX } from "hono/jsx/jsx-runtime";
 import { recordAnswer, SavingIndicator } from "./answerActions";
 import { fetchAnswerStatuses } from "./answerClient";
@@ -11,8 +11,8 @@ import { SolutionPanel } from "./SolutionPanel";
  * 回答済み状態は useEffect で 1 回取得して saved があれば "restore" を dispatch し graded へ「格下げ」する
  * （記録はしない）。これで SSR 出力と client 初期描画が一致しチラつかない。
  *
- * カード（[data-question-card]）とその解説/チップは island の subtree 外にあるため rootRef（安定 ref）
- * から dispatch 時点で closest() で解決する。
+ * 解答時間はページ唯一のラップ式ストップウォッチ（[data-lap-stopwatch]）から recordAnswer が
+ * 読むため、カード要素への参照は持たない。
  *
  * 純粋 Async React（discriminated union）。各 phase の UI は phase から宣言的に導出し、遷移は
  * <form action={dispatch}> の submit で起こす。採点の非同期保存中は useFormStatus().pending。
@@ -89,12 +89,9 @@ export interface SelfGradeProps {
 
 export default function SelfGrade(props: SelfGradeProps): JSX.Element {
 	const { questionId, answerHtml, explanationHtml } = props;
-	// rootRef は安定参照。reducer は dispatch 時に rootRef から closest() で親カードを解決する。
-	const rootRef = useRef<HTMLDivElement | null>(null);
 
 	const [state, dispatch] = useActionState(
 		async (prev: State, formData: FormData): Promise<State> => {
-			const card = rootRef.current?.closest("[data-question-card]") ?? null;
 			const recorded = formData.get("recorded") === "true";
 			switch (formData.get("event") as Event) {
 				case "restore": {
@@ -124,7 +121,6 @@ export default function SelfGrade(props: SelfGradeProps): JSX.Element {
 							recorded ||
 							(await recordAnswer({
 								questionId,
-								card,
 								selectedLabel: isCorrect ? "self-correct" : "self-incorrect",
 								isCorrect,
 							})),
@@ -166,7 +162,7 @@ export default function SelfGrade(props: SelfGradeProps): JSX.Element {
 	const ui = PHASE_UI[state.phase];
 	const view = cardView(state);
 	return (
-		<div ref={rootRef} class="contents">
+		<div class="contents">
 			{view.chip ? (
 				<div class={`q-chip ${view.chip === "correct" ? "q-chip--correct" : "q-chip--review"}`}>
 					{CHIP_TEXT[view.chip]}

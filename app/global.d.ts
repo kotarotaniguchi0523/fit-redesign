@@ -13,6 +13,8 @@ declare module "hono" {
 				description?: string;
 				jsonLd?: Record<string, unknown>;
 				noindex?: boolean;
+				// canonical override（path or 絶対URL、_renderer が SITE_URL に解決。未指定=c.req.path）
+				canonical?: string;
 			},
 		): Response | Promise<Response>;
 	}

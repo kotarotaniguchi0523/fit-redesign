@@ -1,9 +1,21 @@
 /** @jsxImportSource hono/jsx */
 import { Hono } from "hono";
 import { disableSSG } from "hono/ssg";
-import UnitDetails from "../../features/dashboard/$UnitDetails";
-import { aggregateStats, type DashboardData } from "../../features/dashboard/dashboardAggregator";
+import { DashboardDataScript } from "../../features/dashboard/DashboardDataScript";
+import { DashboardHero } from "../../features/dashboard/DashboardHero";
+import {
+	aggregateStats,
+	type DashboardData,
+	TOTAL_QUESTIONS,
+} from "../../features/dashboard/dashboardAggregator";
+import { buildHeatmapGrid } from "../../features/dashboard/dashboardView";
+import { Heatmap } from "../../features/dashboard/Heatmap";
+import { MasteryBreakdown } from "../../features/dashboard/MasteryBreakdown";
+import { TrendCharts } from "../../features/dashboard/TrendCharts";
+import { WeaknessPanel } from "../../features/dashboard/WeaknessPanel";
 import CopyButton from "../../features/markdown/$CopyButton";
+import { deriveSrsFromHistory, type SrsSummary, summarizeSrs } from "../../features/srs/replay";
+import { DAILY_SESSION_MAX } from "../../features/srs/srs";
 import { getUserAnswerHistory } from "../../server/answerRepository";
 import type { Db } from "../../server/schema";
 import type { UserIdentityVariables } from "../../server/userIdentity";
@@ -20,9 +32,12 @@ import { type UserId, UserIdSchema } from "../../types";
  * メインコンテンツを JSX で組み、共有レイアウト（Header 等）は _renderer.tsx 経由で描画する。
  * Chart.js は集計データを #dashboard-data に埋め込み、app/client.ts が同要素を検出した時だけ
  * dashboard チャートモジュールを遅延 import して描画する。
+ * hasData=true の時のみ DashboardDataScript を出力するため、無回答ユーザーで chart.js は読まれない。
  */
 
 type Env = { Bindings: Cloudflare.Env; Variables: UserIdentityVariables };
+
+const dailySessionGoal = DAILY_SESSION_MAX;
 
 const EMPTY_DASHBOARD: DashboardData = {
 	totalAnswered: 0,
@@ -32,35 +47,40 @@ const EMPTY_DASHBOARD: DashboardData = {
 	monthlyStats: [],
 	unitStats: [],
 	trend: "stable",
+	dailyStats: [],
+	weeklyStats: [],
+	heatmap: [],
+	todayCount: 0,
+	coverage: { attempted: 0, total: TOTAL_QUESTIONS },
+	unitMastery: [],
+	weakUnits: [],
+	weakQuestions: [],
+	setTimes: [],
+	overallMastery: null,
+	masteryAttempted: 0,
 };
 
-function trendIcon(trend: string): string {
-	if (trend === "improving") {
-		return "↗";
-	}
-	if (trend === "declining") {
-		return "↘";
-	}
-	return "→";
+const EMPTY_SRS: SrsSummary = {
+	seenCount: 0,
+	overdueCount: 0,
+	stages: { learning: 0, takingHold: 0, mastered: 0 },
+};
+
+interface LoadedDashboardData {
+	dashboardData: DashboardData;
+	srs: SrsSummary;
 }
 
-function trendColor(trend: string): string {
-	if (trend === "improving") {
-		return "text-emerald-600";
-	}
-	if (trend === "declining") {
-		return "text-red-600";
-	}
-	return "text-gray-500";
-}
-
-async function loadDashboardData(db: Db, userId: UserId): Promise<DashboardData> {
+async function loadDashboardData(db: Db, userId: UserId): Promise<LoadedDashboardData> {
 	try {
 		const answerHistory = await getUserAnswerHistory(db, userId);
-		return aggregateStats(answerHistory);
+		const now = Date.now();
+		const dashboardData = aggregateStats(answerHistory, now);
+		const srs = summarizeSrs(deriveSrsFromHistory(answerHistory), now);
+		return { dashboardData, srs };
 	} catch (error) {
 		console.error("Dashboard data error:", error);
-		return EMPTY_DASHBOARD;
+		return { dashboardData: EMPTY_DASHBOARD, srs: EMPTY_SRS };
 	}
 }
 
@@ -74,9 +94,19 @@ app.get("/", disableSSG(), async (c) => {
 	}
 
 	const userId = parsedUserId.data;
-	const dashboardData = await loadDashboardData(c.var.db, userId);
+	const { dashboardData, srs } = await loadDashboardData(c.var.db, userId);
 	const hasData = dashboardData.totalAnswered > 0;
 	const dashboardUrl = `${new URL(c.req.url).origin}/dashboard/${userId}`;
+
+	// ヒートマップグリッド（グリッド構築のみ; 列キー・曜日ラベルは Heatmap が導出）
+	const heatmapGrid = buildHeatmapGrid(dashboardData.heatmap);
+
+	// Chart.js（推移グラフ）が使う 3 粒度のみを #dashboard-data へ（重い unitStats/weakQuestions 等は載せない）
+	const chartData = {
+		monthlyStats: dashboardData.monthlyStats,
+		dailyStats: dashboardData.dailyStats,
+		weeklyStats: dashboardData.weeklyStats,
+	};
 
 	// _renderer.tsx（凍結）が title プロップを受け取るが、ContextRenderer は既定で空
 	// interface = 1 引数の DefaultRenderer 型。第 2 引数 { title } を渡すため、ここだけ
@@ -88,6 +118,7 @@ app.get("/", disableSSG(), async (c) => {
 
 	return render(
 		<main class="max-w-4xl mx-auto px-4 py-8">
+			{/* ヘッダー：共有リンク */}
 			<div class="mb-8">
 				<h1 class="text-2xl font-bold text-[#1e3a5f] mb-2" style="font-family: var(--font-serif)">
 					学習ダッシュボード
@@ -106,57 +137,39 @@ app.get("/", disableSSG(), async (c) => {
 
 			{hasData ? (
 				<>
-					<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-						<div class="bg-white rounded-lg shadow-sm p-4 text-center">
-							<div class="text-2xl font-bold text-[#1e3a5f]">{dashboardData.totalAnswered}</div>
-							<div class="text-xs text-gray-500 mt-1">解いた問題数</div>
-						</div>
-						<div class="bg-white rounded-lg shadow-sm p-4 text-center">
-							<div class="relative w-20 h-20 mx-auto">
-								<canvas id="accuracy-donut" width="80" height="80" />
-								<div class="absolute inset-0 flex items-center justify-center">
-									<span class="text-lg font-bold text-[#1e3a5f]">
-										{dashboardData.overallAccuracy}%
-									</span>
-								</div>
-							</div>
-							<div class="text-xs text-gray-500 mt-1">正答率</div>
-						</div>
-						<div class="bg-white rounded-lg shadow-sm p-4 text-center">
-							<div class="text-2xl font-bold text-[#1e3a5f]">
-								{dashboardData.avgDuration ? `${dashboardData.avgDuration}s` : "-"}
-							</div>
-							<div class="text-xs text-gray-500 mt-1">平均回答時間</div>
-						</div>
-						<div class="bg-white rounded-lg shadow-sm p-4 text-center">
-							<div class={`text-3xl font-bold ${trendColor(dashboardData.trend)}`}>
-								{trendIcon(dashboardData.trend)}
-							</div>
-							<div class="text-xs text-gray-500 mt-1">成長トレンド</div>
-						</div>
-					</div>
+					{/* ① ヒーロー行: 4 カード */}
+					<DashboardHero
+						overallMastery={dashboardData.overallMastery}
+						masteryAttempted={dashboardData.masteryAttempted}
+						todayCount={dashboardData.todayCount}
+						dailySessionGoal={dailySessionGoal}
+						coverage={dashboardData.coverage}
+						srs={srs}
+					/>
 
-					{dashboardData.monthlyStats.length > 0 && (
-						<div class="bg-white rounded-lg shadow-sm p-6 mb-8">
-							<h2 class="text-lg font-bold text-[#1e3a5f] mb-4">月ごとの推移</h2>
-							<div class="h-64">
-								<canvas id="monthly-chart" />
-							</div>
-						</div>
-					)}
+					{/* ② 仕上がりの内訳 */}
+					<MasteryBreakdown
+						srs={srs}
+						unitMastery={dashboardData.unitMastery}
+						setTimes={dashboardData.setTimes}
+						unitStats={dashboardData.unitStats}
+					/>
 
-					{dashboardData.unitStats.length > 0 && (
-						<div class="space-y-3">
-							<h2 class="text-lg font-bold text-[#1e3a5f]">単元別</h2>
-							{dashboardData.unitStats.map((unit) => (
-								<UnitDetails
-									unit={unit}
-									trendIcon={trendIcon(unit.trend)}
-									trendClass={trendColor(unit.trend)}
-								/>
-							))}
-						</div>
-					)}
+					{/* ③ 弱点診断 */}
+					<WeaknessPanel
+						weakUnits={dashboardData.weakUnits}
+						unitMastery={dashboardData.unitMastery}
+						weakQuestions={dashboardData.weakQuestions}
+					/>
+
+					{/* ④ 推移グラフ（トグル + canvas） */}
+					<TrendCharts monthlyStats={dashboardData.monthlyStats} />
+
+					{/* ⑤ 学習ヒートマップ */}
+					<Heatmap heatmapGrid={heatmapGrid} />
+
+					{/* Chart.js 用データ：hasData 時のみ出力（無回答ユーザーで chart.js を読まない最適化） */}
+					<DashboardDataScript chartData={chartData} />
 				</>
 			) : (
 				<div class="bg-white rounded-lg shadow-sm p-12 text-center">
@@ -173,13 +186,6 @@ app.get("/", disableSSG(), async (c) => {
 					</a>
 				</div>
 			)}
-
-			<script
-				id="dashboard-data"
-				type="application/json"
-				// biome-ignore lint/security/noDangerouslySetInnerHtml: Chart.js 用の集計データ受け渡し（クライアントの Chart.js へ受け渡し）
-				dangerouslySetInnerHTML={{ __html: JSON.stringify(dashboardData) }}
-			/>
 		</main>,
 		{ title: "学習ダッシュボード" },
 	);

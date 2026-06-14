@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { getUserId } from "../../lib/userId";
 import {
 	buildDailySet,
+	DAILY_SESSION_MAX,
 	isDue,
 	isNew,
 	loadSrsState,
 	recordGrade,
+	SRS_KEY_PREFIX,
 	type SrsState,
 	unitReadiness,
 } from "./srs";
@@ -132,6 +135,20 @@ describe("isNew", () => {
 	});
 });
 
+describe("DAILY_SESSION_MAX", () => {
+	it("DAILY_SESSION_MAX は 15 である", () => {
+		expect(DAILY_SESSION_MAX).toBe(15);
+	});
+
+	it("buildDailySet のデフォルト maxTotal は DAILY_SESSION_MAX で打ち切られる", () => {
+		// 20件の新規問題を用意し、maxNew を大きくして maxTotal(=DAILY_SESSION_MAX) で打ち切られることを確認
+		const questionIds = Array.from({ length: 20 }, (_, index) => `q${index + 1}`);
+
+		const largeSet = buildDailySet({}, questionIds, NOW, { maxNew: 20 });
+		expect(largeSet.questionIds).toHaveLength(DAILY_SESSION_MAX);
+	});
+});
+
 describe("buildDailySet", () => {
 	it("期限到来の復習を新規より先頭に並べ、内訳を返す", () => {
 		// Arrange: q1=期限到来の復習、q2=新規
@@ -239,5 +256,81 @@ describe("unitReadiness", () => {
 	it("端数は四捨五入する（3問中1問が box1 → 1/15 = 6.67% → 7）", () => {
 		const state: SrsState = { q1: card(1, NOW) };
 		expect(unitReadiness(state, ["q1", "q2", "q3"])).toBe(7);
+	});
+});
+
+describe("loadSrsState（localStorage 破損時の耐性）", () => {
+	afterEach(() => {
+		localStorage.clear();
+	});
+
+	/**
+	 * storageKey は `${SRS_KEY_PREFIX}:${getUserId()}` と同形式。
+	 * getUserId() は jsdom の localStorage から userId を取得（なければ生成）するため、
+	 * このヘルパーで書いたキーと loadSrsState() が読むキーは常に一致する。
+	 */
+	function writeRawSrsState(value: unknown): void {
+		const key = `${SRS_KEY_PREFIX}:${getUserId()}`;
+		localStorage.setItem(key, JSON.stringify(value));
+	}
+
+	it("box が小数（2.5）のカードはサイレントに破棄される", () => {
+		writeRawSrsState({ q1: { box: 2.5, due: 123, last: 1 } });
+		const state = loadSrsState();
+		expect(Object.keys(state)).not.toContain("q1");
+	});
+
+	it("box が負数（-3）のカードはサイレントに破棄される", () => {
+		writeRawSrsState({ q1: { box: -3, due: 123, last: 1 } });
+		const state = loadSrsState();
+		expect(Object.keys(state)).not.toContain("q1");
+	});
+
+	it("box が 0 のカードはサイレントに破棄される", () => {
+		writeRawSrsState({ q1: { box: 0, due: 123, last: 1 } });
+		const state = loadSrsState();
+		expect(Object.keys(state)).not.toContain("q1");
+	});
+
+	it("box が MAX_BOX 超え（99）のカードはサイレントに破棄される", () => {
+		writeRawSrsState({ q1: { box: 99, due: 123, last: 1 } });
+		const state = loadSrsState();
+		expect(Object.keys(state)).not.toContain("q1");
+	});
+
+	it("due が非有限数（文字列）のカードはサイレントに破棄される", () => {
+		writeRawSrsState({ q1: { box: 3, due: "x", last: 1 } });
+		const state = loadSrsState();
+		expect(Object.keys(state)).not.toContain("q1");
+	});
+
+	it("有効なカードはそのまま読み込み、壊れたカードだけを破棄する（部分破棄）", () => {
+		writeRawSrsState({
+			q1: { box: 3, due: 100, last: 50 },
+			q2: { box: 2.5, due: 1, last: 1 },
+		});
+		const state = loadSrsState();
+		expect(Object.keys(state)).toContain("q1");
+		expect(state.q1).toEqual({ box: 3, due: 100, last: 50 });
+		expect(Object.keys(state)).not.toContain("q2");
+	});
+
+	it("生 JSON が配列（[]）の場合は空オブジェクトを返す", () => {
+		const key = `${SRS_KEY_PREFIX}:${getUserId()}`;
+		localStorage.setItem(key, "[]");
+		expect(loadSrsState()).toEqual({});
+	});
+
+	it('生 JSON が文字列（"abc"）の場合は空オブジェクトを返す', () => {
+		const key = `${SRS_KEY_PREFIX}:${getUserId()}`;
+		localStorage.setItem(key, JSON.stringify("abc"));
+		expect(loadSrsState()).toEqual({});
+	});
+
+	it("破棄されたカードは isDue で新規扱い（true）になる", () => {
+		writeRawSrsState({ q1: { box: 2.5, due: NOW + DAY_MS * 999, last: 1 } });
+		// q1 は壊れているので loadSrsState から欠落し、isDue は新規として true を返す
+		const state = loadSrsState();
+		expect(isDue(state, "q1", NOW)).toBe(true);
 	});
 });

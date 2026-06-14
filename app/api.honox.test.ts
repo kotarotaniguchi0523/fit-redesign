@@ -37,15 +37,8 @@ function makeFakeDb(bindCalls: unknown[][] = []): D1Database {
 	} as unknown as D1Database;
 }
 
-function makeFakeKv(): KVNamespace {
-	return {
-		get: () => Promise.resolve(null),
-		put: () => Promise.resolve(),
-	} as unknown as KVNamespace;
-}
-
 function env(bindCalls: unknown[][] = []): Cloudflare.Env {
-	return { DB: makeFakeDb(bindCalls), CACHE: makeFakeKv() } as unknown as Cloudflare.Env;
+	return { DB: makeFakeDb(bindCalls) } as unknown as Cloudflare.Env;
 }
 
 /** HonoX のネスト sub-app マウントを忠実に再現した合成アプリ。 */

@@ -7,7 +7,7 @@ import { type InsertAnswerInput, insertAnswer } from "./answerRepository";
  * （answers への bind 値・返り値・users upsert の副作用）を AAA で検証する。
  * 実装詳細（SQL の整形やライブラリ呼び出し）ではなく振る舞いを検証＝リファクタ耐性。
  *
- * 既存 answerCache.test.ts の fake D1 注入パターンに倣う。
+ * fake D1 注入パターンで out-of-process 依存を差し替える。
  */
 
 interface RecordedCall {
@@ -65,6 +65,7 @@ const BASE_INPUT: InsertAnswerInput = {
 	selectedLabel: "ア",
 	isCorrect: true,
 	duration: 42,
+	setId: null,
 };
 
 // TODO(T12): Drizzle 化により insertAnswer は prepare().bind() ではなく insert-from-select を
