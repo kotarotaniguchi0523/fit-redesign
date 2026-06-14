@@ -166,7 +166,3 @@ export interface UnitBasedTab {
 		integratedTitle?: string; // 統合試験の場合のタイトル（例: "オートマトン・符号理論"）
 	}[];
 }
-
-// Result types
-export type { Result } from "./result";
-export { err, ok } from "./result";
