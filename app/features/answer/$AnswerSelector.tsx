@@ -1,4 +1,4 @@
-import { useActionState, useEffect } from "hono/jsx";
+import { useActionState, useEffect } from "hono/jsx/dom";
 import type { JSX } from "hono/jsx/jsx-runtime";
 import { recordAnswer, SavingIndicator } from "./answerActions";
 import { fetchAnswerStatuses } from "./answerClient";
