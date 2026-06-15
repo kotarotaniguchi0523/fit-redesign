@@ -1,156 +1,136 @@
-import { describe, expect, it } from "vitest";
-import { type InsertAnswerInput, insertAnswer } from "./answerRepository";
+import { eq } from "drizzle-orm";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { type QuestionId, QuestionIdSchema, type UserId, UserIdSchema } from "../types";
+import { createTestDb, type TestDb } from "../types/test/d1";
+import {
+	getLatestAnswers,
+	getUserAnswerHistory,
+	type InsertAnswerInput,
+	insertAnswer,
+} from "./answerRepository";
+import { answers, users } from "./schema";
 
 /**
- * 古典派（Detroit school）ユニットテスト。
- * out-of-process 依存（D1）だけを fake 注入し、insertAnswer の観測可能な振る舞い
- * （answers への bind 値・返り値・users upsert の副作用）を AAA で検証する。
- * 実装詳細（SQL の整形やライブラリ呼び出し）ではなく振る舞いを検証＝リファクタ耐性。
+ * 実 SQLite（better-sqlite3 + baseline マイグレーション）に対する integration テスト（AAA）。
  *
- * fake D1 注入パターンで out-of-process 依存を差し替える。
+ * 旧 fake-D1 ユニットは Drizzle 化（leftJoin / 相関サブクエリ / returning）で成立しなくなったため、
+ * D1 と同方言の実 DB で「観測可能な振る舞い」（保存値・返り値・users upsert の副作用・最新解決）を
+ * 検証する。bind 順などの実装詳細は見ない＝リファクタ耐性。
  */
 
-interface RecordedCall {
-	sql: string;
-	args: unknown[];
-}
-
-interface FakeD1 {
-	db: D1Database;
-	calls: RecordedCall[];
-	prepareCount: () => number;
-}
-
-/**
- * insertAnswer が実行する prepare().bind().run() を再現する最小 fake。
- * 各 prepare/bind を {sql, args} として記録し、run() は last_row_id を返す。
- * users upsert と answers insert を区別するため、SQL に "answers" を含む run() のみ
- * answersLastRowId を返し、それ以外（users upsert）は usersLastRowId を返す。
- */
-function makeFakeD1(answersLastRowId: number, usersLastRowId = 7): FakeD1 {
-	const calls: RecordedCall[] = [];
-	let prepareCount = 0;
-	const db = {
-		prepare(sql: string): {
-			bind: (...args: unknown[]) => { run: () => Promise<{ meta: { last_row_id: number } }> };
-		} {
-			prepareCount++;
-			return {
-				bind(...args: unknown[]): { run: () => Promise<{ meta: { last_row_id: number } }> } {
-					calls.push({ sql, args });
-					return {
-						run(): Promise<{ meta: { last_row_id: number } }> {
-							const lastRowId = sql.includes("answers") ? answersLastRowId : usersLastRowId;
-							return Promise.resolve({ meta: { last_row_id: lastRowId } });
-						},
-					};
-				},
-			};
-		},
-	} as unknown as D1Database;
-	return { db, calls, prepareCount: () => prepareCount };
-}
-
-function findAnswersCall(calls: RecordedCall[]): RecordedCall {
-	const call = calls.find((c) => c.sql.includes("INSERT INTO answers"));
-	if (call == null) {
-		throw new Error("answers insert call not recorded");
-	}
-	return call;
-}
+const USER_ID: UserId = UserIdSchema.parse("550e8400-e29b-41d4-a716-446655440000");
+const OTHER_USER: UserId = UserIdSchema.parse("11111111-2222-3333-4444-555555555555");
+const QID: QuestionId = QuestionIdSchema.parse("exam1-2013-q1");
 
 const BASE_INPUT: InsertAnswerInput = {
-	userId: "user-1",
-	questionId: "exam1-2013-q1",
+	userId: USER_ID,
+	questionId: QID,
 	selectedLabel: "ア",
 	isCorrect: true,
 	duration: 42,
 	setId: null,
 };
 
-// TODO(T12): Drizzle 化により insertAnswer は prepare().bind() ではなく insert-from-select を
-// 実行するため、この fake-D1 ユニットテストは成立しない。vitest-pool-workers の実 D1 ハーネスへ移行する。
-describe.skip("insertAnswer", () => {
-	it("正常系: answers へ入力値を順序通り bind し、answers insert の last_row_id を返す", async () => {
-		// Arrange
-		const { db, calls } = makeFakeD1(123);
+let testDb: TestDb;
 
-		// Act
-		const answerId = await insertAnswer(db, BASE_INPUT);
+beforeEach(() => {
+	testDb = createTestDb();
+});
 
-		// Assert: 返り値は answers insert の last_row_id（users upsert の 7 ではない）
-		expect(answerId).toBe(123);
-		const answersCall = findAnswersCall(calls);
-		// bind 順序は ? プレースホルダとの契約（順序ズレ＝誤データ永続化）
-		expect(answersCall.args).toEqual([
-			"user-1",
-			"exam1-2013-q1",
-			"ア",
-			1, // isCorrect true → 1
-			42, // duration
-			1_700_000_000_000, // timestamp
-		]);
+afterEach(() => {
+	testDb.close();
+});
+
+describe("insertAnswer", () => {
+	it("正常系: 入力値を answers へ保存し、生成された answerId を返す", async () => {
+		const answerId = await insertAnswer(testDb.db, { ...BASE_INPUT, setId: "set-1" });
+
+		expect(typeof answerId).toBe("number");
+		const rows = await testDb.db.select().from(answers);
+		expect(rows).toHaveLength(1);
+		expect(rows[0]).toMatchObject({
+			id: answerId,
+			userId: USER_ID,
+			selectedLabel: "ア",
+			isCorrect: 1, // true → 1
+			duration: 42,
+			setId: "set-1",
+		});
+		expect(typeof rows[0]?.createdAt).toBe("number");
+		// json_id(exam1-2013-q1) が questions.id(FK) に解決されて保存される。
+		const q = await testDb.db.select().from(answers).where(eq(answers.id, answerId));
+		expect(q[0]?.questionId).toBeGreaterThan(0);
 	});
 
-	it("正常系: answers insert に先立ち users upsert を対象 userId で発火する", async () => {
-		// Arrange
-		const { db, calls } = makeFakeD1(123);
+	it("門番: 未登録の json_id は記録せず null を返す", async () => {
+		const unknownQid = QuestionIdSchema.parse("exam9-2017-q9");
+		const answerId = await insertAnswer(testDb.db, { ...BASE_INPUT, questionId: unknownQid });
 
-		// Act
-		await insertAnswer(db, BASE_INPUT);
-
-		// Assert: users upsert が answers insert より前に、対象ユーザーで発火する
-		// （FK 依存の契約。prepare 回数のような内部実装は検証しない）
-		const usersIdx = calls.findIndex((c) => c.sql.includes("INSERT INTO users"));
-		const answersIdx = calls.findIndex((c) => c.sql.includes("INSERT INTO answers"));
-		expect(usersIdx).toBeGreaterThanOrEqual(0);
-		expect(answersIdx).toBeGreaterThanOrEqual(0);
-		expect(usersIdx).toBeLessThan(answersIdx);
-		// timestamp は upsertUser 内部依存なので検証しない
-		expect(calls[usersIdx].args[0]).toBe("user-1");
+		expect(answerId).toBeNull();
+		expect(await testDb.db.select().from(answers)).toHaveLength(0);
 	});
 
-	it("duration が数値のとき、その値をそのまま bind する", async () => {
-		// Arrange
-		const { db, calls } = makeFakeD1(1);
+	it("FK 副作用: answers 保存に先立ち対象 userId の users 行を upsert する", async () => {
+		await insertAnswer(testDb.db, BASE_INPUT);
 
-		// Act
-		await insertAnswer(db, { ...BASE_INPUT, duration: 90 });
-
-		// Assert
-		expect(findAnswersCall(calls).args[4]).toBe(90);
+		const userRows = await testDb.db.select().from(users).where(eq(users.id, USER_ID));
+		expect(userRows).toHaveLength(1);
+		expect(typeof userRows[0]?.createdAt).toBe("number");
 	});
 
-	it("duration が null のとき、null を bind する", async () => {
-		// Arrange
-		const { db, calls } = makeFakeD1(1);
+	it("境界: isCorrect=false は 0 として保存する", async () => {
+		const answerId = await insertAnswer(testDb.db, { ...BASE_INPUT, isCorrect: false });
 
-		// Act
-		await insertAnswer(db, { ...BASE_INPUT, duration: null });
-
-		// Assert
-		expect(findAnswersCall(calls).args[4]).toBeNull();
+		const rows = await testDb.db
+			.select()
+			.from(answers)
+			.where(eq(answers.id, answerId ?? -1));
+		expect(rows[0]?.isCorrect).toBe(0);
 	});
 
-	it("境界: isCorrect=true は 1 に変換して bind する", async () => {
-		// Arrange
-		const { db, calls } = makeFakeD1(1);
+	it("境界: duration=null はそのまま null で保存する", async () => {
+		const answerId = await insertAnswer(testDb.db, { ...BASE_INPUT, duration: null });
 
-		// Act
-		await insertAnswer(db, { ...BASE_INPUT, isCorrect: true });
+		const rows = await testDb.db
+			.select()
+			.from(answers)
+			.where(eq(answers.id, answerId ?? -1));
+		expect(rows[0]?.duration).toBeNull();
+	});
+});
 
-		// Assert
-		expect(findAnswersCall(calls).args[3]).toBe(1);
+describe("getLatestAnswers", () => {
+	it("question ごとの最新回答（MAX id）を json_id キーで返す", async () => {
+		// 同一 question に 2 回回答 → 後勝ち。別 question も 1 件。
+		await insertAnswer(testDb.db, { ...BASE_INPUT, selectedLabel: "ア", isCorrect: false });
+		await insertAnswer(testDb.db, { ...BASE_INPUT, selectedLabel: "ウ", isCorrect: true });
+		const q2 = QuestionIdSchema.parse("exam1-2013-q2");
+		await insertAnswer(testDb.db, { ...BASE_INPUT, questionId: q2, selectedLabel: "イ" });
+
+		const statuses = await getLatestAnswers(testDb.db, USER_ID);
+
+		expect(statuses["exam1-2013-q1"]).toEqual({ label: "ウ", isCorrect: true });
+		expect(statuses["exam1-2013-q2"]).toEqual({ label: "イ", isCorrect: true });
 	});
 
-	it("境界: isCorrect=false は 0 に変換して bind する", async () => {
-		// Arrange
-		const { db, calls } = makeFakeD1(1);
+	it("他ユーザーの回答は混ざらない", async () => {
+		await insertAnswer(testDb.db, BASE_INPUT);
 
-		// Act
-		await insertAnswer(db, { ...BASE_INPUT, isCorrect: false });
+		const statuses = await getLatestAnswers(testDb.db, OTHER_USER);
 
-		// Assert
-		expect(findAnswersCall(calls).args[3]).toBe(0);
+		expect(statuses).toEqual({});
+	});
+});
+
+describe("getUserAnswerHistory", () => {
+	it("question ごとに created_at 昇順でグルーピングして返す", async () => {
+		await insertAnswer(testDb.db, { ...BASE_INPUT, selectedLabel: "ア" });
+		await insertAnswer(testDb.db, { ...BASE_INPUT, selectedLabel: "イ" });
+
+		const history = await getUserAnswerHistory(testDb.db, USER_ID);
+
+		expect(Object.keys(history)).toEqual(["exam1-2013-q1"]);
+		expect(history["exam1-2013-q1"]?.map((record) => record.selectedLabel)).toEqual(["ア", "イ"]);
+		expect(history["exam1-2013-q1"]?.[0]).toMatchObject({ userId: USER_ID, questionId: QID });
 	});
 });

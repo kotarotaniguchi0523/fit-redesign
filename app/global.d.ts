@@ -1,6 +1,16 @@
 import type {} from "hono";
+import type { QuestionGradedDetail } from "./features/srs/srs";
 import type { Db } from "./server/schema";
 import type { UserIdentityVariables } from "./server/userIdentity";
+
+// 採点イベント（constants.ts の QUESTION_GRADED_EVENT="question-graded"）を DOM のイベントマップへ
+// 宣言マージする。これで addEventListener/dispatch の event が CustomEvent<QuestionGradedDetail> に
+// 型付き解決され、購読側（srs-recorder / $LapStopwatch / $DailySession）の as キャストが不要になる。
+declare global {
+	interface DocumentEventMap {
+		"question-graded": CustomEvent<QuestionGradedDetail>;
+	}
+}
 
 // _renderer.tsx が受け取る props を c.render に型付けする（honox 規約）。
 declare module "hono" {

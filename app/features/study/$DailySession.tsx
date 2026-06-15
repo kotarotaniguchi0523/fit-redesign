@@ -62,8 +62,8 @@ export default function DailySession(props: DailySessionProps): JSX.Element {
 	const readiness = state.finished ? unitReadiness(loadSrsState(), questionIds) : 0;
 
 	useEffect(() => {
-		const onGraded = (event: Event): void => {
-			const detail = (event as CustomEvent<QuestionGradedDetail>).detail;
+		const onGraded = (event: CustomEvent<QuestionGradedDetail>): void => {
+			const detail = event.detail;
 			if (!(detail?.questionId && queueSet.has(detail.questionId))) {
 				return;
 			}

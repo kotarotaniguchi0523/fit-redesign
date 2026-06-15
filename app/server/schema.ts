@@ -50,10 +50,3 @@ export const schema = { users, questions, answers };
 
 // 全 Hono context（createRoute 含む）で c.var.db に型を付けるための Db 型。
 export type Db = DrizzleD1Database<typeof schema>;
-
-export type UserInsert = typeof users.$inferInsert;
-export type UserSelect = typeof users.$inferSelect;
-export type QuestionInsert = typeof questions.$inferInsert;
-export type QuestionSelect = typeof questions.$inferSelect;
-export type AnswerInsert = typeof answers.$inferInsert;
-export type AnswerSelect = typeof answers.$inferSelect;

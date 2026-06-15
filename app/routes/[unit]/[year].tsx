@@ -1,5 +1,4 @@
 /** @jsxImportSource hono/jsx */
-import type { JSX } from "hono/jsx/jsx-runtime";
 import { createRoute } from "honox/factory";
 import { ExamSection } from "../../components/ExamSection";
 import { Header } from "../../components/Header";
@@ -7,8 +6,10 @@ import { SlideSection } from "../../components/SlideSection";
 import { getExamByNumber, selectVisibleExamNumbers } from "../../data/exams";
 import { unitBasedTabs } from "../../data/units";
 import LapStopwatch from "../../features/timer/$LapStopwatch";
-import type { ExamNumber, UnitBasedTab, Year } from "../../types";
+import type { ExamNumber, Year } from "../../types";
 import { isExamNumber, YEARS } from "../../types";
+import { buildJsonLd, buildPageDescription, buildPageTitle } from "./_meta";
+import { ExamSwitchTabs, UnitTabBar, YearPill } from "./_unitNav";
 
 /**
  * 単元ページ（単元 × 年度 × 小テスト の演習）。
@@ -20,120 +21,8 @@ import { isExamNumber, YEARS } from "../../types";
  * - JSON-LD（Quiz / LearningResource）は c.render の props で _renderer.tsx に渡す。
  * - パラメータが既知の単元・年度に一致しなければ 404。
  *
- * Header / ExamSection は別エージェントが app/components/ に移植中（hono/jsx 版）。
+ * presentational なナビは ./_unitNav、SEO/メタ生成は ./_meta に co-location 切り出し済み。
  */
-
-const DEFAULT_YEAR = YEARS[0];
-
-// 年度ピルの単一エントリ
-function YearPill({
-	y,
-	unitId,
-	isAvailable,
-	isSelected,
-}: {
-	y: Year;
-	unitId: string;
-	isAvailable: boolean;
-	isSelected: boolean;
-}): JSX.Element {
-	if (isAvailable) {
-		return (
-			<a
-				href={`/${unitId}/${y}`}
-				class={`rounded-full border-2 px-4 py-1.5 text-sm font-bold transition-colors ${
-					isSelected
-						? "border-[#c9a227] bg-[#f7eed1] text-[#6f5712]"
-						: "border-gray-200 bg-white text-slate-700 shadow-sm hover:border-gray-300"
-				}`}
-			>
-				{y}年度
-			</a>
-		);
-	}
-	return (
-		<span class="cursor-not-allowed rounded-full border-2 border-gray-100 px-4 py-1.5 text-sm font-bold text-gray-300">
-			{y}年度
-		</span>
-	);
-}
-
-// 小テスト切替タブ（複数 exam がある年度のみ描画）
-function ExamSwitchTabs({
-	examNumbers,
-	selectedExamNumber,
-	unitId,
-	year,
-}: {
-	examNumbers: ExamNumber[];
-	selectedExamNumber: ExamNumber;
-	unitId: string;
-	year: Year;
-}): JSX.Element | null {
-	if (examNumbers.length <= 1) {
-		return null;
-	}
-	return (
-		<div class="mt-4">
-			<p class="mb-2 text-sm font-bold text-[#1e3a5f]">小テストを選択</p>
-			<div class="flex flex-row flex-wrap gap-2" role="tablist" aria-label="小テスト選択">
-				{examNumbers.map((examNum) => {
-					const isActive = examNum === selectedExamNumber;
-					return (
-						<a
-							href={`/${unitId}/${year}?exam=${examNum}`}
-							role="tab"
-							aria-selected={isActive ? "true" : "false"}
-							class={`rounded-full border-2 px-4 py-1.5 text-sm font-bold transition-colors ${
-								isActive
-									? "border-[#1e3a5f] bg-[#1e3a5f] text-white shadow-sm"
-									: "border-gray-200 bg-white text-slate-700 shadow-sm hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
-							}`}
-						>
-							小テスト{examNum}
-						</a>
-					);
-				})}
-			</div>
-		</div>
-	);
-}
-
-// 単元タブ行（全単元のナビゲーション）
-function UnitTabBar({ currentUnitId }: { currentUnitId: string }): JSX.Element {
-	return (
-		<div
-			class="no-scrollbar mb-5 flex gap-2 overflow-x-auto pb-2"
-			role="tablist"
-			aria-label="単元選択"
-		>
-			{unitBasedTabs.map((tab) => {
-				const isActive = tab.id === currentUnitId;
-				const targetYear = tab.examMapping[0]?.year ?? DEFAULT_YEAR;
-				return (
-					<a
-						href={`/${tab.id}/${targetYear}`}
-						role="tab"
-						aria-selected={isActive ? "true" : "false"}
-						class={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-center text-sm font-bold transition-all ${
-							isActive
-								? "border-[#1e3a5f] bg-[#1e3a5f] text-white shadow-sm"
-								: "border-gray-300 bg-white text-gray-700 hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
-						}`}
-					>
-						{tab.name}
-					</a>
-				);
-			})}
-			<a
-				href="/slide-only"
-				class="min-h-10 shrink-0 rounded-full border border-gray-300 bg-white px-4 py-2 text-center text-sm font-bold text-gray-700 transition-all hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
-			>
-				講義資料のみ
-			</a>
-		</div>
-	);
-}
 
 // ?exam クエリから選択中の小テスト番号を決定する。
 // examNumbers に含まれない値（不正・undefined→NaN）は find が弾き、先頭にフォールバック（404 にしない）。
@@ -339,69 +228,3 @@ export default createRoute(async (c) => {
 		},
 	);
 });
-
-// exam ラベルの接頭スペース付き断片（空ラベル＝単一 exam 年度なら何も付けない）。
-function examPartOf(examLabel: string): string {
-	return examLabel ? ` ${examLabel}` : "";
-}
-
-// ページタイトルを生成する（複数 exam がある年度のみ exam 番号を付ける）
-function buildPageTitle(unit: UnitBasedTab, year: Year, examLabel: string): string {
-	return `${unit.title} (${year}年度)${examPartOf(examLabel)} - 基本情報技術 I`;
-}
-
-// ページ説明文を生成する
-function buildPageDescription(
-	unit: UnitBasedTab,
-	year: Year,
-	examLabel: string,
-	totalQuestions: number,
-): string {
-	const questionText = totalQuestions > 0 ? `（全${totalQuestions}問）` : "";
-	return `明治大学 基本情報技術 I「${unit.name}」${year}年度${examPartOf(examLabel)}の演習問題${questionText}。${unit.description}`;
-}
-
-// JSON-LD スキーマを生成する
-function buildJsonLd(
-	unit: UnitBasedTab,
-	year: Year,
-	examLabel: string,
-	totalQuestions: number,
-	pageDescription: string,
-): Record<string, unknown> {
-	const examPart = examPartOf(examLabel);
-	return {
-		"@context": "https://schema.org",
-		"@graph": [
-			{
-				"@type": "Quiz",
-				name: `${unit.name} - ${year}年度演習問題${examPart}`,
-				about: {
-					"@type": "Thing",
-					name: unit.name,
-					description: unit.description,
-				},
-				educationalLevel: "大学学部",
-				inLanguage: "ja",
-				isPartOf: {
-					"@type": "Course",
-					name: "基本情報技術 I",
-					provider: {
-						"@type": "EducationalOrganization",
-						name: "明治大学",
-					},
-				},
-				...(totalQuestions > 0 ? { numberOfQuestions: totalQuestions } : {}),
-			},
-			{
-				"@type": "LearningResource",
-				name: `${unit.title} (${year}年度)${examPart}`,
-				description: pageDescription,
-				learningResourceType: "Practice Problem",
-				educationalLevel: "大学学部",
-				inLanguage: "ja",
-				teaches: unit.description,
-			},
-		],
-	};
-}

@@ -111,6 +111,9 @@ const slideOnlyUnitsData: Unit[] = [
 	},
 ];
 
+// スキーマは slides を z.unknown() で緩く検証する（Slide 形の厳格検証はしない）ため推論型は
+// slides: unknown[] になる。データ源（slideOnlyUnitsData）は Slide[] で型付け済みのため、parse
+// 結果をドメイン型へ寄せるこの境界キャストは妥当（スキーマ厳格化は別タスク）。
 export const slideOnlyUnits: Unit[] = safeParseOrThrow(
 	SlideOnlyUnitsSchema,
 	slideOnlyUnitsData,
@@ -271,6 +274,8 @@ const unitBasedTabsData: UnitBasedTabInput[] = [
 	},
 ];
 
+// slideOnlyUnits と同様、スキーマは slides を緩く検証するため slides: unknown[] に推論される。
+// データ源は型付け済みのため parse 結果をドメイン型へ寄せる境界キャストは妥当。
 export const unitBasedTabs: UnitBasedTab[] = safeParseOrThrow(
 	UnitBasedTabsSchema,
 	unitBasedTabsData,

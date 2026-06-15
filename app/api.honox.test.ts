@@ -1,15 +1,16 @@
-import { drizzle } from "drizzle-orm/d1";
+import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import apiMiddleware from "./routes/_middleware";
 import answer from "./routes/answer";
 import health from "./routes/health";
 import markdown from "./routes/markdown";
-import { schema } from "./server/schema";
+import { answers, type Db } from "./server/schema";
 import { ensureUserIdentity } from "./server/userIdentity";
+import { createTestDb } from "./types/test/d1";
 
 /**
- * 分解した API ファイルルート（app/routes/**）の古典派 integration テスト（AAA）。
+ * 分解した API ファイルルート（app/routes/**）の integration テスト（AAA）。
  *
  * 本番では HonoX が answer.ts（chained Hono sub-app）を /answer へマウントし、
  * _middleware.ts を `subApp.use("*")` で全ルートに適用する。vitest では createApp()
@@ -17,32 +18,16 @@ import { ensureUserIdentity } from "./server/userIdentity";
  * 再現し、外部 URL の HTTP 振る舞い（status・レスポンス形状・400/413/304・middleware ヘッダ）を
  * app.request() で検証する。
  *
- * out-of-process 依存（D1 / KV）は空データを返す fake を注入する。
+ * D1 は実 SQLite（better-sqlite3 + baseline）を c.var.db に直接注入し、answer ルートの
+ * 実 SQL（leftJoin / 相関サブクエリ / returning）を本物の DB に対して検証する。
  */
 
-function makeFakeDb(bindCalls: unknown[][] = []): D1Database {
-	const stmt = {
-		bind: (...args: unknown[]): typeof stmt => {
-			bindCalls.push(args);
-			return stmt;
-		},
-		all: (): Promise<{ results: unknown[] }> => Promise.resolve({ results: [] }),
-		run: (): Promise<{ meta: { last_row_id: number }; success: boolean }> =>
-			Promise.resolve({ meta: { last_row_id: 1 }, success: true }),
-		first: (): Promise<null> => Promise.resolve(null),
-	};
-	return {
-		prepare: () => stmt,
-		batch: (stmts: unknown[]) => Promise.resolve(stmts.map(() => ({ results: [], success: true }))),
-	} as unknown as D1Database;
+function env(): Cloudflare.Env {
+	return {} as unknown as Cloudflare.Env;
 }
 
-function env(bindCalls: unknown[][] = []): Cloudflare.Env {
-	return { DB: makeFakeDb(bindCalls) } as unknown as Cloudflare.Env;
-}
-
-/** HonoX のネスト sub-app マウントを忠実に再現した合成アプリ。 */
-function mountedApp(): Hono {
+/** HonoX のネスト sub-app マウントを忠実に再現した合成アプリ。db を c.var へ直接注入する。 */
+function mountedApp(db: Db = createTestDb().db): Hono {
 	// biome-ignore lint/suspicious/noExplicitAny: テスト用に health ハンドラ配列を spread マウントする
 	const spread = (handlers: unknown): any => handlers as any;
 
@@ -55,7 +40,7 @@ function mountedApp(): Hono {
 		c.set("userId", identity.userId);
 		c.set("userIdCookieIssued", identity.userIdCookieIssued);
 		// answer ルートは c.var.db（Drizzle）を使う。server.ts の middleware と同流儀で配線する。
-		c.set("db", drizzle(c.env.DB, { schema }));
+		c.set("db", db);
 		await next();
 	});
 	app.get("/health", ...spread(health));
@@ -73,51 +58,42 @@ describe("外部 URL の一致（HonoX マウント越し）", () => {
 	});
 });
 
-// TODO(T12): answer ルートは Drizzle（c.var.db）の leftJoin / insert-from-select を実行するため、
-// prepare().bind().all() を模した fake-D1 では DrizzleQueryError になる。submit ケースは body に
-// timestamp を送るため strict schema でも 400 になる（時刻はサーバー付与に一本化）。
-// vitest-pool-workers の実 D1 ハーネスへ移行する。
-describe.skip("answer routes", () => {
-	it("GET /answer/status は { statuses } を返す（D1 空→空マップ）", async () => {
+describe("answer routes", () => {
+	it("GET /answer/status は空 DB で空マップを返す", async () => {
 		const res = await mountedApp().request("/answer/status", {}, env());
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({ statuses: {} });
 	});
 
-	it("GET /answer/status は userId Cookie が無い場合も middleware が発行して返す", async () => {
+	it("GET /answer/status は userId Cookie が無い場合 middleware が発行する", async () => {
 		const res = await mountedApp().request("/answer/status", {}, env());
 		expect(res.status).toBe(200);
-		expect(await res.json()).toEqual({ statuses: {} });
 		expect(res.headers.get("Set-Cookie")).toContain("fit-exam-user-id=");
 	});
 
-	it("POST /answer/submit は { ok, answerId } を返す", async () => {
-		const bindCalls: unknown[][] = [];
-		const res = await mountedApp().request(
+	it("POST /answer/submit は登録済み question を記録し { ok, answerId } を返す", async () => {
+		const { db } = createTestDb();
+		const res = await mountedApp(db).request(
 			"/answer/submit",
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					questionId: "exam1-2013-q1",
-					selectedLabel: "ア",
-					isCorrect: true,
-					timestamp: 1_700_000_000_000,
-				}),
+				body: JSON.stringify({ questionId: "exam1-2013-q1", selectedLabel: "ア", isCorrect: true }),
 			},
-			env(bindCalls),
+			env(),
 		);
 		expect(res.status).toBe(200);
-		expect(await res.json()).toEqual({ ok: true, answerId: 1 });
-		expect(bindCalls[1]?.[0]).toMatch(
-			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-		);
+		const body = await res.json();
+		expect(body).toMatchObject({ ok: true });
+		expect(typeof body.answerId).toBe("number");
+		// 実 DB に 1 行記録される。
+		expect(await db.select().from(answers)).toHaveLength(1);
 	});
 
 	it("POST /answer/submit は body ではなく HttpOnly Cookie の userId で記録する", async () => {
-		const bindCalls: unknown[][] = [];
+		const { db } = createTestDb();
 		const cookieUserId = "550e8400-e29b-41d4-a716-446655440000";
-		const res = await mountedApp().request(
+		const res = await mountedApp(db).request(
 			"/answer/submit",
 			{
 				method: "POST",
@@ -125,28 +101,19 @@ describe.skip("answer routes", () => {
 					"Content-Type": "application/json",
 					Cookie: `fit-exam-user-id=${cookieUserId}`,
 				},
-				body: JSON.stringify({
-					questionId: "exam1-2013-q1",
-					selectedLabel: "ア",
-					isCorrect: true,
-					timestamp: 1_700_000_000_000,
-				}),
+				body: JSON.stringify({ questionId: "exam1-2013-q1", selectedLabel: "ア", isCorrect: true }),
 			},
-			env(bindCalls),
+			env(),
 		);
 
 		expect(res.status).toBe(200);
 		expect(res.headers.get("Set-Cookie")).toBeNull();
-		expect(bindCalls[0]).toEqual([
-			cookieUserId,
-			expect.any(Number),
-			expect.any(Number),
-			expect.any(Number),
-		]);
-		expect(bindCalls[1]?.[0]).toBe(cookieUserId);
+		// 記録された行の user_id は body ではなく Cookie の userId。
+		const rows = await db.select().from(answers).where(eq(answers.userId, cookieUserId));
+		expect(rows).toHaveLength(1);
 	});
 
-	it("POST /answer/submit は余計な userId body を 400 で拒否する", async () => {
+	it("POST /answer/submit は余計な userId body を 400 で拒否する（strict schema）", async () => {
 		const res = await mountedApp().request(
 			"/answer/submit",
 			{
@@ -160,7 +127,6 @@ describe.skip("answer routes", () => {
 					questionId: "exam1-2013-q1",
 					selectedLabel: "ア",
 					isCorrect: true,
-					timestamp: 1_700_000_000_000,
 				}),
 			},
 			env(),
@@ -175,19 +141,14 @@ describe.skip("answer routes", () => {
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					questionId: "bad-id",
-					selectedLabel: "ア",
-					isCorrect: true,
-					timestamp: 1,
-				}),
+				body: JSON.stringify({ questionId: "bad-id", selectedLabel: "ア", isCorrect: true }),
 			},
 			env(),
 		);
 		expect(res.status).toBe(400);
 	});
 
-	it("GET /answer/history は { answers } を返す", async () => {
+	it("GET /answer/history は空 DB で空マップを返す", async () => {
 		const res = await mountedApp().request("/answer/history", {}, env());
 		expect(res.status).toBe(200);
 		expect(await res.json()).toEqual({ answers: {} });

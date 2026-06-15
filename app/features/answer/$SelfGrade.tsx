@@ -1,4 +1,4 @@
-import { useActionState, useEffect } from "hono/jsx";
+import { useActionState, useEffect } from "hono/jsx/dom";
 import type { JSX } from "hono/jsx/jsx-runtime";
 import { recordAnswer, SavingIndicator } from "./answerActions";
 import { fetchAnswerStatuses } from "./answerClient";
@@ -30,7 +30,7 @@ type State =
 
 // 採点イベント（form の hidden input で渡す）。hono の form は submit ボタンの value を
 // FormData に含めないため、value ではなく hidden input で event を渡す。
-type Event = "restore" | "reveal" | "correct" | "review" | "retry";
+type SelfGradeEvent = "restore" | "reveal" | "correct" | "review" | "retry";
 type Chip = "correct" | "review";
 
 interface CardView {
@@ -45,7 +45,7 @@ const CHIP_TEXT: Record<Chip, string> = {
 
 /** 各 phase に表示するアクションフォームの宣言的定義（条件分岐の代わりに DU からの導出）。 */
 interface ActionDef {
-	event: Event;
+	event: SelfGradeEvent;
 	btnClass: string;
 	label: string;
 	pending?: boolean; // 非同期保存中に「保存中…」を出すか
@@ -93,7 +93,9 @@ export default function SelfGrade(props: SelfGradeProps): JSX.Element {
 	const [state, dispatch] = useActionState(
 		async (prev: State, formData: FormData): Promise<State> => {
 			const recorded = formData.get("recorded") === "true";
-			switch (formData.get("event") as Event) {
+			// FormData の値（string | File | null）を直接 switch する。case のリテラルで型が絞られ、
+			// 不正値・null は default（prev 維持）へ落ちるため as キャストは不要。
+			switch (formData.get("event")) {
 				case "restore": {
 					// fetch 後の格下げ: saved を graded へ反映する（記録はしない＝既存挙動）。
 					const next: State = {

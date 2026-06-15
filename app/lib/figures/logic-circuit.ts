@@ -66,14 +66,16 @@ export function getWirePath(
 		return null;
 	}
 
-	const start =
-		"label" in fromElement && inputs.includes(fromElement as LogicInput)
-			? { x: fromElement.x + 20, y: fromElement.y }
-			: { x: (fromElement as LogicGate).x + gateWidth / 2, y: (fromElement as LogicGate).y };
-	const end =
-		"label" in toElement && outputs.includes(toElement as LogicOutput)
-			? { x: toElement.x - 20, y: toElement.y }
-			: { x: (toElement as LogicGate).x - gateWidth / 2, y: (toElement as LogicGate).y };
+	// 入力/出力の判定は id 集合で行う（全要素が x/y を持つため要素自体の as キャストは不要）。
+	const inputIds = new Set(inputs.map((input) => input.id));
+	const outputIds = new Set(outputs.map((output) => output.id));
+
+	const start = inputIds.has(fromElement.id)
+		? { x: fromElement.x + 20, y: fromElement.y }
+		: { x: fromElement.x + gateWidth / 2, y: fromElement.y };
+	const end = outputIds.has(toElement.id)
+		? { x: toElement.x - 20, y: toElement.y }
+		: { x: toElement.x - gateWidth / 2, y: toElement.y };
 	const wirePoints = wire.points ?? [];
 	const points = wirePoints.length > 0 ? [start, ...wirePoints, end] : [start, end];
 

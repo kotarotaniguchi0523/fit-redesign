@@ -1,9 +1,11 @@
 import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
 import type { AnswerRecord } from "./types/answer";
+import { makeAnswerRecord } from "./types/test/answerRecord";
 
-// getUserAnswerHistory を vi.mock で差し替える。Drizzle leftJoin が fake D1 で動かないため、
-// テスト内で直接 answerHistory を注入するパターンに移行する。
+// getUserAnswerHistory を vi.mock で差し替える。本テストは「dashboard ルートの描画」を検証する
+// 単位なので、データ源（repository）は意図的にモック注入してビューを分離する。repository の実 SQL
+// （leftJoin / 相関サブクエリ / グルーピング）は answerRepository.test.ts の実 DB integration で別途カバー済み。
 vi.mock("./server/answerRepository", async (importOriginal) => {
 	const original = await importOriginal<typeof import("./server/answerRepository")>();
 	return {
@@ -27,8 +29,8 @@ const USER_ID = "550e8400-e29b-41d4-a716-446655440000" as const;
  * 出力（c.render 経由）は _renderer.tsx が無いため Hono の既定 renderer = c.html() で
  * 本文 JSX のみ描画される。本テストは描画内容（空 / データあり）と redirect 分岐を検証する。
  *
- * getUserAnswerHistory は vi.mock で差し替え済み。
- * fake D1 は Drizzle leftJoin が動かないため空オブジェクトを渡すだけ。
+ * getUserAnswerHistory は vi.mock で差し替え済み（ビュー分離。実 SQL は repository の integration で検証）。
+ * 渡す Cloudflare.Env は描画に使われないため空でよい。
  */
 
 /** ダッシュボードルートのマウント（userId param が解決される本番相当）。 */
@@ -90,6 +92,8 @@ function jstMs(month: number, day: number, hour = 0): number {
 
 type QuestionId = `exam${number}-${number}-q${number}`;
 
+// 共有ファクトリ makeAnswerRecord に委譲する位置引数ラッパー（フィクスチャの可読性を保つ）。
+// 明示 id と固定 createdAt で決定的なフィクスチャを作るため、shared の自動採番 id は上書きする。
 function makeRecord(
 	id: number,
 	questionId: QuestionId,
@@ -98,16 +102,16 @@ function makeRecord(
 	duration: number | null = 30,
 	setId: string | null = null,
 ): AnswerRecord {
-	return {
+	return makeAnswerRecord({
 		id,
-		userId: USER_ID as unknown as AnswerRecord["userId"],
-		questionId: questionId as unknown as AnswerRecord["questionId"],
-		selectedLabel: isCorrect ? "ア" : "イ",
+		questionId,
 		isCorrect,
+		createdAt,
 		duration,
 		setId,
-		createdAt,
-	};
+		selectedLabel: isCorrect ? "ア" : "イ",
+		userId: USER_ID as unknown as AnswerRecord["userId"],
+	});
 }
 
 // exam1-2013 の q1〜q5 を同一セットで揃え、通しタイムが出るようにする（unit-base-conversion）
