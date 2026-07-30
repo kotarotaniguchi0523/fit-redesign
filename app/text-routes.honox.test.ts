@@ -37,11 +37,11 @@ describe("robots.txt ルート", () => {
 		expect(body).toContain(`Sitemap: ${SITE_URL}/sitemap.xml`);
 	});
 
-	it("Disallow: /answer/ と Disallow: /dashboard/ を含む", async () => {
+	it("Disallow: /records と Disallow: /progress/ を含む", async () => {
 		const res = await mountGet(robotsTxt).request("/");
 		const body = await res.text();
-		expect(body).toContain("Disallow: /answer/");
-		expect(body).toContain("Disallow: /dashboard/");
+		expect(body).toContain("Disallow: /records");
+		expect(body).toContain("Disallow: /progress/");
 	});
 
 	it("廃止済み /timer/ の Disallow を含まない", async () => {

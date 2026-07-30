@@ -8,5 +8,12 @@
 	"observability": { "enabled": true },
 	"d1_databases": [
 		{ "binding": "DB", "database_name": "fit-timer-db", "database_id": "57532062-e9cf-4a86-a89f-fc6fdb1e3ba5" }
+	],
+	"ratelimits": [
+		{
+			"name": "PROGRESS_RATE_LIMITER",
+			"namespace_id": "1001",
+			"simple": { "limit": 60, "period": 60 }
+		}
 	]
 }

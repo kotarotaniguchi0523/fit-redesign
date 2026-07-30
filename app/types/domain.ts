@@ -3,7 +3,6 @@ import { z } from "zod";
 export const YEARS = ["2013", "2014", "2015", "2016", "2017"] as const;
 export const EXAM_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
-declare const userIdBrand: unique symbol;
 declare const examIdBrand: unique symbol;
 declare const questionIdBrand: unique symbol;
 declare const pdfPathBrand: unique symbol;
@@ -15,8 +14,6 @@ export type ExamNumber = (typeof EXAM_NUMBERS)[number];
 
 export const MEIJI_FIT_BASE = "https://www.isc.meiji.ac.jp/~kikn/FIT" as const;
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export const YearSchema = z.enum(YEARS);
 export const ExamNumberSchema = z
 	.number()
@@ -24,12 +21,6 @@ export const ExamNumberSchema = z
 	.refine((value): value is ExamNumber => EXAM_NUMBERS.includes(value as ExamNumber), {
 		error: "exam number must be one of 1..9",
 	});
-
-export const UserIdSchema = z
-	.string({ error: "userId は文字列である必要があります" })
-	.regex(UUID_RE, { error: "userId は UUID 形式である必要があります" })
-	.transform((value) => value.toLowerCase())
-	.brand<typeof userIdBrand>();
 
 export const ExamIdSchema = z
 	.string({ error: "examId は文字列である必要があります" })
@@ -65,7 +56,6 @@ export const UnitTabIdSchema = z
 	})
 	.brand<typeof unitTabIdBrand>();
 
-export type UserId = z.infer<typeof UserIdSchema>;
 export type ExamId = z.infer<typeof ExamIdSchema>;
 export type QuestionId = z.infer<typeof QuestionIdSchema>;
 export type PdfPath = z.infer<typeof PdfPathSchema>;

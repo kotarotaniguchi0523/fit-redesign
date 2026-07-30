@@ -47,12 +47,12 @@ function mountGet(handlers: RouteHandlers): Hono {
 }
 
 describe("home（/）", () => {
-	it("200 を返し、study-home の DOM と JSON-LD を描画する", async () => {
+	it("200 を返し、単元と年度の表と JSON-LD を描画する", async () => {
 		const res = await mountGet(index).request("/");
 		expect(res.status).toBe(200);
 		const html = await res.text();
-		expect(html).toContain("data-study-home");
-		expect(html).toContain("勉強が嫌いな日でも、まず今日のぶんだけ。");
+		expect(html).toContain("問題を選ぶ");
+		expect(html).toContain('href="/unit-base-conversion/2013"');
 		// JSON-LD（WebSite + Course）が渡されている
 		expect(html).toContain('"@type":"WebSite"');
 		expect(html).toContain('"@type":"Course"');
@@ -63,34 +63,20 @@ describe("home（/）", () => {
 		expect(res.headers.get("Cache-Control")).toBe("public, s-maxage=31536000, max-age=3600");
 	});
 
-	it("単元別マニフェスト（9 単元）を today リンクとして描画する", async () => {
+	it("複数小テストの年度には件数を表示する", async () => {
 		const res = await mountGet(index).request("/");
 		const html = await res.text();
-		// 単元行のメイン導線は /today/{unitId}
-		expect(html).toContain('href="/today/unit-base-conversion"');
-		// 各行に演習ページ /unit-x/{主要年度} への「年度ごとに解く」サブリンクがある
-		expect(html).toContain('href="/unit-base-conversion/2013"');
-		expect(html).toContain("この単元の年度ごとに解く");
-		// home-unit-row が複数（マニフェスト件数分）出力される
-		const rowCount = (html.match(/class="home-unit-row"/g) ?? []).length;
-		expect(rowCount).toBeGreaterThanOrEqual(9);
+		expect(html).toContain("2テスト");
+		expect(html).not.toContain("3テスト");
+		expect(html).not.toContain("/today/");
 	});
 });
 
 describe("exercises（/exercises）", () => {
-	it("200・タイトル・年度ヘッダ・単元×年度の演習リンクを描画する", async () => {
+	it("ホームへ301リダイレクトする", async () => {
 		const res = await mountGet(exercises).request("/");
-		expect(res.status).toBe(200);
-		const html = await res.text();
-		expect(html).toContain("<title>年度・単元別 演習問題一覧 - 基本情報技術 I</title>");
-		// 年度ヘッダ（2013〜2017）
-		expect(html).toContain("2013");
-		expect(html).toContain("2017");
-		// 出題年度のセルは /unit-x/{year} の演習ページへリンクする
-		expect(html).toContain('href="/unit-base-conversion/2013"');
-		expect(html).toContain('href="/unit-base-conversion/2017"');
-		// 浮動小数点は 2014 が無いため欠落セル（— マーカー）が出る
-		expect(html).toContain("exercises-td-empty");
+		expect(res.status).toBe(301);
+		expect(res.headers.get("Location")).toBe("/");
 	});
 });
 
@@ -100,10 +86,10 @@ describe("guide（/guide）", () => {
 		expect(res.status).toBe(200);
 		const html = await res.text();
 		expect(html).toContain("<title>使い方ガイド - 基本情報技術 I</title>");
-		// MDX 本文がサーバー側で HTML 化されている（見出し・GFM テーブル）。
-		expect(html).toContain("はじめに");
-		expect(html).toContain("基数変換");
-		expect(html).toContain("<table");
+		// MDX 本文がサーバー側で HTML 化されている。
+		expect(html).toContain("基本の使い方");
+		expect(html).toContain("単元");
+		expect(html).toContain("答えを確認する");
 		// 外部 CDN（lobster.js）への依存が無いこと。
 		expect(html).not.toContain("hacknock.github.io");
 	});
@@ -114,10 +100,10 @@ describe("slide-only（/slide-only）", () => {
 		const res = await mountGet(slideOnly).request("/");
 		expect(res.status).toBe(200);
 		const html = await res.text();
-		expect(html).toContain("<title>講義資料のみ - 基本情報技術 I</title>");
+		expect(html).toContain("<title>講義資料 - 基本情報技術 I</title>");
 		// 単元タブ（unitBasedTabs）が defaultYear へのリンクとして描画される
 		expect(html).toContain('role="tablist"');
-		expect(html).toContain("講義資料のみ");
+		expect(html).toContain("講義資料");
 		// SlideSection の見出し（PDF バッジ + 講義スライド）が描画される
 		expect(html).toContain("講義スライド");
 	});
@@ -142,19 +128,10 @@ describe("404（_404.tsx / NotFoundHandler）", () => {
 	});
 });
 
-describe("dashboard index（/dashboard/）", () => {
-	it("Cookie userId のダッシュボードへリダイレクトする", async () => {
-		const app = new Hono();
-		app.use("*", testRenderer);
-		app.use("*", async (c, next) => {
-			c.set("userId", "550e8400-e29b-41d4-a716-446655440000");
-			c.set("userIdCookieIssued", false);
-			await next();
-		});
-		app.get("/", ...(dashboardIndex as never));
-
-		const res = await app.request("/");
-		expect(res.status).toBe(302);
-		expect(res.headers.get("Location")).toBe("/dashboard/550e8400-e29b-41d4-a716-446655440000");
+describe("dashboard index（/dashboard）", () => {
+	it("/records へ301リダイレクトする", async () => {
+		const res = await mountGet(dashboardIndex).request("/");
+		expect(res.status).toBe(301);
+		expect(res.headers.get("Location")).toBe("/records");
 	});
 });

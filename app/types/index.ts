@@ -28,7 +28,6 @@ export type {
 	QuestionId,
 	SlideId,
 	UnitTabId,
-	UserId,
 	Year,
 } from "./domain";
 export {
@@ -42,7 +41,6 @@ export {
 	QuestionIdSchema,
 	SlideIdSchema,
 	UnitTabIdSchema,
-	UserIdSchema,
 	YEARS,
 	YearSchema,
 } from "./domain";

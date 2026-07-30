@@ -1,17 +1,22 @@
 import type { JSX } from "hono/jsx/jsx-runtime";
-import type { Exam } from "../types";
+import type { Exam, ExamNumber, UnitTabId } from "../types";
 import { QuestionCard } from "./QuestionCard";
 
 interface ExamSectionProps {
 	title: string;
 	exam: Exam | undefined;
+	examNumber: ExamNumber;
+	unitId: UnitTabId;
 }
 
-export function ExamSection({ title, exam }: ExamSectionProps): JSX.Element {
+export function ExamSection({ title, exam, examNumber, unitId }: ExamSectionProps): JSX.Element {
 	const questionCount = exam?.questions.length ?? 0;
 
 	return (
-		<section class="mt-6 rounded-2xl border border-gray-200 bg-white shadow-sm">
+		<section
+			id={`exam-${examNumber}`}
+			class="mt-6 scroll-mt-20 rounded-2xl border border-gray-200 bg-white shadow-sm"
+		>
 			<div class="flex flex-col gap-4 rounded-t-2xl border-b border-gray-200 bg-linear-to-r from-gray-50 to-slate-50 p-4">
 				<div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<div class="flex items-start gap-3">
@@ -19,6 +24,7 @@ export function ExamSection({ title, exam }: ExamSectionProps): JSX.Element {
 							問
 						</span>
 						<div>
+							<p class="text-xs font-bold text-slate-500">小テスト{examNumber}</p>
 							<h2 class="text-lg font-bold leading-snug text-[#1e3a5f]">{title}</h2>
 							<p class="mt-1 text-sm text-slate-500">
 								{questionCount > 0
@@ -41,7 +47,7 @@ export function ExamSection({ title, exam }: ExamSectionProps): JSX.Element {
 			</div>
 			<div class="space-y-4 p-4 sm:p-5">
 				{exam?.questions.map((q) => (
-					<QuestionCard question={q} />
+					<QuestionCard question={q} unitId={unitId} />
 				))}
 				{(!exam || exam.questions.length === 0) && (
 					<p class="text-gray-500 italic">

@@ -1,11 +1,10 @@
 /** @jsxImportSource hono/jsx */
 
 import type { JSX } from "hono/jsx/jsx-runtime";
-import AnswerSelector from "../features/answer/$AnswerSelector";
-import SelfGrade from "../features/answer/$SelfGrade";
+import SolutionReveal from "../features/answer/$SolutionReveal";
 import { questionToMarkdown } from "../features/markdown/questionToMarkdown";
 import { overlineToHtml } from "../lib/overline";
-import type { Question } from "../types";
+import type { Question, UnitTabId } from "../types";
 import CopyButton from "./$CopyButton";
 import { BinaryTree } from "./figures/BinaryTree";
 import { Flowchart } from "./figures/Flowchart";
@@ -29,6 +28,7 @@ import { TruthTable } from "./figures/TruthTable";
 
 interface Props {
 	question: Question;
+	unitId: UnitTabId;
 	/**
 	 * 初期 SSR で `hidden` 属性を付けるか。today（dailySession）は全カードを
 	 * `hidden` で出力し、初回ペイントの「全部見え→1枚に畳む」崩壊を消す。
@@ -110,19 +110,25 @@ function buildQuestionView(question: Question): QuestionView {
 	};
 }
 
-export function QuestionCard({ question, hidden }: Props): JSX.Element {
+export function QuestionCard({ question, unitId, hidden }: Props): JSX.Element {
 	const view = buildQuestionView(question);
 	const figureData = question.figureData;
 
 	return (
-		<article data-question-card data-question-id={question.id} class="q-card" hidden={hidden}>
+		<article
+			id={`question-${question.id}`}
+			data-question-card
+			data-question-id={question.id}
+			class="q-card scroll-mt-20"
+			hidden={hidden}
+		>
 			<div class="q-card__body">
 				{/* 1. 問題番号 + 種別 */}
 				<header class="q-head">
 					<span class="q-num">{question.number}</span>
 					<div>
 						<p class="q-eyebrow">問題 {question.number}</p>
-						{view.hasOptions && <p class="q-hint">選択肢を1つ選んで確かめよう</p>}
+						{view.hasOptions && <p class="q-hint">選択肢</p>}
 					</div>
 				</header>
 
@@ -148,26 +154,26 @@ export function QuestionCard({ question, hidden }: Props): JSX.Element {
 					</div>
 				) : null}
 
-				{/* 4. 回答（選択式 island or 記述式の自己採点 island） */}
 				{view.hasOptions ? (
-					<div class="q-options">
-						<AnswerSelector
-							questionId={question.id}
-							correctLabel={question.answer}
-							answerHtml={view.answerHtml}
-							explanationHtml={view.explanationHtml}
-							options={view.options}
-						/>
-					</div>
-				) : (
-					<div class="mt-4 block">
-						<SelfGrade
-							questionId={question.id}
-							answerHtml={view.answerHtml}
-							explanationHtml={view.explanationHtml}
-						/>
-					</div>
-				)}
+					<ol class="q-options" aria-label="選択肢">
+						{view.options.map((option) => (
+							<li class="q-option">
+								<span class="q-option__label">{option.label}</span>
+								{/* biome-ignore lint/security/noDangerouslySetInnerHtml: overlineToHtmlで生成した限定HTML */}
+								<span dangerouslySetInnerHTML={{ __html: option.html }} />
+							</li>
+						))}
+					</ol>
+				) : null}
+
+				<div class="mt-4 block">
+					<SolutionReveal
+						questionId={question.id}
+						unitId={unitId}
+						answerHtml={view.answerHtml}
+						explanationHtml={view.explanationHtml}
+					/>
+				</div>
 
 				{/* 6. ツール（控えめなフッター） */}
 				<footer class="q-footer">

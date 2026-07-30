@@ -1,16 +1,45 @@
 /** @jsxImportSource hono/jsx */
 import { createRoute } from "honox/factory";
 import { Header } from "../components/Header";
+import { getExamByNumber } from "../data/exams";
 import { SITE_URL } from "../data/site";
-import { buildUnitManifest } from "../features/srs/questionManifest";
-import StudyHome from "../features/study/$StudyHome";
+import { unitBasedTabs } from "../data/units";
+import ContinueLearning from "../features/answer/$ContinueLearning";
 import { YEARS } from "../types";
 
-// 学習ホーム。進捗計算と表示は StudyHome island が所有する。
 export default createRoute(async (c) => {
-	const manifest = await buildUnitManifest();
+	const examCounts = new Map<string, number>();
+	await Promise.all(
+		unitBasedTabs.flatMap((unit) =>
+			unit.examMapping.map(async (mapping) => {
+				const signatures = await Promise.all(
+					mapping.examNumbers.map(async (examNumber) => {
+						const exam = (await getExamByNumber(examNumber))?.exams[mapping.year];
+						return exam?.questions.map((question) => question.id).join("|") ?? `exam-${examNumber}`;
+					}),
+				);
+				examCounts.set(`${unit.id}|${mapping.year}`, new Set(signatures).size);
+			}),
+		),
+	);
+	const locations = (
+		await Promise.all(
+			unitBasedTabs.flatMap((unit) =>
+				unit.examMapping.flatMap((mapping) =>
+					mapping.examNumbers.map(async (examNumber) => {
+						const exam = (await getExamByNumber(examNumber))?.exams[mapping.year];
+						return (exam?.questions ?? []).map((question) => ({
+							questionId: question.id,
+							unitName: unit.name,
+							year: mapping.year,
+							href: `/${unit.id}/${mapping.year}#question-${question.id}`,
+						}));
+					}),
+				),
+			),
+		)
+	).flat();
 
-	// JSON-LD: WebSite + Course
 	const jsonLd = {
 		"@context": "https://schema.org",
 		"@graph": [
@@ -18,46 +47,82 @@ export default createRoute(async (c) => {
 				"@type": "WebSite",
 				name: "基本情報技術 I - 明治大学",
 				url: `${SITE_URL}/`,
-				description:
-					"明治大学の基本情報技術 I 講義の演習問題サイト。2013〜2017年度の9単元・全問題を掲載。",
+				description: "単元と年度を選び、過去の小テストと解答・解説をすぐ確認できるサイト。",
 				inLanguage: "ja",
-				publisher: { "@type": "EducationalOrganization", name: "明治大学" },
 			},
 			{
 				"@type": "Course",
 				name: "基本情報技術 I",
-				description:
-					"基数変換、負数表現、浮動小数点、論理演算、集合と確率、オートマトン、符号理論、データ構造、ソート・探索の9単元を学習する情報技術の基礎講義。",
 				provider: { "@type": "EducationalOrganization", name: "明治大学" },
-				educationalLevel: "大学学部",
 				inLanguage: "ja",
-				numberOfCredits: 2,
-				hasCourseInstance: YEARS.map((y) => ({
-					"@type": "CourseInstance",
-					name: `基本情報技術 I (${y}年度)`,
-					courseMode: "onsite",
-				})),
 			},
 		],
 	};
 
-	// buildUnitManifest は SSR でリクエストごとに実行されるため、エッジキャッシュを効かせる
-	// （[unit]/[year].tsx と同方針）。
 	c.header("Cache-Control", "public, s-maxage=31536000, max-age=3600");
-
 	return c.render(
 		<>
 			<Header currentPath={c.req.path} />
 			<main class="study-shell">
-				<div class="container mx-auto max-w-4xl px-4 py-8">
-					<StudyHome manifest={manifest} />
+				<div class="container mx-auto max-w-5xl px-4 py-8">
+					<section class="py-2">
+						<p class="home-eyebrow">過去問アーカイブ</p>
+						<h1 class="home-title">問題を選ぶ</h1>
+						<p class="home-lede">単元と年度を選ぶと、小テストと答えをすぐ確認できます。</p>
+					</section>
+
+					<div class="exercises-table-wrap mt-6">
+						<table class="exercises-table">
+							<thead>
+								<tr>
+									<th scope="col" class="exercises-th-unit">
+										単元
+									</th>
+									{YEARS.map((year) => (
+										<th scope="col" class="exercises-th-year">
+											{year}
+										</th>
+									))}
+								</tr>
+							</thead>
+							<tbody>
+								{unitBasedTabs.map((unit, index) => (
+									<tr>
+										<th scope="row" class="exercises-td-unit">
+											<span class="exercises-unit-num">{index + 1}</span>
+											{unit.name}
+										</th>
+										{YEARS.map((year) => {
+											const mapping = unit.examMapping.find((item) => item.year === year);
+											return mapping ? (
+												<td class="exercises-td">
+													<a href={`/${unit.id}/${year}`} class="exercises-link">
+														{year}
+														<span class="sr-only">年度</span>
+														{(examCounts.get(`${unit.id}|${year}`) ?? 1) > 1 ? (
+															<small class="block">
+																{examCounts.get(`${unit.id}|${year}`)}テスト
+															</small>
+														) : null}
+													</a>
+												</td>
+											) : (
+												<td class="exercises-td exercises-td-empty">—</td>
+											);
+										})}
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+					<ContinueLearning locations={locations} />
 				</div>
 			</main>
 		</>,
 		{
-			title: "基本情報技術 I - 明治大学",
+			title: "問題を選ぶ - 基本情報技術 I",
 			description:
-				"明治大学の基本情報技術 I 講義の演習問題サイト。基数変換・論理演算・オートマトンなど9単元、2013〜2017年度の全問題を掲載。",
+				"明治大学 基本情報技術 I の単元と年度を選び、小テストと解答・解説を確認できます。",
 			jsonLd,
 		},
 	);

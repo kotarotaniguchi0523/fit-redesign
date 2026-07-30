@@ -56,9 +56,9 @@ async function unitLines(unit: (typeof unitBasedTabs)[number]): Promise<string[]
 export default createRoute(async (c) => {
 	const nestedUnitLines = await Promise.all(unitBasedTabs.map(unitLines));
 	const lines = [
-		"# 基本情報技術 I - 明治大学 演習問題サイト（完全版）",
+		"# 基本情報技術 I - 明治大学 小テスト（完全版）",
 		"",
-		"> 明治大学の「基本情報技術 I」講義の演習問題を全て収録。2013〜2017年度の小テスト問題と解答・解説を単元別に整理。",
+		"> 明治大学の「基本情報技術 I」講義の小テストを全て収録。2013〜2017年度の問題と解答・解説を単元別に整理。",
 		"",
 		"---",
 		"",

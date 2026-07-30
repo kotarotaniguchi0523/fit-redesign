@@ -4,10 +4,9 @@
  * 命令的 client バンドル（/app/client.ts）を全ページで読み込むための script タグ。
  *
  * honox の `<Script>`（honox/server）は出力を `HasIslands` でラップしており、ルートが
- * island を import している時のみ script を出力する。本アプリはホーム（進捗）・today
- * （デイリーセッション）・dashboard（chart.js）・guide（コピーボタン）など **island を
- * 持たないページでも命令的 client スクリプトを必要とする**ため、honox の Script では
- * これらのページで client バンドルが一切読まれない。
+ * island を import している時のみ script を出力する。一方、Markdown コピーなどの
+ * island を持たないページでもクライアント処理を使うため、このコンポーネントでは
+ * HasIslands gate を外している。
  *
  * 解決ロジック自体は honox の Script と同一（本番は vite manifest からハッシュ付き
  * 実体へ解決、dev は src をそのまま module script に）で、HasIslands gate のみ外す。

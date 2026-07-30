@@ -3,12 +3,11 @@ import { Hono } from "hono";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { createApp } from "honox/server";
 import { schema } from "./server/schema";
-import { ensureUserIdentity, type UserIdentityVariables } from "./server/userIdentity";
 
 // セキュリティヘッダー（public/_headers と同一内容）。
 // Cloudflare の _headers は静的アセット応答にしか適用されず、Worker が生成する SSR HTML
 // には載らない。HTML 応答にも CSP/HSTS 等を付与するため Worker 側で明示設定する。
-// （静的アセットは引き続き public/_headers が担当する。）
+// （静的アセットは引き続き public/_headers が担当する。両者を同期させること。）
 const SECURITY_HEADERS: Record<string, string> = {
 	"Content-Security-Policy":
 		"default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self'",
@@ -19,26 +18,28 @@ const SECURITY_HEADERS: Record<string, string> = {
 	"Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
 };
 
-// 末尾スラッシュ付き URL（以前は /dashboard/ 形式の URL を出力していた）を正規化。
-// honox/Workers のファイルルートは末尾スラッシュを別パス扱いで 404 にするため、
-// /path/ → /path へ 301 して既存ブックマーク・内部リンクを救済する（"/" は対象外）。
-type Env = { Bindings: Cloudflare.Env; Variables: UserIdentityVariables };
+type Env = { Bindings: Cloudflare.Env };
 
 const app = new Hono<Env>();
+// 末尾スラッシュ付き URL（/path/ → /path）を 301 正規化（honox/Workers のファイルルートは
+// 末尾スラッシュを別パス扱いで 404 にするため。"/" は対象外）。
 app.use(trimTrailingSlash());
 app.use(async (c, next) => {
-	const identity = ensureUserIdentity(c);
-	c.set("userId", identity.userId);
-	c.set("userIdCookieIssued", identity.userIdCookieIssued);
 	// db はリクエスト毎に生成（Workers の env.DB はリクエストスコープ）。全 Context で c.var.db を使う。
 	c.set("db", drizzle(c.env.DB, { schema }));
 	await next();
+	// 既にルートが設定したヘッダーは上書きしない（例: 共有ページの Referrer-Policy: no-referrer）。
+	// Response.redirect 等の immutable headers に備え、設定失敗は握り潰す。
 	for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
-		c.header(name, value);
+		if (!c.res.headers.has(name)) {
+			try {
+				c.header(name, value);
+			} catch {
+				// immutable response headers — このレスポンスには付与できないのでスキップ
+			}
+		}
 	}
 });
 
-// API は HonoX のファイルルートとして各パスへ自動マウントされる（answer.ts/markdown.ts =
-// default-export Hono sub-app を各パスへ、health.ts = handler を /health へ）。ここでは composition
-// root の共通ミドルウェアのみ適用する。
+// API は HonoX のファイルルートとして自動マウントされる。ここでは共通基盤のみ適用する。
 export default createApp({ app });

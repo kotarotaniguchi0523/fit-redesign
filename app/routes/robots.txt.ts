@@ -3,7 +3,7 @@ import { SITE_URL } from "../data/site";
 
 /**
  * robots.txt。Sitemap URL を SITE_URL から動的生成し静的ファイルのドメインドリフトを解消する。
- * 廃止済みの /timer/ Disallow は除去し /answer/ /dashboard/ のみ残す。
+ * 学習記録と同期 API は検索対象外にする。
  * AI 検索ボットは全許可（配列から flatMap で生成）。
  */
 const AI_SEARCH_BOTS = [
@@ -24,8 +24,8 @@ export default createRoute((c) => {
 		...botLines,
 		"User-agent: *",
 		"Allow: /",
-		"Disallow: /answer/",
-		"Disallow: /dashboard/",
+		"Disallow: /records",
+		"Disallow: /progress/",
 		"",
 		`Sitemap: ${SITE_URL}/sitemap.xml`,
 		"",

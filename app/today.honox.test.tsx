@@ -5,9 +5,7 @@ import { describe, expect, it } from "vitest";
 import todayRoute from "./routes/today/[unit]";
 
 /**
- * HonoX 版 今日の道ページ（app/routes/today/[unit].tsx）の古典派テスト（AAA）。
- * createRoute のハンドラ配列を、_renderer 相当の軽量レンダラ + spread で /today/:unit にマウントし、
- * ルートが出す DOM（daily-session フック属性・QuestionCard・見出し）と 404 を検証する。
+ * 廃止した「今日の道」URLの互換リダイレクトを検証する。
  */
 const testRenderer = jsxRenderer(({ children, title }) => (
 	<html lang="ja">
@@ -26,16 +24,10 @@ function mounted(): Hono {
 }
 
 describe("今日の道ページ 描画", () => {
-	it("既知の単元で 200 を返し daily-session の DOM フックを描画する", async () => {
+	it("既知の単元は最初の年度の小テストへ301リダイレクトする", async () => {
 		const res = await mounted().request("/today/unit-base-conversion");
-		expect(res.status).toBe(200);
-		const body = await res.text();
-		expect(body).toContain("data-daily-session");
-		expect(body).toContain('data-unit-id="unit-base-conversion"');
-		expect(body).toContain("session-cards");
-		expect(body).toContain("session-next");
-		expect(body).toContain("data-question-card");
-		expect(body).toContain("今日の道");
+		expect(res.status).toBe(301);
+		expect(res.headers.get("Location")).toBe("/unit-base-conversion/2013");
 	});
 
 	it("未知の単元では 404 を返す", async () => {
