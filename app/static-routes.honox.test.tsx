@@ -87,9 +87,11 @@ describe("guide（/guide）", () => {
 		const html = await res.text();
 		expect(html).toContain("<title>使い方ガイド - 基本情報技術 I</title>");
 		// MDX 本文がサーバー側で HTML 化されている。
-		expect(html).toContain("基本の使い方");
+		expect(html).toContain("問題の答えを確認する");
 		expect(html).toContain("単元");
 		expect(html).toContain("答えを確認する");
+		expect(html).toContain("コピーしました");
+		expect(html).not.toContain("**「");
 		// 外部 CDN（lobster.js）への依存が無いこと。
 		expect(html).not.toContain("hacknock.github.io");
 	});

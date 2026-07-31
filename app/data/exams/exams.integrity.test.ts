@@ -102,6 +102,48 @@ describe("exam data integrity", () => {
 		}
 	});
 
+	it("2015 question 4 matches the source PDF and official answer", () => {
+		for (const examNumber of [3, 4] as const) {
+			const question = getExamByNumber(examNumber)?.exams["2015"]?.questions.find(
+				(item) => item.number === 4,
+			);
+
+			expect(question?.text).toContain("¬(¬X ∧ ¬Y)");
+			expect(question?.answer).toBe("0,1,1,1");
+			expect(question?.explanation).toContain("= X ∨ Y");
+			expect(question?.figureData).toEqual({
+				type: "truthTable",
+				columns: [
+					{ key: "x", label: "X" },
+					{ key: "y", label: "Y" },
+					{ key: "f", label: "F" },
+				],
+				rows: [
+					{ x: 0, y: 0, f: "" },
+					{ x: 0, y: 1, f: "" },
+					{ x: 1, y: 0, f: "" },
+					{ x: 1, y: 1, f: "" },
+				],
+			});
+		}
+	});
+
+	it("2014 doubly linked list includes its address and pointer table", () => {
+		const question = getExamByNumber(8)?.exams["2014"]?.questions.find(
+			(item) => item.id === "exam8-2014-q2",
+		);
+
+		expect(question?.figureData).toMatchObject({
+			type: "dataTable",
+			columns: [
+				{ key: "address", label: "アドレス" },
+				{ key: "previous", label: "← 前" },
+				{ key: "data", label: "データ" },
+				{ key: "next", label: "次 →" },
+			],
+		});
+	});
+
 	it("unit mappings only reference existing exams and years", () => {
 		for (const unit of unitBasedTabs) {
 			for (const mapping of unit.examMapping) {

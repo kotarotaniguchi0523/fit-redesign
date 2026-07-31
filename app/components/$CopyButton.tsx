@@ -34,6 +34,16 @@ function StateIcon({ state }: { state: CopyState }): JSX.Element {
 	return <CopyIcon />;
 }
 
+function stateLabel(state: CopyState): string {
+	if (state === "success") {
+		return "コピーしました";
+	}
+	if (state === "error") {
+		return "コピーできませんでした";
+	}
+	return "Markdownでコピー";
+}
+
 export default function CopyButton({
 	text,
 	className,
@@ -59,12 +69,13 @@ export default function CopyButton({
 		INITIAL_STATE,
 	);
 	const feedbackClass = feedbackClassFor(state);
+	const label = stateLabel(state);
 
 	return (
 		<button
 			type="button"
 			class={`${className} ${feedbackClass}`}
-			aria-label={ariaLabel}
+			aria-label={state === "idle" ? ariaLabel : label}
 			title={title}
 			onClick={(): void => {
 				const formData = new FormData();
@@ -83,6 +94,7 @@ export default function CopyButton({
 			}}
 		>
 			<StateIcon state={state} />
+			<span aria-live="polite">{label}</span>
 		</button>
 	);
 }
