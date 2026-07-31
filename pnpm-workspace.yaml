@@ -20,3 +20,4 @@ minimumReleaseAgeExclude:
   - '@vitest/spy@4.1.8'
   - '@vitest/utils@4.1.8'
   - vitest@4.1.8
+  - hono@4.12.33

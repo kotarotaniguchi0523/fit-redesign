@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LogicGate, LogicInput, LogicOutput, LogicWire } from "../../types";
-import { getGateSymbolPath, getWirePath } from "./logic-circuit";
+import { getGateSymbolPath, getLogicCircuitViewport, getWirePath } from "./logic-circuit";
 
 describe("getGateSymbolPath", () => {
 	const gateTypes = ["AND", "OR", "NOT", "NAND", "NOR", "XOR", "XNOR"] as const;
@@ -66,5 +66,27 @@ describe("getWirePath", () => {
 		expect(result).not.toBeNull();
 		expect(result).toContain("60 50");
 		expect(result).toContain("80 70");
+	});
+});
+
+describe("getLogicCircuitViewport", () => {
+	it("fits the 2016 circuit to its content instead of the 500x300 default canvas", () => {
+		const viewport = getLogicCircuitViewport(
+			[
+				{ id: "A", label: "A", x: 50, y: 60 },
+				{ id: "B", label: "B", x: 50, y: 120 },
+			],
+			[{ id: "X", label: "X", x: 300, y: 90, input: "OR1" }],
+			[
+				{ id: "NOT1", type: "NOT", x: 120, y: 120 },
+				{ id: "OR1", type: "OR", x: 200, y: 90 },
+			],
+			[],
+		);
+
+		expect(viewport.width).toBeLessThan(350);
+		expect(viewport.height).toBeLessThan(150);
+		expect(viewport.x).toBeLessThan(50);
+		expect(viewport.y).toBeLessThan(60);
 	});
 });

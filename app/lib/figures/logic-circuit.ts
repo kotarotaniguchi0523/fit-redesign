@@ -6,6 +6,62 @@ export const LOGIC_DEFAULTS = {
 	GATE_HEIGHT: 40,
 } as const;
 
+export interface LogicCircuitViewport {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+}
+
+/**
+ * 回路の実要素だけを囲む viewBox。固定 500x300 の余白を除き、狭い画面でも
+ * ゲートとラベルへ使える表示面積を確保する。
+ */
+export function getLogicCircuitViewport(
+	inputs: LogicInput[],
+	outputs: LogicOutput[],
+	gates: LogicGate[],
+	wires: LogicWire[],
+): LogicCircuitViewport {
+	const points = [
+		...inputs.flatMap((input) => [
+			{ x: input.x - 34, y: input.y - 18 },
+			{ x: input.x + 4, y: input.y + 18 },
+		]),
+		...outputs.flatMap((output) => [
+			{ x: output.x - 4, y: output.y - 18 },
+			{ x: output.x + 34, y: output.y + 18 },
+		]),
+		...gates.flatMap((gate) => [
+			{
+				x: gate.x - LOGIC_DEFAULTS.GATE_WIDTH / 2 - 8,
+				y: gate.y - LOGIC_DEFAULTS.GATE_HEIGHT / 2 - 8,
+			},
+			{
+				x: gate.x + LOGIC_DEFAULTS.GATE_WIDTH / 2 + 12,
+				y: gate.y + LOGIC_DEFAULTS.GATE_HEIGHT / 2 + 30,
+			},
+		]),
+		...wires.flatMap((wire) => wire.points ?? []),
+	];
+
+	if (points.length === 0) {
+		return { x: 0, y: 0, width: 1, height: 1 };
+	}
+
+	const minX = Math.min(...points.map((point) => point.x));
+	const maxX = Math.max(...points.map((point) => point.x));
+	const minY = Math.min(...points.map((point) => point.y));
+	const maxY = Math.max(...points.map((point) => point.y));
+
+	return {
+		x: minX,
+		y: minY,
+		width: Math.max(1, maxX - minX),
+		height: Math.max(1, maxY - minY),
+	};
+}
+
 export function getGateSymbolPath(
 	gate: LogicGate,
 	gateWidth = LOGIC_DEFAULTS.GATE_WIDTH,
