@@ -18,6 +18,10 @@ export type ProgressRepositoryError =
 	| Readonly<{ kind: "InvalidStoredProgress"; syncSpaceId: SyncSpaceId; issues: unknown }>
 	| Readonly<{ kind: "SyncSpaceNotFound"; syncSpaceId: SyncSpaceId }>;
 
+export const ProgressRepositoryError = {
+	isUnknownSpace: (error: ProgressRepositoryError): boolean => error.kind === "SyncSpaceNotFound",
+} as const;
+
 function repositoryError(
 	operation: RepositoryOperation,
 ): (cause: unknown) => ProgressRepositoryError {

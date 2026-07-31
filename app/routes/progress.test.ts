@@ -1,5 +1,7 @@
 // @vitest-environment node
+/** biome-ignore-all lint/nursery/useExplicitReturnType: testClientのルート型はchained Hono appの推論を維持する必要がある */
 import { Hono } from "hono";
+import { testClient } from "hono/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createSyncSpace } from "../server/progressRepository";
 import { SyncKey } from "../server/syncKey";
@@ -24,13 +26,17 @@ function env(isAllowed = true): Cloudflare.Env {
 	};
 }
 
-function mountedApp(): Hono<{ Bindings: Cloudflare.Env }> {
+function mountedApp() {
 	const app = new Hono<{ Bindings: Cloudflare.Env }>();
 	app.use("*", async (c, next) => {
 		c.set("db", database.db);
 		await next();
 	});
 	return app.route("/progress", progress);
+}
+
+function mountedClient(isAllowed = true) {
+	return testClient(mountedApp(), env(isAllowed));
 }
 
 async function seedSyncSpace(rawKey = "a".repeat(43)): Promise<void> {
@@ -49,7 +55,7 @@ afterEach(async () => {
 
 describe("progress routes", () => {
 	it("256bitのキーを一度だけ返し、D1にはハッシュだけを保存する", async () => {
-		const response = await mountedApp().request("/progress/spaces", { method: "POST" }, env());
+		const response = await mountedClient().progress.spaces.$post();
 		const body = SyncKey.schema.safeParse((await response.json()).key);
 
 		expect(response.status).toBe(201);
@@ -122,60 +128,43 @@ describe("progress routes", () => {
 			unitId: "unit-base-conversion",
 			revealedAt: index + 1,
 		}));
-		const response = await mountedApp().request(
-			"/progress/sync",
-			{
-				method: "POST",
-				headers: { "Content-Type": "application/json", "X-Sync-Key": "a".repeat(43) },
-				body: JSON.stringify({ entries }),
-			},
-			env(),
+		const response = await mountedClient().progress.sync.$post(
+			{ json: { entries } },
+			{ headers: { "X-Sync-Key": "a".repeat(43) } },
 		);
 		expect(response.status).toBe(200);
 	});
 
 	it("未知の同期領域は404にする", async () => {
-		const response = await mountedApp().request(
-			"/progress/sync",
-			{
-				method: "POST",
-				headers: { "Content-Type": "application/json", "X-Sync-Key": "a".repeat(43) },
-				body: '{"entries":[]}',
-			},
-			env(),
+		const response = await mountedClient().progress.sync.$post(
+			{ json: { entries: [] } },
+			{ headers: { "X-Sync-Key": "a".repeat(43) } },
 		);
 		expect(response.status).toBe(404);
 	});
 
 	it("レート上限を超えた同期は429にする", async () => {
-		const response = await mountedApp().request(
-			"/progress/sync",
-			{
-				method: "POST",
-				headers: { "Content-Type": "application/json", "X-Sync-Key": "a".repeat(43) },
-				body: '{"entries":[]}',
-			},
-			env(false),
+		const response = await mountedClient(false).progress.sync.$post(
+			{ json: { entries: [] } },
+			{ headers: { "X-Sync-Key": "a".repeat(43) } },
 		);
 		expect(response.status).toBe(429);
 	});
 
 	it("同期データ削除は存在有無によらず冪等に成功する", async () => {
 		await seedSyncSpace();
-		const response = await mountedApp().request(
-			"/progress",
-			{ method: "DELETE", headers: { "X-Sync-Key": "a".repeat(43) } },
-			env(),
+		const response = await mountedClient().progress.$delete(
+			{},
+			{ headers: { "X-Sync-Key": "a".repeat(43) } },
 		);
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual({ ok: true });
 	});
 
 	it("削除済み同期領域を再削除しても成功する", async () => {
-		const response = await mountedApp().request(
-			"/progress",
-			{ method: "DELETE", headers: { "X-Sync-Key": "a".repeat(43) } },
-			env(),
+		const response = await mountedClient().progress.$delete(
+			{},
+			{ headers: { "X-Sync-Key": "a".repeat(43) } },
 		);
 		expect(response.status).toBe(200);
 	});

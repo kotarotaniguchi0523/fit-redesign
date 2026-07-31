@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createTestD1, type TestD1 } from "../types/test/d1";
 import { ProgressEntry, type ProgressEntry as ProgressEntryType } from "./progressEntry";
 import { createSyncSpace, deleteSyncSpace, syncProgress } from "./progressRepository";
@@ -28,10 +28,21 @@ function entry(index: number): ProgressEntryType {
 }
 
 afterEach(async () => {
+	vi.restoreAllMocks();
 	await Promise.all(databases.splice(0).map((database) => database.dispose()));
 });
 
 describe("progressRepository", () => {
+	it("暗号乱数の生成失敗をResultで返す", () => {
+		vi.spyOn(crypto, "getRandomValues").mockImplementation(() => {
+			throw new Error("random unavailable");
+		});
+
+		expect(SyncKey.generate()._unsafeUnwrapErr()).toMatchObject({
+			kind: "GenerateSyncKeyError",
+		});
+	});
+
 	it("同期キーをSHA-256へ変換する", async () => {
 		const key = SyncKey.parse("a".repeat(43))._unsafeUnwrap();
 		await expect(SyncSpaceId.fromSyncKey(key)).resolves.toSatisfy(

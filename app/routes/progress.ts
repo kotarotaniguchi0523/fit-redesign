@@ -5,7 +5,7 @@ import { unitBasedTabs } from "../data/units";
 import {
 	createSyncSpace,
 	deleteSyncSpace,
-	type ProgressRepositoryError,
+	ProgressRepositoryError,
 	syncProgress,
 } from "../server/progressRepository";
 import { SyncKey } from "../server/syncKey";
@@ -70,10 +70,6 @@ function resolveSpace(c: {
 		: errAsync<SyncSpaceId, Readonly<{ kind: "InvalidSyncKey" }>>({ kind: "InvalidSyncKey" });
 }
 
-function isUnknownSpace(error: ProgressRepositoryError): boolean {
-	return error.kind === "SyncSpaceNotFound";
-}
-
 const progress = new Hono<Env>()
 	.use("/*", postBodyLimit)
 	.post("/spaces", async (c) => {
@@ -123,7 +119,10 @@ const progress = new Hono<Env>()
 		const result = await syncProgress(c.var.db, syncSpace.value, submitted);
 		return result.match(
 			(entries) => c.json({ entries }),
-			(error) => (isUnknownSpace(error) ? c.json(UNKNOWN_SPACE, 404) : c.json(INTERNAL_ERROR, 500)),
+			(error) =>
+				ProgressRepositoryError.isUnknownSpace(error)
+					? c.json(UNKNOWN_SPACE, 404)
+					: c.json(INTERNAL_ERROR, 500),
 		);
 	})
 	.delete("/", async (c) => {

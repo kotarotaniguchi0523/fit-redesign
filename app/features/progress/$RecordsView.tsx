@@ -1,4 +1,4 @@
-import { useEffect, useState } from "hono/jsx";
+import { useEffect, useState, useTransition } from "hono/jsx";
 import type { JSX } from "hono/jsx/jsx-runtime";
 import {
 	PROGRESS_STORAGE_KEY,
@@ -7,9 +7,15 @@ import {
 	SYNC_KEY_STORAGE_KEY,
 } from "../answer/progressClient";
 
-interface RecordsViewProps {
+type RecordsViewProps = Readonly<{
 	unitNames: Record<string, string>;
-}
+}>;
+
+type PendingAction = "create" | "sync" | "delete";
+type Feedback = Readonly<{
+	kind: "success" | "error";
+	message: string;
+}>;
 
 const QUESTION_ID_PATTERN = /^exam(\d+)-(\d{4})-q(\d+)$/;
 
@@ -62,22 +68,37 @@ export default function RecordsView({ unitNames }: RecordsViewProps): JSX.Elemen
 	const [entries, setEntries] = useState<ProgressEntry[]>([]);
 	const [syncKey, setSyncKey] = useState<string | null>(null);
 	const [origin, setOrigin] = useState("");
-	const [message, setMessage] = useState("");
-	const [busy, setBusy] = useState(false);
+	const [feedback, setFeedback] = useState<Feedback | null>(null);
+	const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+	const [isPending, startTransition] = useTransition();
 
-	const applySync = async (key: string, local: ProgressEntry[]): Promise<void> => {
-		setBusy(true);
-		try {
-			const merged = await sync(key, local);
+	const runAction = (
+		action: PendingAction,
+		task: () => Promise<void>,
+		fallbackMessage: string,
+	): void => {
+		startTransition(async (): Promise<void> => {
+			setPendingAction(action);
+			setFeedback(null);
+			try {
+				await task();
+			} catch (error) {
+				setFeedback({
+					kind: "error",
+					message: error instanceof Error ? error.message : fallbackMessage,
+				});
+			} finally {
+				setPendingAction(null);
+			}
+		});
+	};
+
+	const applySync = (key: string, local: ProgressEntry[]): Promise<void> =>
+		sync(key, local).then((merged) => {
 			saveEntries(merged);
 			setEntries(merged);
-			setMessage("この端末と同期しました");
-		} catch (error) {
-			setMessage(error instanceof Error ? error.message : "同期できませんでした");
-		} finally {
-			setBusy(false);
-		}
-	};
+			setFeedback({ kind: "success", message: "この端末と同期しました" });
+		});
 
 	useEffect((): void => {
 		setOrigin(location.origin);
@@ -94,14 +115,14 @@ export default function RecordsView({ unitNames }: RecordsViewProps): JSX.Elemen
 			if (window.confirm("この同期リンクの記録を、この端末の記録と統合しますか？")) {
 				localStorage.setItem(SYNC_KEY_STORAGE_KEY, incomingKey);
 				setSyncKey(incomingKey);
-				applySync(incomingKey, local).catch(() => setMessage("同期できませんでした"));
+				runAction("sync", () => applySync(incomingKey, local), "同期できませんでした");
 			} else {
 				setSyncKey(storedKey);
 			}
 		} else {
 			setSyncKey(storedKey);
 			if (storedKey) {
-				applySync(storedKey, local).catch(() => setMessage("同期できませんでした"));
+				runAction("sync", () => applySync(storedKey, local), "同期できませんでした");
 			}
 		}
 	}, []);
@@ -109,64 +130,67 @@ export default function RecordsView({ unitNames }: RecordsViewProps): JSX.Elemen
 	const latest = entries[0];
 	const shareUrl = syncKey && origin ? `${origin}/records#sync=${syncKey}` : "";
 
-	const createLink = async (): Promise<void> => {
-		setBusy(true);
-		setMessage("");
-		try {
-			const response = await fetch("/progress/spaces", { method: "POST" });
-			if (!response.ok) {
-				throw new Error("同期リンクを作成できませんでした");
-			}
-			const body = (await response.json()) as { key: string };
-			localStorage.setItem(SYNC_KEY_STORAGE_KEY, body.key);
-			setSyncKey(body.key);
-			await applySync(body.key, entries);
-		} catch (error) {
-			setMessage(error instanceof Error ? error.message : "同期リンクを作成できませんでした");
-		} finally {
-			setBusy(false);
-		}
+	const createLink = (): void => {
+		runAction(
+			"create",
+			async (): Promise<void> => {
+				const response = await fetch("/progress/spaces", { method: "POST" });
+				if (!response.ok) {
+					throw new Error("同期リンクを作成できませんでした");
+				}
+				const body = (await response.json()) as { key: string };
+				localStorage.setItem(SYNC_KEY_STORAGE_KEY, body.key);
+				setSyncKey(body.key);
+				await applySync(body.key, entries);
+			},
+			"同期リンクを作成できませんでした",
+		);
 	};
 
 	const copyLink = async (): Promise<void> => {
 		try {
 			await navigator.clipboard.writeText(shareUrl);
-			setMessage("同期リンクをコピーしました");
+			setFeedback({ kind: "success", message: "同期リンクをコピーしました" });
 		} catch {
-			setMessage("コピーできませんでした。下のリンクを選択してコピーしてください");
+			setFeedback({
+				kind: "error",
+				message: "コピーできませんでした。下のリンクを選択してコピーしてください",
+			});
 		}
 	};
 
 	const disconnect = (): void => {
 		localStorage.removeItem(SYNC_KEY_STORAGE_KEY);
 		setSyncKey(null);
-		setMessage("同期を解除しました。端末内の記録は残っています");
+		setFeedback({ kind: "success", message: "同期を解除しました。端末内の記録は残っています" });
 	};
 
-	const deleteLink = async (): Promise<void> => {
+	const deleteLink = (): void => {
 		if (!(syncKey && window.confirm("同期先の記録を削除しますか？ この端末の記録は残ります。"))) {
 			return;
 		}
-		setBusy(true);
-		try {
-			const response = await fetch("/progress", {
-				method: "DELETE",
-				headers: { "X-Sync-Key": syncKey },
-			});
-			if (!response.ok) {
-				throw new Error("同期先を削除できませんでした");
-			}
-			disconnect();
-			setMessage("同期先を削除しました。端末内の記録は残っています");
-		} catch (error) {
-			setMessage(error instanceof Error ? error.message : "同期先を削除できませんでした");
-		} finally {
-			setBusy(false);
-		}
+		runAction(
+			"delete",
+			async (): Promise<void> => {
+				const response = await fetch("/progress", {
+					method: "DELETE",
+					headers: { "X-Sync-Key": syncKey },
+				});
+				if (!response.ok) {
+					throw new Error("同期先を削除できませんでした");
+				}
+				disconnect();
+				setFeedback({
+					kind: "success",
+					message: "同期先を削除しました。端末内の記録は残っています",
+				});
+			},
+			"同期先を削除できませんでした",
+		);
 	};
 
 	return (
-		<div class="space-y-6">
+		<div class="space-y-6" aria-busy={isPending ? "true" : "false"}>
 			<section class="grid gap-4 sm:grid-cols-2">
 				<div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
 					<p class="text-sm text-gray-500">答えを確認した問題</p>
@@ -240,7 +264,7 @@ export default function RecordsView({ unitNames }: RecordsViewProps): JSX.Elemen
 						<div class="flex flex-wrap gap-2">
 							<button
 								type="button"
-								disabled={busy}
+								disabled={isPending}
 								onClick={copyLink}
 								class="rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
 							>
@@ -248,17 +272,17 @@ export default function RecordsView({ unitNames }: RecordsViewProps): JSX.Elemen
 							</button>
 							<button
 								type="button"
-								disabled={busy}
+								disabled={isPending}
 								onClick={(): void => {
-									applySync(syncKey, entries).catch(() => setMessage("同期できませんでした"));
+									runAction("sync", () => applySync(syncKey, entries), "同期できませんでした");
 								}}
 								class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 disabled:opacity-50"
 							>
-								今すぐ同期
+								{pendingAction === "sync" ? "同期中…" : "今すぐ同期"}
 							</button>
 							<button
 								type="button"
-								disabled={busy}
+								disabled={isPending}
 								onClick={disconnect}
 								class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 disabled:opacity-50"
 							>
@@ -266,27 +290,30 @@ export default function RecordsView({ unitNames }: RecordsViewProps): JSX.Elemen
 							</button>
 							<button
 								type="button"
-								disabled={busy}
+								disabled={isPending}
 								onClick={deleteLink}
 								class="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-700 disabled:opacity-50"
 							>
-								同期先を削除
+								{pendingAction === "delete" ? "削除中…" : "同期先を削除"}
 							</button>
 						</div>
 					</div>
 				) : (
 					<button
 						type="button"
-						disabled={busy}
+						disabled={isPending}
 						onClick={createLink}
 						class="mt-4 rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
 					>
-						同期リンクを作る
+						{pendingAction === "create" ? "作成中…" : "同期リンクを作る"}
 					</button>
 				)}
-				{message && (
-					<p role="status" class="mt-3 text-sm text-gray-700">
-						{message}
+				{feedback && (
+					<p
+						role={feedback.kind === "error" ? "alert" : "status"}
+						class={`mt-3 text-sm ${feedback.kind === "error" ? "text-red-700" : "text-gray-700"}`}
+					>
+						{feedback.message}
 					</p>
 				)}
 			</section>
