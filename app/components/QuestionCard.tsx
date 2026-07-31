@@ -6,13 +6,7 @@ import { questionToMarkdown } from "../features/markdown/questionToMarkdown";
 import { overlineToHtml } from "../lib/overline";
 import type { Question, UnitTabId } from "../types";
 import CopyButton from "./$CopyButton";
-import { BinaryTree } from "./figures/BinaryTree";
-import { Flowchart } from "./figures/Flowchart";
-import { LogicCircuit } from "./figures/LogicCircuit";
-import { ParityCheck } from "./figures/ParityCheck";
-import { StateDiagram } from "./figures/StateDiagram";
-import { TableRenderer } from "./figures/TableRenderer";
-import { TruthTable } from "./figures/TruthTable";
+import { Figure } from "./figures/Figure";
 
 /**
  * 問題カード。
@@ -38,50 +32,6 @@ interface Props {
 	hidden?: boolean;
 }
 
-function renderFigure(figureData: Question["figureData"]): JSX.Element | null {
-	if (!figureData) {
-		return null;
-	}
-
-	switch (figureData.type) {
-		case "stateDiagram":
-			return <StateDiagram nodes={figureData.nodes} transitions={figureData.transitions} />;
-		case "binaryTree":
-			return (
-				<BinaryTree root={figureData.root} width={figureData.width} height={figureData.height} />
-			);
-		case "truthTable":
-			return <TruthTable columns={figureData.columns} rows={figureData.rows} />;
-		case "parityCheck":
-			return <ParityCheck data={figureData.data} />;
-		case "logicCircuit":
-			return (
-				<LogicCircuit
-					inputs={figureData.inputs}
-					outputs={figureData.outputs}
-					gates={figureData.gates}
-					wires={figureData.wires}
-				/>
-			);
-		case "flowchart":
-			return (
-				<Flowchart
-					nodes={figureData.nodes}
-					edges={figureData.edges}
-					width={figureData.width}
-					height={figureData.height}
-				/>
-			);
-		case "dataTable":
-		case "huffmanTable":
-		case "linkedListTable":
-		case "normalDistributionTable":
-			return <TableRenderer figureData={figureData} />;
-		default:
-			return null;
-	}
-}
-
 interface QuestionView {
 	markdownText: string;
 	hasOptions: boolean;
@@ -103,7 +53,7 @@ function buildQuestionView(question: Question): QuestionView {
 	return {
 		markdownText: questionToMarkdown(question),
 		hasOptions,
-		figure: renderFigure(question.figureData),
+		figure: question.figureData ? <Figure data={question.figureData} /> : null,
 		answerHtml,
 		explanationHtml,
 		options,

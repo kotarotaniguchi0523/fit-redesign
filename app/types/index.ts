@@ -93,6 +93,8 @@ export type FigureData =
 			outputs: LogicOutput[];
 			gates: LogicGate[];
 			wires: LogicWire[];
+			width?: number;
+			height?: number;
 	  }
 	| {
 			type: "flowchart";
