@@ -27,13 +27,15 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile --prefer-offline
       - parallel:
           - name: Lint and format check
             run: pnpm check
           - name: Type check
             run: pnpm typecheck:full
           - name: Test
-            run: pnpm test:run
+            # BuildとのCPU競合を抑え、同一Runner全体の完了を早める。
+            run: pnpm test:run --maxWorkers=1
           - name: Build
             run: pnpm build
