@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -24,7 +28,12 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm check
-      - run: pnpm typecheck:full
-      - run: pnpm test:run
-      - run: pnpm build
+      - parallel:
+          - name: Lint and format check
+            run: pnpm check
+          - name: Type check
+            run: pnpm typecheck:full
+          - name: Test
+            run: pnpm test:run
+          - name: Build
+            run: pnpm build

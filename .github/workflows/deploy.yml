@@ -32,10 +32,15 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm check
-      - run: pnpm typecheck:full
-      - run: pnpm test:run
-      - run: pnpm build
+      - parallel:
+          - name: Lint and format check
+            run: pnpm check
+          - name: Type check
+            run: pnpm typecheck:full
+          - name: Test
+            run: pnpm test:run
+          - name: Build
+            run: pnpm build
 
       # 無条件で実行する（wrangler d1 migrations apply は冪等: 未適用のみ適用、無ければ no-op）。
       # 旧実装は push 差分で migration 変更を検出した時だけ適用していたが、migration 付きデプロイが
