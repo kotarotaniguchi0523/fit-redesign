@@ -38,6 +38,8 @@ jobs:
             run: pnpm check
           - name: Type check
             run: pnpm typecheck:full
+          - name: Unused code check
+            run: pnpm knip
           - name: Test
             run: pnpm test:run
           - name: Build
