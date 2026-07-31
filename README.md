@@ -1,17 +1,16 @@
 # FIT Redesign
 
-明治大学「基本情報技術 I」のインタラクティブ学習プラットフォーム。
-過去の小テスト（2013〜2017年度）を Web 上で演習し、間隔反復（SRS）で定着させるアプリケーションです。
+明治大学「基本情報技術 I」の過去の小テスト（2013〜2017年度）を、単元と年度から探して解答・解説をすぐ確認できるサイトです。
 
 **本番 URL**: https://fit-redesign.r02takako.workers.dev
 
 ## 機能
 
-- 全 9 単元 × 最大 5 年分の小テスト演習（選択式・自己採点式の両方に対応）
-- 選択肢の正誤判定と解説表示
-- **「今日の道」学習体験**: SRS（Leitner ボックス方式）で今日解くべき問題を出題、試験本番メーターで単元到達度を可視化
-- タイマー機能（ストップウォッチ / カウントダウン、問題ごとの所要時間記録）
-- 回答履歴のサーバー記録とダッシュボード集計（月次推移・単元別正答率・トレンド）
+- 全9単元 × 最大5年分の小テストを、単元・年度から直接選択
+- 同じ単元・年度に複数の小テストがある場合も、年度ページ内にまとめて表示
+- 入力や採点を挟まない「答えを確認する」操作と解説表示
+- 確認した問題と日時を匿名で端末内に保存し、前回の続きや最近見た問題を表示
+- 任意の秘密リンクによる端末間同期（アカウント・Googleログイン不要）
 - 各単元の講義スライド閲覧
 - 問題の Markdown エクスポート（クリップボードコピー / AI エージェント向け API）
 - オートマトン・論理回路・二分木などのインタラクティブな図表描画
@@ -39,10 +38,9 @@
 | カテゴリ | 技術 |
 |---------|------|
 | フレームワーク | Astro 6（SSG + SSR ハイブリッド、`experimental.advancedRouting`） |
-| サーバー / API | Hono（RPC、`src/app.ts` で Astro パイプラインへマウント） |
+| サーバー / API | HonoX（`app/routes/` のファイルルート） |
 | ホスティング | Cloudflare Pages |
-| データストア | Cloudflare D1（SQLite、永続データ） |
-| キャッシュ | Cloudflare KV（回答済み状態の read-through キャッシュ） |
+| データストア | localStorage（端末内記録）、Cloudflare D1（任意同期） |
 | クライアント UI | hono/jsx/dom（Async React）+ 軽量 DOM コントローラ |
 | スタイリング | Tailwind CSS 4 |
 | バリデーション | Zod 4 + @hono/zod-validator |
@@ -72,7 +70,7 @@ pnpm install
 
 ### ローカル D1 の初期化
 
-D1 を参照するページ（ダッシュボード等）は、ローカル DB へマイグレーションを適用しないと
+D1 を参照する秘密リンク同期は、ローカル DB へマイグレーションを適用しないと
 `no such table` エラーになります。初回および `migrations/` 変更時に実行してください。
 
 ```bash
@@ -129,27 +127,15 @@ npx wrangler pages dev dist
 
 ```
 fit-redesign/
-├── src/
-│   ├── pages/            # ファイルベースルーティング（薄く保つ）
-│   │   ├── [unit]/[year].astro    # 単元ページ（SSG）
-│   │   ├── today/[unit].astro     # 「今日の道」セッション
-│   │   ├── dashboard/[userId].astro  # ダッシュボード（SSR）
-│   │   └── api/markdown/          # AI 向け Markdown（旧 API は Hono RPC へ移行済み）
-│   ├── features/         # 機能別の縦スライス（client script・repository・型・集計を同居）
-│   │   ├── answer/       #   AnswerSelector / SelfGrade（hono/jsx/dom）, answerClient
-│   │   ├── timer/        #   question-timer, timerRepository(D1), timeFormat
-│   │   ├── srs/          #   srs（Leitner エンジン）, srs-recorder, progressClient
-│   │   ├── study/        #   studyHome, dailySession（DOM コントローラ）
-│   │   ├── dashboard/    #   dashboard（chart.js 描画）
-│   │   └── markdown/     #   markdownContent（SSR レンダリング）
-│   ├── server/           # 機能横断の基盤（answerCache(KV), answerRepository(D1), userRepository）
-│   ├── components/       # 全画面共有の Astro コンポーネント
-│   ├── layouts/          # Layout.astro（canonical / OG / JSON-LD）
-│   ├── content/          # Content Collections（exams JSON）※Astro 固定
-│   ├── data/             # 単元定義（units.ts）・スライド設定
-│   ├── utils/            # 純粋ユーティリティ（dashboardAggregator, apiClient, userId 等）
-│   ├── api.ts            # Hono RPC ルート定義（answer / timer / markdown）
-│   └── app.ts            # advancedRouting エントリ（Hono + Astro 合成、env 注入）
+├── app/
+│   ├── routes/           # HonoXファイルルート（問題、記録、同期、Markdown）
+│   ├── features/         # 機能別のUI・クライアント処理・リポジトリ
+│   │   ├── progress/     #   答えの表示、端末内記録、秘密リンク同期
+│   │   └── markdown/     #   Markdown生成・コピー
+│   ├── components/       # 共有コンポーネント
+│   ├── data/             # 単元定義、試験JSON、スライド設定
+│   ├── content/          # ガイド本文
+│   └── server.ts         # HonoX composition root、セキュリティヘッダー
 ├── migrations/           # D1 マイグレーション SQL
 ├── patches/              # @astrojs/cloudflare の advancedRouting 対応パッチ
 ├── public/               # 静的ファイル（robots.txt, llms.txt, _headers）
@@ -158,34 +144,29 @@ fit-redesign/
 
 ### データフロー
 
-- **Cloudflare D1**: 永続データストア（users / attempts / answers テーブル）。信頼源。
-- **Cloudflare KV**: 回答済み状態の read-through キャッシュ。submit 時に write-invalidate、
-  障害時は D1 にフォールバック。
-- **localStorage**: 匿名ユーザー ID（`fit-exam-user-id`）と SRS スケジュール状態のみ保持。
+- **localStorage**: 答えを確認した問題と最新確認日時を匿名で保存。通常利用の信頼源。
+- **Cloudflare D1**: 秘密リンク同期を有効にした場合のみ、同期領域と確認履歴を保存。
+- **秘密リンク**: 生の同期キーはD1へ保存せず、サーバーではSHA-256ハッシュを使用する。
 
-### API（Hono RPC）
+### API
 
-`src/api.ts` に定義し、`hc<ApiType>` で型付きクライアントから呼び出します（`src/utils/apiClient.ts`）。
-ミドルウェア（logger / request-id / timing / etag / body-limit）は `/api/*` にスコープされます。
+HonoXのファイルルートとして定義し、クライアントから型付きで呼び出します。
 
 | メソッド | パス | 用途 |
 |---------|------|------|
 | GET | `/api/health` | ヘルスチェック |
-| POST | `/api/answer/submit` | 回答記録 |
-| GET | `/api/answer/status` | 回答済み状態（KV キャッシュ） |
-| GET | `/api/answer/history` | 回答履歴 |
-| POST | `/api/timer/sync` | タイマー同期 |
-| GET | `/api/timer/load` | タイマー読み込み |
-| DELETE | `/api/timer/clear` | タイマー削除 |
-| GET | `/api/markdown/{unit}/{year}` | AI 向け Markdown（ETag / Cache-Control） |
+| POST | `/progress/spaces` | 秘密の同期領域を作成 |
+| POST | `/progress/sync` | 確認履歴をマージして同期 |
+| DELETE | `/progress` | 同期領域とサーバー記録を削除 |
+| GET | `/markdown/{unit}/{year}` | AI 向け Markdown（ETag / Cache-Control） |
 
 ---
 
 ## 試験データの管理
 
-試験データは `src/data/exams-json/` に JSON で格納し、`src/data/exams/loader.ts` が
+試験データは `app/data/exams-json/` に JSON で格納し、`app/data/exams/loader.ts` が
 `import.meta.glob` で読み込みます（ビルド時に worker バンドルへインライン化）。各 JSON は
-Zod スキーマ（`src/data/exams/schema.ts`）でバリデーションされ、型安全が保証されます。
+Zod スキーマ（`app/data/exams/schema.ts`）でバリデーションされ、型安全が保証されます。
 
 データは静的にコミット済みです。JSON を編集したら `pnpm test:run` で整合性テストを
 実行してください。
@@ -231,7 +212,7 @@ Zod スキーマ（`src/data/exams/schema.ts`）でバリデーションされ�
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API トークン（Pages デプロイ / D1 マイグレーション） |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare アカウント ID |
 
-KV / D1 のバインディングは `wrangler.jsonc` で設定します。
+D1とRate Limitingのバインディングは `wrangler.jsonc` で設定します。
 
 ---
 
@@ -239,7 +220,7 @@ KV / D1 のバインディングは `wrangler.jsonc` で設定します。
 
 - **パッケージマネージャー**: pnpm のみ使用（npm / yarn 禁止）
 - **コードスタイル**: Biome による自動フォーマット（タブインデント、100 文字幅）
-- **構成方針**: 複数ルート横断 / ドメインロジックは `src/features/<機能>/` に同居。
+- **構成方針**: 複数ルート横断 / ドメインロジックは `app/features/<機能>/` に同居。
   特定ルート専用部品は `_` プレフィックスで co-location。`features` から `types` / `server` /
   `utils` への import は可、逆は禁止。
 - **型安全**: 外部データは必ず Zod スキーマでバリデーション

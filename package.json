@@ -35,6 +35,7 @@
 		"better-sqlite3": "^12.10.0",
 		"jsdom": "^29.1.1",
 		"knip": "^6.16.1",
+		"miniflare": "^4.20260722.1",
 		"remark-gfm": "^4.0.1",
 		"tailwindcss": "^4.3.0",
 		"vite": "^7.3.5",
@@ -44,10 +45,10 @@
 	},
 	"dependencies": {
 		"@hono/zod-validator": "^0.8.0",
-		"chart.js": "^4.5.1",
 		"drizzle-orm": "1.0.0-beta.22",
 		"hono": "^4.12.23",
 		"honox": "^0.1.56",
+		"neverthrow": "^8.2.0",
 		"zod": "^4.4.3"
 	}
 }

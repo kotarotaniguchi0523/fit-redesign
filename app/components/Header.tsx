@@ -1,5 +1,4 @@
 import type { JSX } from "hono/jsx/jsx-runtime";
-import DashboardLink from "./DashboardLink";
 
 interface HeaderProps {
 	/** 現在のパス名。ルート側で c.req.path を渡す。 */
@@ -8,7 +7,7 @@ interface HeaderProps {
 
 export function Header({ currentPath }: HeaderProps): JSX.Element {
 	const isGuide = currentPath === "/guide" || currentPath === "/guide/";
-	const isDashboard = currentPath.startsWith("/dashboard");
+	const isRecords = currentPath === "/records" || currentPath === "/records/";
 
 	return (
 		<nav class="sticky top-0 z-50 w-full bg-linear-to-r from-[#1e3a5f] to-[#152a45] text-white border-b-2 border-[#c9a227] shadow-md">
@@ -38,13 +37,12 @@ export function Header({ currentPath }: HeaderProps): JSX.Element {
 					</div>
 				</a>
 
-				<div class="flex items-center gap-3 sm:gap-4">
+				<div class="flex items-center gap-3 sm:gap-5">
 					<a
-						href="/exercises"
+						href="/"
 						class="text-sm text-white/80 hover:text-white transition-colors flex items-center gap-1.5"
 					>
-						<span class="hidden sm:inline">演習一覧</span>
-						<span class="sm:hidden">演習</span>
+						小テスト
 					</a>
 					<a
 						href="/slide-only"
@@ -53,8 +51,10 @@ export function Header({ currentPath }: HeaderProps): JSX.Element {
 						<span class="hidden sm:inline">講義資料</span>
 						<span class="sm:hidden">資料</span>
 					</a>
-					{!isDashboard && (
-						<DashboardLink className="text-sm text-white/80 hover:text-white transition-colors flex items-center gap-1.5" />
+					{!isRecords && (
+						<a href="/records" class="text-sm text-white/80 hover:text-white transition-colors">
+							学習記録
+						</a>
 					)}
 					<a
 						href={isGuide ? "/" : "/guide"}

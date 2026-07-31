@@ -7,10 +7,10 @@ import { type ExamNumber, isYear, type Question, type Year } from "../../types";
  * Hono ルート（/markdown/*）から呼ばれ、Response 生成は呼び出し側が担う。
  */
 
-export interface MarkdownResult {
-	status: number;
+type MarkdownResult = Readonly<{
+	status: 200 | 404;
 	body: string;
-}
+}>;
 
 const MARKDOWN_PATH_RE = /^(unit-[a-z-]+)\/(\d{4})$/;
 
@@ -50,7 +50,7 @@ export async function renderMarkdown(path: string): Promise<MarkdownResult> {
 	return { status: 200, body };
 }
 
-export function generateSiteOverview(): string {
+function generateSiteOverview(): string {
 	const unitRows = unitBasedTabs.map((unit) => {
 		const years = unit.examMapping.map((m) => m.year).join(", ");
 		return `| ${unit.name} | ${unit.description} | ${years} |`;

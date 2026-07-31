@@ -6,7 +6,7 @@ import { slideOnlyUnits, unitBasedTabs } from "../data/units";
 import type { Unit } from "../types";
 import { YEARS } from "../types";
 
-// 講義資料のみ（単元タブ + 講義スライド一覧）。
+// 講義資料（単元タブ + 講義スライド一覧）。
 const defaultYear = YEARS[0];
 
 export default createRoute((c) =>
@@ -26,7 +26,7 @@ export default createRoute((c) =>
 							</a>
 						))}
 						<span class="px-4 py-2 rounded-lg border text-sm font-medium h-auto min-h-[40px] whitespace-normal text-center bg-[#1e3a5f] text-white border-[#1e3a5f] shadow-sm">
-							講義資料のみ
+							講義資料
 						</span>
 					</div>
 
@@ -39,6 +39,6 @@ export default createRoute((c) =>
 				</div>
 			</main>
 		</>,
-		{ title: "講義資料のみ - 基本情報技術 I" },
+		{ title: "講義資料 - 基本情報技術 I" },
 	),
 );

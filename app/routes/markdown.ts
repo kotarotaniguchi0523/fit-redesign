@@ -14,7 +14,7 @@ async function respond(c: Context<Env>, path: string): Promise<Response> {
 			"Cache-Control": "public, max-age=86400",
 		});
 	}
-	return c.body(body, status as 404);
+	return c.body(body, status);
 }
 
 const markdown = new Hono<Env>()

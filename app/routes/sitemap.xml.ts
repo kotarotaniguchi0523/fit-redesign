@@ -7,10 +7,9 @@ const BASE = SITE_URL;
 
 function sitemapPaths(): string[] {
 	const staticPaths = ["/", "/guide", "/slide-only"];
-	const unitPaths = unitBasedTabs.flatMap((tab) => [
-		...tab.examMapping.map((mapping) => `/${tab.id}/${mapping.year}`),
-		`/today/${tab.id}`,
-	]);
+	const unitPaths = unitBasedTabs.flatMap((tab) =>
+		tab.examMapping.map((mapping) => `/${tab.id}/${mapping.year}`),
+	);
 
 	return Array.from(new Set([...staticPaths, ...unitPaths]));
 }

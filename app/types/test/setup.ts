@@ -6,7 +6,9 @@ import { beforeEach } from "vitest";
 
 // 各テスト前にlocalStorageをクリア
 beforeEach(() => {
-	localStorage.clear();
+	if (typeof localStorage !== "undefined") {
+		localStorage.clear();
+	}
 });
 
 // crypto.randomUUID polyfill（jsdomに存在しない場合）

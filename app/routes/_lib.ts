@@ -3,19 +3,18 @@ import type { Context, ValidationTargets } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { createFactory } from "hono/factory";
 import type { ZodType } from "zod";
-import type { UserIdentityVariables } from "../server/userIdentity";
 
 /**
- * API エンドポイント（health / answer / markdown）の共有 plumbing。`_` 接頭辞のため
+ * API エンドポイント（health / progress / markdown）の共有 plumbing。`_` 接頭辞のため
  * HonoX のルーティング対象外。API は /api プレフィックス無しで root 直下に置く。
  *
- * 主形態は機能ごとの chained Hono sub-app（answer.ts / markdown.ts）で、検証は `validate`
- * を使い hc 用に型を export する。health 等の単発エンドポイントは `apiRoute`（Bindings(D1) を型付けした
+ * 主形態は機能ごとの chained Hono sub-app（progress.ts / markdown.ts）で、検証は `validate`
+ * を使い hc 用に型を export する。health 等の単発エンドポイントは `apiRoute`（Bindingsを型付けした
  * createRoute。honox の createRoute は Bindings 空のため必要）で `export default apiRoute(...)`(GET) でよい。
  * cross-cutting middleware は app/routes/_middleware.ts（logger/request-id/timing、全ルート適用）。
  * 機能固有スキーマは features/<x>/、複数機能横断スキーマは types/ に置く（ここには集約しない）。
  */
-export type Env = { Bindings: Cloudflare.Env; Variables: UserIdentityVariables };
+export type Env = { Bindings: Cloudflare.Env };
 
 export const apiRoute = createFactory<Env>().createHandlers;
 
@@ -40,6 +39,6 @@ export function validate<T extends ZodType, Target extends keyof ValidationTarge
 	});
 }
 
-/** POST ボディの上限（過大ペイロードは 413）。正当なリクエストデータを十分上回るサイズ。 */
+/** POST ボディの上限（過大ペイロードは 413）。 */
 const POST_BODY_LIMIT = 256 * 1024;
 export const postBodyLimit = bodyLimit({ maxSize: POST_BODY_LIMIT });
