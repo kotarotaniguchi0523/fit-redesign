@@ -156,6 +156,8 @@ const FigureDataSchema = z.discriminatedUnion("type", [
 				points: z.array(PointSchema).optional(),
 			}),
 		),
+		width: z.number().positive().optional(),
+		height: z.number().positive().optional(),
 	}),
 	z.object({
 		type: z.literal("flowchart"),

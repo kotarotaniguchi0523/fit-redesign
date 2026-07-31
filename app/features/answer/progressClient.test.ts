@@ -3,6 +3,7 @@ import {
 	PROGRESS_STORAGE_KEY,
 	readProgress,
 	recordReveal,
+	SYNC_KEY_STORAGE_KEY,
 	syncProgressEntry,
 } from "./progressClient";
 
@@ -31,5 +32,43 @@ describe("progressClient", () => {
 		const fetchSpy = vi.spyOn(globalThis, "fetch");
 		await syncProgressEntry(entry);
 		expect(fetchSpy).not.toHaveBeenCalled();
+	});
+	it("同期成功時にサーバーで統合された最新記録をローカルへ反映する", async () => {
+		localStorage.setItem(SYNC_KEY_STORAGE_KEY, "sync-key");
+		recordReveal(entry);
+		const remoteEntry = {
+			questionId: "exam1-2014-q2" as never,
+			unitId: "unit-base-conversion" as never,
+			revealedAt: 789,
+		};
+		vi.spyOn(globalThis, "fetch").mockResolvedValue(
+			new Response(JSON.stringify({ entries: [{ ...entry, revealedAt: 100 }, remoteEntry] }), {
+				status: 200,
+				headers: { "Content-Type": "application/json" },
+			}),
+		);
+
+		await syncProgressEntry(entry);
+
+		expect(readProgress()).toEqual({
+			[entry.questionId]: entry,
+			[remoteEntry.questionId]: remoteEntry,
+		});
+	});
+	it("同期失敗または不正な応答ではローカル記録を変更しない", async () => {
+		localStorage.setItem(SYNC_KEY_STORAGE_KEY, "sync-key");
+		recordReveal(entry);
+		const fetchSpy = vi.spyOn(globalThis, "fetch");
+		fetchSpy.mockResolvedValueOnce(new Response("not found", { status: 404 }));
+		await syncProgressEntry(entry);
+		fetchSpy.mockResolvedValueOnce(
+			new Response(JSON.stringify({ entries: [{ questionId: 42 }] }), {
+				status: 200,
+				headers: { "Content-Type": "application/json" },
+			}),
+		);
+		await syncProgressEntry(entry);
+
+		expect(readProgress()).toEqual({ [entry.questionId]: entry });
 	});
 });

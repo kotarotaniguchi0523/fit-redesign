@@ -68,6 +68,19 @@ describe("単元ページ 描画", () => {
 		expect(body).toContain('href="#exam-4"');
 	});
 
+	it.each([
+		["unit-automaton", 6],
+		["unit-ecc", 7],
+	])("統合試験が別試験を内包する場合は部分集合側を重複表示しない", async (unit, hiddenExam) => {
+		const res = await mounted().request(`/${unit}/2016`);
+		const body = await res.text();
+
+		expect(res.status).toBe(200);
+		expect(body).toContain('id="exam-4"');
+		expect(body).not.toContain(`id="exam-${hiddenExam}"`);
+		expect(body).not.toContain(`href="#exam-${hiddenExam}"`);
+	});
+
 	it("統合試験の年度では integratedTitle の注意が描画される", async () => {
 		// 論理演算 2015 年度は「集合・論理演算」統合試験
 		const res = await mounted().request("/unit-logic/2015");

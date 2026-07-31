@@ -113,9 +113,15 @@ export default function RecordsView({ unitNames }: RecordsViewProps): JSX.Elemen
 		const storedKey = localStorage.getItem(SYNC_KEY_STORAGE_KEY);
 		if (incomingKey) {
 			if (window.confirm("この同期リンクの記録を、この端末の記録と統合しますか？")) {
-				localStorage.setItem(SYNC_KEY_STORAGE_KEY, incomingKey);
-				setSyncKey(incomingKey);
-				runAction("sync", () => applySync(incomingKey, local), "同期できませんでした");
+				runAction(
+					"sync",
+					async (): Promise<void> => {
+						await applySync(incomingKey, local);
+						localStorage.setItem(SYNC_KEY_STORAGE_KEY, incomingKey);
+						setSyncKey(incomingKey);
+					},
+					"同期できませんでした",
+				);
 			} else {
 				setSyncKey(storedKey);
 			}
@@ -139,9 +145,9 @@ export default function RecordsView({ unitNames }: RecordsViewProps): JSX.Elemen
 					throw new Error("同期リンクを作成できませんでした");
 				}
 				const body = (await response.json()) as { key: string };
+				await applySync(body.key, entries);
 				localStorage.setItem(SYNC_KEY_STORAGE_KEY, body.key);
 				setSyncKey(body.key);
-				await applySync(body.key, entries);
 			},
 			"同期リンクを作成できませんでした",
 		);

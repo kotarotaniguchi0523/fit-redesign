@@ -9,6 +9,8 @@ interface LogicCircuitProps {
 	wires: LogicWire[];
 	width?: number;
 	height?: number;
+	responsive?: boolean;
+	rasterTextOverlay?: boolean;
 }
 
 export function LogicCircuit({
@@ -18,15 +20,21 @@ export function LogicCircuit({
 	wires,
 	width = 500,
 	height = 300,
+	responsive = true,
+	rasterTextOverlay = false,
 }: LogicCircuitProps): JSX.Element {
-	return (
+	const circuit = (
 		<svg
-			width="100%"
-			height="auto"
+			width={responsive ? "100%" : width}
+			height={responsive ? "auto" : height}
 			viewBox={`0 0 ${width} ${height}`}
 			preserveAspectRatio="xMidYMid meet"
-			class="border border-gray-300 rounded max-w-full"
-			style={`aspect-ratio: ${width}/${height}`}
+			class={responsive ? "border border-gray-300 rounded max-w-full" : undefined}
+			style={
+				responsive
+					? `aspect-ratio: ${width}/${height}; background-color: #fff`
+					: "background-color: #fff"
+			}
 			aria-label="Logic circuit diagram"
 		>
 			<title>Logic circuit diagram</title>
@@ -89,5 +97,31 @@ export function LogicCircuit({
 				</g>
 			))}
 		</svg>
+	);
+
+	if (!rasterTextOverlay) {
+		return circuit;
+	}
+
+	const labelStyle = (x: number, y: number, fontSize: number): string =>
+		`position:absolute;left:${x}px;top:${y}px;font-size:${fontSize}px;line-height:1;color:#000;transform:translate(-50%,-50%)`;
+
+	return (
+		<div style={`position:relative;width:${width}px;height:${height}px;background:#fff`}>
+			{circuit}
+			{inputs.map((input) => (
+				<span style={labelStyle(input.x - 17, input.y, 14)}>{input.label}</span>
+			))}
+			{gates.map((gate) => (
+				<span
+					style={`${labelStyle(gate.x, gate.y + LOGIC_DEFAULTS.GATE_HEIGHT / 2 + 15, 10)};font-weight:700`}
+				>
+					{gate.type}
+				</span>
+			))}
+			{outputs.map((output) => (
+				<span style={labelStyle(output.x + 17, output.y, 14)}>{output.label}</span>
+			))}
+		</div>
 	);
 }
