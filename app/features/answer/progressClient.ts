@@ -46,6 +46,29 @@ export function recordReveal(entry: ProgressEntry): void {
 	}
 }
 
+function mergeProgress(entries: readonly ProgressEntry[]): void {
+	try {
+		const progress = readProgress();
+		for (const entry of entries) {
+			const current = progress[entry.questionId];
+			if (!current || entry.revealedAt > current.revealedAt) {
+				progress[entry.questionId] = entry;
+			}
+		}
+		localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(progress));
+	} catch {
+		// 同期結果を保存できなくても、答えの表示と既存のローカル記録は維持する。
+	}
+}
+
+function parseSyncEntries(value: unknown): readonly ProgressEntry[] | null {
+	if (!value || typeof value !== "object") {
+		return null;
+	}
+	const entries = (value as Record<string, unknown>).entries;
+	return Array.isArray(entries) && entries.every(isProgressEntry) ? entries : null;
+}
+
 export async function syncProgressEntry(entry: ProgressEntry): Promise<void> {
 	let syncKey: string | null = null;
 	try {
@@ -58,11 +81,18 @@ export async function syncProgressEntry(entry: ProgressEntry): Promise<void> {
 	}
 
 	try {
-		await fetch("/progress/sync", {
+		const response = await fetch("/progress/sync", {
 			method: "POST",
 			headers: { "Content-Type": "application/json", "X-Sync-Key": syncKey },
 			body: JSON.stringify({ entries: [entry] }),
 		});
+		if (!response.ok) {
+			return;
+		}
+		const entries = parseSyncEntries(await response.json());
+		if (entries) {
+			mergeProgress(entries);
+		}
 	} catch {
 		// ローカル記録が正本として残るため、次回の同期で再試行できる。
 	}

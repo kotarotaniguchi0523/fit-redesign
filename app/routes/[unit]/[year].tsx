@@ -2,7 +2,7 @@
 import { createRoute } from "honox/factory";
 import { ExamSection } from "../../components/ExamSection";
 import { Header } from "../../components/Header";
-import { getExamByNumber } from "../../data/exams";
+import { getExamByNumber, selectVisibleExamNumbers } from "../../data/exams";
 import { unitBasedTabs } from "../../data/units";
 import type { ExamByYear, ExamNumber } from "../../types";
 import { isYear, YEARS } from "../../types";
@@ -46,22 +46,17 @@ export default createRoute(async (c) => {
 	const availableExamData = loaded.filter(
 		(item): item is { examNumber: ExamNumber; examByYear: ExamByYear } => !!item.examByYear,
 	);
-	// 一部の単元マッピングには、同じ問題データを指す別番号が含まれる。
-	// 問題IDの組が同じ小テストは二重表示せず、問題ID自身と番号が一致する方を採用する。
-	const uniqueExams = new Map<string, (typeof availableExamData)[number]>();
-	for (const item of availableExamData) {
-		const questions = item.examByYear.exams[year]?.questions ?? [];
-		const signature =
-			questions.map((question) => question.id).join("|") || `exam-${item.examNumber}`;
-		const current = uniqueExams.get(signature);
-		const matchesOwnIds = questions.some((question) =>
-			question.id.startsWith(`exam${item.examNumber}-${year}-`),
-		);
-		if (!current || matchesOwnIds) {
-			uniqueExams.set(signature, item);
-		}
-	}
-	const examDataList = [...uniqueExams.values()];
+	// 統合試験には、別番号の試験を丸ごと内包するものがある。
+	// 完全一致だけでなく真部分集合も除外し、問題カードと DOM ID の重複を防ぐ。
+	const visibleExamNumbers = new Set(
+		selectVisibleExamNumbers(
+			availableExamData.map((item) => ({
+				examNumber: item.examNumber,
+				questionIds: (item.examByYear.exams[year]?.questions ?? []).map((question) => question.id),
+			})),
+		),
+	);
+	const examDataList = availableExamData.filter((item) => visibleExamNumbers.has(item.examNumber));
 
 	const availableYears = unit.examMapping.map((m) => m.year);
 	const totalQuestions = examDataList.reduce((sum, item) => {
