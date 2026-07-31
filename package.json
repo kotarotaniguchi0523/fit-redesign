@@ -45,11 +45,12 @@
 	},
 	"dependencies": {
 		"@hono/zod-validator": "^0.8.0",
+		"@takumi-rs/helpers": "2.5.4",
+		"@takumi-rs/wasm": "2.5.4",
 		"drizzle-orm": "1.0.0-beta.22",
 		"hono": "^4.12.23",
 		"honox": "^0.1.56",
 		"neverthrow": "^8.2.0",
-		"takumi-js": "^2.5.4",
 		"zod": "^4.4.3"
 	}
 }
