@@ -39,8 +39,7 @@ jobs:
           - name: Type check
             run: pnpm typecheck:full
           - name: Test
-            # BuildとのCPU競合を抑え、同一Runner全体の完了を早める。
-            run: pnpm test:run --maxWorkers=1
+            run: pnpm test:run
           - name: Build
             run: pnpm build
 
