@@ -5,8 +5,10 @@ import {
 	PROGRESS_STORAGE_KEY,
 	readProgress,
 	recordReveal,
+	removeSyncKey,
 	SYNC_KEY_STORAGE_KEY,
 	saveProgressEntries,
+	saveSyncKey,
 } from "./progressStorage";
 
 const entry = ProgressEntrySchema.parse({
@@ -30,6 +32,23 @@ describe("progress persistence", () => {
 	it("壊れたlocalStorageを空の記録として扱う", () => {
 		localStorage.setItem(PROGRESS_STORAGE_KEY, "broken");
 		expect(readProgress()).toEqual({});
+	});
+	it("同期キーの保存と削除に失敗したらResultで返す", () => {
+		vi.spyOn(Storage.prototype, "setItem").mockImplementationOnce(() => {
+			throw new Error("storage unavailable");
+		});
+		expect(saveSyncKey(syncKey)).toMatchObject({
+			kind: "StorageMutationError",
+			operation: "SaveSyncKey",
+		});
+
+		vi.spyOn(Storage.prototype, "removeItem").mockImplementationOnce(() => {
+			throw new Error("storage unavailable");
+		});
+		expect(removeSyncKey()).toMatchObject({
+			kind: "StorageMutationError",
+			operation: "RemoveSyncKey",
+		});
 	});
 	it("同期成功時にサーバーで統合された最新記録をローカルへ反映する", async () => {
 		localStorage.setItem(SYNC_KEY_STORAGE_KEY, syncKey);

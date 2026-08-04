@@ -48,11 +48,12 @@ function chunksOf<T>(values: readonly T[], size: number): readonly (readonly T[]
 export function createSyncSpace(
 	db: Db,
 	syncSpaceId: SyncSpaceId,
+	createdAt: number,
 ): ResultAsync<void, ProgressRepositoryError> {
 	return ResultAsync.fromPromise(
 		db
 			.insert(syncSpaces)
-			.values({ id: syncSpaceId, createdAt: Date.now() })
+			.values({ id: syncSpaceId, createdAt })
 			.then(() => undefined),
 		repositoryError("CreateSyncSpace"),
 	);

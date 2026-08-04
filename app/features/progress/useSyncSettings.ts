@@ -39,6 +39,11 @@ export function useSyncSettings(origin: string): SyncSettings {
 	};
 	const localEntries = (): readonly ProgressEntry[] =>
 		Object.values(readProgress()).sort((a, b) => b.revealedAt - a.revealedAt);
+	const persistSyncKey = (key: SyncKey): void => {
+		if (saveSyncKey(key).kind === "StorageMutationError") {
+			throw new Error("同期設定をこの端末へ保存できませんでした");
+		}
+	};
 	const applySync = (key: SyncKey): Promise<void> =>
 		syncProgress(key, localEntries()).match(
 			(merged) => {
@@ -92,7 +97,7 @@ export function useSyncSettings(origin: string): SyncSettings {
 				async () => {
 					await applySync(key);
 					if (incomingKey.success) {
-						saveSyncKey(incomingKey.data);
+						persistSyncKey(incomingKey.data);
 					}
 				},
 				"同期できませんでした",
@@ -102,7 +107,10 @@ export function useSyncSettings(origin: string): SyncSettings {
 	}, []);
 
 	const disconnect = (message = "同期を解除しました。端末内の記録は残っています"): void => {
-		removeSyncKey();
+		if (removeSyncKey().kind === "StorageMutationError") {
+			update(() => setFeedback({ kind: "error", message: "同期設定を変更できませんでした" }));
+			return;
+		}
 		update(() => setFeedback({ kind: "success", message }));
 	};
 	const execute = (command: SyncCommand): void => {
@@ -117,19 +125,22 @@ export function useSyncSettings(origin: string): SyncSettings {
 						}
 						const body = await response.json();
 						await applySync(body.key);
-						saveSyncKey(body.key);
+						persistSyncKey(body.key);
 					},
 					"同期リンクを作成できませんでした",
 				);
 				return;
 			case "copy":
 				navigator.clipboard.writeText(syncKey ? `${origin}/records#sync=${syncKey}` : "").then(
-					() => setFeedback({ kind: "success", message: "同期リンクをコピーしました" }),
 					() =>
-						setFeedback({
-							kind: "error",
-							message: "コピーできませんでした。下のリンクを選択してコピーしてください",
-						}),
+						update(() => setFeedback({ kind: "success", message: "同期リンクをコピーしました" })),
+					() =>
+						update(() =>
+							setFeedback({
+								kind: "error",
+								message: "コピーできませんでした。下のリンクを選択してコピーしてください",
+							}),
+						),
 				);
 				return;
 			case "disconnect":

@@ -42,7 +42,7 @@ function mountedClient(isAllowed = true) {
 async function seedSyncSpace(rawKey = "a".repeat(43)): Promise<void> {
 	const key = SyncKey.parse(rawKey)._unsafeUnwrap();
 	const id = (await SyncSpaceId.fromSyncKey(key))._unsafeUnwrap();
-	(await createSyncSpace(database.db, id))._unsafeUnwrap();
+	(await createSyncSpace(database.db, id, 1_700_000_000_000))._unsafeUnwrap();
 }
 
 beforeEach(async () => {
@@ -148,6 +148,24 @@ describe("progress routes", () => {
 			header: { "x-sync-key": "a".repeat(43) },
 		});
 		expect(response.status).toBe(200);
+	});
+
+	it("端末から送られた遠い未来の確認時刻を拒否する", async () => {
+		await seedSyncSpace();
+		const response = await mountedClient().progress.sync.$post({
+			json: {
+				entries: [
+					{
+						questionId: "exam1-2013-q1",
+						unitId: "unit-base-conversion",
+						revealedAt: 4_000_000_000_000,
+					},
+				],
+			},
+			header: { "x-sync-key": "a".repeat(43) },
+		});
+
+		expect(response.status).toBe(400);
 	});
 
 	it("未知の同期領域は404にする", async () => {

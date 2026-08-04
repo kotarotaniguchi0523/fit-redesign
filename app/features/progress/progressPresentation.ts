@@ -1,11 +1,7 @@
+import { formatLocalDateTime } from "../../lib/dateTime";
 import type { ProgressEntry } from "./progress";
 
 const QUESTION_ID_PATTERN = /^exam(\d+)-(\d{4})-q(\d+)$/;
-const PROGRESS_DATE_TIME_FORMAT = new Intl.DateTimeFormat("ja-JP", {
-	dateStyle: "medium",
-	timeStyle: "short",
-});
-
 export function progressQuestionLink(
 	entry: ProgressEntry,
 	unitNames: Readonly<Record<string, string>>,
@@ -21,5 +17,5 @@ export function progressQuestionLink(
 }
 
 export function formatProgressDateTime(timestamp: number): string {
-	return PROGRESS_DATE_TIME_FORMAT.format(timestamp);
+	return formatLocalDateTime(timestamp);
 }

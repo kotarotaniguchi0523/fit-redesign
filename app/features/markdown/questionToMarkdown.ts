@@ -1,11 +1,12 @@
+import type { DeepReadonly } from "../../lib/immutable";
 import type { FigureData, Question } from "../../types";
 
 /**
  * テーブルデータを Markdown 文字列に変換するヘルパー関数
  */
 function tableToMarkdown(
-	columns: Array<{ key: string; label: string }>,
-	rows: Record<string, unknown>[],
+	columns: readonly DeepReadonly<{ key: string; label: string }>[],
+	rows: readonly DeepReadonly<Record<string, unknown>>[],
 ): string {
 	const header = `| ${columns.map((c) => c.label).join(" | ")} |`;
 	const separator = `| ${columns.map(() => "---").join(" | ")} |`;
@@ -19,7 +20,7 @@ function tableToMarkdown(
 /**
  * FigureData を Markdown 文字列に変換する
  */
-function figureDataToMarkdown(figureData: FigureData): string {
+function figureDataToMarkdown(figureData: DeepReadonly<FigureData>): string {
 	switch (figureData.type) {
 		case "truthTable":
 			return tableToMarkdown(figureData.columns, figureData.rows);
@@ -113,7 +114,7 @@ function figureDataToMarkdown(figureData: FigureData): string {
 	}
 }
 
-function buildFigureSection(question: Question): string[] {
+function buildFigureSection(question: DeepReadonly<Question>): string[] {
 	if (question.figureData) {
 		return ["### 図", "", figureDataToMarkdown(question.figureData), ""];
 	}
@@ -126,7 +127,7 @@ function buildFigureSection(question: Question): string[] {
 /**
  * Question オブジェクトを Markdown 文字列に変換する
  */
-export function questionToMarkdown(question: Question): string {
+export function questionToMarkdown(question: DeepReadonly<Question>): string {
 	const base = [`## 問題 ${question.number}`, "", question.text, ""];
 
 	const figure = buildFigureSection(question);
