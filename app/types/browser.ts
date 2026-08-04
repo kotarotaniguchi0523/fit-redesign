@@ -12,6 +12,7 @@ import * as z from "zod/mini";
 const questionIdBrand: unique symbol = Symbol("QuestionId");
 const unitTabIdBrand: unique symbol = Symbol("UnitTabId");
 const syncKeyBrand: unique symbol = Symbol("SyncKey");
+const revealedAtBrand: unique symbol = Symbol("RevealedAt");
 
 export const QuestionIdSchema = z
 	.string("questionId は文字列である必要があります")
@@ -33,7 +34,7 @@ export const UnitTabIdSchema = z
 	)
 	.brand<typeof unitTabIdBrand>();
 
-export const RevealedAtSchema = z.int().check(z.positive());
+export const RevealedAtSchema = z.int().check(z.positive()).brand<typeof revealedAtBrand>();
 
 export const SyncKeySchema = z
 	.string()

@@ -1,3 +1,4 @@
+import { type DeepReadonly, deepFreeze } from "../../lib/immutable";
 import { safeParseOrThrow } from "../../lib/zod";
 import type { ExamByYear } from "../../types";
 import metaJson from "../exams-json/exams-meta.json";
@@ -42,8 +43,10 @@ function parseExamEntries(): ParsedExamEntry[] {
  * Promise を返す async のまま維持する。
  */
 // biome-ignore lint/suspicious/useAwait: consumer の Promise シグネチャ安定のため async を維持（中身は同期）
-export async function loadExams(): Promise<ExamByYear[]> {
+export async function loadExams(): Promise<DeepReadonly<ExamByYear[]>> {
 	const parsedMeta = safeParseOrThrow(ExamsMetaSchema, metaJson, "Invalid exams meta");
 	const entries = parseExamEntries();
-	return assembleExamsByYear(parsedMeta.exams, entries);
+	const exams = assembleExamsByYear(parsedMeta.exams, entries);
+	deepFreeze(exams);
+	return exams;
 }

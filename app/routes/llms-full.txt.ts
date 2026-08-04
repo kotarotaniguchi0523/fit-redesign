@@ -1,9 +1,10 @@
 import { createRoute } from "honox/factory";
 import { getExamByNumber } from "../data/exams";
 import { unitBasedTabs } from "../data/units";
+import type { DeepReadonly } from "../lib/immutable";
 import type { ExamNumber, Question, Year } from "../types";
 
-function questionLines(question: Question): string[] {
+function questionLines(question: DeepReadonly<Question>): string[] {
 	const options = question.options ?? [];
 	const optionLines =
 		options.length > 0

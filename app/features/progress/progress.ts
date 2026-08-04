@@ -4,6 +4,15 @@ import type { ProgressEntry } from "../../types/domain";
 
 export type ProgressMap = Readonly<Record<string, ProgressEntry>>;
 
+export const MAX_FUTURE_CLOCK_SKEW_MS = 5 * 60 * 1000;
+
+export function hasPlausibleRevealTime(
+	entry: ProgressEntry,
+	nowEpochMilliseconds: number,
+): boolean {
+	return entry.revealedAt <= nowEpochMilliseconds + MAX_FUTURE_CLOCK_SKEW_MS;
+}
+
 function indexLatestProgress(entries: readonly ProgressEntry[]): Map<string, ProgressEntry> {
 	return entries.reduce((indexed, entry) => {
 		const current = indexed.get(entry.questionId);

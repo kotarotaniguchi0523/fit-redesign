@@ -59,14 +59,33 @@ export function readSyncKey(): SyncKey | null {
 	}
 }
 
-export function saveSyncKey(key: SyncKey): void {
-	localStorage.setItem(SYNC_KEY_STORAGE_KEY, key);
-	notifyStorageChange(SYNC_KEY_CHANGE_EVENT);
+export type StorageMutationError = Readonly<{
+	kind: "StorageMutationError";
+	operation: "SaveSyncKey" | "RemoveSyncKey";
+	cause: unknown;
+}>;
+export type StorageMutationResult =
+	| Readonly<{ kind: "StorageMutationSuccess" }>
+	| StorageMutationError;
+
+export function saveSyncKey(key: SyncKey): StorageMutationResult {
+	try {
+		localStorage.setItem(SYNC_KEY_STORAGE_KEY, key);
+		notifyStorageChange(SYNC_KEY_CHANGE_EVENT);
+		return { kind: "StorageMutationSuccess" };
+	} catch (cause) {
+		return { kind: "StorageMutationError", operation: "SaveSyncKey", cause };
+	}
 }
 
-export function removeSyncKey(): void {
-	localStorage.removeItem(SYNC_KEY_STORAGE_KEY);
-	notifyStorageChange(SYNC_KEY_CHANGE_EVENT);
+export function removeSyncKey(): StorageMutationResult {
+	try {
+		localStorage.removeItem(SYNC_KEY_STORAGE_KEY);
+		notifyStorageChange(SYNC_KEY_CHANGE_EVENT);
+		return { kind: "StorageMutationSuccess" };
+	} catch (cause) {
+		return { kind: "StorageMutationError", operation: "RemoveSyncKey", cause };
+	}
 }
 
 export function parseProgressSnapshot(snapshot: string | null): ProgressMap {

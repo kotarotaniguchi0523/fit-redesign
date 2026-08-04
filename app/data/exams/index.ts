@@ -1,24 +1,29 @@
+import type { DeepReadonly } from "../../lib/immutable";
 import type { ExamByYear, ExamNumber } from "../../types";
 import { loadExams } from "./loader";
 
-let _loadPromise: Promise<ExamByYear[]> | null = null;
-let _byNumberPromise: Promise<Map<ExamNumber, ExamByYear>> | null = null;
+type FrozenExamByYear = DeepReadonly<ExamByYear>;
 
-export function getAllExams(): Promise<ExamByYear[]> {
+let _loadPromise: Promise<readonly FrozenExamByYear[]> | null = null;
+let _byNumberPromise: Promise<ReadonlyMap<ExamNumber, FrozenExamByYear>> | null = null;
+
+export function getAllExams(): Promise<readonly FrozenExamByYear[]> {
 	if (!_loadPromise) {
 		_loadPromise = loadExams();
 	}
 	return _loadPromise;
 }
 
-function getExamsByNumber(): Promise<Map<ExamNumber, ExamByYear>> {
+function getExamsByNumber(): Promise<ReadonlyMap<ExamNumber, FrozenExamByYear>> {
 	if (!_byNumberPromise) {
 		_byNumberPromise = getAllExams().then((exams) => new Map(exams.map((e) => [e.examNumber, e])));
 	}
 	return _byNumberPromise;
 }
 
-export async function getExamByNumber(examNumber: ExamNumber): Promise<ExamByYear | undefined> {
+export async function getExamByNumber(
+	examNumber: ExamNumber,
+): Promise<FrozenExamByYear | undefined> {
 	const byNumber = await getExamsByNumber();
 	return byNumber.get(examNumber);
 }

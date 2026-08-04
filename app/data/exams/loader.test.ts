@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { safeParseOrThrow } from "../../lib/zod";
+import { slides } from "../slides";
+import { slideOnlyUnits, unitBasedTabs } from "../units";
 import { getAllExams, getExamByNumber, selectVisibleExamNumbers } from "./index";
 import { ExamJsonSchema } from "./schema";
 
@@ -48,6 +50,20 @@ describe("exams loader public API", () => {
 
 		// Assert — index.ts memoizes the load promise
 		expect(first).toBe(second);
+	});
+
+	it("共有する静的カタログを再帰的に凍結する", async () => {
+		const exams = await getAllExams();
+		const firstExam = exams[0]?.exams["2013"];
+
+		expect(Object.isFrozen(exams)).toBe(true);
+		expect(Object.isFrozen(firstExam)).toBe(true);
+		expect(Object.isFrozen(firstExam?.questions)).toBe(true);
+		expect(Object.isFrozen(slides)).toBe(true);
+		expect(Object.isFrozen(slides[0])).toBe(true);
+		expect(Object.isFrozen(slideOnlyUnits)).toBe(true);
+		expect(Object.isFrozen(unitBasedTabs)).toBe(true);
+		expect(Object.isFrozen(unitBasedTabs[0]?.examMapping)).toBe(true);
 	});
 
 	it("getExamByNumber returns the matching group", async () => {

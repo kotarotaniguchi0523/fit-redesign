@@ -1,11 +1,13 @@
 import { useRef } from "hono/jsx";
-import type { QuestionId, UnitTabId } from "../../types";
+import { type Clock, systemClock } from "../../lib/dateTime";
+import { type QuestionId, RevealedAtSchema, type UnitTabId } from "../../types/browser";
 import { syncProgress } from "../progress/progressApi";
 import { mergeStoredProgress, readSyncKey, recordReveal } from "../progress/progressStorage";
 
 export function useSolutionReveal(
 	questionId: QuestionId,
 	unitId: UnitTabId,
+	clock: Clock = systemClock,
 ): (event: Event) => void {
 	const hasRecorded = useRef(false);
 	return (event: Event): void => {
@@ -16,7 +18,11 @@ export function useSolutionReveal(
 			return;
 		}
 		hasRecorded.current = true;
-		const entry = { questionId, unitId, revealedAt: Date.now() };
+		const revealedAt = RevealedAtSchema.safeParse(clock.nowEpochMilliseconds());
+		if (!revealedAt.success) {
+			return;
+		}
+		const entry = { questionId, unitId, revealedAt: revealedAt.data };
 		recordReveal(entry);
 		const syncKey = readSyncKey();
 		if (syncKey) {

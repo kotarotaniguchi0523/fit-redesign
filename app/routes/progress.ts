@@ -4,13 +4,15 @@ import { csrf } from "hono/csrf";
 import { ResultAsync } from "neverthrow";
 import { getAllExams } from "../data/exams";
 import { unitBasedTabs } from "../data/units";
+import { hasPlausibleRevealTime } from "../features/progress/progress";
+import { systemClock } from "../lib/dateTime";
 import {
 	createSyncSpace,
 	deleteSyncSpace,
 	ProgressRepositoryError,
 	syncProgress,
 } from "../server/progressRepository";
-import { SyncKey } from "../server/syncKey";
+import { SyncKey, secureRandomBytes } from "../server/syncKey";
 import { type HashSyncKeyError, SyncSpaceId } from "../server/syncSpaceId";
 import { ProgressSyncRequestSchema, SyncHeaderSchema, type SyncKey as SyncKeyType } from "../types";
 import { type Env, postBodyLimit, validate } from "./_lib";
@@ -88,12 +90,13 @@ const progress = new Hono<Env>()
 			return c.json(RATE_LIMITED, 429);
 		}
 
-		const syncKey = SyncKey.generate();
+		const syncKey = SyncKey.generate(secureRandomBytes);
 		if (syncKey.isErr()) {
 			return c.json(INTERNAL_ERROR, 500);
 		}
+		const createdAt = systemClock.nowEpochMilliseconds();
 		const created = await SyncSpaceId.fromSyncKey(syncKey.value).andThen((syncSpaceId) =>
-			createSyncSpace(c.var.db, syncSpaceId).map(() => syncKey.value),
+			createSyncSpace(c.var.db, syncSpaceId, createdAt).map(() => syncKey.value),
 		);
 		return created.match(
 			(key) => c.json({ key }, 201),
@@ -114,6 +117,10 @@ const progress = new Hono<Env>()
 		}
 
 		const submitted = c.req.valid("json").entries;
+		const nowEpochMilliseconds = systemClock.nowEpochMilliseconds();
+		if (!submitted.every((entry) => hasPlausibleRevealTime(entry, nowEpochMilliseconds))) {
+			return c.json(INVALID_PROGRESS, 400);
+		}
 		const catalogKeys = await getCatalogKeys();
 		if (submitted.some((entry) => !catalogKeys.has(`${entry.questionId}|${entry.unitId}`))) {
 			return c.json(INVALID_PROGRESS, 400);

@@ -1,5 +1,6 @@
 import { getExamByNumber } from "../../data/exams";
 import { unitBasedTabs } from "../../data/units";
+import type { DeepReadonly } from "../../lib/immutable";
 import { type ExamNumber, isYear, type Question, type Year } from "../../types";
 
 /**
@@ -82,7 +83,7 @@ function generateSiteOverview(): string {
 	].join("\n");
 }
 
-function questionMarkdownLines(question: Question): string[] {
+function questionMarkdownLines(question: DeepReadonly<Question>): string[] {
 	const options = question.options ?? [];
 	const optionLines =
 		options.length > 0
