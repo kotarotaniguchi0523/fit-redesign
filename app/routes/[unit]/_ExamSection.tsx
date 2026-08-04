@@ -1,6 +1,6 @@
 import type { JSX } from "hono/jsx/jsx-runtime";
-import type { Exam, ExamNumber, UnitTabId } from "../types";
-import { QuestionCard } from "./QuestionCard";
+import type { Exam, ExamNumber, UnitTabId } from "../../types";
+import { QuestionCard } from "./_QuestionCard";
 
 interface ExamSectionProps {
 	title: string;

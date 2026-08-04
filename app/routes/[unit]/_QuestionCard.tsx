@@ -1,12 +1,12 @@
 /** @jsxImportSource hono/jsx */
 
 import type { JSX } from "hono/jsx/jsx-runtime";
-import SolutionReveal from "../features/answer/$SolutionReveal";
-import { questionToMarkdown } from "../features/markdown/questionToMarkdown";
-import { overlineToHtml } from "../lib/overline";
-import type { Question, UnitTabId } from "../types";
-import CopyButton from "./$CopyButton";
-import { Figure } from "./figures/Figure";
+import CopyButton from "../../components/$CopyButton";
+import { Figure } from "../../components/figures/Figure";
+import SolutionReveal from "../../features/answer/$SolutionReveal";
+import { questionToMarkdown } from "../../features/markdown/questionToMarkdown";
+import { overlineToHtml } from "../../lib/overline";
+import type { Question, UnitTabId } from "../../types";
 
 /** 問題、図表、答え確認、Markdownコピーをまとめて表示する。 */
 
