@@ -48,7 +48,7 @@
 		"@takumi-rs/helpers": "2.5.4",
 		"@takumi-rs/wasm": "2.5.4",
 		"drizzle-orm": "1.0.0-beta.22",
-		"hono": "^4.12.33",
+		"hono": "^4.12.34",
 		"honox": "^0.1.60",
 		"neverthrow": "^8.2.0",
 		"zod": "^4.4.3"

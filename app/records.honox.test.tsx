@@ -24,7 +24,8 @@ describe("学習記録", () => {
 		expect(response.status).toBe(200);
 		const html = await response.text();
 		expect(html).toContain("学習記録");
-		expect(html).toContain("端末間で同期（任意）");
+		expect(html).toContain("端末間で同期");
+		expect(html).toContain("必要な場合だけ設定します");
 		expect(html).toContain('name="robots"');
 	});
 

@@ -125,14 +125,19 @@ export function getWirePath(
 	// 入力/出力の判定は id 集合で行う（全要素が x/y を持つため要素自体の as キャストは不要）。
 	const inputIds = new Set(inputs.map((input) => input.id));
 	const outputIds = new Set(outputs.map((output) => output.id));
+	const gateIds = new Set(gates.map((gate) => gate.id));
+	const wirePoints = wire.points ?? [];
+	const lastPoint = wirePoints.at(-1);
 
 	const start = inputIds.has(fromElement.id)
 		? { x: fromElement.x + 20, y: fromElement.y }
 		: { x: fromElement.x + gateWidth / 2, y: fromElement.y };
 	const end = outputIds.has(toElement.id)
 		? { x: toElement.x - 20, y: toElement.y }
-		: { x: toElement.x - gateWidth / 2, y: toElement.y };
-	const wirePoints = wire.points ?? [];
+		: {
+				x: toElement.x - gateWidth / 2,
+				y: gateIds.has(toElement.id) && lastPoint ? lastPoint.y : toElement.y,
+			};
 	const points = wirePoints.length > 0 ? [start, ...wirePoints, end] : [start, end];
 
 	return pointsToPolyline(points);

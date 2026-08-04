@@ -6,10 +6,11 @@ import logicGatesRoute from "./routes/figures/logic-gates";
 import logicGatesPngRoute from "./routes/figures/logic-gates.png";
 import logicGatesSvgRoute from "./routes/figures/logic-gates.svg";
 
-const testRenderer = jsxRenderer(({ children, title }) => (
+const testRenderer = jsxRenderer(({ children, title, noindex }) => (
 	<html lang="ja">
 		<head>
 			<title>{title}</title>
+			{noindex ? <meta name="robots" content="noindex, follow" /> : null}
 		</head>
 		<body>{children}</body>
 	</html>
@@ -35,6 +36,8 @@ describe("論理回路図プレビュー", () => {
 		expect(html).toContain("OR");
 		expect(html).toContain("NOT");
 		expect(html).toContain("NAND");
+		expect(html).toContain('id="main-content"');
+		expect(html).toContain('name="robots"');
 		expect(html).toContain('href="/figures/logic-gates.svg"');
 	});
 

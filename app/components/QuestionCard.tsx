@@ -73,13 +73,13 @@ export function QuestionCard({ question, unitId, hidden }: Props): JSX.Element {
 			hidden={hidden}
 		>
 			<div class="q-card__body">
-				{/* 1. 問題番号 + 種別 */}
+				{/* 問題番号 */}
 				<header class="q-head">
-					<span class="q-num">{question.number}</span>
-					<div>
-						<p class="q-eyebrow">問題 {question.number}</p>
-						{view.hasOptions && <p class="q-hint">選択肢</p>}
-					</div>
+					<span class="q-num">
+						<span class="sr-only">問題</span>
+						{question.number}
+					</span>
+					{view.hasOptions ? <p class="q-hint">選択肢から確認</p> : null}
 				</header>
 
 				{/* 2. 問題文 */}

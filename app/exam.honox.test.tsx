@@ -42,8 +42,9 @@ describe("単元ページ 描画", () => {
 		const body = await res.text();
 		// 単元タイトル・説明
 		expect(body).toContain("単元1: 基数変換");
-		// 年度選択 UI
-		expect(body).toContain("年度を選択");
+		// 単元・年度は必要なときだけ開くナビゲーションにまとめる
+		expect(body).toContain("単元・年度を変更");
+		expect(body).toContain('class="study-navigator"');
 		// 問題セクション（QuestionCard の DOM フック）
 		expect(body).toContain("data-question-card");
 		// 単元タブのリンク
@@ -54,16 +55,20 @@ describe("単元ページ 描画", () => {
 		const res = await mounted().request("/unit-base-conversion/2013");
 		const body = await res.text();
 		expect(body).toContain("答えを確認する");
+		// 解答本文はSSR済みのnative details内に置き、JavaScript失敗時も確認できる。
+		expect(body).toContain("<details");
+		expect(body).toContain('class="q-solution"');
 		expect(body).toContain("Markdownでコピー");
 		expect(body).not.toContain("data-question-timer");
 		expect(body).not.toContain("答え合わせをする");
 	});
 
-	it("複数小テスト年度に件数と小テスト内ジャンプを描画する", async () => {
+	it("複数小テスト年度に小テスト内ジャンプだけを描画する", async () => {
 		const res = await mounted().request("/unit-logic/2015");
 		const body = await res.text();
-		expect(body).toContain("小テスト3・");
-		expect(body).toContain("小テスト4・");
+		expect(body).toContain("小テスト3 —");
+		expect(body).toContain("小テスト4 —");
+		expect(body).not.toContain("5問。上から順番でなくても大丈夫です。");
 		expect(body).toContain('href="#exam-3"');
 		expect(body).toContain('href="#exam-4"');
 	});
@@ -81,13 +86,12 @@ describe("単元ページ 描画", () => {
 		expect(body).not.toContain(`href="#exam-${hiddenExam}"`);
 	});
 
-	it("統合試験の年度では integratedTitle の注意が描画される", async () => {
-		// 論理演算 2015 年度は「集合・論理演算」統合試験
+	it("統合試験という重複説明を表示しない", async () => {
 		const res = await mounted().request("/unit-logic/2015");
 		expect(res.status).toBe(200);
 		const body = await res.text();
-		expect(body).toContain("統合試験");
-		expect(body).toContain("集合・論理演算");
+		expect(body).not.toContain("統合試験です");
+		expect(body).not.toContain("小テスト一覧");
 	});
 
 	it("未知の単元では 404 を返す", async () => {

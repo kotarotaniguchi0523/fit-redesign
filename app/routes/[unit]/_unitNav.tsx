@@ -23,57 +23,71 @@ export function YearPill({
 }): JSX.Element {
 	if (isAvailable) {
 		return (
-			<a
-				href={`/${unitId}/${y}`}
-				class={`rounded-full border-2 px-4 py-1.5 text-sm font-bold transition-colors ${
-					isSelected
-						? "border-[#c9a227] bg-[#f7eed1] text-[#6f5712]"
-						: "border-gray-200 bg-white text-slate-700 shadow-sm hover:border-gray-300"
-				}`}
-			>
+			<a href={`/${unitId}/${y}`} aria-current={isSelected ? "page" : undefined}>
 				{y}年度
 			</a>
 		);
 	}
 	return (
-		<span class="cursor-not-allowed rounded-full border-2 border-gray-100 px-4 py-1.5 text-sm font-bold text-gray-300">
+		<span aria-disabled="true" class="cursor-not-allowed opacity-45">
 			{y}年度
 		</span>
 	);
 }
 
 // 単元タブ行（全単元のナビゲーション）
-export function UnitTabBar({ currentUnitId }: { currentUnitId: string }): JSX.Element {
+export function StudyNavigator({
+	currentUnitId,
+	currentYear,
+}: {
+	currentUnitId: string;
+	currentYear: Year;
+}): JSX.Element {
+	const currentUnit = unitBasedTabs.find((unit) => unit.id === currentUnitId);
 	return (
-		<div
-			class="no-scrollbar mb-5 flex gap-2 overflow-x-auto pb-2"
-			role="tablist"
-			aria-label="単元選択"
-		>
-			{unitBasedTabs.map((tab) => {
-				const isActive = tab.id === currentUnitId;
-				const targetYear = tab.examMapping[0]?.year ?? DEFAULT_YEAR;
-				return (
-					<a
-						href={`/${tab.id}/${targetYear}`}
-						role="tab"
-						aria-selected={isActive ? "true" : "false"}
-						class={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-center text-sm font-bold transition-all ${
-							isActive
-								? "border-[#1e3a5f] bg-[#1e3a5f] text-white shadow-sm"
-								: "border-gray-300 bg-white text-gray-700 hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
-						}`}
-					>
-						{tab.name}
-					</a>
-				);
-			})}
-			<a
-				href="/slide-only"
-				class="min-h-10 shrink-0 rounded-full border border-gray-300 bg-white px-4 py-2 text-center text-sm font-bold text-gray-700 transition-all hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
-			>
-				講義資料のみ
-			</a>
-		</div>
+		<details class="study-navigator">
+			<summary>
+				<span>
+					<strong>{currentUnit?.name}</strong>
+					<small>{currentYear}年度</small>
+				</span>
+				<span class="study-navigator__action">単元・年度を変更</span>
+			</summary>
+			<div class="study-navigator__panel">
+				<div>
+					<p class="study-navigator__label">単元</p>
+					<div class="study-navigator__units">
+						{unitBasedTabs.map((unit) => {
+							const matchingYear = unit.examMapping.some((mapping) => mapping.year === currentYear)
+								? currentYear
+								: (unit.examMapping[0]?.year ?? DEFAULT_YEAR);
+							return (
+								<a
+									href={`/${unit.id}/${matchingYear}`}
+									aria-current={unit.id === currentUnitId ? "page" : undefined}
+								>
+									{unit.name}
+								</a>
+							);
+						})}
+					</div>
+				</div>
+				<div>
+					<p class="study-navigator__label">年度</p>
+					<div class="study-navigator__years">
+						{YEARS.map((year) => (
+							<YearPill
+								y={year}
+								unitId={currentUnitId}
+								isAvailable={
+									currentUnit?.examMapping.some((mapping) => mapping.year === year) ?? false
+								}
+								isSelected={year === currentYear}
+							/>
+						))}
+					</div>
+				</div>
+			</div>
+		</details>
 	);
 }

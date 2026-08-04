@@ -26,9 +26,9 @@ export function BinaryTree({
 			preserveAspectRatio="xMidYMid meet"
 			class="border border-gray-300 rounded max-w-full h-auto"
 			style={`aspect-ratio: ${width}/${height}`}
-			aria-label="Binary tree diagram"
+			aria-label="二分木"
 		>
-			<title>Binary tree diagram</title>
+			<title>二分木</title>
 
 			{edgeLines.map((line) => (
 				<line
