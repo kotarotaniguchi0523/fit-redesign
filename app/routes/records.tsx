@@ -6,8 +6,9 @@ import RecordsView from "../features/progress/$RecordsView";
 
 const unitNames = Object.fromEntries(unitBasedTabs.map((unit) => [unit.id, unit.name]));
 
-export default createRoute((c) =>
-	c.render(
+export default createRoute((c) => {
+	const origin = new URL(c.req.url).origin;
+	return c.render(
 		<main id="main-content" class="study-shell">
 			<div class="page-container">
 				<PageHeading
@@ -15,7 +16,7 @@ export default createRoute((c) =>
 					title="学習記録"
 					description="答えを確認した問題を、この端末に記録します。"
 				/>
-				<RecordsView unitNames={unitNames} />
+				<RecordsView unitNames={unitNames} origin={origin} />
 			</div>
 		</main>,
 		{
@@ -23,5 +24,5 @@ export default createRoute((c) =>
 			description: "答えを確認した問題の履歴を端末内で確認できます。",
 			noindex: true,
 		},
-	),
-);
+	);
+});

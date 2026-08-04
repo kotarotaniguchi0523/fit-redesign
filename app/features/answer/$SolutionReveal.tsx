@@ -1,7 +1,6 @@
-import { useState } from "hono/jsx";
 import type { JSX } from "hono/jsx/jsx-runtime";
 import type { QuestionId, UnitTabId } from "../../types";
-import { recordReveal, syncProgressEntry } from "./progressClient";
+import { useSolutionReveal } from "./useSolutionReveal";
 
 interface SolutionRevealProps {
 	questionId: QuestionId;
@@ -16,20 +15,10 @@ export default function SolutionReveal({
 	answerHtml,
 	explanationHtml,
 }: SolutionRevealProps): JSX.Element {
-	const [recorded, setRecorded] = useState(false);
+	const onToggle = useSolutionReveal(questionId, unitId);
 
 	return (
-		<details
-			class="q-answer"
-			onToggle={(event: Event): void => {
-				if ((event.currentTarget as HTMLDetailsElement).open && !recorded) {
-					setRecorded(true);
-					const entry = { questionId, unitId, revealedAt: Date.now() };
-					recordReveal(entry);
-					syncProgressEntry(entry).catch(() => undefined);
-				}
-			}}
-		>
+		<details class="q-answer" onToggle={onToggle}>
 			<summary class="q-btn-primary cursor-pointer list-none text-center">答えを確認する</summary>
 			<section class="q-solution" aria-live="polite">
 				<h3 class="q-solution__title">解答</h3>

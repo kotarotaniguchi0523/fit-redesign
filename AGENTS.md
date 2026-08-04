@@ -89,7 +89,7 @@ app/
 ├── features/
 │   ├── answer/          # 答え表示とローカル進捗記録
 │   ├── markdown/        # 問題のMarkdown変換
-│   └── progress/        # 記録画面のクライアントUI
+│   └── progress/        # 進捗モデル、Storage/API境界、記録画面Island
 ├── routes/              # HonoXファイルベースルート
 │   ├── [unit]/[year].tsx
 │   ├── progress.ts      # 同期スペース作成・同期・削除API
@@ -130,6 +130,7 @@ migrations/              # D1 migration SQL
 ### HonoXルート
 
 - 画面は可能な限りサーバー描画し、操作が必要な小さな領域だけ `$` 接頭辞のクライアントコンポーネントにする。
+- Islandの描画と副作用が大きくなる場合は、描画を `$` コンポーネント、副作用を同一feature内のController Hookへ分ける。
 - APIサブルーターは `new Hono<Env>()` で構成し、ルートファイルから default exportする。
 - JSON入力は `_schemas.ts` のZodスキーマと `_lib.ts` の `validate()` を使う。
 - リクエストボディには `_lib.ts` の `postBodyLimit` を適用する。
@@ -200,7 +201,7 @@ migrations/              # D1 migration SQL
 
 - Hono JSXのHTML属性名はReactと完全には同じでない。型エラー時はHono JSXの定義を確認する。
 - HonoXのクライアントコンポーネントは `$` 接頭辞を使い、サーバー専用コードをimportしない。
-- `app/client-script.tsx` はHTML文字列として配信されるクライアント処理を含む。変更時はスクリプト単体テストも更新する。
+- クライアント処理は `app/client.ts` と `$` 接頭辞のislandへ限定し、`honox/server` の `Script` から読み込む。
 - Cloudflare bindingsの型は `Cloudflare.Env` と `app/routes/_lib.ts` の `Env` を一致させる。
 - Drizzleスキーマ変更時はmigrationだけでなく、テスト用D1セットアップも確認する。
 

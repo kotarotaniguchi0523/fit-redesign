@@ -8,28 +8,11 @@ import type { Question, UnitTabId } from "../types";
 import CopyButton from "./$CopyButton";
 import { Figure } from "./figures/Figure";
 
-/**
- * 問題カード。
- *
- * 回答 UI は island（AnswerSelector / SelfGrade）に置き換え、props を直接渡す
- * （旧 data 属性スクレイプは廃止）。採点チップと解説パネルも island の状態から
- * 宣言的に描画し、カード外 DOM への反映処理を持たない。
- *
- * timer と copy button は island が所有する。
- *
- * ExamSection / today ルートが `import { QuestionCard }` で参照するため named export。
- */
+/** 問題、図表、答え確認、Markdownコピーをまとめて表示する。 */
 
 interface Props {
 	question: Question;
 	unitId: UnitTabId;
-	/**
-	 * 初期 SSR で `hidden` 属性を付けるか。today（dailySession）は全カードを
-	 * `hidden` で出力し、初回ペイントの「全部見え→1枚に畳む」崩壊を消す。
-	 * 未指定時は属性を出さない（hono/jsx は `hidden={undefined}` で属性を省く）ため
-	 * 年度別ページ / ExamSection には無影響。
-	 */
-	hidden?: boolean;
 }
 
 interface QuestionView {
@@ -60,7 +43,7 @@ function buildQuestionView(question: Question): QuestionView {
 	};
 }
 
-export function QuestionCard({ question, unitId, hidden }: Props): JSX.Element {
+export function QuestionCard({ question, unitId }: Props): JSX.Element {
 	const view = buildQuestionView(question);
 	const figureData = question.figureData;
 
@@ -70,7 +53,6 @@ export function QuestionCard({ question, unitId, hidden }: Props): JSX.Element {
 			data-question-card
 			data-question-id={question.id}
 			class="q-card scroll-mt-20"
-			hidden={hidden}
 		>
 			<div class="q-card__body">
 				{/* 問題番号 */}

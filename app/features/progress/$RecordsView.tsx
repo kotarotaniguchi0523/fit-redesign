@@ -1,199 +1,28 @@
-import { useEffect, useState, useTransition } from "hono/jsx";
 import type { JSX } from "hono/jsx/jsx-runtime";
-import {
-	PROGRESS_STORAGE_KEY,
-	type ProgressEntry,
-	readProgress,
-	SYNC_KEY_STORAGE_KEY,
-} from "../answer/progressClient";
+import { formatProgressDateTime, progressQuestionLink } from "./progressPresentation";
+import { useRecordsController } from "./useRecordsController";
 
 type RecordsViewProps = Readonly<{
 	unitNames: Record<string, string>;
+	origin: string;
 }>;
 
-type PendingAction = "create" | "sync" | "delete";
-type Feedback = Readonly<{
-	kind: "success" | "error";
-	message: string;
-}>;
-
-const QUESTION_ID_PATTERN = /^exam(\d+)-(\d{4})-q(\d+)$/;
-
-function mergeEntries(local: ProgressEntry[], remote: ProgressEntry[]): ProgressEntry[] {
-	const merged = new Map<string, ProgressEntry>();
-	for (const entry of [...local, ...remote]) {
-		const current = merged.get(entry.questionId);
-		if (!current || entry.revealedAt > current.revealedAt) {
-			merged.set(entry.questionId, entry);
-		}
-	}
-	return [...merged.values()].sort((a, b) => b.revealedAt - a.revealedAt);
-}
-
-function saveEntries(entries: ProgressEntry[]): void {
-	localStorage.setItem(
-		PROGRESS_STORAGE_KEY,
-		JSON.stringify(Object.fromEntries(entries.map((entry) => [entry.questionId, entry]))),
-	);
-}
-
-function questionDetails(
-	entry: ProgressEntry,
-	unitNames: Record<string, string>,
-): { label: string; href: string } {
-	const match = QUESTION_ID_PATTERN.exec(entry.questionId);
-	const year = match?.[2];
-	return {
-		label: match
-			? `${unitNames[entry.unitId] ?? "小テスト"}・${year}年度・第${match[1]}回 問${match[3]}`
-			: entry.questionId,
-		href: year ? `/${entry.unitId}/${year}#question-${entry.questionId}` : "/",
-	};
-}
-
-async function sync(key: string, local: ProgressEntry[]): Promise<ProgressEntry[]> {
-	const response = await fetch("/progress/sync", {
-		method: "POST",
-		headers: { "Content-Type": "application/json", "X-Sync-Key": key },
-		body: JSON.stringify({ entries: local }),
-	});
-	if (!response.ok) {
-		throw new Error(response.status === 404 ? "同期リンクが無効です" : "同期できませんでした");
-	}
-	const body = (await response.json()) as { entries: ProgressEntry[] };
-	return mergeEntries(local, body.entries);
-}
-
-export default function RecordsView({ unitNames }: RecordsViewProps): JSX.Element {
-	const [entries, setEntries] = useState<ProgressEntry[]>([]);
-	const [syncKey, setSyncKey] = useState<string | null>(null);
-	const [origin, setOrigin] = useState("");
-	const [feedback, setFeedback] = useState<Feedback | null>(null);
-	const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
-	const [isPending, startTransition] = useTransition();
-
-	const runAction = (
-		action: PendingAction,
-		task: () => Promise<void>,
-		fallbackMessage: string,
-	): void => {
-		startTransition(async (): Promise<void> => {
-			setPendingAction(action);
-			setFeedback(null);
-			try {
-				await task();
-			} catch (error) {
-				setFeedback({
-					kind: "error",
-					message: error instanceof Error ? error.message : fallbackMessage,
-				});
-			} finally {
-				setPendingAction(null);
-			}
-		});
-	};
-
-	const applySync = (key: string, local: ProgressEntry[]): Promise<void> =>
-		sync(key, local).then((merged) => {
-			saveEntries(merged);
-			setEntries(merged);
-			setFeedback({ kind: "success", message: "この端末と同期しました" });
-		});
-
-	useEffect((): void => {
-		setOrigin(location.origin);
-		const local = Object.values(readProgress()).sort((a, b) => b.revealedAt - a.revealedAt);
-		setEntries(local);
-		const fragment = new URLSearchParams(location.hash.slice(1));
-		const incomingKey = fragment.get("sync");
-		if (location.hash) {
-			history.replaceState(null, "", `${location.pathname}${location.search}`);
-		}
-
-		const storedKey = localStorage.getItem(SYNC_KEY_STORAGE_KEY);
-		if (incomingKey) {
-			if (window.confirm("この同期リンクの記録を、この端末の記録と統合しますか？")) {
-				runAction(
-					"sync",
-					async (): Promise<void> => {
-						await applySync(incomingKey, local);
-						localStorage.setItem(SYNC_KEY_STORAGE_KEY, incomingKey);
-						setSyncKey(incomingKey);
-					},
-					"同期できませんでした",
-				);
-			} else {
-				setSyncKey(storedKey);
-			}
-		} else {
-			setSyncKey(storedKey);
-			if (storedKey) {
-				runAction("sync", () => applySync(storedKey, local), "同期できませんでした");
-			}
-		}
-	}, []);
-
-	const latest = entries[0];
-	const shareUrl = syncKey && origin ? `${origin}/records#sync=${syncKey}` : "";
-
-	const createLink = (): void => {
-		runAction(
-			"create",
-			async (): Promise<void> => {
-				const response = await fetch("/progress/spaces", { method: "POST" });
-				if (!response.ok) {
-					throw new Error("同期リンクを作成できませんでした");
-				}
-				const body = (await response.json()) as { key: string };
-				await applySync(body.key, entries);
-				localStorage.setItem(SYNC_KEY_STORAGE_KEY, body.key);
-				setSyncKey(body.key);
-			},
-			"同期リンクを作成できませんでした",
-		);
-	};
-
-	const copyLink = async (): Promise<void> => {
-		try {
-			await navigator.clipboard.writeText(shareUrl);
-			setFeedback({ kind: "success", message: "同期リンクをコピーしました" });
-		} catch {
-			setFeedback({
-				kind: "error",
-				message: "コピーできませんでした。下のリンクを選択してコピーしてください",
-			});
-		}
-	};
-
-	const disconnect = (): void => {
-		localStorage.removeItem(SYNC_KEY_STORAGE_KEY);
-		setSyncKey(null);
-		setFeedback({ kind: "success", message: "同期を解除しました。端末内の記録は残っています" });
-	};
-
-	const deleteLink = (): void => {
-		if (!(syncKey && window.confirm("同期先の記録を削除しますか？ この端末の記録は残ります。"))) {
-			return;
-		}
-		runAction(
-			"delete",
-			async (): Promise<void> => {
-				const response = await fetch("/progress", {
-					method: "DELETE",
-					headers: { "X-Sync-Key": syncKey },
-				});
-				if (!response.ok) {
-					throw new Error("同期先を削除できませんでした");
-				}
-				disconnect();
-				setFeedback({
-					kind: "success",
-					message: "同期先を削除しました。端末内の記録は残っています",
-				});
-			},
-			"同期先を削除できませんでした",
-		);
-	};
+export default function RecordsView({ unitNames, origin }: RecordsViewProps): JSX.Element {
+	const {
+		entries,
+		latest,
+		shareUrl,
+		isConnected,
+		feedback,
+		pendingAction,
+		isPending,
+		createLink,
+		copyLink,
+		disconnect,
+		deleteLink,
+		syncNow,
+	} = useRecordsController(origin);
+	const latestLink = latest ? progressQuestionLink(latest, unitNames) : null;
 
 	return (
 		<div class="space-y-6" aria-busy={isPending ? "true" : "false"}>
@@ -207,18 +36,13 @@ export default function RecordsView({ unitNames }: RecordsViewProps): JSX.Elemen
 				</div>
 				<div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
 					<p class="text-sm text-gray-500">前回の続き</p>
-					{latest ? (
-						((): JSX.Element => {
-							const detail = questionDetails(latest, unitNames);
-							return (
-								<a
-									class="mt-2 block font-bold text-[#1e3a5f] underline decoration-[#c9a227] underline-offset-4"
-									href={detail.href}
-								>
-									{detail.label}
-								</a>
-							);
-						})()
+					{latestLink ? (
+						<a
+							class="mt-2 block font-bold text-[#1e3a5f] underline decoration-[#c9a227] underline-offset-4"
+							href={latestLink.href}
+						>
+							{latestLink.label}
+						</a>
 					) : (
 						<p class="mt-2 text-gray-600">答えを確認すると、ここに表示されます。</p>
 					)}
@@ -230,14 +54,14 @@ export default function RecordsView({ unitNames }: RecordsViewProps): JSX.Elemen
 				{entries.length > 0 ? (
 					<ol class="mt-3 divide-y divide-gray-100">
 						{entries.slice(0, 10).map((entry): JSX.Element => {
-							const detail = questionDetails(entry, unitNames);
+							const detail = progressQuestionLink(entry, unitNames);
 							return (
 								<li class="py-3">
 									<a class="font-medium text-[#1e3a5f] hover:underline" href={detail.href}>
 										{detail.label}
 									</a>
 									<time class="mt-1 block text-xs text-gray-500">
-										{new Date(entry.revealedAt).toLocaleString("ja-JP")}
+										{formatProgressDateTime(entry.revealedAt)}
 									</time>
 								</li>
 							);
@@ -263,7 +87,7 @@ export default function RecordsView({ unitNames }: RecordsViewProps): JSX.Elemen
 					<p class="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
 						リンクを知っている人は記録を読み書きできます。他人に送らないでください。リンクを失うと復元できません。
 					</p>
-					{syncKey ? (
+					{isConnected ? (
 						<div class="mt-4 space-y-3">
 							<input
 								aria-label="秘密の同期リンク"
@@ -286,9 +110,7 @@ export default function RecordsView({ unitNames }: RecordsViewProps): JSX.Elemen
 								<button
 									type="button"
 									disabled={isPending}
-									onClick={(): void => {
-										runAction("sync", () => applySync(syncKey, entries), "同期できませんでした");
-									}}
+									onClick={syncNow}
 									class="min-h-11 rounded-lg border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 disabled:opacity-50"
 								>
 									{pendingAction === "sync" ? "同期中…" : "今すぐ同期"}

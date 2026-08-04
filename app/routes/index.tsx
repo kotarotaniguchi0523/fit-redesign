@@ -1,43 +1,13 @@
 /** @jsxImportSource hono/jsx */
 import { createRoute } from "honox/factory";
-import { getExamByNumber } from "../data/exams";
+import { loadHomeExamCatalog } from "../data/exams/homeCatalog";
 import { SITE_URL } from "../data/site";
 import { unitBasedTabs } from "../data/units";
 import ContinueLearning from "../features/answer/$ContinueLearning";
 import { YEARS } from "../types";
 
 export default createRoute(async (c) => {
-	const examCounts = new Map<string, number>();
-	await Promise.all(
-		unitBasedTabs.flatMap((unit) =>
-			unit.examMapping.map(async (mapping) => {
-				const signatures = await Promise.all(
-					mapping.examNumbers.map(async (examNumber) => {
-						const exam = (await getExamByNumber(examNumber))?.exams[mapping.year];
-						return exam?.questions.map((question) => question.id).join("|") ?? `exam-${examNumber}`;
-					}),
-				);
-				examCounts.set(`${unit.id}|${mapping.year}`, new Set(signatures).size);
-			}),
-		),
-	);
-	const locations = (
-		await Promise.all(
-			unitBasedTabs.flatMap((unit) =>
-				unit.examMapping.flatMap((mapping) =>
-					mapping.examNumbers.map(async (examNumber) => {
-						const exam = (await getExamByNumber(examNumber))?.exams[mapping.year];
-						return (exam?.questions ?? []).map((question) => ({
-							questionId: question.id,
-							unitName: unit.name,
-							year: mapping.year,
-							href: `/${unit.id}/${mapping.year}#question-${question.id}`,
-						}));
-					}),
-				),
-			),
-		)
-	).flat();
+	const { examCounts, locations } = await loadHomeExamCatalog();
 
 	const jsonLd = {
 		"@context": "https://schema.org",
