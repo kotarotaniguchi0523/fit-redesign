@@ -1,19 +1,8 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "hono/jsx";
-import { type ProgressEntry, type SyncKey, SyncKeySchema } from "../../types/browser";
-import {
-	createSyncSpace,
-	deleteRemoteProgress,
-	syncProgress,
-	syncProgressErrorMessage,
-} from "./progressApi";
-import {
-	readProgress,
-	readSyncKey,
-	removeSyncKey,
-	saveProgressEntries,
-	saveSyncKey,
-	subscribeToSyncKey,
-} from "./progressStorage";
+import { type SyncKey, SyncKeySchema } from "../../types/browser";
+import { createSyncSpace, deleteRemoteProgress } from "./progressApi";
+import { readSyncKey, removeSyncKey, subscribeToSyncKey } from "./progressStorage";
+import { persistSyncKey, synchronizeProgress } from "./syncSettingsOperations";
 
 export type SyncCommand = "create" | "copy" | "disconnect" | "delete" | "sync";
 type PendingAction = Exclude<SyncCommand, "copy" | "disconnect">;
@@ -37,23 +26,10 @@ export function useSyncSettings(origin: string): SyncSettings {
 			operation();
 		}
 	};
-	const localEntries = (): readonly ProgressEntry[] =>
-		Object.values(readProgress()).sort((a, b) => b.revealedAt - a.revealedAt);
-	const persistSyncKey = (key: SyncKey): void => {
-		if (saveSyncKey(key).kind === "StorageMutationError") {
-			throw new Error("同期設定をこの端末へ保存できませんでした");
-		}
+	const applySync = async (key: SyncKey): Promise<void> => {
+		await synchronizeProgress(key);
+		update(() => setFeedback({ kind: "success", message: "この端末と同期しました" }));
 	};
-	const applySync = (key: SyncKey): Promise<void> =>
-		syncProgress(key, localEntries()).match(
-			(merged) => {
-				saveProgressEntries(merged);
-				update(() => setFeedback({ kind: "success", message: "この端末と同期しました" }));
-			},
-			(error) => {
-				throw new Error(syncProgressErrorMessage(error));
-			},
-		);
 	const run = (action: PendingAction, task: () => Promise<void>, fallback: string): void => {
 		update(() => {
 			setPendingAction(action);

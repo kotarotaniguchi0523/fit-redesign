@@ -1,10 +1,10 @@
 /** @jsxImportSource hono/jsx */
 import { createRoute } from "honox/factory";
-import { ExamSection } from "../../components/ExamSection";
 import { getExamByNumber, selectVisibleExamNumbers } from "../../data/exams";
 import { unitBasedTabs } from "../../data/units";
 import type { ExamByYear, ExamNumber } from "../../types";
 import { isYear } from "../../types";
+import { ExamSection } from "./_ExamSection";
 import { buildJsonLd, buildPageDescription, buildPageTitle } from "./_meta";
 import { StudyNavigator } from "./_unitNav";
 
