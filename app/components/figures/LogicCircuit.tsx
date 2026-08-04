@@ -5,34 +5,22 @@ import {
 	getWirePath,
 	LOGIC_DEFAULTS,
 } from "../../lib/figures/logic-circuit";
-import type { LogicGate, LogicInput, LogicOutput, LogicWire } from "../../types";
+import type { FigureData } from "../../types";
+import type { FigureRenderMode } from "./Figure";
 
 interface LogicCircuitProps {
-	inputs: LogicInput[];
-	outputs: LogicOutput[];
-	gates: LogicGate[];
-	wires: LogicWire[];
-	width?: number;
-	height?: number;
-	responsive?: boolean;
-	rasterTextOverlay?: boolean;
+	circuit: Extract<FigureData, { type: "logicCircuit" }>;
+	mode?: FigureRenderMode;
 }
 
-export function LogicCircuit({
-	inputs,
-	outputs,
-	gates,
-	wires,
-	width = 500,
-	height = 300,
-	responsive = true,
-	rasterTextOverlay = false,
-}: LogicCircuitProps): JSX.Element {
+export function LogicCircuit({ circuit, mode = "responsive" }: LogicCircuitProps): JSX.Element {
+	const { inputs, outputs, gates, wires, width = 500, height = 300 } = circuit;
+	const responsive = mode === "responsive";
 	const viewport = responsive
 		? getLogicCircuitViewport(inputs, outputs, gates, wires)
 		: { x: 0, y: 0, width, height };
-	const showSvgLabels = !(responsive || rasterTextOverlay);
-	const circuit = (
+	const showSvgLabels = mode === "fixed";
+	const svg = (
 		<svg
 			width={responsive ? "100%" : width}
 			height={responsive ? "100%" : height}
@@ -110,8 +98,8 @@ export function LogicCircuit({
 		</svg>
 	);
 
-	if (!(responsive || rasterTextOverlay)) {
-		return circuit;
+	if (mode === "fixed") {
+		return svg;
 	}
 
 	const labelStyle = (x: number, y: number, fontSize: number): string => {
@@ -128,7 +116,7 @@ export function LogicCircuit({
 			class={responsive ? "overflow-hidden rounded border border-gray-300" : undefined}
 			style={wrapperStyle}
 		>
-			{circuit}
+			{svg}
 			{inputs.map((input) => (
 				<span aria-hidden="true" style={labelStyle(input.x - 17, input.y, 14)}>
 					{input.label}

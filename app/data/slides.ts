@@ -1,16 +1,7 @@
-import { z } from "zod";
 import { safeParseOrThrow } from "../lib/zod";
-import { PdfPathSchema, type Slide, type SlideId, SlideIdSchema } from "../types";
+import { type Slide, SlideIdSchema, SlideSchema } from "../types";
 
-const SlideSchema = z
-	.object({
-		id: SlideIdSchema,
-		title: z.string().min(1),
-		pdfPath: PdfPathSchema,
-	})
-	.strict();
-
-const SlidesSchema = z.array(SlideSchema);
+const SlidesSchema = SlideSchema.array();
 
 const slidesData = [
 	{
@@ -82,16 +73,14 @@ const slidesData = [
 
 export const slides: Slide[] = safeParseOrThrow(SlidesSchema, slidesData, "Invalid slides");
 
-const slidesById: Record<SlideId, Slide> = Object.fromEntries(
-	slides.map((slide) => [slide.id, slide] as const),
-) as Record<SlideId, Slide>;
+const slidesById = new Map(slides.map((slide) => [slide.id, slide] as const));
 
 export function getSlide(id: string): Slide {
 	const parsedId = SlideIdSchema.safeParse(id);
 	if (!parsedId.success) {
 		throw new Error(`Invalid slide id format: ${id}`);
 	}
-	const slide = slidesById[parsedId.data];
+	const slide = slidesById.get(parsedId.data);
 	if (!slide) {
 		throw new Error(`Unknown slide id: ${id}`);
 	}

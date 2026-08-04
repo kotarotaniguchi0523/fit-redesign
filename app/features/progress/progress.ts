@@ -1,10 +1,6 @@
-import type { QuestionId, UnitTabId } from "../../types";
+export type { ProgressEntry } from "../../types/domain";
 
-export type ProgressEntry = Readonly<{
-	questionId: QuestionId;
-	unitId: UnitTabId;
-	revealedAt: number;
-}>;
+import type { ProgressEntry } from "../../types/domain";
 
 export type ProgressMap = Readonly<Record<string, ProgressEntry>>;
 
@@ -16,19 +12,6 @@ function indexLatestProgress(entries: readonly ProgressEntry[]): Map<string, Pro
 		}
 		return indexed;
 	}, new Map<string, ProgressEntry>());
-}
-
-export function isProgressEntry(value: unknown): value is ProgressEntry {
-	if (!value || typeof value !== "object") {
-		return false;
-	}
-	const entry = value as Record<string, unknown>;
-	return (
-		typeof entry.questionId === "string" &&
-		typeof entry.unitId === "string" &&
-		typeof entry.revealedAt === "number" &&
-		Number.isFinite(entry.revealedAt)
-	);
 }
 
 export function mergeProgressEntries(

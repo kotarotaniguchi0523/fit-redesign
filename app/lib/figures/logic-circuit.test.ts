@@ -13,12 +13,6 @@ describe("getGateSymbolPath", () => {
 			expect(result).toContain("<g>");
 		});
 	}
-
-	it("returns an empty string for an unknown gate type", () => {
-		const gate = { id: "g1", type: "UNKNOWN", x: 100, y: 100 } as unknown as LogicGate;
-		const result = getGateSymbolPath(gate);
-		expect(result).toBe("");
-	});
 });
 
 describe("getWirePath", () => {

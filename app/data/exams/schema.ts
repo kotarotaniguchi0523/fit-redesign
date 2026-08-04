@@ -5,9 +5,11 @@ import {
 	PdfPathSchema,
 	QuestionIdSchema,
 	YearSchema,
-} from "../../types";
+} from "../../types/domain";
 
 const EXAM_FILE_RE = /exam(\d+)-(\d{4})\.json$/;
+
+export const JsonModuleSchema = z.object({ default: z.unknown() }).passthrough();
 
 export const JsonExamFilePathSchema = z.string().regex(/^..\/exams-json\/exam\d+-\d{4}\.json$/, {
 	error: "exam json path must match ../exams-json/exam{n}-{year}.json",
@@ -30,7 +32,7 @@ export const ParsedJsonExamFilePathSchema = JsonExamFilePathSchema.transform((fi
 	}),
 );
 
-const QuestionOptionSchema = z
+export const QuestionOptionSchema = z
 	.object({
 		label: z.string().min(1).max(16),
 		value: z.string().min(1),
@@ -38,14 +40,14 @@ const QuestionOptionSchema = z
 	})
 	.strict();
 
-const PointSchema = z
+export const PointSchema = z
 	.object({
 		x: z.number(),
 		y: z.number(),
 	})
 	.strict();
 
-const StateNodeSchema = z
+export const StateNodeSchema = z
 	.object({
 		id: z.string().min(1),
 		label: z.string().min(1),
@@ -56,7 +58,7 @@ const StateNodeSchema = z
 	})
 	.strict();
 
-const TransitionSchema = z
+export const TransitionSchema = z
 	.object({
 		from: z.string().min(1),
 		to: z.string().min(1),
@@ -65,27 +67,31 @@ const TransitionSchema = z
 	})
 	.strict();
 
-const TreeNodeSchema: z.ZodType<unknown> = z.lazy(() =>
-	z.object({
-		value: z.union([z.string(), z.number()]),
-		left: TreeNodeSchema.optional(),
-		right: TreeNodeSchema.optional(),
-	}),
-);
+export const TreeNodeSchema = z.object({
+	value: z.union([z.string(), z.number()]),
+	get left() {
+		return TreeNodeSchema.optional();
+	},
+	get right() {
+		return TreeNodeSchema.optional();
+	},
+	x: z.number().optional(),
+	y: z.number().optional(),
+});
 
-const TruthTableSchema = z.object({
+export const TruthTableSchema = z.object({
 	type: z.literal("truthTable"),
 	columns: z.array(z.object({ key: z.string().min(1), label: z.string().min(1) })),
 	rows: z.array(z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]))),
 });
 
-const DataTableSchema = z.object({
+export const DataTableSchema = z.object({
 	type: z.literal("dataTable"),
 	columns: z.array(z.object({ key: z.string().min(1), label: z.string().min(1) })),
 	rows: z.array(z.record(z.string(), z.union([z.string(), z.number()]))),
 });
 
-const FigureDataSchema = z.discriminatedUnion("type", [
+export const FigureDataSchema = z.discriminatedUnion("type", [
 	z.object({
 		type: z.literal("stateDiagram"),
 		nodes: z.array(StateNodeSchema),
@@ -187,7 +193,7 @@ const FigureDataSchema = z.discriminatedUnion("type", [
 	}),
 ]);
 
-const QuestionSchema = z
+export const QuestionSchema = z
 	.object({
 		id: QuestionIdSchema,
 		number: z.number().int().positive(),
@@ -238,3 +244,8 @@ export const ExamsMetaSchema = z
 	.strict();
 
 export { YearSchema };
+
+export type FigureData = z.infer<typeof FigureDataSchema>;
+export type Question = z.infer<typeof QuestionSchema>;
+export type Exam = z.infer<typeof ExamJsonSchema>;
+export type ExamMeta = z.infer<typeof ExamsMetaSchema>;

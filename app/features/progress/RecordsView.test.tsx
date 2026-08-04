@@ -1,6 +1,6 @@
 import { render } from "hono/jsx/dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import RecordsView from "./$RecordsView";
+import SyncSettings from "./$SyncSettings";
 import { SYNC_KEY_STORAGE_KEY } from "./progressStorage";
 
 describe("RecordsView の同期リンク受け入れ", () => {
@@ -16,23 +16,26 @@ describe("RecordsView の同期リンク受け入れ", () => {
 	});
 
 	it("新しい同期が失敗したら既存の同期キーを保持する", async () => {
-		localStorage.setItem(SYNC_KEY_STORAGE_KEY, "working-key");
+		const workingKey = "a".repeat(43);
+		localStorage.setItem(SYNC_KEY_STORAGE_KEY, workingKey);
 		history.replaceState(null, "", "/records#sync=invalid-key");
 		vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 404 }));
 
 		const container = document.createElement("div");
 		document.body.appendChild(container);
-		render(<RecordsView unitNames={{}} origin="http://localhost" />, container);
+		render(<SyncSettings origin="http://localhost" />, container);
 
 		await vi.waitFor(() => {
 			expect(container.textContent).toContain("同期リンクが無効です");
 		});
-		expect(localStorage.getItem(SYNC_KEY_STORAGE_KEY)).toBe("working-key");
+		expect(localStorage.getItem(SYNC_KEY_STORAGE_KEY)).toBe(workingKey);
 	});
 
 	it("新しい同期が成功した後に同期キーを保存する", async () => {
-		localStorage.setItem(SYNC_KEY_STORAGE_KEY, "old-key");
-		history.replaceState(null, "", "/records#sync=new-key");
+		const oldKey = "a".repeat(43);
+		const newKey = "b".repeat(43);
+		localStorage.setItem(SYNC_KEY_STORAGE_KEY, oldKey);
+		history.replaceState(null, "", `/records#sync=${newKey}`);
 		let resolveSync: ((response: Response) => void) | undefined;
 		vi.spyOn(globalThis, "fetch").mockImplementation(
 			() =>
@@ -43,14 +46,14 @@ describe("RecordsView の同期リンク受け入れ", () => {
 
 		const container = document.createElement("div");
 		document.body.appendChild(container);
-		render(<RecordsView unitNames={{}} origin="http://localhost" />, container);
+		render(<SyncSettings origin="http://localhost" />, container);
 
 		await vi.waitFor(() => expect(resolveSync).toBeTypeOf("function"));
-		expect(localStorage.getItem(SYNC_KEY_STORAGE_KEY)).toBe("old-key");
+		expect(localStorage.getItem(SYNC_KEY_STORAGE_KEY)).toBe(oldKey);
 
 		resolveSync?.(Response.json({ entries: [] }));
 		await vi.waitFor(() => {
-			expect(localStorage.getItem(SYNC_KEY_STORAGE_KEY)).toBe("new-key");
+			expect(localStorage.getItem(SYNC_KEY_STORAGE_KEY)).toBe(newKey);
 		});
 	});
 });

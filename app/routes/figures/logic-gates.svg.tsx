@@ -4,7 +4,7 @@ import { LOGIC_CIRCUIT_PROTOTYPE } from "../../features/figures/logic-circuit-pr
 
 export default createRoute(async (c) => {
 	const prototype = LOGIC_CIRCUIT_PROTOTYPE;
-	const svg = String(await (<Figure data={prototype.figure} responsive={false} />));
+	const svg = String(await (<Figure data={prototype.figure} mode="fixed" />));
 
 	return c.body(svg, 200, {
 		"Cache-Control": "public, max-age=3600",

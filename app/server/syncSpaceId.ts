@@ -1,9 +1,9 @@
 import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import { z } from "zod";
+import type { SyncKey } from "../types/domain";
 import { schemaResult } from "./schemaResult";
-import type { SyncKey } from "./syncKey";
 
-const SyncSpaceIdBrand = Symbol("SyncSpaceId");
+const SyncSpaceIdBrand: unique symbol = Symbol("SyncSpaceId");
 const SyncSpaceIdSchema = z.string().length(64).brand<typeof SyncSpaceIdBrand>();
 
 export type SyncSpaceId = z.infer<typeof SyncSpaceIdSchema>;

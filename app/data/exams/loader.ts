@@ -2,25 +2,26 @@ import { safeParseOrThrow } from "../../lib/zod";
 import type { ExamByYear } from "../../types";
 import metaJson from "../exams-json/exams-meta.json";
 import { assembleExamsByYear, type ParsedExamEntry } from "./assemble";
-import { ExamJsonSchema, ExamsMetaSchema } from "./schema";
+import {
+	ExamJsonSchema,
+	ExamsMetaSchema,
+	JsonModuleSchema,
+	ParsedJsonExamFilePathSchema,
+} from "./schema";
 
 const examModules = import.meta.glob<{ default: unknown }>("../exams-json/exam[0-9]-*.json", {
 	eager: true,
 });
 
-const EXAM_FILE_RE = /exam(\d+)-(\d{4})\.json$/;
-
 function getJsonValue(module: unknown): unknown {
-	if (module && typeof module === "object" && "default" in module) {
-		return (module as { default: unknown }).default;
-	}
-	return module;
+	const parsed = JsonModuleSchema.safeParse(module);
+	return parsed.success ? parsed.data.default : module;
 }
 
 function parseExamEntries(): ParsedExamEntry[] {
 	return Object.entries(examModules).flatMap(([filePath, module]) => {
-		const match = filePath.match(EXAM_FILE_RE);
-		if (!match) {
+		const path = ParsedJsonExamFilePathSchema.safeParse(filePath);
+		if (!path.success) {
 			return [];
 		}
 		const data = safeParseOrThrow(
@@ -28,7 +29,7 @@ function parseExamEntries(): ParsedExamEntry[] {
 			getJsonValue(module),
 			`Invalid exam json: ${filePath}`,
 		);
-		return [{ examNumber: Number(match[1]), year: match[2], data }];
+		return [{ ...path.data, data }];
 	});
 }
 

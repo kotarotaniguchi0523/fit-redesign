@@ -1,81 +1,8 @@
-import { z } from "zod";
 import { safeParseOrThrow } from "../lib/zod";
-import {
-	type ExamNumber,
-	ExamNumberSchema,
-	type Slide,
-	type Unit,
-	type UnitBasedTab,
-	type UnitTabId,
-	UnitTabIdSchema,
-	type Year,
-	YearSchema,
-} from "../types";
+import { type Unit, UnitBasedTabsSchema, UnitSchema } from "../types";
 import { getSlide } from "./slides";
 
-const SlideOnlyUnitSchema = z
-	.object({
-		id: z
-			.string()
-			.regex(/^slide-only-\d+$/, { error: "slide-only unit id must match slide-only-{n}" }),
-		number: z.number().int().nonnegative(),
-		name: z.string().min(1),
-		slides: z.array(z.unknown()).min(1),
-	})
-	.strict();
-const SlideOnlyUnitsSchema = z.array(SlideOnlyUnitSchema);
-
-const UnitExamMappingSchema = z
-	.object({
-		year: YearSchema,
-		examNumbers: z.array(ExamNumberSchema).min(1),
-		integratedTitle: z.string().min(1).optional(),
-	})
-	.strict();
-
-const UnitBasedTabSchema = z
-	.object({
-		id: UnitTabIdSchema,
-		name: z.string().min(1),
-		title: z.string().min(1),
-		icon: z.string().min(1),
-		description: z.string().min(1),
-		slides: z.array(z.unknown()).min(1),
-		examMapping: z.array(UnitExamMappingSchema).min(1),
-	})
-	.superRefine((tab, ctx) => {
-		const years = tab.examMapping.map((mapping) => mapping.year);
-		const uniqueYears = new Set<Year>(years);
-		if (uniqueYears.size !== years.length) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["examMapping"],
-				message: "examMapping years must be unique within each unit tab",
-			});
-		}
-	});
-
-const UnitBasedTabsSchema = z.array(UnitBasedTabSchema).superRefine((tabs, ctx) => {
-	const ids = tabs.map((tab) => tab.id);
-	const uniqueIds = new Set<UnitTabId>(ids);
-	if (uniqueIds.size !== ids.length) {
-		ctx.addIssue({
-			code: "custom",
-			path: [],
-			message: "unit tab ids must be unique",
-		});
-	}
-});
-
-type UnitBasedTabInput = Omit<UnitBasedTab, "id" | "slides" | "examMapping"> & {
-	id: string;
-	slides: Slide[];
-	examMapping: {
-		year: Year;
-		examNumbers: ExamNumber[];
-		integratedTitle?: string;
-	}[];
-};
+const SlideOnlyUnitsSchema = UnitSchema.array();
 
 // 講義資料のみの単元
 const slideOnlyUnitsData: Unit[] = [
@@ -111,14 +38,11 @@ const slideOnlyUnitsData: Unit[] = [
 	},
 ];
 
-// スキーマは slides を z.unknown() で緩く検証する（Slide 形の厳格検証はしない）ため推論型は
-// slides: unknown[] になる。データ源（slideOnlyUnitsData）は Slide[] で型付け済みのため、parse
-// 結果をドメイン型へ寄せるこの境界キャストは妥当（スキーマ厳格化は別タスク）。
-export const slideOnlyUnits: Unit[] = safeParseOrThrow(
+export const slideOnlyUnits = safeParseOrThrow(
 	SlideOnlyUnitsSchema,
 	slideOnlyUnitsData,
 	"Invalid slideOnlyUnits",
-) as Unit[];
+);
 
 // ===== 単元ベースのタブ構造 =====
 
@@ -135,7 +59,7 @@ export const slideOnlyUnits: Unit[] = safeParseOrThrow(
  *   - オートマトン+符号理論 → exam6, exam7 (2016-2017はexam4)
  *   - データ構造+ソート → exam8, exam9 (2016-2017はexam5)
  */
-const unitBasedTabsData: UnitBasedTabInput[] = [
+const unitBasedTabsData = [
 	{
 		id: "unit-base-conversion",
 		name: "基数変換",
@@ -274,10 +198,8 @@ const unitBasedTabsData: UnitBasedTabInput[] = [
 	},
 ];
 
-// slideOnlyUnits と同様、スキーマは slides を緩く検証するため slides: unknown[] に推論される。
-// データ源は型付け済みのため parse 結果をドメイン型へ寄せる境界キャストは妥当。
-export const unitBasedTabs: UnitBasedTab[] = safeParseOrThrow(
+export const unitBasedTabs = safeParseOrThrow(
 	UnitBasedTabsSchema,
 	unitBasedTabsData,
 	"Invalid unitBasedTabs",
-) as UnitBasedTab[];
+);

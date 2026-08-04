@@ -10,20 +10,17 @@ import { TruthTable } from "./TruthTable";
 
 interface FigureProps {
 	data: FigureData;
-	responsive?: boolean;
-	rasterTextOverlay?: boolean;
+	mode?: FigureRenderMode;
 }
+
+export type FigureRenderMode = "responsive" | "fixed" | "raster";
 
 function assertNever(value: never): never {
 	throw new Error(`Unknown figure type: ${JSON.stringify(value)}`);
 }
 
 /** FigureData の判別可能 Union を、対応する Hono JSX 図表へ変換する。 */
-export function Figure({
-	data,
-	responsive = true,
-	rasterTextOverlay = false,
-}: FigureProps): JSX.Element {
+export function Figure({ data, mode = "responsive" }: FigureProps): JSX.Element {
 	switch (data.type) {
 		case "stateDiagram":
 			return <StateDiagram nodes={data.nodes} transitions={data.transitions} />;
@@ -34,18 +31,7 @@ export function Figure({
 		case "parityCheck":
 			return <ParityCheck data={data.data} />;
 		case "logicCircuit":
-			return (
-				<LogicCircuit
-					inputs={data.inputs}
-					outputs={data.outputs}
-					gates={data.gates}
-					wires={data.wires}
-					width={data.width}
-					height={data.height}
-					responsive={responsive}
-					rasterTextOverlay={rasterTextOverlay}
-				/>
-			);
+			return <LogicCircuit circuit={data} mode={mode} />;
 		case "flowchart":
 			return (
 				<Flowchart nodes={data.nodes} edges={data.edges} width={data.width} height={data.height} />

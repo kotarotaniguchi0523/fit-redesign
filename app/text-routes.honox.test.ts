@@ -15,7 +15,7 @@ import robotsTxt from "./routes/robots.txt";
 type RouteHandlers = readonly [unknown, ...unknown[]];
 function mountGet(handlers: RouteHandlers): Hono {
 	const app = new Hono();
-	app.get("/", ...(handlers as never));
+	app.get("/", ...handlers);
 	return app;
 }
 
