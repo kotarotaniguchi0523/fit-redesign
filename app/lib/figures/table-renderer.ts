@@ -14,6 +14,10 @@ export interface TableConfig {
 	rows: Record<string, unknown>[];
 }
 
+function assertNever(value: never): never {
+	throw new Error(`unreachable table figure: ${JSON.stringify(value)}`);
+}
+
 export function buildTableConfig(data: TableFigureData): TableConfig {
 	switch (data.type) {
 		case "dataTable":
@@ -61,6 +65,6 @@ export function buildTableConfig(data: TableFigureData): TableConfig {
 				})),
 			};
 		default:
-			throw new Error(`unreachable: unknown table figure type ${(data as { type: string }).type}`);
+			return assertNever(data);
 	}
 }

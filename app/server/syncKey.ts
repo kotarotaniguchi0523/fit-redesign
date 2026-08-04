@@ -1,15 +1,8 @@
 import { Result, type Result as ResultType } from "neverthrow";
-import { z } from "zod";
+import { SyncKeySchema, type SyncKey as SyncKeyType } from "../types/domain";
 import { schemaResult, type ValidationError } from "./schemaResult";
 
 const BASE64_PADDING_PATTERN = /=+$/;
-const SyncKeyBrand = Symbol("SyncKey");
-const SyncKeySchema = z
-	.string()
-	.regex(/^[A-Za-z0-9_-]{43}$/, "同期キーの形式が正しくありません")
-	.brand<typeof SyncKeyBrand>();
-
-export type SyncKey = z.infer<typeof SyncKeySchema>;
 
 export type GenerateSyncKeyError =
 	| ValidationError
@@ -30,6 +23,6 @@ const generateRandomKey = Result.fromThrowable(
 export const SyncKey = {
 	schema: SyncKeySchema,
 	parse: schemaResult(SyncKeySchema),
-	generate: (): ResultType<SyncKey, GenerateSyncKeyError> =>
+	generate: (): ResultType<SyncKeyType, GenerateSyncKeyError> =>
 		generateRandomKey().andThen(schemaResult(SyncKeySchema)),
 } as const;

@@ -42,7 +42,7 @@ type RouteHandlers = readonly [unknown, ...unknown[]];
 function mountGet(handlers: RouteHandlers): Hono {
 	const app = new Hono();
 	app.use("*", testRenderer);
-	app.get("/", ...(handlers as never));
+	app.get("/", ...handlers);
 	return app;
 }
 

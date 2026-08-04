@@ -6,7 +6,7 @@ import { renderHonoJsxToPng } from "../../lib/figures/render-hono-image";
 export default createRoute(async (c) => {
 	const prototype = LOGIC_CIRCUIT_PROTOTYPE;
 	const png = await renderHonoJsxToPng(
-		<Figure data={prototype.figure} responsive={false} rasterTextOverlay />,
+		<Figure data={prototype.figure} mode="raster" />,
 		prototype.canvas,
 	);
 

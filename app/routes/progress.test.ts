@@ -55,13 +55,28 @@ afterEach(async () => {
 
 describe("progress routes", () => {
 	it("256bitのキーを一度だけ返し、D1にはハッシュだけを保存する", async () => {
-		const response = await mountedClient().progress.spaces.$post();
+		const response = await mountedClient().progress.spaces.$post(
+			{},
+			{ headers: { Origin: "http://localhost" } },
+		);
 		const body = SyncKey.schema.safeParse((await response.json()).key);
 
 		expect(response.status).toBe(201);
 		expect(body.success).toBe(true);
 		const stored = await database.binding.prepare("SELECT id FROM sync_spaces").first();
 		expect(stored?.id).not.toBe(body.data);
+	});
+
+	it("外部Originから同期先を発行できない", async () => {
+		const response = await mountedApp().request(
+			"/progress/spaces",
+			{
+				method: "POST",
+				headers: { "Content-Type": "text/plain", Origin: "https://evil.example" },
+			},
+			env(),
+		);
+		expect(response.status).toBe(403);
 	});
 
 	it("同期キーがないリクエストは404にする", async () => {
@@ -128,34 +143,36 @@ describe("progress routes", () => {
 			unitId: "unit-base-conversion",
 			revealedAt: index + 1,
 		}));
-		const response = await mountedClient().progress.sync.$post(
-			{ json: { entries } },
-			{ headers: { "X-Sync-Key": "a".repeat(43) } },
-		);
+		const response = await mountedClient().progress.sync.$post({
+			json: { entries },
+			header: { "x-sync-key": "a".repeat(43) },
+		});
 		expect(response.status).toBe(200);
 	});
 
 	it("未知の同期領域は404にする", async () => {
-		const response = await mountedClient().progress.sync.$post(
-			{ json: { entries: [] } },
-			{ headers: { "X-Sync-Key": "a".repeat(43) } },
-		);
+		const response = await mountedClient().progress.sync.$post({
+			json: { entries: [] },
+			header: { "x-sync-key": "a".repeat(43) },
+		});
 		expect(response.status).toBe(404);
 	});
 
 	it("レート上限を超えた同期は429にする", async () => {
-		const response = await mountedClient(false).progress.sync.$post(
-			{ json: { entries: [] } },
-			{ headers: { "X-Sync-Key": "a".repeat(43) } },
-		);
+		const response = await mountedClient(false).progress.sync.$post({
+			json: { entries: [] },
+			header: { "x-sync-key": "a".repeat(43) },
+		});
 		expect(response.status).toBe(429);
 	});
 
 	it("同期データ削除は存在有無によらず冪等に成功する", async () => {
 		await seedSyncSpace();
 		const response = await mountedClient().progress.$delete(
-			{},
-			{ headers: { "X-Sync-Key": "a".repeat(43) } },
+			{
+				header: { "x-sync-key": "a".repeat(43) },
+			},
+			{ headers: { Origin: "http://localhost" } },
 		);
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual({ ok: true });
@@ -163,8 +180,10 @@ describe("progress routes", () => {
 
 	it("削除済み同期領域を再削除しても成功する", async () => {
 		const response = await mountedClient().progress.$delete(
-			{},
-			{ headers: { "X-Sync-Key": "a".repeat(43) } },
+			{
+				header: { "x-sync-key": "a".repeat(43) },
+			},
+			{ headers: { Origin: "http://localhost" } },
 		);
 		expect(response.status).toBe(200);
 	});

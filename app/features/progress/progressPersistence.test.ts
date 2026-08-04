@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ProgressEntrySchema, SyncKeySchema } from "../../types";
 import { syncProgress } from "./progressApi";
 import {
 	PROGRESS_STORAGE_KEY,
@@ -8,11 +9,12 @@ import {
 	saveProgressEntries,
 } from "./progressStorage";
 
-const entry = {
-	questionId: "exam1-2013-q1" as never,
-	unitId: "unit-base-conversion" as never,
+const entry = ProgressEntrySchema.parse({
+	questionId: "exam1-2013-q1",
+	unitId: "unit-base-conversion",
 	revealedAt: 123,
-};
+});
+const syncKey = SyncKeySchema.parse("a".repeat(43));
 
 describe("progress persistence", () => {
 	beforeEach(() => {
@@ -30,13 +32,13 @@ describe("progress persistence", () => {
 		expect(readProgress()).toEqual({});
 	});
 	it("同期成功時にサーバーで統合された最新記録をローカルへ反映する", async () => {
-		localStorage.setItem(SYNC_KEY_STORAGE_KEY, "sync-key");
+		localStorage.setItem(SYNC_KEY_STORAGE_KEY, syncKey);
 		recordReveal(entry);
-		const remoteEntry = {
-			questionId: "exam1-2014-q2" as never,
-			unitId: "unit-base-conversion" as never,
+		const remoteEntry = ProgressEntrySchema.parse({
+			questionId: "exam1-2014-q2",
+			unitId: "unit-base-conversion",
 			revealedAt: 789,
-		};
+		});
 		vi.spyOn(globalThis, "fetch").mockResolvedValue(
 			new Response(JSON.stringify({ entries: [{ ...entry, revealedAt: 100 }, remoteEntry] }), {
 				status: 200,
@@ -44,7 +46,7 @@ describe("progress persistence", () => {
 			}),
 		);
 
-		const result = await syncProgress("sync-key", [entry]);
+		const result = await syncProgress(syncKey, [entry]);
 		result.map(saveProgressEntries);
 
 		expect(readProgress()).toEqual({
@@ -53,18 +55,18 @@ describe("progress persistence", () => {
 		});
 	});
 	it("同期失敗または不正な応答ではローカル記録を変更しない", async () => {
-		localStorage.setItem(SYNC_KEY_STORAGE_KEY, "sync-key");
+		localStorage.setItem(SYNC_KEY_STORAGE_KEY, syncKey);
 		recordReveal(entry);
 		const fetchSpy = vi.spyOn(globalThis, "fetch");
 		fetchSpy.mockResolvedValueOnce(new Response("not found", { status: 404 }));
-		await syncProgress("sync-key", [entry]);
+		await syncProgress(syncKey, [entry]);
 		fetchSpy.mockResolvedValueOnce(
 			new Response(JSON.stringify({ entries: [{ questionId: 42 }] }), {
 				status: 200,
 				headers: { "Content-Type": "application/json" },
 			}),
 		);
-		await syncProgress("sync-key", [entry]);
+		await syncProgress(syncKey, [entry]);
 
 		expect(readProgress()).toEqual({ [entry.questionId]: entry });
 	});

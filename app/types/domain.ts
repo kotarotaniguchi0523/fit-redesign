@@ -1,13 +1,32 @@
 import { z } from "zod";
 
+export type {
+	ProgressEntry,
+	QuestionId,
+	RevealedAt,
+	SyncKey,
+	UnitTabId,
+} from "./browser";
+export {
+	ProgressEntryListSchema,
+	ProgressEntrySchema,
+	ProgressSnapshotSchema,
+	ProgressSyncRequestSchema,
+	QuestionIdSchema,
+	RevealedAtSchema,
+	SyncHeaderSchema,
+	SyncKeySchema,
+	UnitTabIdSchema,
+} from "./browser";
+
 export const YEARS = ["2013", "2014", "2015", "2016", "2017"] as const;
 export const EXAM_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+const yearValues: ReadonlySet<string> = new Set(YEARS);
+const examNumberValues: ReadonlySet<number> = new Set(EXAM_NUMBERS);
 
-declare const examIdBrand: unique symbol;
-declare const questionIdBrand: unique symbol;
-declare const pdfPathBrand: unique symbol;
-declare const slideIdBrand: unique symbol;
-declare const unitTabIdBrand: unique symbol;
+const examIdBrand: unique symbol = Symbol("ExamId");
+const pdfPathBrand: unique symbol = Symbol("PdfPath");
+const slideIdBrand: unique symbol = Symbol("SlideId");
 
 export type Year = (typeof YEARS)[number];
 export type ExamNumber = (typeof EXAM_NUMBERS)[number];
@@ -18,7 +37,7 @@ export const YearSchema = z.enum(YEARS);
 export const ExamNumberSchema = z
 	.number()
 	.int()
-	.refine((value): value is ExamNumber => EXAM_NUMBERS.includes(value as ExamNumber), {
+	.refine((value): value is ExamNumber => examNumberValues.has(value), {
 		error: "exam number must be one of 1..9",
 	});
 
@@ -28,13 +47,6 @@ export const ExamIdSchema = z
 		error: "examId は exam{1-9}-{2013..2017} 形式である必要があります",
 	})
 	.brand<typeof examIdBrand>();
-
-export const QuestionIdSchema = z
-	.string({ error: "questionId は文字列である必要があります" })
-	.regex(/^exam[1-9]-(2013|2014|2015|2016|2017)-q[1-9]\d*$/, {
-		error: "questionId は exam{1-9}-{2013..2017}-q{positive} 形式である必要があります",
-	})
-	.brand<typeof questionIdBrand>();
 
 export const PdfPathSchema = z
 	.string({ error: "pdfPath は文字列である必要があります" })
@@ -49,23 +61,6 @@ export const SlideIdSchema = z
 	.regex(/^slide-(0|[1-9]\d*)$/, { error: "slideId は slide-{number} 形式である必要があります" })
 	.brand<typeof slideIdBrand>();
 
-export const UnitTabIdSchema = z
-	.string({ error: "unit id は文字列である必要があります" })
-	.regex(/^unit-[a-z0-9]+(?:-[a-z0-9]+)*$/, {
-		error: "unit id は unit-{kebab-case} 形式である必要があります",
-	})
-	.brand<typeof unitTabIdBrand>();
-
-export type ExamId = z.infer<typeof ExamIdSchema>;
-export type QuestionId = z.infer<typeof QuestionIdSchema>;
-export type PdfPath = z.infer<typeof PdfPathSchema>;
-export type SlideId = z.infer<typeof SlideIdSchema>;
-export type UnitTabId = z.infer<typeof UnitTabIdSchema>;
-
 export function isYear(value: string): value is Year {
-	return YEARS.includes(value as Year);
-}
-
-export function isExamNumber(value: number): value is ExamNumber {
-	return EXAM_NUMBERS.includes(value as ExamNumber);
+	return yearValues.has(value);
 }

@@ -9,7 +9,10 @@ export function useSolutionReveal(
 ): (event: Event) => void {
 	const hasRecorded = useRef(false);
 	return (event: Event): void => {
-		if (!(event.currentTarget as HTMLDetailsElement).open || hasRecorded.current) {
+		if (
+			!(event.currentTarget instanceof HTMLDetailsElement && event.currentTarget.open) ||
+			hasRecorded.current
+		) {
 			return;
 		}
 		hasRecorded.current = true;

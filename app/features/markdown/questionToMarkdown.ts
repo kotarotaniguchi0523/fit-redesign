@@ -50,9 +50,10 @@ function figureDataToMarkdown(figureData: FigureData): string {
 		case "stateDiagram": {
 			const { nodes, transitions } = figureData;
 			const nodeLines = nodes.map((node) => {
-				const markers = ([] as string[])
-					.concat(node.isInitial ? "初期状態" : [])
-					.concat(node.isAccepting ? "受理状態" : []);
+				const markers = [
+					...(node.isInitial ? ["初期状態"] : []),
+					...(node.isAccepting ? ["受理状態"] : []),
+				];
 				const markerStr = markers.length > 0 ? ` (${markers.join(", ")})` : "";
 				return `- ${node.label}${markerStr}`;
 			});

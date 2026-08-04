@@ -22,11 +22,9 @@ function env(): Cloudflare.Env {
 }
 
 function mountedApp(): Hono {
-	// biome-ignore lint/suspicious/noExplicitAny: HonoX handler配列をintegration testへマウントする
-	const spread = (handlers: unknown): any => handlers as any;
 	const app = new Hono();
-	app.use("*", ...spread(apiMiddleware));
-	app.get("/health", ...spread(health));
+	app.use("*", ...apiMiddleware);
+	app.get("/health", ...health);
 	app.route("/markdown", markdown);
 	return app;
 }

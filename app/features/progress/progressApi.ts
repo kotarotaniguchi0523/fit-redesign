@@ -1,5 +1,8 @@
-import { err, ok, ResultAsync } from "neverthrow";
-import { isProgressEntry, mergeProgressEntries, type ProgressEntry } from "./progress";
+import { hc } from "hono/client";
+import { err, ResultAsync } from "neverthrow";
+import type { ProgressApp } from "../../routes/progress";
+import type { SyncKey } from "../../types";
+import { mergeProgressEntries, type ProgressEntry } from "./progress";
 
 function assertNever(value: never): never {
 	throw new Error(`Unexpected sync error: ${String(value)}`);
@@ -10,24 +13,24 @@ export type SyncProgressError =
 	| Readonly<{ kind: "RequestFailed"; cause: unknown }>
 	| Readonly<{ kind: "InvalidResponse"; cause?: unknown }>;
 
-function parseSyncEntries(value: unknown): readonly ProgressEntry[] | null {
-	if (!value || typeof value !== "object") {
-		return null;
-	}
-	const entries = (value as Record<string, unknown>).entries;
-	return Array.isArray(entries) && entries.every(isProgressEntry) ? entries : null;
+const progressClient = hc<ProgressApp>("/progress");
+
+export function createSyncSpace(): ReturnType<typeof progressClient.spaces.$post> {
+	return progressClient.spaces.$post();
+}
+
+export function deleteRemoteProgress(
+	key: SyncKey,
+): ReturnType<typeof progressClient.index.$delete> {
+	return progressClient.index.$delete({ header: { "x-sync-key": key } });
 }
 
 export function syncProgress(
-	key: string,
+	key: SyncKey,
 	local: readonly ProgressEntry[],
 ): ResultAsync<ProgressEntry[], SyncProgressError> {
 	return ResultAsync.fromPromise(
-		fetch("/progress/sync", {
-			method: "POST",
-			headers: { "Content-Type": "application/json", "X-Sync-Key": key },
-			body: JSON.stringify({ entries: local }),
-		}),
+		progressClient.sync.$post({ json: { entries: local }, header: { "x-sync-key": key } }),
 		(cause): SyncProgressError => ({ kind: "RequestFailed", cause }),
 	).andThen((response) => {
 		if (!response.ok) {
@@ -40,12 +43,7 @@ export function syncProgress(
 		return ResultAsync.fromPromise(
 			response.json(),
 			(cause): SyncProgressError => ({ kind: "InvalidResponse", cause }),
-		).andThen((body) => {
-			const remote = parseSyncEntries(body);
-			return remote
-				? ok(mergeProgressEntries(local, remote))
-				: err<never, SyncProgressError>({ kind: "InvalidResponse" });
-		});
+		).map((body) => mergeProgressEntries(local, body.entries));
 	});
 }
 

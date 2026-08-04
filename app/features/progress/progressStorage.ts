@@ -1,5 +1,10 @@
 import {
-	isProgressEntry,
+	ProgressEntrySchema,
+	ProgressSnapshotSchema,
+	type SyncKey,
+	SyncKeySchema,
+} from "../../types/browser";
+import {
 	mergeProgressEntries,
 	type ProgressEntry,
 	type ProgressMap,
@@ -45,15 +50,16 @@ export function readProgressSnapshot(): string | null {
 	}
 }
 
-export function readSyncKey(): string | null {
+export function readSyncKey(): SyncKey | null {
 	try {
-		return localStorage.getItem(SYNC_KEY_STORAGE_KEY);
+		const parsed = SyncKeySchema.safeParse(localStorage.getItem(SYNC_KEY_STORAGE_KEY));
+		return parsed.success ? parsed.data : null;
 	} catch {
 		return null;
 	}
 }
 
-export function saveSyncKey(key: string): void {
+export function saveSyncKey(key: SyncKey): void {
 	localStorage.setItem(SYNC_KEY_STORAGE_KEY, key);
 	notifyStorageChange(SYNC_KEY_CHANGE_EVENT);
 }
@@ -65,11 +71,16 @@ export function removeSyncKey(): void {
 
 export function parseProgressSnapshot(snapshot: string | null): ProgressMap {
 	try {
-		const parsed: unknown = JSON.parse(snapshot ?? "{}");
-		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+		const parsed = ProgressSnapshotSchema.safeParse(JSON.parse(snapshot ?? "{}"));
+		if (!parsed.success) {
 			return {};
 		}
-		return Object.fromEntries(Object.entries(parsed).filter(([, value]) => isProgressEntry(value)));
+		return Object.fromEntries(
+			Object.entries(parsed.data).flatMap(([key, value]) => {
+				const entry = ProgressEntrySchema.safeParse(value);
+				return entry.success ? [[key, entry.data] as const] : [];
+			}),
+		);
 	} catch {
 		return {};
 	}

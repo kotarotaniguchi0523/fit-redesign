@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 import { type ExamByYear, type ExamNumber, MEIJI_FIT_BASE } from "../../types";
 import { unitBasedTabs } from "../units";
 import { assembleExamsByYear } from "./assemble";
-import { ExamJsonSchema, ExamsMetaSchema, ParsedJsonExamFilePathSchema } from "./schema";
+import {
+	ExamJsonSchema,
+	ExamsMetaSchema,
+	JsonModuleSchema,
+	ParsedJsonExamFilePathSchema,
+} from "./schema";
 
 const examModules = import.meta.glob<{ default: unknown }>("../exams-json/exam[0-9]-*.json", {
 	eager: true,
@@ -12,10 +17,8 @@ const metaModule = import.meta.glob<{ default: unknown }>("../exams-json/exams-m
 });
 
 function getJsonValue(module: unknown): unknown {
-	if (module && typeof module === "object" && "default" in module) {
-		return (module as { default: unknown }).default;
-	}
-	return module;
+	const parsed = JsonModuleSchema.safeParse(module);
+	return parsed.success ? parsed.data.default : module;
 }
 
 /**
@@ -27,11 +30,11 @@ function buildAllExams(): ExamByYear[] {
 
 	const entries = Object.entries(examModules).flatMap(([filePath, module]) => {
 		const parsed = ExamJsonSchema.parse(getJsonValue(module));
-		const match = filePath.match(/exam(\d+)-(\d{4})\.json$/);
-		if (!match) {
+		const path = ParsedJsonExamFilePathSchema.safeParse(filePath);
+		if (!path.success) {
 			return [];
 		}
-		return [{ examNumber: Number(match[1]), year: match[2], data: parsed }];
+		return [{ ...path.data, data: parsed }];
 	});
 
 	return assembleExamsByYear(meta.exams, entries);

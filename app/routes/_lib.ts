@@ -2,7 +2,7 @@ import { zValidator } from "@hono/zod-validator";
 import type { Context, ValidationTargets } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { createFactory } from "hono/factory";
-import type { ZodType } from "zod";
+import type * as z from "zod/v4/core";
 
 /**
  * API エンドポイント（health / progress / markdown）の共有 plumbing。`_` 接頭辞のため
@@ -28,7 +28,7 @@ export function invalid(c: Context, issues: unknown): Response {
  * 注意: zValidator に明示型引数を渡すと hc の型推論が落ちるため、schema 引数からの推論に委ねる。
  */
 // biome-ignore lint/nursery/useExplicitReturnType: zValidator の返す MiddlewareHandler 型を明示すると hc の型推論が落ちる（schema からの推論に委ねる）
-export function validate<T extends ZodType, Target extends keyof ValidationTargets>(
+export function validate<T extends z.$ZodType, Target extends keyof ValidationTargets>(
 	target: Target,
 	schema: T,
 ) {

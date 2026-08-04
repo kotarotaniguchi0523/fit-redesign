@@ -1,5 +1,7 @@
+import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
-import { errAsync, ResultAsync } from "neverthrow";
+import { csrf } from "hono/csrf";
+import { ResultAsync } from "neverthrow";
 import { getAllExams } from "../data/exams";
 import { unitBasedTabs } from "../data/units";
 import {
@@ -10,8 +12,8 @@ import {
 } from "../server/progressRepository";
 import { SyncKey } from "../server/syncKey";
 import { type HashSyncKeyError, SyncSpaceId } from "../server/syncSpaceId";
+import { ProgressSyncRequestSchema, SyncHeaderSchema, type SyncKey as SyncKeyType } from "../types";
 import { type Env, postBodyLimit, validate } from "./_lib";
-import { ProgressSync } from "./_schemas";
 
 const RATE_LIMITED = { error: "Too many requests" } as const;
 const UNKNOWN_SPACE = { error: "Sync space not found" } as const;
@@ -61,16 +63,16 @@ function hashRateLimitSubject(value: string): ResultAsync<string, HashRateLimitS
 	);
 }
 
-function resolveSpace(c: {
-	req: { header(name: string): string | undefined };
-}): ResultAsync<SyncSpaceId, HashSyncKeyError | Readonly<{ kind: "InvalidSyncKey" }>> {
-	const syncKey = SyncKey.parse(c.req.header("X-Sync-Key"));
-	return syncKey.isOk()
-		? SyncSpaceId.fromSyncKey(syncKey.value)
-		: errAsync<SyncSpaceId, Readonly<{ kind: "InvalidSyncKey" }>>({ kind: "InvalidSyncKey" });
+function resolveSpace(syncKey: SyncKeyType): ResultAsync<SyncSpaceId, HashSyncKeyError> {
+	return SyncSpaceId.fromSyncKey(syncKey);
 }
 
+const validateSyncHeader = zValidator("header", SyncHeaderSchema, (result, c) =>
+	result.success ? undefined : c.json(UNKNOWN_SPACE, 404),
+);
+
 const progress = new Hono<Env>()
+	.use("/*", csrf())
 	.use("/*", postBodyLimit)
 	.post("/spaces", async (c) => {
 		const ipAddress = c.req.header("CF-Connecting-IP") ?? "unknown";
@@ -98,8 +100,8 @@ const progress = new Hono<Env>()
 			() => c.json(INTERNAL_ERROR, 500),
 		);
 	})
-	.post("/sync", validate("json", ProgressSync.schema), async (c) => {
-		const syncSpace = await resolveSpace(c);
+	.post("/sync", validateSyncHeader, validate("json", ProgressSyncRequestSchema), async (c) => {
+		const syncSpace = await resolveSpace(c.req.valid("header")["x-sync-key"]);
 		if (syncSpace.isErr()) {
 			return c.json(UNKNOWN_SPACE, 404);
 		}
@@ -125,8 +127,8 @@ const progress = new Hono<Env>()
 					: c.json(INTERNAL_ERROR, 500),
 		);
 	})
-	.delete("/", async (c) => {
-		const syncSpace = await resolveSpace(c);
+	.delete("/", validateSyncHeader, async (c) => {
+		const syncSpace = await resolveSpace(c.req.valid("header")["x-sync-key"]);
 		if (syncSpace.isErr()) {
 			return c.json(UNKNOWN_SPACE, 404);
 		}
@@ -146,3 +148,4 @@ const progress = new Hono<Env>()
 	});
 
 export default progress;
+export type ProgressApp = typeof progress;

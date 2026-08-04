@@ -5,8 +5,6 @@ import type { FigureCanvas } from "../../features/figures/logic-circuit-prototyp
 
 const MIN_CANVAS_SIDE = 64;
 const MAX_CANVAS_SIDE = 2048;
-type WasmSource = WebAssembly.Module | ArrayBuffer;
-
 type TakumiRenderer = import("@takumi-rs/wasm").Renderer;
 let rendererPromise: Promise<TakumiRenderer> | undefined;
 
@@ -16,8 +14,8 @@ function getRenderer(): Promise<TakumiRenderer> {
 			import("@takumi-rs/wasm"),
 			import("@takumi-rs/wasm/auto"),
 		]);
-		// auto は Workers では WebAssembly.Module、Vite SSR では ArrayBuffer の Promise を返す。
-		const source = await (wasmModule as unknown as WasmSource | Promise<WasmSource>);
+		// auto の条件付きexportが実行環境に合う初期化入力を返す。
+		const source = await wasmModule;
 		await initWasm({ module_or_path: source });
 		return new Renderer();
 	})().catch((error: unknown) => {
