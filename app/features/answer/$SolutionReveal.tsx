@@ -1,7 +1,6 @@
-import { useState } from "hono/jsx";
 import type { JSX } from "hono/jsx/jsx-runtime";
 import type { QuestionId, UnitTabId } from "../../types";
-import { recordReveal, syncProgressEntry } from "./progressClient";
+import { useSolutionReveal } from "./useSolutionReveal";
 
 interface SolutionRevealProps {
 	questionId: QuestionId;
@@ -16,37 +15,23 @@ export default function SolutionReveal({
 	answerHtml,
 	explanationHtml,
 }: SolutionRevealProps): JSX.Element {
-	const [revealed, setRevealed] = useState(false);
-
-	if (!revealed) {
-		return (
-			<button
-				type="button"
-				class="q-primary-action"
-				onClick={(): void => {
-					setRevealed(true);
-					const entry = { questionId, unitId, revealedAt: Date.now() };
-					recordReveal(entry);
-					syncProgressEntry(entry).catch(() => undefined);
-				}}
-			>
-				答えを確認する
-			</button>
-		);
-	}
+	const onToggle = useSolutionReveal(questionId, unitId);
 
 	return (
-		<section class="q-solution" aria-live="polite">
-			<h3 class="q-solution__title">解答</h3>
-			{/* biome-ignore lint/security/noDangerouslySetInnerHtml: overlineToHtmlで生成した限定HTML */}
-			<p dangerouslySetInnerHTML={{ __html: answerHtml }} />
-			{explanationHtml ? (
-				<>
-					<h3 class="q-solution__title">解説</h3>
-					{/* biome-ignore lint/security/noDangerouslySetInnerHtml: overlineToHtmlで生成した限定HTML */}
-					<p dangerouslySetInnerHTML={{ __html: explanationHtml }} />
-				</>
-			) : null}
-		</section>
+		<details class="q-answer" onToggle={onToggle}>
+			<summary class="q-btn-primary cursor-pointer list-none text-center">答えを確認する</summary>
+			<section class="q-solution" aria-live="polite">
+				<h3 class="q-solution__title">解答</h3>
+				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: overlineToHtmlで生成した限定HTML */}
+				<p dangerouslySetInnerHTML={{ __html: answerHtml }} />
+				{explanationHtml ? (
+					<>
+						<h3 class="q-solution__title">解説</h3>
+						{/* biome-ignore lint/security/noDangerouslySetInnerHtml: overlineToHtmlで生成した限定HTML */}
+						<p dangerouslySetInnerHTML={{ __html: explanationHtml }} />
+					</>
+				) : null}
+			</section>
+		</details>
 	);
 }

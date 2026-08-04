@@ -1,7 +1,5 @@
 import { prepareImages } from "@takumi-rs/helpers";
 import { fromHtml } from "@takumi-rs/helpers/html";
-import initWasm, { Renderer } from "@takumi-rs/wasm";
-import wasmModule from "@takumi-rs/wasm/auto";
 import type { JSX } from "hono/jsx/jsx-runtime";
 import type { FigureCanvas } from "../../features/figures/logic-circuit-prototype";
 
@@ -9,10 +7,15 @@ const MIN_CANVAS_SIDE = 64;
 const MAX_CANVAS_SIDE = 2048;
 type WasmSource = WebAssembly.Module | ArrayBuffer;
 
-let rendererPromise: Promise<Renderer> | undefined;
+type TakumiRenderer = import("@takumi-rs/wasm").Renderer;
+let rendererPromise: Promise<TakumiRenderer> | undefined;
 
-function getRenderer(): Promise<Renderer> {
-	rendererPromise ??= (async (): Promise<Renderer> => {
+function getRenderer(): Promise<TakumiRenderer> {
+	rendererPromise ??= (async (): Promise<TakumiRenderer> => {
+		const [{ default: initWasm, Renderer }, { default: wasmModule }] = await Promise.all([
+			import("@takumi-rs/wasm"),
+			import("@takumi-rs/wasm/auto"),
+		]);
 		// auto は Workers では WebAssembly.Module、Vite SSR では ArrayBuffer の Promise を返す。
 		const source = await (wasmModule as unknown as WasmSource | Promise<WasmSource>);
 		await initWasm({ module_or_path: source });

@@ -28,9 +28,9 @@ export function StateDiagram({
 			preserveAspectRatio="xMidYMid meet"
 			class="border border-gray-300 rounded max-w-full h-auto"
 			style={`aspect-ratio: ${width}/${height}`}
-			aria-label="State machine diagram"
+			aria-label="状態遷移図"
 		>
-			<title>State machine diagram</title>
+			<title>状態遷移図</title>
 
 			{transitionData.map((t) =>
 				t.type === "selfLoop" ? (

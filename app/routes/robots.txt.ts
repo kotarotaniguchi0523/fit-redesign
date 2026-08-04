@@ -30,7 +30,6 @@ export default createRoute((c) => {
 		`Sitemap: ${SITE_URL}/sitemap.xml`,
 		"",
 	].join("\n");
-	c.header("Content-Type", "text/plain; charset=utf-8");
 	c.header("Cache-Control", "public, max-age=86400");
-	return c.body(body);
+	return c.text(body);
 });

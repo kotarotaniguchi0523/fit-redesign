@@ -30,9 +30,9 @@ export function Flowchart({
 			preserveAspectRatio="xMidYMid meet"
 			class="max-w-full h-auto"
 			style={`aspect-ratio: ${width}/${height}`}
-			aria-label="Flowchart diagram"
+			aria-label="フローチャート"
 		>
-			<title>Flowchart diagram</title>
+			<title>フローチャート</title>
 
 			<defs>
 				<marker

@@ -1,9 +1,6 @@
-import { useState } from "hono/jsx";
 import type { JSX } from "hono/jsx/jsx-runtime";
-import { FEEDBACK_DURATION } from "../constants";
 import { CheckIcon, CopyIcon, ErrorIcon } from "./icons";
-
-type CopyState = "idle" | "success" | "error";
+import { type CopyState, useCopyFeedback } from "./useCopyFeedback";
 
 interface CopyButtonProps {
 	text: string;
@@ -48,17 +45,7 @@ export default function CopyButton({
 	ariaLabel,
 	title,
 }: CopyButtonProps): JSX.Element {
-	const [state, setState] = useState<CopyState>("idle");
-
-	const copy = async (): Promise<void> => {
-		try {
-			await navigator.clipboard.writeText(text);
-			setState("success");
-		} catch {
-			setState("error");
-		}
-		setTimeout(() => setState("idle"), FEEDBACK_DURATION);
-	};
+	const { state, copy } = useCopyFeedback(text);
 	const feedbackClass = feedbackClassFor(state);
 	const label = stateLabel(state);
 

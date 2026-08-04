@@ -5,15 +5,31 @@ interface HeaderProps {
 	currentPath: string;
 }
 
+const QUIZ_PATH_PATTERN = /^\/unit-[^/]+\/\d{4}\/?$/;
+
 export function Header({ currentPath }: HeaderProps): JSX.Element {
-	const isGuide = currentPath === "/guide" || currentPath === "/guide/";
-	const isRecords = currentPath === "/records" || currentPath === "/records/";
+	let active: "quiz" | "records" | "slides" | "guide" | null = null;
+	if (currentPath.startsWith("/records")) {
+		active = "records";
+	} else if (currentPath.startsWith("/slide-only")) {
+		active = "slides";
+	} else if (currentPath.startsWith("/guide")) {
+		active = "guide";
+	} else if (currentPath === "/" || QUIZ_PATH_PATTERN.test(currentPath)) {
+		active = "quiz";
+	}
+	const links = [
+		{ id: "quiz", href: "/", label: "問題" },
+		{ id: "records", href: "/records", label: "学習記録" },
+		{ id: "slides", href: "/slide-only", label: "講義資料" },
+		{ id: "guide", href: "/guide", label: "使い方" },
+	];
 
 	return (
-		<nav class="sticky top-0 z-50 w-full bg-linear-to-r from-[#1e3a5f] to-[#152a45] text-white border-b-2 border-[#c9a227] shadow-md">
-			<div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-				<a href="/" class="flex items-center gap-4 no-underline text-white">
-					<div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+		<nav aria-label="メインナビゲーション" class="site-header">
+			<div class="site-header__inner">
+				<a href="/" class="site-brand">
+					<div class="site-brand__mark">
 						<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
 							<path
 								d="M4 7.5 12 4l8 3.5-8 3.5L4 7.5Z"
@@ -29,51 +45,28 @@ export function Header({ currentPath }: HeaderProps): JSX.Element {
 							/>
 						</svg>
 					</div>
-					<div class="flex flex-col">
-						<span class="text-lg font-bold tracking-wide" style="font-family: var(--font-serif)">
-							基本情報技術 I
-						</span>
-						<span class="text-xs tracking-widest text-white/70">明治大学</span>
+					<div class="site-brand__text">
+						<span class="site-brand__title">基本情報技術 I</span>
+						<span class="site-brand__meta">明治大学</span>
 					</div>
 				</a>
-
-				<div class="flex items-center gap-3 sm:gap-5">
-					<a
-						href="/"
-						class="text-sm text-white/80 hover:text-white transition-colors flex items-center gap-1.5"
-					>
-						小テスト
-					</a>
-					<a
-						href="/slide-only"
-						class="text-sm text-white/80 hover:text-white transition-colors flex items-center gap-1.5"
-					>
-						<span class="hidden sm:inline">講義資料</span>
-						<span class="sm:hidden">資料</span>
-					</a>
-					{!isRecords && (
-						<a href="/records" class="text-sm text-white/80 hover:text-white transition-colors">
-							学習記録
+				<div class="site-nav site-nav--desktop">
+					{links.map((link) => (
+						<a href={link.href} aria-current={active === link.id ? "page" : undefined}>
+							{link.label}
 						</a>
-					)}
-					<a
-						href={isGuide ? "/" : "/guide"}
-						class="text-sm text-white/80 hover:text-white transition-colors flex items-center gap-1.5"
-					>
-						{isGuide ? (
-							<>
-								<span>←</span>
-								<span class="hidden sm:inline">ホームに戻る</span>
-								<span class="sm:hidden">戻る</span>
-							</>
-						) : (
-							<>
-								<span class="hidden sm:inline">使い方ガイド</span>
-								<span class="sm:hidden">使い方</span>
-							</>
-						)}
-					</a>
+					))}
 				</div>
+				<details class="site-menu">
+					<summary aria-label="メニューを開く">メニュー</summary>
+					<div class="site-menu__panel">
+						{links.map((link) => (
+							<a href={link.href} aria-current={active === link.id ? "page" : undefined}>
+								{link.label}
+							</a>
+						))}
+					</div>
+				</details>
 			</div>
 		</nav>
 	);

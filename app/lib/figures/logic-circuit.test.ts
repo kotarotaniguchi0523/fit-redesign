@@ -67,6 +67,19 @@ describe("getWirePath", () => {
 		expect(result).toContain("60 50");
 		expect(result).toContain("80 70");
 	});
+
+	it("connects an explicit route horizontally to a gate input", () => {
+		const wire: LogicWire = {
+			from: "i1",
+			to: "g1",
+			points: [
+				{ x: 60, y: 50 },
+				{ x: 80, y: 40 },
+			],
+		};
+
+		expect(getWirePath(wire, inputs, outputs, gates)).toBe("M 40 50 L 60 50 L 80 40 L 125 40");
+	});
 });
 
 describe("getLogicCircuitViewport", () => {

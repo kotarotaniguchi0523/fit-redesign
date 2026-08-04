@@ -1,7 +1,7 @@
 import { render } from "hono/jsx/dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { SYNC_KEY_STORAGE_KEY } from "../answer/progressClient";
 import RecordsView from "./$RecordsView";
+import { SYNC_KEY_STORAGE_KEY } from "./progressStorage";
 
 describe("RecordsView の同期リンク受け入れ", () => {
 	beforeEach(() => {
@@ -22,7 +22,7 @@ describe("RecordsView の同期リンク受け入れ", () => {
 
 		const container = document.createElement("div");
 		document.body.appendChild(container);
-		render(<RecordsView unitNames={{}} />, container);
+		render(<RecordsView unitNames={{}} origin="http://localhost" />, container);
 
 		await vi.waitFor(() => {
 			expect(container.textContent).toContain("同期リンクが無効です");
@@ -43,7 +43,7 @@ describe("RecordsView の同期リンク受け入れ", () => {
 
 		const container = document.createElement("div");
 		document.body.appendChild(container);
-		render(<RecordsView unitNames={{}} />, container);
+		render(<RecordsView unitNames={{}} origin="http://localhost" />, container);
 
 		await vi.waitFor(() => expect(resolveSync).toBeTypeOf("function"));
 		expect(localStorage.getItem(SYNC_KEY_STORAGE_KEY)).toBe("old-key");

@@ -10,7 +10,7 @@ interface TruthTableProps {
 export function TruthTable({
 	columns,
 	rows,
-	ariaLabel = "Truth table",
+	ariaLabel = "真理値表",
 }: TruthTableProps): JSX.Element {
 	return (
 		<div class="w-full overflow-x-auto">

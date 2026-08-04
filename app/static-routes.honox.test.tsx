@@ -98,13 +98,14 @@ describe("guide（/guide）", () => {
 });
 
 describe("slide-only（/slide-only）", () => {
-	it("200・タイトル・単元タブ・講義スライドセクションを描画する", async () => {
+	it("200・タイトル・折りたたみ単元選択・講義スライドを描画する", async () => {
 		const res = await mountGet(slideOnly).request("/");
 		expect(res.status).toBe(200);
 		const html = await res.text();
 		expect(html).toContain("<title>講義資料 - 基本情報技術 I</title>");
-		// 単元タブ（unitBasedTabs）が defaultYear へのリンクとして描画される
-		expect(html).toContain('role="tablist"');
+		// 常時タブではなく、必要時に開く単元選択として描画される
+		expect(html).toContain("単元を選択");
+		expect(html).toContain('class="study-navigator');
 		expect(html).toContain("講義資料");
 		// SlideSection の見出し（PDF バッジ + 講義スライド）が描画される
 		expect(html).toContain("講義スライド");

@@ -7,45 +7,38 @@ interface ExamSectionProps {
 	exam: Exam | undefined;
 	examNumber: ExamNumber;
 	unitId: UnitTabId;
+	showExamLabel: boolean;
 }
 
-export function ExamSection({ title, exam, examNumber, unitId }: ExamSectionProps): JSX.Element {
-	const questionCount = exam?.questions.length ?? 0;
-
+export function ExamSection({
+	title,
+	exam,
+	examNumber,
+	unitId,
+	showExamLabel,
+}: ExamSectionProps): JSX.Element {
 	return (
-		<section
-			id={`exam-${examNumber}`}
-			class="mt-6 scroll-mt-20 rounded-2xl border border-gray-200 bg-white shadow-sm"
-		>
-			<div class="flex flex-col gap-4 rounded-t-2xl border-b border-gray-200 bg-linear-to-r from-gray-50 to-slate-50 p-4">
-				<div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-					<div class="flex items-start gap-3">
-						<span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#c9a227]/20">
-							問
-						</span>
-						<div>
-							<p class="text-xs font-bold text-slate-500">小テスト{examNumber}</p>
-							<h2 class="text-lg font-bold leading-snug text-[#1e3a5f]">{title}</h2>
-							<p class="mt-1 text-sm text-slate-500">
-								{questionCount > 0
-									? `${questionCount}問。上から順番でなくても大丈夫です。`
-									: "問題データは準備中です。"}
-							</p>
-						</div>
-					</div>
-					{exam && (
-						<a
-							href={exam.pdfPath}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="inline-flex min-h-10 items-center justify-center rounded-lg bg-[#1e3a5f] px-3 py-1.5 text-center text-sm font-bold text-white transition-colors hover:bg-[#2d4a6f]"
-						>
-							PDF ↗
-						</a>
-					)}
-				</div>
+		<section id={`exam-${examNumber}`} class="mt-6 scroll-mt-20">
+			<div
+				class={`mb-3 flex items-center gap-3 pb-2 ${showExamLabel ? "justify-between border-b-2 border-[#1e3a5f]" : "justify-end"}`}
+			>
+				{showExamLabel ? (
+					<h2 class="font-bold text-[#1e3a5f]">
+						小テスト{examNumber} — {title}
+					</h2>
+				) : null}
+				{exam && (
+					<a
+						href={exam.pdfPath}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="shrink-0 text-sm font-bold text-[#1e3a5f] underline decoration-[#c9a227] underline-offset-4"
+					>
+						原本PDF ↗
+					</a>
+				)}
 			</div>
-			<div class="space-y-4 p-4 sm:p-5">
+			<div class="space-y-4">
 				{exam?.questions.map((q) => (
 					<QuestionCard question={q} unitId={unitId} />
 				))}

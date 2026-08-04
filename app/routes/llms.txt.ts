@@ -41,7 +41,6 @@ export default createRoute((c) => {
 		"- 言語: TypeScript",
 		"",
 	];
-	c.header("Content-Type", "text/plain; charset=utf-8");
 	c.header("Cache-Control", "public, max-age=86400");
-	return c.body(lines.join("\n"));
+	return c.text(lines.join("\n"));
 });

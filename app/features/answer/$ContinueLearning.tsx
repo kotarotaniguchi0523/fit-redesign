@@ -1,27 +1,12 @@
-import { useEffect, useState } from "hono/jsx";
 import type { JSX } from "hono/jsx/jsx-runtime";
-import { readProgress } from "./progressClient";
-
-interface QuestionLocation {
-	questionId: string;
-	unitName: string;
-	year: string;
-	href: string;
-}
+import { type QuestionLocation, useContinueLearning } from "./useContinueLearning";
 
 export default function ContinueLearning({
 	locations,
 }: {
-	locations: QuestionLocation[];
+	locations: readonly QuestionLocation[];
 }): JSX.Element | null {
-	const [latestId, setLatestId] = useState<string | null>(null);
-
-	useEffect(() => {
-		const latest = Object.values(readProgress()).sort((a, b) => b.revealedAt - a.revealedAt)[0];
-		setLatestId(latest?.questionId ?? null);
-	}, []);
-
-	const location = locations.find((item) => item.questionId === latestId);
+	const location = useContinueLearning(locations);
 	if (!location) {
 		return null;
 	}

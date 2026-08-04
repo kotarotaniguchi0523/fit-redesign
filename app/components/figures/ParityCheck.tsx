@@ -22,9 +22,9 @@ export function ParityCheck({
 			height={height}
 			viewBox={`0 0 ${parity.svgWidth} ${parity.svgHeight}`}
 			class="border border-gray-300 rounded"
-			aria-label="Parity check diagram"
+			aria-label="パリティ検査図"
 		>
-			<title>Parity check diagram</title>
+			<title>パリティ検査図</title>
 
 			{parity.dataCells.map((cell) => (
 				<g>

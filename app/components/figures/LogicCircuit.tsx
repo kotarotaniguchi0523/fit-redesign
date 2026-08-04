@@ -40,9 +40,9 @@ export function LogicCircuit({
 			preserveAspectRatio="xMidYMid meet"
 			class={responsive ? "block max-w-full" : undefined}
 			style="background-color: #fff"
-			aria-label="Logic circuit diagram"
+			aria-label="論理回路図"
 		>
-			<title>Logic circuit diagram</title>
+			<title>論理回路図</title>
 
 			{wires.map((wire) => {
 				const pathData = getWirePath(wire, inputs, outputs, gates);
