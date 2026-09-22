@@ -6,8 +6,8 @@ import type { DeepReadonly } from "../../lib/immutable";
 import { overlineToHtml } from "../../lib/overline";
 import type { ExamNumber, Judgment, Question, QuestionId, UnitTabId, Year } from "../../types";
 import { EpochMillisecondsSchema } from "../../types/browser";
-import { syncProgress } from "../progress/progressApi";
-import { mergeStoredProgress, readSyncKey, recordReveal } from "../progress/progressStorage";
+import { recordProgressEntry } from "../progress/progressPersistence";
+import { readSyncKey } from "../progress/progressStorage";
 import type { ChallengeAction } from "./challenge";
 import {
 	aggregateChallengeResults,
@@ -16,6 +16,7 @@ import {
 	challengeReducer,
 	createChallengeSnapshot,
 	createInitialChallengeState,
+	formatAccuracy,
 	formatDuration,
 	isChallengeComplete,
 	restoreChallengeState,
@@ -74,10 +75,6 @@ function generateChallengeId(): string {
 	bytes[8] = (bytes[8] & 0x3f) | 0x80;
 	const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
-function formatAccuracy(accuracy: number | null): string {
-	return accuracy === null ? "—" : `${Math.round(accuracy * 100)}%`;
 }
 
 function questionScopeKey(examId: string, mode: Props["mode"], questionId?: QuestionId): string {
@@ -832,23 +829,12 @@ export default function ExamPlayer(props: Props): JSX.Element {
 							if (!timestamp.success) {
 								return;
 							}
-							recordReveal({
+							recordProgressEntry({
 								questionId: currentQuestionId,
 								unitId: props.unitId,
 								createdAt: timestamp.data,
 								updatedAt: timestamp.data,
 							});
-							const syncKey = readSyncKey();
-							if (syncKey) {
-								syncProgress(syncKey, [
-									{
-										questionId: currentQuestionId,
-										unitId: props.unitId,
-										createdAt: timestamp.data,
-										updatedAt: timestamp.data,
-									},
-								]).map(mergeStoredProgress);
-							}
 						}
 					}}
 					onJudge={(judgment): void => {

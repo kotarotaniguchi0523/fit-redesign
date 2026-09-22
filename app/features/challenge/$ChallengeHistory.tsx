@@ -1,7 +1,12 @@
 import { useState, useSyncExternalStore } from "hono/jsx";
 import type { JSX } from "hono/jsx/jsx-runtime";
 import { formatLocalDateTime } from "../../lib/dateTime";
-import { aggregateChallengeResults, formatDuration } from "./challenge";
+import {
+	aggregateChallengeResults,
+	formatAccuracy,
+	formatDuration,
+	summarizeChallenge,
+} from "./challenge";
 import {
 	readChallengeHistorySnapshot,
 	readCompletedChallenges,
@@ -33,10 +38,6 @@ function challengeLabel(challenge: CompletedChallengePayload): string {
 function questionLabel(questionId: string): string {
 	const match = QUESTION_NUMBER_PATTERN.exec(questionId);
 	return match ? `問${match[1]}` : questionId;
-}
-
-function formatAccuracy(accuracy: number | null): string {
-	return accuracy === null ? "—" : `${Math.round(accuracy * 100)}%`;
 }
 
 export default function ChallengeHistory(): JSX.Element {
@@ -121,7 +122,7 @@ export default function ChallengeHistory(): JSX.Element {
 							<h3 class="font-bold text-[#1e3a5f]">最近の試行</h3>
 							<ol class="mt-3 divide-y divide-gray-100">
 								{completed.slice(0, 8).map((challenge) => {
-									const summary = aggregateChallengeResults([challenge]);
+									const summary = summarizeChallenge(challenge);
 									return (
 										<li class="flex items-center justify-between gap-3 py-3 text-sm">
 											<div class="min-w-0">

@@ -1,5 +1,5 @@
 import { hc } from "hono/client";
-import { err, ResultAsync } from "neverthrow";
+import { err, okAsync, ResultAsync } from "neverthrow";
 import type { ProgressApp } from "../../routes/progress";
 import type { SyncKey } from "../../types";
 import { isCompletedChallengePayload, mergeCompletedChallenges } from "./challenge";
@@ -56,7 +56,7 @@ export function syncChallenges(
 		).andThen((body) => {
 			const parsed = parseResponse(body);
 			return parsed
-				? ResultAsync.fromSafePromise(Promise.resolve([...mergeCompletedChallenges(local, parsed)]))
+				? okAsync([...mergeCompletedChallenges(local, parsed)])
 				: err<CompletedChallengePayload[], ChallengeSyncError>({ kind: "InvalidResponse" });
 		});
 	});

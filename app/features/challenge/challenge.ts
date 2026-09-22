@@ -249,11 +249,20 @@ export function formatDuration(elapsedMs: number): string {
 		: `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+export function formatAccuracy(accuracy: number | null): string {
+	return accuracy === null ? "—" : `${Math.round(accuracy * 100)}%`;
+}
+
+function countJudgments(answers: readonly { judgment: Judgment }[]): Readonly<{
+	correctCount: number;
+	incorrectCount: number;
+}> {
+	const correctCount = answers.filter((answer) => answer.judgment === "correct").length;
+	return { correctCount, incorrectCount: answers.length - correctCount };
+}
+
 export function summarizeChallenge(challenge: CompletedChallengePayload): ChallengeResultSummary {
-	const correctCount = challenge.answers.filter((answer) => answer.judgment === "correct").length;
-	const incorrectCount = challenge.answers.filter(
-		(answer) => answer.judgment === "incorrect",
-	).length;
+	const { correctCount, incorrectCount } = countJudgments(challenge.answers);
 	const judgedCount = correctCount + incorrectCount;
 	return {
 		challengeCount: 1,
@@ -270,8 +279,7 @@ export function aggregateChallengeResults(
 ): ChallengeResultSummary &
 	Readonly<{ byQuestion: Readonly<Record<string, QuestionResultSummary>> }> {
 	const answers = completed.flatMap((challenge) => challenge.answers);
-	const correctCount = answers.filter((answer) => answer.judgment === "correct").length;
-	const incorrectCount = answers.filter((answer) => answer.judgment === "incorrect").length;
+	const { correctCount, incorrectCount } = countJudgments(answers);
 	const judgedCount = correctCount + incorrectCount;
 	const byQuestion = answers.reduce<Record<string, QuestionResultSummary>>((result, answer) => {
 		const current = result[answer.questionId] ?? {

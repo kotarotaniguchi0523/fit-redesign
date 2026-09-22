@@ -7,7 +7,7 @@ import { getAllExams } from "../data/exams";
 import { unitBasedTabs } from "../data/units";
 import { CompletedChallengesRequestSchema } from "../features/challenge/challengeWire";
 import type { CompletedChallengePayload } from "../features/challenge/types";
-import { hasPlausibleProgressTime } from "../features/progress/progress";
+import { hasPlausibleProgressTime, MAX_FUTURE_CLOCK_SKEW_MS } from "../features/progress/progress";
 import { systemClock } from "../lib/dateTime";
 import { ChallengeRepositoryError, syncChallenges } from "../server/challengeRepository";
 import {
@@ -77,7 +77,7 @@ function getExamQuestionIds(): Promise<ReadonlyMap<string, readonly string[]>> {
 }
 
 function hasPlausibleChallengeTime(payload: CompletedChallengePayload, now: number): boolean {
-	const maximum = now + 5 * 60 * 1000;
+	const maximum = now + MAX_FUTURE_CLOCK_SKEW_MS;
 	return [
 		payload.createdAt,
 		payload.updatedAt,

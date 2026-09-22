@@ -1,8 +1,7 @@
 import { useRef } from "hono/jsx";
 import { type Clock, systemClock } from "../../lib/dateTime";
 import { EpochMillisecondsSchema, type QuestionId, type UnitTabId } from "../../types/browser";
-import { syncProgress } from "../progress/progressApi";
-import { mergeStoredProgress, readSyncKey, recordReveal } from "../progress/progressStorage";
+import { recordProgressEntry } from "../progress/progressPersistence";
 
 export function useSolutionReveal(
 	questionId: QuestionId,
@@ -32,10 +31,6 @@ export function useSolutionReveal(
 			createdAt: timestamp.data,
 			updatedAt: timestamp.data,
 		};
-		recordReveal(entry);
-		const syncKey = readSyncKey();
-		if (syncKey) {
-			syncProgress(syncKey, [entry]).map(mergeStoredProgress);
-		}
+		recordProgressEntry(entry);
 	};
 }
