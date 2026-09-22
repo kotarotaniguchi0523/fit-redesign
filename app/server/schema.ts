@@ -43,8 +43,5 @@ export const questionProgress = sqliteTable(
 	],
 );
 
-// schema は drizzle(env.DB, { schema }) に渡すバレル。
-export const schema = { syncSpaces, questionProgress };
-
 // 全 Hono context（createRoute 含む）で c.var.db に型を付けるための Db 型。
-export type Db = DrizzleD1Database<typeof schema>;
+export type Db = DrizzleD1Database;

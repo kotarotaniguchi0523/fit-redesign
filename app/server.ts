@@ -3,7 +3,6 @@ import { Hono } from "hono";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { createApp } from "honox/server";
-import { schema } from "./server/schema";
 
 type Env = { Bindings: Cloudflare.Env };
 
@@ -41,7 +40,7 @@ app.use(
 );
 app.use(async (c, next) => {
 	// db はリクエスト毎に生成（Workers の env.DB はリクエストスコープ）。全 Context で c.var.db を使う。
-	c.set("db", drizzle(c.env.DB, { schema }));
+	c.set("db", drizzle(c.env.DB));
 	await next();
 });
 

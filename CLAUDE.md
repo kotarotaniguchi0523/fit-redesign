@@ -3,7 +3,7 @@
 ## 技術スタック
 
 - **Python ツール**: `uv`（pip/pipx ではなく `uv tool install` を使用）
-- **フレームワーク**: HonoX 0.1.56（Hono メタフレームワーク。ファイルベースルーティング + Islands Architecture）
+- **フレームワーク**: HonoX 0.1.61（Hono メタフレームワーク。ファイルベースルーティング + Islands Architecture）
 - **ホスティング**: Cloudflare Workers（`git push origin main` → CI が `wrangler deploy`）
 - **DB**: Cloudflare D1（SQLite、永続データ）
 - **CSS**: Tailwind CSS v4
@@ -135,9 +135,9 @@ public/             # 静的ファイル（robots.txt, llms.txt, _headers, favic
 
 ## 既知の注意点（HonoX / Workers）
 
-### vite は ^7 に固定（8 禁止）
+### Vite 8 / Rolldown
 
-vite 8（Rolldown/oxc）は honox 0.1.56 の SSR を実行時 `TypeError: e5.search is not a function` で壊す（ビルドは通るが全ページ 500）。`package.json` で `vite` を `^7` に固定。JSX は server=`hono/jsx`、island=`hono/jsx/dom`。
+Vite 8.3のRolldownベースのビルドを使う。現行のHonoX 0.1.61構成ではクライアント・SSRビルドとWrangler上のSSR実行を確認済み。Vite更新時は同じ経路を再検証する。JSXはserver=`hono/jsx`、island=`hono/jsx/dom`。
 
 ### honox `<Script>` は island の無いページで client を出さない
 

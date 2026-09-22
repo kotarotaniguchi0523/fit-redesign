@@ -1,80 +1,56 @@
 # FIT Redesign
 
-明治大学「基本情報技術 I」の過去の小テスト（2013〜2017年度）を、単元と年度から探して解答・解説をすぐ確認できるサイトです。
+明治大学「基本情報技術 I」の過去の小テスト（2013〜2017年度）を、単元と年度から探して、問題・解答・解説をすぐ確認できるサイトです。
 
-**本番 URL**: https://fit-redesign.r02takako.workers.dev
+本番環境: <https://fit-redesign.r02takako.workers.dev>
 
 ## 機能
 
-- 全9単元 × 最大5年分の小テストを、単元・年度から直接選択
-- 同じ単元・年度に複数の小テストがある場合も、年度ページ内にまとめて表示
-- 入力や採点を挟まない「答えを確認する」操作と解説表示
-- 確認した問題と日時を匿名で端末内に保存し、前回の続きや最近見た問題を表示
-- 任意の秘密リンクによる端末間同期（アカウント・Googleログイン不要）
-- 各単元の講義スライド閲覧
-- 問題の Markdown エクスポート（クリップボードコピー / AI エージェント向け API）
-- オートマトン・論理回路・二分木などのインタラクティブな図表描画
+- 9単元の小テストを単元・年度から検索
+- 同じ単元・年度に複数の小テストがある場合のまとめて表示
+- 問題への回答入力や採点を行わず、「答えを見る」で解答・解説を確認
+- 答えを確認した問題と確認日時を端末内に保存
+- 前回の続きや最近確認した問題の表示
+- アカウント不要の秘密リンクによる端末間の学習記録同期
+- 講義スライドの閲覧
+- 問題のMarkdown出力とAIエージェント向けMarkdown API
+- オートマトン、論理回路、二分木、フローチャートなどの図表表示
 
-### 単元一覧
-
-| # | 単元名 |
-|---|--------|
-| 1 | 基数変換 |
-| 2 | 負の数の表現 |
-| 3 | 浮動小数点 |
-| 4 | 論理演算 |
-| 5 | 集合と確率 |
-| 6 | オートマトン |
-| 7 | 誤り検出・訂正符号 |
-| 8 | データ構造 |
-| 9 | ソートと探索 |
-
-講義スライド専用の単元（ガイダンス、制御理論、二分探索木、計算量、プログラミング言語）も含みます。
-
----
+学習記録は通常、ブラウザのlocalStorageに保存されます。同期を有効にした場合だけ、秘密リンクから導出した同期領域へD1を使って記録を統合します。同期キーそのものはD1に保存しません。
 
 ## 技術スタック
 
-| カテゴリ | 技術 |
-|---------|------|
-| フレームワーク | Astro 6（SSG + SSR ハイブリッド、`experimental.advancedRouting`） |
-| サーバー / API | HonoX（`app/routes/` のファイルルート） |
-| ホスティング | Cloudflare Pages |
-| データストア | localStorage（端末内記録）、Cloudflare D1（任意同期） |
-| クライアント UI | hono/jsx/dom（Async React）+ 軽量 DOM コントローラ |
-| スタイリング | Tailwind CSS 4 |
-| バリデーション | Zod 4 + @hono/zod-validator |
-| リンター / フォーマッター | Biome 2 |
-| テスト | Vitest 4（jsdom） |
-| 型チェック | astro check + tsgo（TypeScript native preview） |
-| 未使用コード検出 | Knip |
-| CI/CD | GitHub Actions |
-| パッケージマネージャー | pnpm |
+| 分類 | 使用技術 |
+| --- | --- |
+| Webフレームワーク | HonoX `0.1.61` + Hono `4.13` |
+| ビルド | Vite `8.3` |
+| UI | Hono JSX / `hono/jsx/dom` Islands |
+| スタイリング | Tailwind CSS `4.3` |
+| 実行環境 | Cloudflare Workers + Workers Assets |
+| データベース | Cloudflare D1（SQLite） |
+| ORM | Drizzle ORM `1.0.0-rc.4` |
+| バリデーション | Zod `4` + `@hono/zod-validator` |
+| Lint / Format | Biome `2.5` |
+| 型チェック | TypeScript Native Preview `7` |
+| テスト | Vitest `5` + jsdom `30` |
+| 未使用コード検査 | Knip |
+| パッケージマネージャー | pnpm `11.5.0` |
 
----
+Vite 8のRolldownベースのビルドを使用しています。現行のHonoX/Workers実行経路でクライアント・SSRビルドとWrangler上のSSR実行を検証済みです。
 
 ## セットアップ
 
 ### 前提条件
 
-- Node.js 24 以上
-- pnpm 10 以上
+- Node.js 24
+- pnpm 11.5.0
 
 ### インストール
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/kotarotaniguchi0523/fit-redesign.git
 cd fit-redesign
-pnpm install
-```
-
-### ローカル D1 の初期化
-
-D1 を参照する秘密リンク同期は、ローカル DB へマイグレーションを適用しないと
-`no such table` エラーになります。初回および `migrations/` 変更時に実行してください。
-
-```bash
-pnpm db:migrate:local
+pnpm install --frozen-lockfile
 ```
 
 ### 開発サーバー
@@ -83,148 +59,120 @@ pnpm db:migrate:local
 pnpm dev
 ```
 
-> **注意**: `experimental.advancedRouting` 有効時、`astro dev` は Hono アプリへ env/ctx を
-> 渡せず全ページが 500 になります。実際の動作確認は本番ビルド + `wrangler dev`（ビルド成果物）で
-> 行ってください。
+Viteの開発サーバーでは、画面やクライアント側の動作を確認できます。D1を含むWorkerのSSR・API経路を確認する場合は、本番ビルド後にWranglerでプレビューします。
 
 ```bash
+pnpm db:migrate:local
 pnpm build
-npx wrangler pages dev dist
+pnpm preview
 ```
 
----
+### ローカルD1
 
-## コマンド一覧
+同期APIをローカルで確認する場合は、最初にマイグレーションを適用します。
 
-| コマンド | 説明 |
-|---------|------|
-| `pnpm dev` | 開発サーバー起動（astro dev） |
-| `pnpm build` | 本番ビルド（astro build） |
-| `pnpm preview` | ビルド結果をローカルで確認（astro preview） |
-| `pnpm format` | Biome でコードフォーマット |
-| `pnpm check` | Biome で Lint・フォーマットチェック（CI 用） |
-| `pnpm typecheck` | 型チェック（tsgo --noEmit、高速版） |
-| `pnpm typecheck:full` | 型チェック（astro check + tsgo、`.astro` 含む完全版） |
-| `pnpm knip` | 未使用コード・依存の検出 |
-| `pnpm test` | テスト実行（watch モード） |
-| `pnpm test:run` | テスト実行（1 回のみ、CI 用） |
-| `pnpm test:coverage` | カバレッジ付きテスト実行 |
-| `pnpm db:migrate:local` | ローカル D1 へマイグレーション適用 |
-| `pnpm db:query:local "SQL"` | ローカル D1 へ任意 SQL を実行 |
-
-### コミット前チェック
-
-1. `pnpm format` — フォーマット適用
-2. `pnpm check` — Lint チェック
-3. `pnpm typecheck:full` — 型チェック（`.astro` 含む完全版を使う）
-4. `pnpm test:run` / `pnpm knip` / `pnpm build` — テスト・未使用検出・ビルド確認
-
----
-
-## アーキテクチャ
-
-機能別（Package by Feature）構成を採用しています。
-
+```bash
+pnpm db:migrate:local
+pnpm db:query:local -- "SELECT name FROM sqlite_master WHERE type = 'table'"
 ```
+
+## コマンド
+
+| コマンド | 内容 |
+| --- | --- |
+| `pnpm dev` | Vite開発サーバーを起動 |
+| `pnpm build` | クライアントとWorkerをビルド |
+| `pnpm preview` | ビルド結果をWranglerで配信 |
+| `pnpm format` | Biomeでフォーマットを適用 |
+| `pnpm check` | BiomeのLint・フォーマット検査 |
+| `pnpm typecheck:full` | プロジェクト全体の型チェック |
+| `pnpm test` | Vitestのwatch実行 |
+| `pnpm test:run` | Vitestを1回実行 |
+| `pnpm test:coverage` | カバレッジ付きテスト |
+| `pnpm knip` | 未使用コード・依存・exportの検査 |
+| `pnpm db:migrate:local` | ローカルD1へmigrationを適用 |
+| `pnpm db:query:local -- "SQL"` | ローカルD1でSQLを実行 |
+| `pnpm deploy` | Workerへデプロイ（明示的に必要な場合のみ） |
+
+コミット前は次の順で確認します。
+
+```bash
+pnpm format
+pnpm check
+pnpm typecheck:full
+pnpm test:run
+pnpm build
+pnpm knip
+```
+
+## 主なURL
+
+| URL | 内容 |
+| --- | --- |
+| `/` | 単元・年度の選択 |
+| `/unit-{slug}/{year}` | 単元・年度ごとの問題ページ |
+| `/records` | 端末内の学習記録と同期設定 |
+| `/guide` | 利用ガイド |
+| `/slide-only` | 講義スライド |
+| `/health` | ヘルスチェック |
+| `/progress/spaces` | 同期領域の発行（POST） |
+| `/progress/sync` | 学習記録の同期（POST） |
+| `/progress` | 同期領域と記録の削除（DELETE） |
+| `/markdown` | サイト概要のMarkdown（GET） |
+| `/markdown/{unit}/{year}` | 単元・年度のMarkdown（GET） |
+
+## ディレクトリ構成
+
+```text
 fit-redesign/
 ├── app/
-│   ├── routes/           # HonoXファイルルート（問題、記録、同期、Markdown）
-│   ├── features/         # 機能別のUI・クライアント処理・リポジトリ
-│   │   ├── progress/     #   答えの表示、端末内記録、秘密リンク同期
-│   │   └── markdown/     #   Markdown生成・コピー
-│   ├── components/       # 共有コンポーネント
-│   ├── data/             # 単元定義、試験JSON、スライド設定
-│   ├── content/          # ガイド本文
-│   └── server.ts         # HonoX composition root、セキュリティヘッダー
-├── migrations/           # D1 マイグレーション SQL
-├── patches/              # @astrojs/cloudflare の advancedRouting 対応パッチ
-├── public/               # 静的ファイル（robots.txt, llms.txt, _headers）
-└── .github/workflows/    # ci.yml / deploy.yml
+│   ├── components/       # 共有Hono JSXコンポーネント
+│   ├── content/          # MDXの長文コンテンツ
+│   ├── data/              # 単元、試験JSON、講義スライド
+│   ├── features/         # 答え表示、Markdown、進捗などの機能単位
+│   ├── lib/               # 汎用ヘルパーと図表描画
+│   ├── routes/            # HonoXのファイルベースルートとAPI
+│   ├── server/            # D1スキーマ、Repository、同期キー処理
+│   ├── types/             # ドメイン・API型とテスト用型
+│   ├── client.ts          # クライアントエントリポイント
+│   └── server.ts          # Workerのcomposition root
+├── migrations/            # Cloudflare D1 migrations
+├── public/                # robots.txt、sitemap関連、静的画像など
+├── vite.config.ts         # HonoX、MDX、Tailwind、Workerビルド設定
+├── vitest.config.ts       # HonoX/MDXを含むテスト設定
+├── wrangler.jsonc         # Worker、Assets、D1、Rate Limiting設定
+└── pnpm-lock.yaml         # pnpmの単一ロックファイル
 ```
 
-### データフロー
+試験データは`app/data/exams-json/`にコミットし、`app/data/exams/loader.ts`が読み込みます。問題PDF・解答ページなどの配布資料は、元の明治大学ページを参照します。データを変更した場合は、試験データの整合性テストを実行してください。
 
-- **localStorage**: 答えを確認した問題と最新確認日時を匿名で保存。通常利用の信頼源。
-- **Cloudflare D1**: 秘密リンク同期を有効にした場合のみ、同期領域と確認履歴を保存。
-- **秘密リンク**: 生の同期キーはD1へ保存せず、サーバーではSHA-256ハッシュを使用する。
+## CI/CDとデプロイ
 
-### API
+Pull Requestでは、GitHub Actionsが次を実行します。
 
-HonoXのファイルルートとして定義し、クライアントから型付きで呼び出します。
+1. `pnpm install --frozen-lockfile`
+2. Biomeチェック
+3. 型チェック
+4. Vitest
+5. Knip
+6. Workerビルド
 
-| メソッド | パス | 用途 |
-|---------|------|------|
-| GET | `/api/health` | ヘルスチェック |
-| POST | `/progress/spaces` | 秘密の同期領域を作成 |
-| POST | `/progress/sync` | 確認履歴をマージして同期 |
-| DELETE | `/progress` | 同期領域とサーバー記録を削除 |
-| GET | `/markdown/{unit}/{year}` | AI 向け Markdown（ETag / Cache-Control） |
+`main`へのpushでは、上記の検証に加えてD1 migrationを適用し、Cloudflare Workersへデプロイします。
 
----
+本番のCloudflare設定は`wrangler.jsonc`で管理します。同期機能ではD1とRate Limiting bindingを使用します。手動デプロイは、明示的に必要な場合だけ次を実行してください。
 
-## 試験データの管理
-
-試験データは `app/data/exams-json/` に JSON で格納し、`app/data/exams/loader.ts` が
-`import.meta.glob` で読み込みます（ビルド時に worker バンドルへインライン化）。各 JSON は
-Zod スキーマ（`app/data/exams/schema.ts`）でバリデーションされ、型安全が保証されます。
-
-データは静的にコミット済みです。JSON を編集したら `pnpm test:run` で整合性テストを
-実行してください。
-
-### 図表コンポーネント
-
-| コンポーネント | 対応する図表 |
-|--------------|------------|
-| `StateDiagram` | 状態遷移図（オートマトン） |
-| `BinaryTree` | 二分木 |
-| `LogicCircuit` | 論理回路（AND/OR/NOT 等 7 種のゲート） |
-| `Flowchart` | フローチャート |
-| `TruthTable` | 真理値表 |
-| `ParityCheck` | パリティ検査行列 |
-| `TableRenderer` | 汎用テーブル |
-
----
-
-## CI/CD パイプライン
-
-`main` ブランチへの push 時に `deploy.yml` が以下を自動実行します（PR 時は `ci.yml` がデプロイ以外を実行）。
-
+```bash
+pnpm deploy
 ```
-1. 依存関係インストール（pnpm install --frozen-lockfile）
-2. Lint・フォーマットチェック（biome ci）
-3. 型チェック（astro check + tsgo、最大 3 回リトライ）
-4. テスト実行（vitest run）
-5. 未使用コード検出（knip）
-6. ビルド（astro build、最大 3 回リトライ）
-7. リンク切れチェック（lychee）
-8. D1 マイグレーション適用（migrations/ に差分がある場合のみ）
-9. Cloudflare Pages へデプロイ
-```
-
-> 型チェック / ビルドのリトライは、`advancedRouting` 下で worker introspection が非決定的に
-> "Network connection lost" でフレークするための保険です（真の型エラー・ビルドエラーは
-> 3 回とも落ちるためゲートの完全性は維持されます）。
-
-### デプロイに必要な Secrets
-
-| Secret 名 | 説明 |
-|-----------|------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API トークン（Pages デプロイ / D1 マイグレーション） |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare アカウント ID |
-
-D1とRate Limitingのバインディングは `wrangler.jsonc` で設定します。
-
----
 
 ## 開発ルール
 
-- **パッケージマネージャー**: pnpm のみ使用（npm / yarn 禁止）
-- **コードスタイル**: Biome による自動フォーマット（タブインデント、100 文字幅）
-- **構成方針**: 複数ルート横断 / ドメインロジックは `app/features/<機能>/` に同居。
-  特定ルート専用部品は `_` プレフィックスで co-location。`features` から `types` / `server` /
-  `utils` への import は可、逆は禁止。
-- **型安全**: 外部データは必ず Zod スキーマでバリデーション
-- **テスト**: 古典派（Detroit）ユニットを中心に、public 関数の入出力を AAA で検証
+- パッケージマネージャーはpnpmのみ使用します。
+- 画面は可能な限りサーバー描画し、操作が必要な小さな領域だけ`$`接頭辞のIslandに分けます。
+- 問題閲覧はJavaScriptや同期APIが失敗しても利用できるようにします。
+- 同期キーはパスワード相当の秘密情報として扱い、ログや外部分析へ出しません。
+- D1スキーマを変更するときは、`migrations/`とテスト用D1のセットアップも確認します。
+- 依存更新後は`pnpm-lock.yaml`を必ず同期し、`pnpm check`、`pnpm typecheck:full`、`pnpm test:run`、`pnpm build`を実行します。
 
 ## ライセンス
 

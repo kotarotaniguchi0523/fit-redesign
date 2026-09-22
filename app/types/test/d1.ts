@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/d1";
 import { Miniflare } from "miniflare";
-import { type Db, schema } from "../../server/schema";
+import type { Db } from "../../server/schema";
 
 const CREATE_PROGRESS_SCHEMA = [
 	"CREATE TABLE sync_spaces (id TEXT PRIMARY KEY NOT NULL, created_at INTEGER NOT NULL)",
@@ -23,7 +23,7 @@ export async function createTestD1(): Promise<TestD1> {
 	const binding = await miniflare.getD1Database("DB");
 	await binding.batch(CREATE_PROGRESS_SCHEMA.map((statement) => binding.prepare(statement)));
 	return {
-		db: drizzle(binding, { schema }),
+		db: drizzle(binding),
 		binding,
 		dispose: async (): Promise<void> => miniflare.dispose(),
 	};
