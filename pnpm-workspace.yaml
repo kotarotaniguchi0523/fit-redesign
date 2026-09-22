@@ -4,13 +4,13 @@ allowBuilds:
   sharp: true
   workerd: true
 minimumReleaseAgeExclude:
-  - '@cloudflare/workerd-darwin-64@1.20260601.1'
-  - '@cloudflare/workerd-darwin-arm64@1.20260601.1'
-  - '@cloudflare/workerd-linux-64@1.20260601.1'
-  - '@cloudflare/workerd-linux-arm64@1.20260601.1'
-  - '@cloudflare/workerd-windows-64@1.20260601.1'
-  - workerd@1.20260601.1
-  - '@cloudflare/workers-types@4.20260601.1'
+  - '@cloudflare/workerd-darwin-64@1.20260601.1 || 1.20260922.1'
+  - '@cloudflare/workerd-darwin-arm64@1.20260601.1 || 1.20260922.1'
+  - '@cloudflare/workerd-linux-64@1.20260601.1 || 1.20260922.1'
+  - '@cloudflare/workerd-linux-arm64@1.20260601.1 || 1.20260922.1'
+  - '@cloudflare/workerd-windows-64@1.20260601.1 || 1.20260922.1'
+  - workerd@1.20260601.1 || 1.20260922.1
+  - '@cloudflare/workers-types@4.20260601.1 || 5.20260922.1'
   - '@vitest/coverage-v8@4.1.8'
   - '@vitest/expect@4.1.8'
   - '@vitest/mocker@4.1.8'
@@ -21,3 +21,6 @@ minimumReleaseAgeExclude:
   - '@vitest/utils@4.1.8'
   - vitest@4.1.8
   - hono@4.12.33
+  - '@cloudflare/unenv-preset@2.16.2'
+  - miniflare@5.20260921.0-alpha
+  - wrangler@4.136.1

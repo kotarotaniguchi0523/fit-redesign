@@ -1,61 +1,61 @@
-# Cloudflare Pages デプロイガイド
+# Cloudflare Workers デプロイガイド
 
 ## デプロイ情報
 
 | 項目 | 値 |
-|------|-----|
-| 本番URL | https://fit-redesign.pages.dev |
-| GitHub リポジトリ | https://github.com/kotarotaniguchi0523/fit-redesign |
-| Account ID | `6a9ec77cec188e5ff1c6451edc9dd48d` |
+| --- | --- |
+| 本番URL | <https://fit-redesign.r02takako.workers.dev> |
+| GitHubリポジトリ | <https://github.com/kotarotaniguchi0523/fit-redesign> |
+| Worker名 | `fit-redesign` |
+| D1データベース | `fit-timer-db` |
 
----
+Worker、Assets、D1、Rate Limitingの設定は`wrangler.jsonc`で管理します。
 
-## 手動デプロイ（Wrangler CLI）
+## 手動デプロイ
 
 ```bash
-# ビルド
+pnpm install --frozen-lockfile
 pnpm build
-
-# デプロイ
-wrangler pages deploy dist --project-name=fit-redesign
+pnpm deploy
 ```
 
----
+`pnpm deploy`は`wrangler deploy`を実行します。デプロイ前にローカルでD1を確認する場合は、次を実行します。
 
-## 自動デプロイ（GitHub Actions）
+```bash
+pnpm db:migrate:local
+pnpm build
+pnpm preview
+```
 
-### 1. Cloudflare API Token の取得
+## GitHub Actionsによる自動デプロイ
 
-1. [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens) にアクセス
-2. **Create Token** をクリック
-3. **Edit Cloudflare Workers** テンプレートを選択（または Custom token）
-4. Custom token の場合:
-   - Permissions: `Cloudflare Pages: Edit`
-   - Account Resources: `Include: Your Account`
-5. **Create Token** → トークンをコピー（一度しか表示されない）
+`main`ブランチへのpushで`.github/workflows/deploy.yml`が起動します。ワークフローは次を順に実行します。
 
-### 2. GitHub Secrets の設定
+1. `pnpm install --frozen-lockfile`
+2. Biome、型チェック、Vitest、Knip、ビルド
+3. D1 migrationの適用
+4. `wrangler deploy`によるWorkerデプロイ
 
-リポジトリの **Settings** → **Secrets and variables** → **Actions** で以下を追加:
+Pull Requestでは`.github/workflows/ci.yml`が検証のみを実行します。
 
-| Secret 名 | 値 |
-|-----------|-----|
-| `CLOUDFLARE_API_TOKEN` | 取得したトークン |
-| `CLOUDFLARE_ACCOUNT_ID` | `6a9ec77cec188e5ff1c6451edc9dd48d` |
+## GitHub Secrets
 
-### 3. 自動デプロイの動作
+GitHubリポジトリの **Settings** → **Secrets and variables** → **Actions** に次を設定します。
 
-- `main` ブランチへの push で自動デプロイ
-- PR 作成でプレビューデプロイ
+| Secret名 | 用途 |
+| --- | --- |
+| `CLOUDFLARE_API_TOKEN` | WorkersデプロイとD1 migration |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflareアカウントの識別 |
 
-ワークフローファイル: `.github/workflows/deploy.yml`
+API Tokenには、少なくとも次の権限が必要です。
 
----
+- Workers Scripts: Edit
+- D1: Edit
 
-## ビルド設定
+Pages用の権限だけではWorkersのデプロイに使えません。
 
-| 項目 | 値 |
-|------|-----|
-| Build command | `pnpm build` |
-| Build output | `dist` |
-| Node.js version | 24 |
+## 関連設定
+
+- Worker設定: [`wrangler.jsonc`](../wrangler.jsonc)
+- CI: [`ci.yml`](../.github/workflows/ci.yml)
+- デプロイ: [`deploy.yml`](../.github/workflows/deploy.yml)

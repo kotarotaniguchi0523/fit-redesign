@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
 	"files": {
 		"includes": [
 			"app/**",
@@ -25,7 +25,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
+			"preset": "recommended",
 			"complexity": {
 				"noForEach": "error",
 				"noUselessFragments": "error",
@@ -66,7 +66,8 @@
 				"noMisplacedAssertion": "error",
 				"noFocusedTests": "error",
 				"noImportCycles": "error",
-				"noTsIgnore": "error"
+				"noTsIgnore": "error",
+				"noShadow": "error"
 			},
 			"style": {
 				"useShorthandFunctionType": "off",
@@ -127,7 +128,6 @@
 			},
 			"nursery": {
 				"noFloatingPromises": "error",
-				"noShadow": "error",
 				"useExplicitReturnType": "error"
 			}
 		}

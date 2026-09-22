@@ -8,9 +8,11 @@ export default defineConfig({
 	// honox の island 変換を vitest にも適用し、app/islands/* を本番同様 <honox-island>
 	// プレースホルダとして SSR する（島の DOM フック useActionState 等を server 描画しない）。
 	plugins: [mdx({ jsxImportSource: "hono/jsx", remarkPlugins: [remarkGfm] }), islandComponents()],
-	esbuild: {
-		jsx: "automatic",
-		jsxImportSource: "hono/jsx",
+	oxc: {
+		jsx: {
+			runtime: "automatic",
+			importSource: "hono/jsx",
+		},
 	},
 	test: {
 		globals: true,
