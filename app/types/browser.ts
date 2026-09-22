@@ -12,7 +12,7 @@ import * as z from "zod/mini";
 const questionIdBrand: unique symbol = Symbol("QuestionId");
 const unitTabIdBrand: unique symbol = Symbol("UnitTabId");
 const syncKeyBrand: unique symbol = Symbol("SyncKey");
-const revealedAtBrand: unique symbol = Symbol("RevealedAt");
+const epochMillisecondsBrand: unique symbol = Symbol("EpochMilliseconds");
 
 export const QuestionIdSchema = z
 	.string("questionId は文字列である必要があります")
@@ -34,20 +34,33 @@ export const UnitTabIdSchema = z
 	)
 	.brand<typeof unitTabIdBrand>();
 
-export const RevealedAtSchema = z.int().check(z.positive()).brand<typeof revealedAtBrand>();
+export const EpochMillisecondsSchema = z
+	.int()
+	.check(z.positive())
+	.brand<typeof epochMillisecondsBrand>();
+
+export const JudgmentSchema = z.union([z.literal("correct"), z.literal("incorrect")]);
 
 export const SyncKeySchema = z
 	.string()
 	.check(z.regex(/^[A-Za-z0-9_-]{43}$/, "同期キーの形式が正しくありません"))
 	.brand<typeof syncKeyBrand>();
 
-export const ProgressEntrySchema = z.readonly(
-	z.strictObject({
-		questionId: QuestionIdSchema,
-		unitId: UnitTabIdSchema,
-		revealedAt: RevealedAtSchema,
-	}),
-);
+export const ProgressEntrySchema = z
+	.readonly(
+		z.strictObject({
+			questionId: QuestionIdSchema,
+			unitId: UnitTabIdSchema,
+			createdAt: EpochMillisecondsSchema,
+			updatedAt: EpochMillisecondsSchema,
+		}),
+	)
+	.check(
+		z.refine(
+			(entry) => entry.createdAt <= entry.updatedAt,
+			"createdAtはupdatedAt以下である必要があります",
+		),
+	);
 
 export const ProgressEntryListSchema = z.readonly(z.array(ProgressEntrySchema));
 
@@ -67,6 +80,6 @@ export const ProgressSnapshotSchema = z.record(z.string(), z.unknown());
 
 export type QuestionId = z.infer<typeof QuestionIdSchema>;
 export type UnitTabId = z.infer<typeof UnitTabIdSchema>;
-export type RevealedAt = z.infer<typeof RevealedAtSchema>;
+export type Judgment = z.infer<typeof JudgmentSchema>;
 export type ProgressEntry = z.infer<typeof ProgressEntrySchema>;
 export type SyncKey = z.infer<typeof SyncKeySchema>;

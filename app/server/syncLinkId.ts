@@ -3,30 +3,30 @@ import { z } from "zod";
 import type { SyncKey } from "../types/domain";
 import { schemaResult } from "./schemaResult";
 
-const SyncSpaceIdBrand: unique symbol = Symbol("SyncSpaceId");
-const SyncSpaceIdSchema = z.string().length(64).brand<typeof SyncSpaceIdBrand>();
+const SyncLinkIdBrand: unique symbol = Symbol("SyncLinkId");
+const SyncLinkIdSchema = z.string().length(64).brand<typeof SyncLinkIdBrand>();
 
-export type SyncSpaceId = z.infer<typeof SyncSpaceIdSchema>;
+export type SyncLinkId = z.infer<typeof SyncLinkIdSchema>;
 
 export type HashSyncKeyError = Readonly<{
 	kind: "HashSyncKeyError";
 	cause: unknown;
 }>;
 
-export const SyncSpaceId = {
-	schema: SyncSpaceIdSchema,
-	parse: schemaResult(SyncSpaceIdSchema),
-	fromSyncKey: (syncKey: SyncKey): ResultAsync<SyncSpaceId, HashSyncKeyError> =>
+export const SyncLinkId = {
+	schema: SyncLinkIdSchema,
+	parse: schemaResult(SyncLinkIdSchema),
+	fromSyncKey: (syncKey: SyncKey): ResultAsync<SyncLinkId, HashSyncKeyError> =>
 		ResultAsync.fromPromise(
 			crypto.subtle.digest("SHA-256", new TextEncoder().encode(syncKey)),
 			(cause): HashSyncKeyError => ({ kind: "HashSyncKeyError", cause }),
 		).andThen((digest) => {
-			const parsed = SyncSpaceId.parse(
+			const parsed = SyncLinkId.parse(
 				Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join(""),
 			);
 			return parsed.isOk()
 				? okAsync(parsed.value)
-				: errAsync<SyncSpaceId, HashSyncKeyError>({
+				: errAsync<SyncLinkId, HashSyncKeyError>({
 						kind: "HashSyncKeyError",
 						cause: parsed.error,
 					});

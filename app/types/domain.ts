@@ -1,20 +1,17 @@
 import { z } from "zod";
 
 export type {
+	Judgment,
 	ProgressEntry,
 	QuestionId,
-	RevealedAt,
 	SyncKey,
 	UnitTabId,
 } from "./browser";
 export {
+	JudgmentSchema,
 	ProgressEntryListSchema,
 	ProgressEntrySchema,
-	ProgressSnapshotSchema,
-	ProgressSyncRequestSchema,
 	QuestionIdSchema,
-	RevealedAtSchema,
-	SyncHeaderSchema,
 	SyncKeySchema,
 	UnitTabIdSchema,
 } from "./browser";

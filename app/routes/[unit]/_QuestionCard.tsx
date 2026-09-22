@@ -6,13 +6,15 @@ import { Figure } from "../../components/figures/Figure";
 import SolutionReveal from "../../features/answer/$SolutionReveal";
 import { questionToMarkdown } from "../../features/markdown/questionToMarkdown";
 import { overlineToHtml } from "../../lib/overline";
-import type { Question, UnitTabId } from "../../types";
+import type { ExamNumber, Question, UnitTabId, Year } from "../../types";
 
 /** 問題、図表、答え確認、Markdownコピーをまとめて表示する。 */
 
 interface Props {
 	question: Question;
 	unitId: UnitTabId;
+	year: Year;
+	examNumber: ExamNumber;
 }
 
 interface QuestionView {
@@ -43,7 +45,7 @@ function buildQuestionView(question: Question): QuestionView {
 	};
 }
 
-export function QuestionCard({ question, unitId }: Props): JSX.Element {
+export function QuestionCard({ question, unitId, year, examNumber }: Props): JSX.Element {
 	const view = buildQuestionView(question);
 	const figureData = question.figureData;
 
@@ -106,6 +108,13 @@ export function QuestionCard({ question, unitId }: Props): JSX.Element {
 						explanationHtml={view.explanationHtml}
 					/>
 				</div>
+
+				<a
+					href={`/${unitId}/${year}/exam?exam=${examNumber}&question=${question.id}`}
+					class="question-timer-link"
+				>
+					この問題だけ計測
+				</a>
 
 				{/* 6. ツール（控えめなフッター） */}
 				<footer class="q-footer">

@@ -1,12 +1,12 @@
 /** @jsxImportSource hono/jsx */
 import { createRoute } from "honox/factory";
-import { getExamByNumber, selectVisibleExamNumbers } from "../../data/exams";
-import { unitBasedTabs } from "../../data/units";
-import type { ExamByYear, ExamNumber } from "../../types";
-import { isYear } from "../../types";
-import { ExamSection } from "./_ExamSection";
-import { buildJsonLd, buildPageDescription, buildPageTitle } from "./_meta";
-import { StudyNavigator } from "./_unitNav";
+import { getExamByNumber, selectVisibleExamNumbers } from "../../../data/exams";
+import { unitBasedTabs } from "../../../data/units";
+import type { ExamByYear, ExamNumber } from "../../../types";
+import { isYear } from "../../../types";
+import { ExamSection } from "../_ExamSection";
+import { buildJsonLd, buildPageDescription, buildPageTitle } from "../_meta";
+import { StudyNavigator } from "../_unitNav";
 
 /**
  * 単元ページ（単元 × 年度の演習）。
@@ -119,6 +119,7 @@ export default createRoute(async (c) => {
 									exam={exam}
 									title={title}
 									examNumber={item.examNumber}
+									year={year}
 									unitId={unit.id}
 									showExamLabel={examDataList.length > 1}
 								/>

@@ -2,6 +2,7 @@
 import { createRoute } from "honox/factory";
 import { PageHeading } from "../components/PageHeading";
 import { unitBasedTabs } from "../data/units";
+import ChallengeHistory from "../features/challenge/$ChallengeHistory";
 import ProgressHistory from "../features/progress/$ProgressHistory";
 import SyncSettings from "../features/progress/$SyncSettings";
 
@@ -19,6 +20,7 @@ export default createRoute((c) => {
 				/>
 				<div class="space-y-6">
 					<ProgressHistory unitNames={unitNames} />
+					<ChallengeHistory />
 					<details class="content-panel p-0!">
 						<summary class="flex min-h-14 cursor-pointer items-center justify-between gap-3 px-5 py-4">
 							<span>

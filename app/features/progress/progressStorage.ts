@@ -1,4 +1,5 @@
 import {
+	EpochMillisecondsSchema,
 	ProgressEntrySchema,
 	ProgressSnapshotSchema,
 	type SyncKey,
@@ -11,7 +12,8 @@ import {
 	toProgressMap,
 } from "./progress";
 
-export const PROGRESS_STORAGE_KEY = "fit-question-progress-v1";
+export const PROGRESS_STORAGE_KEY = "fit-question-progress-v2";
+export const LEGACY_PROGRESS_STORAGE_KEY = "fit-question-progress-v1";
 export const SYNC_KEY_STORAGE_KEY = "fit-sync-key-v1";
 const PROGRESS_CHANGE_EVENT = "fit:progress-change";
 const SYNC_KEY_CHANGE_EVENT = "fit:sync-key-change";
@@ -44,7 +46,10 @@ export function subscribeToSyncKey(onStoreChange: () => void): () => void {
 
 export function readProgressSnapshot(): string | null {
 	try {
-		return localStorage.getItem(PROGRESS_STORAGE_KEY);
+		return (
+			localStorage.getItem(PROGRESS_STORAGE_KEY) ??
+			localStorage.getItem(LEGACY_PROGRESS_STORAGE_KEY)
+		);
 	} catch {
 		return null;
 	}
@@ -97,7 +102,25 @@ export function parseProgressSnapshot(snapshot: string | null): ProgressMap {
 		return Object.fromEntries(
 			Object.entries(parsed.data).flatMap(([key, value]) => {
 				const entry = ProgressEntrySchema.safeParse(value);
-				return entry.success ? [[key, entry.data] as const] : [];
+				if (entry.success) {
+					return [[key, entry.data] as const];
+				}
+				if (typeof value !== "object" || value === null || !("revealedAt" in value)) {
+					return [];
+				}
+				const legacy = value as {
+					questionId?: unknown;
+					unitId?: unknown;
+					revealedAt?: unknown;
+				};
+				const timestamp = EpochMillisecondsSchema.safeParse(legacy.revealedAt);
+				const migrated = ProgressEntrySchema.safeParse({
+					questionId: legacy.questionId ?? key,
+					unitId: legacy.unitId,
+					createdAt: timestamp.success ? timestamp.data : undefined,
+					updatedAt: timestamp.success ? timestamp.data : undefined,
+				});
+				return migrated.success ? [[key, migrated.data] as const] : [];
 			}),
 		);
 	} catch {

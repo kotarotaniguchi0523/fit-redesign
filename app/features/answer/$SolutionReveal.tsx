@@ -1,3 +1,4 @@
+import { useState } from "hono/jsx";
 import type { JSX } from "hono/jsx/jsx-runtime";
 import type { QuestionId, UnitTabId } from "../../types";
 import { useSolutionReveal } from "./useSolutionReveal";
@@ -16,10 +17,21 @@ export default function SolutionReveal({
 	explanationHtml,
 }: SolutionRevealProps): JSX.Element {
 	const onToggle = useSolutionReveal(questionId, unitId);
+	const [isOpen, setIsOpen] = useState(false);
 
 	return (
-		<details class="q-answer" onToggle={onToggle}>
-			<summary class="q-btn-primary cursor-pointer list-none text-center">答えを確認する</summary>
+		<details
+			class="q-answer"
+			onToggle={(event: Event): void => {
+				if (event.currentTarget instanceof HTMLDetailsElement) {
+					setIsOpen(event.currentTarget.open);
+				}
+				onToggle(event);
+			}}
+		>
+			<summary class="q-btn-primary cursor-pointer list-none text-center">
+				{isOpen ? "閉じる" : "答えを確認"}
+			</summary>
 			<section class="q-solution" aria-live="polite">
 				<h3 class="q-solution__title">解答</h3>
 				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: overlineToHtmlで生成した限定HTML */}
