@@ -1,25 +1,25 @@
 import { desc, eq, sql } from "drizzle-orm";
 import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import { ProgressEntry, type ProgressEntry as ProgressEntryType } from "./progressEntry";
-import { type Db, questionProgress, syncSpaces } from "./schema";
-import type { SyncSpaceId } from "./syncSpaceId";
+import { type Db, questionProgress, syncLinks } from "./schema";
+import type { SyncLinkId } from "./syncLinkId";
 
 const BATCH_SIZE = 100;
 
 type RepositoryOperation =
-	| "CreateSyncSpace"
-	| "FindSyncSpace"
+	| "CreateSyncLink"
+	| "FindSyncLink"
 	| "WriteProgress"
 	| "ReadProgress"
-	| "DeleteSyncSpace";
+	| "DeleteSyncLink";
 
 export type ProgressRepositoryError =
 	| Readonly<{ kind: "RepositoryError"; operation: RepositoryOperation; cause: unknown }>
-	| Readonly<{ kind: "InvalidStoredProgress"; syncSpaceId: SyncSpaceId; issues: unknown }>
-	| Readonly<{ kind: "SyncSpaceNotFound"; syncSpaceId: SyncSpaceId }>;
+	| Readonly<{ kind: "InvalidStoredProgress"; syncLinkId: SyncLinkId; issues: unknown }>
+	| Readonly<{ kind: "SyncLinkNotFound"; syncLinkId: SyncLinkId }>;
 
 export const ProgressRepositoryError = {
-	isUnknownSpace: (error: ProgressRepositoryError): boolean => error.kind === "SyncSpaceNotFound",
+	isUnknownLink: (error: ProgressRepositoryError): boolean => error.kind === "SyncLinkNotFound",
 } as const;
 
 function repositoryError(
@@ -31,8 +31,15 @@ function repositoryError(
 function mergeProgressEntries(entries: readonly ProgressEntryType[]): readonly ProgressEntryType[] {
 	const merged = entries.reduce<Map<string, ProgressEntryType>>((result, entry) => {
 		const current = result.get(entry.questionId);
-		if (!current || entry.revealedAt > current.revealedAt) {
+		if (!current) {
 			result.set(entry.questionId, entry);
+		} else if (entry.updatedAt > current.updatedAt) {
+			result.set(entry.questionId, {
+				...entry,
+				createdAt: Math.min(entry.createdAt, current.createdAt) as ProgressEntryType["createdAt"],
+			});
+		} else if (entry.updatedAt === current.updatedAt && entry.createdAt < current.createdAt) {
+			result.set(entry.questionId, { ...current, createdAt: entry.createdAt });
 		}
 		return result;
 	}, new Map());
@@ -45,23 +52,23 @@ function chunksOf<T>(values: readonly T[], size: number): readonly (readonly T[]
 	);
 }
 
-export function createSyncSpace(
+export function createSyncLink(
 	db: Db,
-	syncSpaceId: SyncSpaceId,
+	syncLinkId: SyncLinkId,
 	createdAt: number,
 ): ResultAsync<void, ProgressRepositoryError> {
 	return ResultAsync.fromPromise(
 		db
-			.insert(syncSpaces)
-			.values({ id: syncSpaceId, createdAt })
+			.insert(syncLinks)
+			.values({ id: syncLinkId, createdAt })
 			.then(() => undefined),
-		repositoryError("CreateSyncSpace"),
+		repositoryError("CreateSyncLink"),
 	);
 }
 
 function writeProgress(
 	db: Db,
-	syncSpaceId: SyncSpaceId,
+	syncLinkId: SyncLinkId,
 	entries: readonly ProgressEntryType[],
 ): ResultAsync<void, ProgressRepositoryError> {
 	return chunksOf(mergeProgressEntries(entries), BATCH_SIZE).reduce<
@@ -75,12 +82,13 @@ function writeProgress(
 				const statements = chunk.map((entry) =>
 					db
 						.insert(questionProgress)
-						.values({ syncSpaceId, ...entry })
+						.values({ syncLinkId, ...entry })
 						.onConflictDoUpdate({
-							target: [questionProgress.syncSpaceId, questionProgress.questionId],
+							target: [questionProgress.syncLinkId, questionProgress.questionId],
 							set: {
-								unitId: sql`CASE WHEN excluded.revealed_at > ${questionProgress.revealedAt} THEN excluded.unit_id ELSE ${questionProgress.unitId} END`,
-								revealedAt: sql`MAX(${questionProgress.revealedAt}, excluded.revealed_at)`,
+								unitId: sql`CASE WHEN excluded.updated_at >= ${questionProgress.updatedAt} THEN excluded.unit_id ELSE ${questionProgress.unitId} END`,
+								createdAt: sql`MIN(${questionProgress.createdAt}, excluded.created_at)`,
+								updatedAt: sql`MAX(${questionProgress.updatedAt}, excluded.updated_at)`,
 							},
 						}),
 				);
@@ -99,24 +107,25 @@ function writeProgress(
 
 function readProgress(
 	db: Db,
-	syncSpaceId: SyncSpaceId,
+	syncLinkId: SyncLinkId,
 ): ResultAsync<readonly ProgressEntryType[], ProgressRepositoryError> {
 	return ResultAsync.fromPromise(
 		db
 			.select({
 				questionId: questionProgress.questionId,
 				unitId: questionProgress.unitId,
-				revealedAt: questionProgress.revealedAt,
+				createdAt: questionProgress.createdAt,
+				updatedAt: questionProgress.updatedAt,
 			})
 			.from(questionProgress)
-			.where(eq(questionProgress.syncSpaceId, syncSpaceId))
-			.orderBy(desc(questionProgress.revealedAt)),
+			.where(eq(questionProgress.syncLinkId, syncLinkId))
+			.orderBy(desc(questionProgress.updatedAt)),
 		repositoryError("ReadProgress"),
 	).andThen((rows) =>
 		ProgressEntry.parseList(rows).mapErr(
 			(validationError): ProgressRepositoryError => ({
 				kind: "InvalidStoredProgress",
-				syncSpaceId,
+				syncLinkId,
 				issues: validationError.issues,
 			}),
 		),
@@ -125,37 +134,31 @@ function readProgress(
 
 export function syncProgress(
 	db: Db,
-	syncSpaceId: SyncSpaceId,
+	syncLinkId: SyncLinkId,
 	entries: readonly ProgressEntryType[],
 ): ResultAsync<readonly ProgressEntryType[], ProgressRepositoryError> {
 	return ResultAsync.fromPromise(
-		db
-			.select({ id: syncSpaces.id })
-			.from(syncSpaces)
-			.where(eq(syncSpaces.id, syncSpaceId))
-			.limit(1),
-		repositoryError("FindSyncSpace"),
-	).andThen(([space]) =>
-		space
-			? writeProgress(db, syncSpaceId, entries).andThen(() => readProgress(db, syncSpaceId))
+		db.select({ id: syncLinks.id }).from(syncLinks).where(eq(syncLinks.id, syncLinkId)).limit(1),
+		repositoryError("FindSyncLink"),
+	).andThen(([link]) =>
+		link
+			? writeProgress(db, syncLinkId, entries).andThen(() => readProgress(db, syncLinkId))
 			: errAsync<readonly ProgressEntryType[], ProgressRepositoryError>({
-					kind: "SyncSpaceNotFound",
-					syncSpaceId,
+					kind: "SyncLinkNotFound",
+					syncLinkId,
 				}),
 	);
 }
 
-export function deleteSyncSpace(
+export function deleteSyncLink(
 	db: Db,
-	syncSpaceId: SyncSpaceId,
+	syncLinkId: SyncLinkId,
 ): ResultAsync<void, ProgressRepositoryError> {
 	return ResultAsync.fromPromise(
 		db
-			.batch([
-				db.delete(questionProgress).where(eq(questionProgress.syncSpaceId, syncSpaceId)),
-				db.delete(syncSpaces).where(eq(syncSpaces.id, syncSpaceId)),
-			])
+			.delete(syncLinks)
+			.where(eq(syncLinks.id, syncLinkId))
 			.then(() => undefined),
-		repositoryError("DeleteSyncSpace"),
+		repositoryError("DeleteSyncLink"),
 	);
 }

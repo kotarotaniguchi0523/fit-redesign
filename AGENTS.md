@@ -91,8 +91,8 @@ app/
 │   ├── markdown/        # 問題のMarkdown変換
 │   └── progress/        # 進捗モデル、Storage/API境界、記録画面Island
 ├── routes/              # HonoXファイルベースルート
-│   ├── [unit]/[year].tsx
-│   ├── progress.ts      # 同期スペース作成・同期・削除API
+	│   ├── [unit]/[year]/   # 通常の問題一覧と小テストプレイヤー
+	│   ├── progress.ts      # 同期リンク作成・同期・削除API
 │   ├── records.tsx      # 学習記録ページ
 │   └── markdown.ts      # Markdownエンドポイント
 ├── server/
@@ -100,7 +100,7 @@ app/
 │   ├── progressRepository.ts
 │   ├── progressEntry.ts
 │   ├── syncKey.ts
-│   └── syncSpaceId.ts
+	│   └── syncLinkId.ts
 ├── data/                # 単元、試験、スライドの静的データ
 ├── lib/                 # 表示ロジックなどの純粋関数
 ├── client.ts            # クライアントのエントリポイント
@@ -112,17 +112,17 @@ migrations/              # D1 migration SQL
 
 ```text
 答えを見る
-  -> localStorageへ questionId / unitId / revealedAt を保存
+  -> localStorageへ questionId / unitId / createdAt / updatedAt を保存
   -> 同期が有効な場合だけ POST /progress/sync
-  -> 同期キーをSHA-256で同期スペースIDへ変換
+  -> 同期キーをSHA-256で同期リンクIDへ変換
   -> D1の question_progress とマージ
   -> マージ結果を端末へ返してlocalStorageを更新
 ```
 
-- ローカル利用だけなら同期スペースもネットワーク通信も不要。
-- D1は `sync_spaces` と `question_progress` を保持する。
-- 同期キーの生値をDBへ保存しない。ハッシュ化した同期スペースIDだけを保存する。
-- `question_progress` は同期スペース内で問題ごとの最新 `revealedAt` を保持する。
+- ローカル利用だけなら同期リンクもネットワーク通信も不要。
+- D1は `sync_links`、`question_progress`、`challenges`、`answers` を保持する。
+- 同期キーの生値をDBへ保存しない。ハッシュ化した同期リンクIDだけを保存する。
+- `question_progress` は同期リンク内で問題ごとの初回確認時刻 `createdAt` と最新確認時刻 `updatedAt` を保持する。
 - 同期キーはパスワード相当のcapability。ログ、エラー、分析基盤へ出さない。
 
 ## 実装パターン
@@ -163,9 +163,10 @@ migrations/              # D1 migration SQL
 - `/` — 単元・年度の選択
 - `/unit-{slug}/{year}/` — 問題と答え
 - `/records` — 端末内の学習記録と任意同期
-- `/progress/spaces` — 同期スペース作成（POST）
+- `/progress/links` — 同期リンク作成（POST）
+- `/progress/challenges` — 完了済み小テスト結果の同期（POST）
 - `/progress/sync` — 進捗のマージ（POST）
-- `/progress` — 同期スペースと記録の削除（DELETE）
+- `/progress` — 同期リンクと記録の削除（DELETE）
 - `/markdown/{unit-id}/{year}` — Markdown出力
 - `/guide` — 利用ガイド
 - `/slide-only` — 講義資料
@@ -176,9 +177,9 @@ migrations/              # D1 migration SQL
 ## セキュリティ
 
 - 同期キーはURLや `X-Sync-Key` ヘッダーで扱われる秘密情報として保護する。
-- 同期スペース発行は接続元のハッシュ、同期・削除は同期スペースIDを使ってレート制限する。
+- 同期リンク発行は接続元のハッシュ、同期・削除は同期リンクIDを使ってレート制限する。
 - クライアントから受け取った問題IDと単元IDは、サーバー側の問題カタログと照合する。
-- 不正な同期キーと存在しない同期スペースは、外部から区別できない404として扱う。
+- 不正な同期キーと存在しない同期リンクは、外部から区別できない404として扱う。
 - 外部サービスを追加する場合は、Worker設定とレスポンスヘッダーのCSPを確認する。
 
 ## テスト方針

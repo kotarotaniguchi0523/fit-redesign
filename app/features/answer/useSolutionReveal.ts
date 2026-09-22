@@ -1,6 +1,6 @@
 import { useRef } from "hono/jsx";
 import { type Clock, systemClock } from "../../lib/dateTime";
-import { type QuestionId, RevealedAtSchema, type UnitTabId } from "../../types/browser";
+import { EpochMillisecondsSchema, type QuestionId, type UnitTabId } from "../../types/browser";
 import { syncProgress } from "../progress/progressApi";
 import { mergeStoredProgress, readSyncKey, recordReveal } from "../progress/progressStorage";
 
@@ -9,20 +9,29 @@ export function useSolutionReveal(
 	unitId: UnitTabId,
 	clock: Clock = systemClock,
 ): (event: Event) => void {
-	const hasRecorded = useRef(false);
+	const wasOpen = useRef(false);
 	return (event: Event): void => {
-		if (
-			!(event.currentTarget instanceof HTMLDetailsElement && event.currentTarget.open) ||
-			hasRecorded.current
-		) {
+		if (!(event.currentTarget instanceof HTMLDetailsElement)) {
 			return;
 		}
-		hasRecorded.current = true;
-		const revealedAt = RevealedAtSchema.safeParse(clock.nowEpochMilliseconds());
-		if (!revealedAt.success) {
+		if (!event.currentTarget.open) {
+			wasOpen.current = false;
 			return;
 		}
-		const entry = { questionId, unitId, revealedAt: revealedAt.data };
+		if (wasOpen.current) {
+			return;
+		}
+		wasOpen.current = true;
+		const timestamp = EpochMillisecondsSchema.safeParse(clock.nowEpochMilliseconds());
+		if (!timestamp.success) {
+			return;
+		}
+		const entry = {
+			questionId,
+			unitId,
+			createdAt: timestamp.data,
+			updatedAt: timestamp.data,
+		};
 		recordReveal(entry);
 		const syncKey = readSyncKey();
 		if (syncKey) {

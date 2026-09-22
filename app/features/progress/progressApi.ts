@@ -15,8 +15,8 @@ export type SyncProgressError =
 
 const progressClient = hc<ProgressApp>("/progress");
 
-export function createSyncSpace(): ReturnType<typeof progressClient.spaces.$post> {
-	return progressClient.spaces.$post();
+export function createSyncLink(): ReturnType<typeof progressClient.links.$post> {
+	return progressClient.links.$post();
 }
 
 export function deleteRemoteProgress(

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "hono/jsx";
 import { type SyncKey, SyncKeySchema } from "../../types/browser";
-import { createSyncSpace, deleteRemoteProgress } from "./progressApi";
+import { createSyncLink, deleteRemoteProgress } from "./progressApi";
 import { readSyncKey, removeSyncKey, subscribeToSyncKey } from "./progressStorage";
 import { persistSyncKey, synchronizeProgress } from "./syncSettingsOperations";
 
@@ -95,7 +95,7 @@ export function useSyncSettings(origin: string): SyncSettings {
 				run(
 					"create",
 					async () => {
-						const response = await createSyncSpace();
+						const response = await createSyncLink();
 						if (!response.ok) {
 							throw new Error("同期リンクを作成できませんでした");
 						}

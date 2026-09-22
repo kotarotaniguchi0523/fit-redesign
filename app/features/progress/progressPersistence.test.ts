@@ -14,7 +14,8 @@ import {
 const entry = ProgressEntrySchema.parse({
 	questionId: "exam1-2013-q1",
 	unitId: "unit-base-conversion",
-	revealedAt: 123,
+	createdAt: 123,
+	updatedAt: 123,
 });
 const syncKey = SyncKeySchema.parse("a".repeat(43));
 
@@ -25,8 +26,8 @@ describe("progress persistence", () => {
 	});
 	it("問題ごとの最新確認記録を保存する", () => {
 		recordReveal(entry);
-		recordReveal({ ...entry, revealedAt: 456 });
-		expect(readProgress()[entry.questionId]?.revealedAt).toBe(456);
+		recordReveal({ ...entry, createdAt: 123, updatedAt: 456 });
+		expect(readProgress()[entry.questionId]?.updatedAt).toBe(456);
 		expect(Object.keys(readProgress())).toHaveLength(1);
 	});
 	it("壊れたlocalStorageを空の記録として扱う", () => {
@@ -56,10 +57,11 @@ describe("progress persistence", () => {
 		const remoteEntry = ProgressEntrySchema.parse({
 			questionId: "exam1-2014-q2",
 			unitId: "unit-base-conversion",
-			revealedAt: 789,
+			createdAt: 789,
+			updatedAt: 789,
 		});
 		vi.spyOn(globalThis, "fetch").mockResolvedValue(
-			new Response(JSON.stringify({ entries: [{ ...entry, revealedAt: 100 }, remoteEntry] }), {
+			new Response(JSON.stringify({ entries: [{ ...entry, updatedAt: 100 }, remoteEntry] }), {
 				status: 200,
 				headers: { "Content-Type": "application/json" },
 			}),

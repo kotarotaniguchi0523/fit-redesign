@@ -54,7 +54,7 @@ describe("単元ページ 描画", () => {
 	it("入力やタイマーを出さず答え確認とMarkdownコピーを描画する", async () => {
 		const res = await mounted().request("/unit-base-conversion/2013");
 		const body = await res.text();
-		expect(body).toContain("答えを確認する");
+		expect(body).toContain("答えを確認");
 		// 解答本文はSSR済みのnative details内に置き、JavaScript失敗時も確認できる。
 		expect(body).toContain("<details");
 		expect(body).toContain('class="q-solution"');

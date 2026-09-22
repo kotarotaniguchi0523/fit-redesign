@@ -3,7 +3,7 @@ import { syncProgress, syncProgressErrorMessage } from "./progressApi";
 import { readProgress, saveProgressEntries, saveSyncKey } from "./progressStorage";
 
 function localEntries(): readonly ProgressEntry[] {
-	return Object.values(readProgress()).sort((a, b) => b.revealedAt - a.revealedAt);
+	return Object.values(readProgress()).sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 export async function synchronizeProgress(key: SyncKey): Promise<void> {

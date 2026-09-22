@@ -1,11 +1,12 @@
 import type { JSX } from "hono/jsx/jsx-runtime";
-import type { Exam, ExamNumber, UnitTabId } from "../../types";
+import type { Exam, ExamNumber, UnitTabId, Year } from "../../types";
 import { QuestionCard } from "./_QuestionCard";
 
 interface ExamSectionProps {
 	title: string;
 	exam: Exam | undefined;
 	examNumber: ExamNumber;
+	year: Year;
 	unitId: UnitTabId;
 	showExamLabel: boolean;
 }
@@ -14,6 +15,7 @@ export function ExamSection({
 	title,
 	exam,
 	examNumber,
+	year,
 	unitId,
 	showExamLabel,
 }: ExamSectionProps): JSX.Element {
@@ -38,9 +40,14 @@ export function ExamSection({
 					</a>
 				)}
 			</div>
+			{exam ? (
+				<a href={`/${unitId}/${year}/exam?exam=${examNumber}`} class="exam-start-link">
+					小テストを始める
+				</a>
+			) : null}
 			<div class="space-y-4">
 				{exam?.questions.map((q) => (
-					<QuestionCard question={q} unitId={unitId} />
+					<QuestionCard question={q} unitId={unitId} year={year} examNumber={examNumber} />
 				))}
 				{(!exam || exam.questions.length === 0) && (
 					<p class="text-gray-500 italic">
