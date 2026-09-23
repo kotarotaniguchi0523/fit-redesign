@@ -61,7 +61,10 @@ pnpm test                      # Vitest watch
 pnpm test:run                  # Vitestを1回実行
 pnpm test:coverage             # カバレッジ付きテスト
 pnpm knip                      # 未使用ファイル・依存・exportを検査
-pnpm db:migrate:local          # ローカルD1へmigrationを適用
+pnpm db:baseline:local          # 既存ローカルD1のDrizzle snapshotを初回だけ作成
+pnpm db:generate --name feature_name # Drizzle KitでSQL生成しWrangler用に配置
+pnpm db:check                   # Drizzle migration chainを検査
+pnpm db:migrate:local           # ローカルD1へmigrationを適用
 pnpm db:query:local -- "SQL"   # ローカルD1でSQLを実行
 pnpm deploy                    # WranglerでWorkerをデプロイ
 ```
@@ -89,6 +92,7 @@ app/
 ├── features/
 │   ├── answer/          # 答え表示とローカル進捗記録
 │   ├── markdown/        # 問題のMarkdown変換
+│   ├── challenge/       # 小テスト状態機械、保存、同期、表示
 │   └── progress/        # 進捗モデル、Storage/API境界、記録画面Island
 ├── routes/              # HonoXファイルベースルート
 	│   ├── [unit]/[year]/   # 通常の問題一覧と小テストプレイヤー
@@ -141,13 +145,17 @@ migrations/              # D1 migration SQL
 - DBアクセスは `app/server/progressRepository.ts` に集約する。
 - SQL文字列をルートやUIへ直接書かず、`app/server/schema.ts` のDrizzleスキーマを使う。
 - DB列は `snake_case`、TypeScriptフィールドは `camelCase` とする。
-- `schema.ts` と `migrations/*.sql` は手動で同期する。どちらかを変更したら両方を確認する。
+- `app/server/schema.ts` をスキーマの定義元にする。新しいSQLは手書きせず `pnpm db:generate -- --name feature_name` で生成する。
+- Drizzle Kit v1は各migrationをフォルダーに出力する。`scripts/generate-d1-migration.mjs` がCLI生成SQLをWrangler D1が読む直下の `migrations/*.sql` に配置し、snapshotは生成フォルダーに残す。
+- 既存SQLは適用済みの履歴として保持する。`pnpm db:baseline:local` はローカルD1実体から初回snapshotを取り、本番履歴を書き換えない。
+- スキーマ変更後は `pnpm db:check` と `pnpm db:migrate:local` を実行し、生成SQLをレビューしてからコミットする。
 - 永続化境界の失敗は `ResultAsync` と明示的なエラー型で表し、内部原因をHTTP応答へ漏らさない。
 
 ### クライアント状態
 
 - 問題閲覧と答え確認はJavaScriptや同期APIが失敗しても利用可能にする。
-- `localStorage` の値は信頼せず、読み取り時に軽量な検証を行う。
+- `localStorage` の値は信頼せず、読み取り時にスキーマと相互整合性を検証する。
+- 試行結果のメモリ上の確定と端末保存の成否を分離する。保存失敗だけを理由に完了画面を失わせない。
 - 新しい同期キーは、最初の同期が成功してから永続化する。
 - クライアントへZodを追加する前に、バンドル増加に見合うか確認する。
 

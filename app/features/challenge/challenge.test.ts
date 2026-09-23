@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { QuestionId } from "../../types";
+import type { ChallengeId } from "../../types/browser";
+import { ChallengeIdSchema, ExamIdSchema, QuestionIdSchema } from "../../types/browser";
 import {
 	aggregateChallengeResults,
 	applyElapsedDelta,
@@ -10,14 +11,16 @@ import {
 } from "./challenge";
 import type { ChallengeState, CompletedChallengePayload } from "./types";
 
-const q1 = "exam1-2013-q1" as QuestionId;
-const q2 = "exam1-2013-q2" as QuestionId;
+const q1 = QuestionIdSchema.parse("exam1-2013-q1");
+const q2 = QuestionIdSchema.parse("exam1-2013-q2");
+const challenge1 = ChallengeIdSchema.parse("550e8400-e29b-41d4-a716-446655440000");
+const challenge2 = ChallengeIdSchema.parse("550e8400-e29b-41d4-a716-446655440001");
 
 function initialState(): ChallengeState {
 	return createInitialChallengeState({
-		challengeId: "challenge-1",
+		challengeId: challenge1,
 		scopeKey: "exam1-2013/exam",
-		examId: "exam1-2013",
+		examId: ExamIdSchema.parse("exam1-2013"),
 		mode: "exam",
 		questionIds: [q1, q2],
 		createdAt: 1_700_000_000_000,
@@ -25,12 +28,12 @@ function initialState(): ChallengeState {
 }
 
 function payload(
-	challengeId: string,
+	challengeId: ChallengeId,
 	answers: CompletedChallengePayload["answers"],
 ): CompletedChallengePayload {
 	return {
 		challengeId,
-		examId: "exam1-2013",
+		examId: ExamIdSchema.parse("exam1-2013"),
 		createdAt: 1_700_000_000_000,
 		updatedAt: 1_700_000_000_100,
 		answers,
@@ -96,12 +99,13 @@ describe("challenge core", () => {
 			answerCreatedAt: 1_700_000_000_020,
 		});
 
+		state = challengeReducer(state, { type: "COMPLETE", updatedAt: 1_700_000_000_100 });
 		const completed = toCompletedChallengePayload(state, 1_700_000_000_100);
 		expect(completed?.answers.every((answer) => answer.updatedAt === 1_700_000_000_100)).toBe(true);
 	});
 
 	it("総合正解率は試行ごとの率ではなく判定数で重み付けする", () => {
-		const first = payload("challenge-1", [
+		const first = payload(challenge1, [
 			{
 				questionId: q1,
 				elapsedMs: 1000,
@@ -110,7 +114,7 @@ describe("challenge core", () => {
 				updatedAt: 1_700_000_000_100,
 			},
 		]);
-		const second = payload("challenge-2", [
+		const second = payload(challenge2, [
 			{ ...first.answers[0], questionId: q1, judgment: "incorrect" },
 			{ ...first.answers[0], questionId: q2, judgment: "incorrect" },
 		]);
@@ -120,5 +124,26 @@ describe("challenge core", () => {
 		expect(result.judgedCount).toBe(3);
 		expect(result.correctCount).toBe(1);
 		expect(result.accuracy).toBeCloseTo(1 / 3);
+	});
+
+	it("完了後の試行状態は変更できない", () => {
+		let state = initialState();
+		for (const [index, questionId] of [q1, q2].entries()) {
+			state = challengeReducer(state, { type: "REVEAL_QUESTION", questionId });
+			state = challengeReducer(state, {
+				type: "JUDGE_QUESTION",
+				questionId,
+				judgment: "correct",
+				answerCreatedAt: 1_700_000_000_010 + index,
+			});
+		}
+		const completed = challengeReducer(state, {
+			type: "COMPLETE",
+			updatedAt: 1_700_000_000_100,
+		});
+
+		expect(
+			challengeReducer(completed, { type: "APPLY_ELAPSED", questionId: q1, deltaMs: 500 }),
+		).toBe(completed);
 	});
 });

@@ -1,0 +1,400 @@
+{
+  "dialect": "sqlite",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "prevIds": [],
+  "version": "7",
+  "ddl": [
+    {
+      "name": "questions",
+      "entityType": "tables"
+    },
+    {
+      "name": "sync_links",
+      "entityType": "tables"
+    },
+    {
+      "name": "question_progress",
+      "entityType": "tables"
+    },
+    {
+      "name": "challenges",
+      "entityType": "tables"
+    },
+    {
+      "name": "answers",
+      "entityType": "tables"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "questions"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "sync_links"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sync_link_id",
+      "entityType": "columns",
+      "table": "question_progress"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "challenges"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "challenge_id",
+      "entityType": "columns",
+      "table": "answers"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "json_id",
+      "entityType": "columns",
+      "table": "questions"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "sync_links"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "question_id",
+      "entityType": "columns",
+      "table": "question_progress"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sync_link_id",
+      "entityType": "columns",
+      "table": "challenges"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "question_id",
+      "entityType": "columns",
+      "table": "answers"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "unit_id",
+      "entityType": "columns",
+      "table": "question_progress"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "exam_id",
+      "entityType": "columns",
+      "table": "challenges"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "elapsed_ms",
+      "entityType": "columns",
+      "table": "answers"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "question_progress"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "challenges"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "judgment",
+      "entityType": "columns",
+      "table": "answers"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "question_progress"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "challenges"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "answers"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "answers"
+    },
+    {
+      "columns": [
+        "sync_link_id"
+      ],
+      "tableTo": "sync_links",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": true,
+      "name": "fk_question_progress_sync_link_id_sync_links_id_fk",
+      "entityType": "fks",
+      "table": "question_progress"
+    },
+    {
+      "columns": [
+        "sync_link_id"
+      ],
+      "tableTo": "sync_links",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": true,
+      "name": "fk_challenges_sync_link_id_sync_links_id_fk",
+      "entityType": "fks",
+      "table": "challenges"
+    },
+    {
+      "columns": [
+        "challenge_id"
+      ],
+      "tableTo": "challenges",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": true,
+      "name": "fk_answers_challenge_id_challenges_id_fk",
+      "entityType": "fks",
+      "table": "answers"
+    },
+    {
+      "columns": [
+        "sync_link_id",
+        "question_id"
+      ],
+      "nameExplicit": false,
+      "name": "question_progress_pk",
+      "entityType": "pks",
+      "table": "question_progress"
+    },
+    {
+      "columns": [
+        "challenge_id",
+        "question_id"
+      ],
+      "nameExplicit": false,
+      "name": "answers_pk",
+      "entityType": "pks",
+      "table": "answers"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": true,
+      "name": "questions_pk",
+      "table": "questions",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": true,
+      "name": "sync_links_pk",
+      "table": "sync_links",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": true,
+      "name": "challenges_pk",
+      "table": "challenges",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "sync_link_id",
+          "isExpression": false
+        },
+        {
+          "value": "exam_id",
+          "isExpression": false
+        },
+        {
+          "value": "updated_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_challenges_scope",
+      "entityType": "indexes",
+      "table": "challenges"
+    },
+    {
+      "columns": [
+        {
+          "value": "sync_link_id",
+          "isExpression": false
+        },
+        {
+          "value": "updated_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_question_progress_recent",
+      "entityType": "indexes",
+      "table": "question_progress"
+    },
+    {
+      "columns": [
+        "json_id"
+      ],
+      "nameExplicit": false,
+      "name": "questions_json_id_unique",
+      "entityType": "uniques",
+      "table": "questions"
+    },
+    {
+      "value": "created_at <= updated_at",
+      "name": "question_progress_check_1",
+      "entityType": "checks",
+      "table": "question_progress"
+    },
+    {
+      "value": "created_at <= updated_at",
+      "name": "challenges_check_2",
+      "entityType": "checks",
+      "table": "challenges"
+    },
+    {
+      "value": "elapsed_ms >= 0",
+      "name": "answers_check_3",
+      "entityType": "checks",
+      "table": "answers"
+    },
+    {
+      "value": "judgment IN ('correct', 'incorrect')",
+      "name": "answers_check_4",
+      "entityType": "checks",
+      "table": "answers"
+    },
+    {
+      "value": "created_at <= updated_at",
+      "name": "answers_check_5",
+      "entityType": "checks",
+      "table": "answers"
+    }
+  ],
+  "renames": []
+}

@@ -13,6 +13,8 @@ const questionIdBrand: unique symbol = Symbol("QuestionId");
 const unitTabIdBrand: unique symbol = Symbol("UnitTabId");
 const syncKeyBrand: unique symbol = Symbol("SyncKey");
 const epochMillisecondsBrand: unique symbol = Symbol("EpochMilliseconds");
+const examIdBrand: unique symbol = Symbol("ExamId");
+const challengeIdBrand: unique symbol = Symbol("ChallengeId");
 
 export const QuestionIdSchema = z
 	.string("questionId は文字列である必要があります")
@@ -38,6 +40,16 @@ export const EpochMillisecondsSchema = z
 	.int()
 	.check(z.positive())
 	.brand<typeof epochMillisecondsBrand>();
+
+export const ExamIdSchema = z
+	.string()
+	.check(z.regex(/^exam[1-9]-(2013|2014|2015|2016|2017)$/))
+	.brand<typeof examIdBrand>();
+
+export const ChallengeIdSchema = z
+	.string()
+	.check(z.regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i))
+	.brand<typeof challengeIdBrand>();
 
 export const JudgmentSchema = z.union([z.literal("correct"), z.literal("incorrect")]);
 
@@ -79,6 +91,8 @@ export const SyncHeaderSchema = z.object({
 export const ProgressSnapshotSchema = z.record(z.string(), z.unknown());
 
 export type QuestionId = z.infer<typeof QuestionIdSchema>;
+export type ExamId = z.infer<typeof ExamIdSchema>;
+export type ChallengeId = z.infer<typeof ChallengeIdSchema>;
 export type UnitTabId = z.infer<typeof UnitTabIdSchema>;
 export type Judgment = z.infer<typeof JudgmentSchema>;
 export type ProgressEntry = z.infer<typeof ProgressEntrySchema>;

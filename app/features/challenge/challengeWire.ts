@@ -1,7 +1,11 @@
 import { z } from "zod";
-import { ExamIdSchema, JudgmentSchema, QuestionIdSchema } from "../../types/domain";
+import {
+	ChallengeIdSchema,
+	ExamIdSchema,
+	JudgmentSchema,
+	QuestionIdSchema,
+} from "../../types/browser";
 
-const ChallengeIdSchema = z.string().uuid();
 const TimestampSchema = z.number().int().positive();
 const ElapsedMsSchema = z.number().int().nonnegative();
 

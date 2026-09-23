@@ -1,9 +1,15 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import type { CompletedChallengePayload } from "../features/challenge/types";
-import type { QuestionId } from "../types";
+import {
+	ChallengeIdSchema,
+	EpochMillisecondsSchema,
+	ExamIdSchema,
+	JudgmentSchema,
+	QuestionIdSchema,
+} from "../types/browser";
 import { answers, challenges, type Db, syncLinks } from "./schema";
-import type { SyncLinkId } from "./syncLinkId";
+import { SyncLinkId, type SyncLinkId as SyncLinkIdType } from "./syncLinkId";
 
 type ChallengeRepositoryOperation =
 	| "FindSyncLink"
@@ -13,7 +19,7 @@ type ChallengeRepositoryOperation =
 
 export type ChallengeRepositoryError =
 	| Readonly<{ kind: "RepositoryError"; operation: ChallengeRepositoryOperation; cause: unknown }>
-	| Readonly<{ kind: "SyncLinkNotFound"; syncLinkId: SyncLinkId }>
+	| Readonly<{ kind: "SyncLinkNotFound"; syncLinkId: SyncLinkIdType }>
 	| Readonly<{ kind: "ChallengeConflict"; challengeId: string }>;
 
 export const ChallengeRepositoryError = {
@@ -42,16 +48,16 @@ function toPayload(
 	challengeAnswers: readonly (typeof answers.$inferSelect)[],
 ): CompletedChallengePayload {
 	return {
-		challengeId: challenge.id,
-		examId: challenge.examId,
-		createdAt: challenge.createdAt,
-		updatedAt: challenge.updatedAt,
+		challengeId: ChallengeIdSchema.parse(challenge.id),
+		examId: ExamIdSchema.parse(challenge.examId),
+		createdAt: EpochMillisecondsSchema.parse(challenge.createdAt),
+		updatedAt: EpochMillisecondsSchema.parse(challenge.updatedAt),
 		answers: challengeAnswers.map((answer) => ({
-			questionId: answer.questionId as QuestionId,
+			questionId: QuestionIdSchema.parse(answer.questionId),
 			elapsedMs: answer.elapsedMs,
-			judgment: answer.judgment as "correct" | "incorrect",
-			createdAt: answer.createdAt,
-			updatedAt: answer.updatedAt,
+			judgment: JudgmentSchema.parse(answer.judgment),
+			createdAt: EpochMillisecondsSchema.parse(answer.createdAt),
+			updatedAt: EpochMillisecondsSchema.parse(answer.updatedAt),
 		})),
 	};
 }
@@ -61,34 +67,9 @@ type StoredChallenge = Readonly<{
 	syncLinkId: string;
 }>;
 
-function readChallenge(
-	db: Db,
-	challengeId: string,
-): ResultAsync<StoredChallenge | undefined, ChallengeRepositoryError> {
-	return ResultAsync.fromPromise(
-		Promise.all([
-			db
-				.select({
-					challenge: challenges,
-					syncLinkId: challenges.syncLinkId,
-				})
-				.from(challenges)
-				.where(eq(challenges.id, challengeId))
-				.limit(1),
-			db.select().from(answers).where(eq(answers.challengeId, challengeId)),
-		]),
-		repositoryError("ReadChallenge"),
-	).map(([challengeRows, answerRows]) => {
-		const row = challengeRows[0];
-		return row
-			? { payload: toPayload(row.challenge, answerRows), syncLinkId: row.syncLinkId }
-			: undefined;
-	});
-}
-
 function readChallenges(
 	db: Db,
-	syncLinkId: SyncLinkId,
+	syncLinkId: SyncLinkIdType,
 ): ResultAsync<readonly CompletedChallengePayload[], ChallengeRepositoryError> {
 	return ResultAsync.fromPromise(
 		db
@@ -96,24 +77,29 @@ function readChallenges(
 			.from(challenges)
 			.where(eq(challenges.syncLinkId, syncLinkId))
 			.orderBy(desc(challenges.updatedAt))
-			.then(async (challengeRows) =>
-				Promise.all(
-					challengeRows.map(async (challenge) => {
-						const challengeAnswers = await db
-							.select()
-							.from(answers)
-							.where(eq(answers.challengeId, challenge.id));
-						return toPayload(challenge, challengeAnswers);
-					}),
-				),
-			),
+			.then(async (challengeRows) => {
+				const groupedAnswers = new Map<string, (typeof answers.$inferSelect)[]>();
+				for (let offset = 0; offset < challengeRows.length; offset += 75) {
+					const batch = challengeRows.slice(offset, offset + 75);
+					const ids = batch.map((challenge) => challenge.id);
+					const rows = await db.select().from(answers).where(inArray(answers.challengeId, ids));
+					for (const answer of rows) {
+						const grouped = groupedAnswers.get(answer.challengeId) ?? [];
+						grouped.push(answer);
+						groupedAnswers.set(answer.challengeId, grouped);
+					}
+				}
+				return challengeRows.map((challenge) =>
+					toPayload(challenge, groupedAnswers.get(challenge.id) ?? []),
+				);
+			}),
 		repositoryError("ReadChallenges"),
 	);
 }
 
 export function syncChallenges(
 	db: Db,
-	syncLinkId: SyncLinkId,
+	syncLinkId: SyncLinkIdType,
 	payloads: readonly CompletedChallengePayload[],
 ): ResultAsync<readonly CompletedChallengePayload[], ChallengeRepositoryError> {
 	return ResultAsync.fromPromise(
@@ -138,15 +124,58 @@ export function syncChallenges(
 			}
 			uniquePayloads.set(payload.challengeId, payload);
 		}
-		return [...uniquePayloads.values()]
-			.reduce<ResultAsync<readonly CompletedChallengePayload[], ChallengeRepositoryError>>(
-				(result, payload) =>
-					result.andThen((newPayloads) =>
-						readChallenge(db, payload.challengeId).andThen((existing) => {
-							if (existing) {
-								return existing.syncLinkId === syncLinkId &&
-									canonicalPayload(existing.payload) === canonicalPayload(payload) &&
-									existing.payload.answers.length === payload.answers.length
+		const submitted = [...uniquePayloads.values()];
+		return ResultAsync.fromPromise(
+			Promise.all(
+				Array.from({ length: Math.ceil(submitted.length / 75) }, async (_, index) => {
+					const batch = submitted.slice(index * 75, (index + 1) * 75);
+					const rows = await db
+						.select({ challenge: challenges, syncLinkId: challenges.syncLinkId })
+						.from(challenges)
+						.where(
+							inArray(
+								challenges.id,
+								batch.map((payload) => ChallengeIdSchema.parse(payload.challengeId)),
+							),
+						);
+					const answerRows = await db
+						.select()
+						.from(answers)
+						.where(
+							inArray(
+								answers.challengeId,
+								batch.map((payload) => ChallengeIdSchema.parse(payload.challengeId)),
+							),
+						);
+					return { rows, answerRows };
+				}),
+			),
+			repositoryError("ReadChallenge"),
+		).andThen((batches) => {
+			const existing = new Map<string, StoredChallenge>();
+			for (const { rows, answerRows } of batches) {
+				const answersByChallenge = new Map<string, (typeof answers.$inferSelect)[]>();
+				for (const answer of answerRows) {
+					const group = answersByChallenge.get(answer.challengeId) ?? [];
+					group.push(answer);
+					answersByChallenge.set(answer.challengeId, group);
+				}
+				for (const row of rows) {
+					existing.set(row.challenge.id, {
+						payload: toPayload(row.challenge, answersByChallenge.get(row.challenge.id) ?? []),
+						syncLinkId: row.syncLinkId,
+					});
+				}
+			}
+			return submitted
+				.reduce<ResultAsync<readonly CompletedChallengePayload[], ChallengeRepositoryError>>(
+					(result, payload) =>
+						result.andThen((newPayloads) => {
+							const stored = existing.get(payload.challengeId);
+							if (stored) {
+								return stored.syncLinkId === syncLinkId &&
+									canonicalPayload(stored.payload) === canonicalPayload(payload) &&
+									stored.payload.answers.length === payload.answers.length
 									? okAsync(newPayloads)
 									: errAsync<readonly CompletedChallengePayload[], ChallengeRepositoryError>({
 											kind: "ChallengeConflict",
@@ -155,40 +184,43 @@ export function syncChallenges(
 							}
 							return okAsync([...newPayloads, payload]);
 						}),
-					),
-				okAsync<readonly CompletedChallengePayload[]>([]),
-			)
-			.andThen((newPayloads) => {
-				if (newPayloads.length === 0) {
-					return readChallenges(db, syncLinkId);
-				}
-				const statements = newPayloads.flatMap((payload) => [
-					db.insert(challenges).values({
-						id: payload.challengeId,
-						syncLinkId,
-						examId: payload.examId,
-						createdAt: payload.createdAt,
-						updatedAt: payload.updatedAt,
-					}),
-					db.insert(answers).values(
-						payload.answers.map((answer) => ({
-							challengeId: payload.challengeId,
-							questionId: answer.questionId,
-							elapsedMs: answer.elapsedMs,
-							judgment: answer.judgment,
-							createdAt: answer.createdAt,
-							updatedAt: answer.updatedAt,
-						})),
-					),
-				]);
-				const [first, ...rest] = statements;
-				if (!first) {
-					return readChallenges(db, syncLinkId);
-				}
-				return ResultAsync.fromPromise(
-					db.batch([first, ...rest]).then(() => undefined),
-					repositoryError("WriteChallenges"),
-				).andThen(() => readChallenges(db, syncLinkId));
-			});
+					okAsync<readonly CompletedChallengePayload[]>([]),
+				)
+				.andThen((newPayloads) => {
+					if (newPayloads.length === 0) {
+						return readChallenges(db, syncLinkId);
+					}
+					const statements = newPayloads.flatMap((payload) => {
+						const challenge: typeof challenges.$inferInsert = {
+							id: ChallengeIdSchema.parse(payload.challengeId),
+							syncLinkId: SyncLinkId.schema.parse(syncLinkId),
+							examId: ExamIdSchema.parse(payload.examId),
+							createdAt: payload.createdAt,
+							updatedAt: payload.updatedAt,
+						};
+						return [
+							db.insert(challenges).values(challenge),
+							db.insert(answers).values(
+								payload.answers.map((answer) => ({
+									challengeId: ChallengeIdSchema.parse(payload.challengeId),
+									questionId: QuestionIdSchema.parse(answer.questionId),
+									elapsedMs: answer.elapsedMs,
+									judgment: answer.judgment,
+									createdAt: answer.createdAt,
+									updatedAt: answer.updatedAt,
+								})),
+							),
+						];
+					});
+					const [first, ...rest] = statements;
+					if (!first) {
+						return readChallenges(db, syncLinkId);
+					}
+					return ResultAsync.fromPromise(
+						db.batch([first, ...rest]).then(() => undefined),
+						repositoryError("WriteChallenges"),
+					).andThen(() => readChallenges(db, syncLinkId));
+				});
+		});
 	});
 }

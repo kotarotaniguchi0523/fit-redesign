@@ -11,6 +11,8 @@ export {
 	UnitSchema,
 } from "./content";
 export type {
+	ChallengeId,
+	ExamId,
 	ExamNumber,
 	Judgment,
 	QuestionId,

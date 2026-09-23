@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 export type {
+	ChallengeId,
+	ExamId,
 	Judgment,
 	ProgressEntry,
 	QuestionId,
@@ -8,7 +10,7 @@ export type {
 	UnitTabId,
 } from "./browser";
 export {
-	JudgmentSchema,
+	ExamIdSchema,
 	ProgressEntryListSchema,
 	ProgressEntrySchema,
 	QuestionIdSchema,
@@ -21,7 +23,6 @@ export const EXAM_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 const yearValues: ReadonlySet<string> = new Set(YEARS);
 const examNumberValues: ReadonlySet<number> = new Set(EXAM_NUMBERS);
 
-const examIdBrand: unique symbol = Symbol("ExamId");
 const pdfPathBrand: unique symbol = Symbol("PdfPath");
 const slideIdBrand: unique symbol = Symbol("SlideId");
 
@@ -37,13 +38,6 @@ export const ExamNumberSchema = z
 	.refine((value): value is ExamNumber => examNumberValues.has(value), {
 		error: "exam number must be one of 1..9",
 	});
-
-export const ExamIdSchema = z
-	.string({ error: "examId は文字列である必要があります" })
-	.regex(/^exam[1-9]-(2013|2014|2015|2016|2017)$/, {
-		error: "examId は exam{1-9}-{2013..2017} 形式である必要があります",
-	})
-	.brand<typeof examIdBrand>();
 
 export const PdfPathSchema = z
 	.string({ error: "pdfPath は文字列である必要があります" })
