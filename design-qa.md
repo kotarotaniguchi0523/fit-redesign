@@ -1,14 +1,31 @@
-# Design QA
+# Concept 3 UI redesign QA
 
-- reference: `docs/images/quiz-mode-ui-proposal.png`
-- target states: 問題一覧 → 小テスト開始、プレイヤー、解答表示、自己判定、問題一覧、結果画面
-- target viewports: desktop and mobile
-- status: blocked
+## Scope
 
-## Blocker
+- Selected reference: [Quiz UI proposal](docs/images/quiz-mode-ui-proposal.png)
+- Desktop capture: 1363 × 936
+- Screens: regular question page, learning records, quiz
+- Direction: preserve type sizes; reduce content width, spacing, and button dimensions; center the layout.
 
-Product Design のブラウザ確認手順に従い、ローカルプレビューを `terminal.local:4173` で起動して Cloud Browser から開こうとしたが、ブラウザ環境が `ERR_BLOCKED_BY_CLIENT` を返してページを表示できなかった。`localhost:5173` と開発サーバーのネットワークアドレスでも同じ結果だったため、スクリーンショット取得、操作確認、コンソール確認は実施できていない。
+## Updated screens
 
-静的な代替確認として、SSRを含む本番ビルド、Biome、型チェック、全テスト、KNIPは別途実行している。ブラウザ接続が可能な環境で、同じ対象状態を再確認する必要がある。
+### Regular question page
 
-final result: blocked
+The question list is capped at 52rem. Card gaps and inner spacing are smaller, and each question number sits beside its prompt to reduce card height. The answer disclosure is a 15rem centered button instead of a full-width bar. A compact right-side control stack places “Copy” above the timer action with no gap. On phones, the stack moves below the prompt to preserve reading width.
+
+![Regular question page with centered compact cards](docs/design-qa/question-page-desktop.jpg)
+
+### Learning records
+
+The content is capped at 48rem. Summary cards and history panels have tighter padding and section gaps.
+
+![Compact learning records page](docs/design-qa/records-desktop.jpg)
+
+## Verification
+
+- Regular question page: centered desktop layout, card width, compact answer button, and grouped card actions visually checked. **Pass**.
+- Learning records: centered desktop layout, panel spacing, and padding visually checked. **Pass**.
+- Quiz: the player width is capped at 44rem. The active player state could not be recaptured because this browser profile contains an unfinished attempt. A JavaScript URL to clear local preview state was rejected by browser security policy; no workaround was attempted.
+- Mobile: a responsive Playwright test is included, but this environment has no Chromium executable and its browser download failed, so the test could not run here.
+
+**Overall: partially verified.** Desktop question and records screens pass. Verify the active quiz screen and mobile layout in a Playwright environment with Chromium installed.

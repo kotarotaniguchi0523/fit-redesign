@@ -19,16 +19,16 @@ export default function ProgressHistory({ unitNames }: ProgressHistoryProps): JS
 	const latestLink = latest ? progressQuestionLink(latest, unitNames) : null;
 
 	return (
-		<div class="space-y-6">
-			<section class="grid gap-4 sm:grid-cols-2">
-				<div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+		<div class="progress-history">
+			<section class="progress-history__stats">
+				<div class="progress-history__card">
 					<p class="text-sm text-gray-500">答えを確認した問題</p>
 					<p class="mt-2 text-3xl font-bold text-[#1e3a5f]">
 						{entries.length}
 						<span class="ml-1 text-base">問</span>
 					</p>
 				</div>
-				<div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+				<div class="progress-history__card">
 					<p class="text-sm text-gray-500">前回の続き</p>
 					{latestLink ? (
 						<a
@@ -43,7 +43,7 @@ export default function ProgressHistory({ unitNames }: ProgressHistoryProps): JS
 				</div>
 			</section>
 
-			<section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+			<section class="progress-history__recent">
 				<h2 class="text-lg font-bold text-[#1e3a5f]">最近確認した問題</h2>
 				{entries.length > 0 ? (
 					<ol class="mt-3 divide-y divide-gray-100">

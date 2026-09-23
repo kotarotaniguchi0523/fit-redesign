@@ -66,15 +66,15 @@ export default createRoute(async (c) => {
 	c.header("Cache-Control", "public, s-maxage=31536000, max-age=3600");
 
 	return c.render(
-		<main id="main-content" class="study-shell">
+		<main id="main-content" class="study-shell study-shell--question-set">
 			<div class="page-container page-container--wide">
 				<a href="/" class="page-backlink">
 					← 問題一覧
 				</a>
 				<StudyNavigator currentUnitId={unit.id} currentYear={year} />
 
-				<div class="content-panel">
-					<header class="border-b border-slate-200 pb-4">
+				<div class="content-panel question-set-panel">
+					<header class="question-set-heading border-b border-slate-200 pb-4">
 						<div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
 							<h1
 								class="text-2xl font-bold text-[#1e3a5f] sm:text-3xl"
@@ -89,15 +89,15 @@ export default createRoute(async (c) => {
 
 					{/* 小テスト切り替え（複数ある場合） */}
 					{examDataList.length > 1 ? (
-						<nav class="mt-4" aria-label="小テスト選択">
-							<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+						<nav class="exam-selection" aria-label="小テスト選択">
+							<div class="exam-selection__grid">
 								{examDataList.map((item) => {
 									const exam = item.examByYear.exams[year];
 									const title = exam?.title ?? item.examByYear.title ?? "";
 									return (
 										<a
 											href={`#exam-${item.examNumber}`}
-											class="lift-card flex min-h-11 w-full flex-col justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-left text-xs font-bold text-gray-700 transition-all hover:border-[#1e3a5f] hover:text-[#1e3a5f]"
+											class="exam-selection__item flex w-full flex-col justify-center text-left"
 										>
 											<span class="text-sm leading-snug break-words w-full">
 												小テスト{item.examNumber} — {title}

@@ -79,7 +79,7 @@ export default createRoute(async (c) => {
 	const mode = selectedQuestionId ? "question" : "exam";
 
 	return c.render(
-		<main id="main-content" class="study-shell">
+		<main id="main-content" class="study-shell study-shell--exam">
 			<div class="page-container page-container--wide">
 				<a href={`/${unit.id}/${year}`} class="page-backlink">
 					← 問題一覧へ戻る

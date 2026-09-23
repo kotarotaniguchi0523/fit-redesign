@@ -7,6 +7,7 @@ interface CopyButtonProps {
 	className: string;
 	ariaLabel: string;
 	title: string;
+	idleLabel?: string;
 }
 
 function feedbackClassFor(state: CopyState): string {
@@ -29,14 +30,14 @@ function StateIcon({ state }: { state: CopyState }): JSX.Element {
 	return <CopyIcon />;
 }
 
-function stateLabel(state: CopyState): string {
+function stateLabel(state: CopyState, idleLabel: string): string {
 	if (state === "success") {
 		return "コピーしました";
 	}
 	if (state === "error") {
 		return "コピーできませんでした";
 	}
-	return "Markdownでコピー";
+	return idleLabel;
 }
 
 export default function CopyButton({
@@ -44,10 +45,11 @@ export default function CopyButton({
 	className,
 	ariaLabel,
 	title,
+	idleLabel = "Markdownでコピー",
 }: CopyButtonProps): JSX.Element {
 	const { state, copy } = useCopyFeedback(text);
 	const feedbackClass = feedbackClassFor(state);
-	const label = stateLabel(state);
+	const label = stateLabel(state, idleLabel);
 
 	return (
 		<button

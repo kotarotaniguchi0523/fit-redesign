@@ -55,3 +55,21 @@ export function ErrorIcon(): JSX.Element {
 		</svg>
 	);
 }
+
+export function TimerIcon(): JSX.Element {
+	return (
+		<svg
+			class="h-4 w-4"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			aria-hidden="true"
+		>
+			<circle cx="12" cy="13" r="8" />
+			<path d="M12 9v4l2.5 1.5M10 2h4m-2 0v3M19 6l-1.5 1.5" />
+		</svg>
+	);
+}
