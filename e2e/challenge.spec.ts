@@ -5,7 +5,7 @@ test("quiz records a self-judgment and resumes after reload", async ({ page }) =
 	await expect(page.getByRole("heading", { name: /小テスト/ })).toBeVisible();
 	await page.getByText("答えを確認", { exact: true }).click();
 	await expect(page.getByText("閉じる", { exact: true })).toBeVisible();
-	await page.getByRole("button", { name: "正解として記録" }).click();
+	await page.getByRole("button", { name: "正解として記録", exact: true }).click();
 	await page.reload();
 	await expect(page.getByText("続きから", { exact: true })).toBeVisible();
 	await page.getByText("続きから", { exact: true }).click();
@@ -23,7 +23,7 @@ test("results remain available when browser storage writes fail", async ({ page 
 	await page.goto("/unit-base-conversion/2013/exam?exam=1");
 	for (let question = 0; question < 5; question += 1) {
 		await page.getByText("答えを確認", { exact: true }).click();
-		await page.getByRole("button", { name: "正解として記録" }).click();
+		await page.getByRole("button", { name: "正解として記録", exact: true }).click();
 		if (question < 4) await page.getByRole("button", { name: "次の問題" }).click();
 	}
 	await page.getByRole("button", { name: "結果を見る" }).click();
