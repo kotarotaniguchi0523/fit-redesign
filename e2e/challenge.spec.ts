@@ -9,7 +9,8 @@ test("quiz records a self-judgment and resumes after reload", async ({ page }) =
 	await page.reload();
 	await expect(page.getByText("続きから", { exact: true })).toBeVisible();
 	await page.getByText("続きから", { exact: true }).click();
-	await expect(page.getByRole("button", { name: "正解として記録" })).toBeDisabled();
+	await page.getByText("答えを確認", { exact: true }).click();
+	await expect(page.getByRole("button", { name: "正解として記録", exact: true })).toBeDisabled();
 });
 
 test("results remain available when browser storage writes fail", async ({ page }) => {
@@ -28,5 +29,5 @@ test("results remain available when browser storage writes fail", async ({ page 
 	}
 	await page.getByRole("button", { name: "結果を見る" }).click();
 	await expect(page.getByRole("heading", { name: "小テストの結果" })).toBeVisible();
-	await expect(page.getByRole("alert")).toContainText("保存できませんでした");
+	await expect(page.getByRole("status")).toContainText("保存できませんでした");
 });
