@@ -58,25 +58,23 @@ export default function ChallengeHistory(): JSX.Element {
 	];
 
 	return (
-		<section class="space-y-4" aria-labelledby="challenge-history-title">
-			<div class="flex flex-wrap items-end justify-between gap-3">
+		<section class="challenge-history" aria-labelledby="challenge-history-title">
+			<header class="challenge-history__header">
 				<div>
-					<p class="text-xs font-bold uppercase tracking-[0.16em] text-[#806612]">
-						Challenge records
-					</p>
-					<h2 id="challenge-history-title" class="mt-1 text-xl font-bold text-[#1e3a5f]">
+					<p class="challenge-history__eyebrow">小テストの記録</p>
+					<h2 id="challenge-history-title" class="challenge-history__title">
 						小テストの結果
 					</h2>
-					<p class="mt-1 text-sm text-gray-500">
+					<p class="challenge-history__description">
 						自己判定した完了済みの試行を、あとから振り返れます。
 					</p>
 				</div>
-				<fieldset class="flex rounded-xl border border-gray-200 bg-gray-50 p-1">
+				<fieldset class="challenge-history__filters">
 					<legend class="sr-only">結果の絞り込み</legend>
 					{filterOptions.map((option) => (
 						<button
 							type="button"
-							class={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${filter === option.value ? "bg-white text-[#1e3a5f] shadow-sm" : "text-gray-500 hover:text-[#1e3a5f]"}`}
+							class={`challenge-history__filter ${filter === option.value ? "is-selected" : ""}`}
 							aria-pressed={filter === option.value ? "true" : "false"}
 							onClick={(): void => setFilter(option.value)}
 						>
@@ -84,32 +82,32 @@ export default function ChallengeHistory(): JSX.Element {
 						</button>
 					))}
 				</fieldset>
-			</div>
+			</header>
 
 			{snapshot === null || completed.length === 0 ? (
-				<p class="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-5 py-8 text-center text-sm text-gray-600">
+				<p class="challenge-history__empty">
 					{snapshot === null
 						? "小テストを完了すると、ここに結果が表示されます。"
 						: "この条件の完了済み結果はまだありません。"}
 				</p>
 			) : (
 				<>
-					<div class="grid gap-3 sm:grid-cols-4">
-						<div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+					<div class="challenge-history__metrics">
+						<div class="challenge-history__metric">
 							<p class="text-xs font-bold text-gray-500">試行回数</p>
 							<p class="mt-2 text-2xl font-bold text-[#1e3a5f]">{aggregate.challengeCount}</p>
 						</div>
-						<div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+						<div class="challenge-history__metric">
 							<p class="text-xs font-bold text-gray-500">正解率</p>
 							<p class="mt-2 text-2xl font-bold text-[#1e3a5f]">
 								{formatAccuracy(aggregate.accuracy)}
 							</p>
 						</div>
-						<div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+						<div class="challenge-history__metric">
 							<p class="text-xs font-bold text-gray-500">判定数</p>
 							<p class="mt-2 text-2xl font-bold text-[#1e3a5f]">{aggregate.judgedCount}</p>
 						</div>
-						<div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+						<div class="challenge-history__metric">
 							<p class="text-xs font-bold text-gray-500">合計時間</p>
 							<p class="mt-2 font-mono text-xl font-bold text-[#1e3a5f]">
 								{formatDuration(aggregate.totalElapsedMs)}
@@ -117,8 +115,8 @@ export default function ChallengeHistory(): JSX.Element {
 						</div>
 					</div>
 
-					<div class="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-						<section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+					<div class="challenge-history__columns">
+						<section class="challenge-history__panel">
 							<h3 class="font-bold text-[#1e3a5f]">最近の試行</h3>
 							<ol class="mt-3 divide-y divide-gray-100">
 								{completed.slice(0, 8).map((challenge) => {
@@ -145,7 +143,7 @@ export default function ChallengeHistory(): JSX.Element {
 							</ol>
 						</section>
 
-						<section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+						<section class="challenge-history__panel">
 							<h3 class="font-bold text-[#1e3a5f]">問題別の累計</h3>
 							<ol class="mt-3 divide-y divide-gray-100">
 								{Object.values(aggregate.byQuestion)

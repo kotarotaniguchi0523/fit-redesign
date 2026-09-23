@@ -3,6 +3,7 @@
 import type { JSX } from "hono/jsx/jsx-runtime";
 import CopyButton from "../../components/$CopyButton";
 import { Figure } from "../../components/figures/Figure";
+import { TimerIcon } from "../../components/icons";
 import SolutionReveal from "../../features/answer/$SolutionReveal";
 import { questionToMarkdown } from "../../features/markdown/questionToMarkdown";
 import { overlineToHtml } from "../../lib/overline";
@@ -57,22 +58,41 @@ export function QuestionCard({ question, unitId, year, examNumber }: Props): JSX
 			class="q-card scroll-mt-20"
 		>
 			<div class="q-card__body">
-				{/* 問題番号 */}
-				<header class="q-head">
-					<span class="q-num">
-						<span class="sr-only">問題</span>
-						{question.number}
-					</span>
-					{view.hasOptions ? <p class="q-hint">選択肢から確認</p> : null}
-				</header>
+				<div class="q-card__layout">
+					<div class="q-prompt">
+						<header class="q-head">
+							<span class="q-num">
+								<span class="sr-only">問題</span>
+								{question.number}
+							</span>
+							{view.hasOptions ? <p class="q-hint">選択肢から確認</p> : null}
+						</header>
 
-				{/* 2. 問題文 */}
-				<div class="q-text-wrap">
-					<p
-						class="q-text"
-						// biome-ignore lint/security/noDangerouslySetInnerHtml: overline 変換済み HTML の注入（旧 set:html と同等）
-						dangerouslySetInnerHTML={{ __html: overlineToHtml(question.text) }}
-					/>
+						<div class="q-text-wrap">
+							<p
+								class="q-text"
+								// biome-ignore lint/security/noDangerouslySetInnerHtml: overline 変換済み HTML の注入（旧 set:html と同等）
+								dangerouslySetInnerHTML={{ __html: overlineToHtml(question.text) }}
+							/>
+						</div>
+					</div>
+
+					<div class="q-card__actions">
+						<CopyButton
+							text={view.markdownText}
+							className="q-tool"
+							ariaLabel="Copy"
+							title="Copy"
+							idleLabel="Copy"
+						/>
+						<a
+							href={`/${unitId}/${year}/exam?exam=${examNumber}&question=${question.id}`}
+							class="question-timer-link"
+						>
+							<TimerIcon />
+							<span>時間を測る</span>
+						</a>
+					</div>
 				</div>
 
 				{/* 3. 図表 */}
@@ -100,7 +120,7 @@ export function QuestionCard({ question, unitId, year, examNumber }: Props): JSX
 					</ol>
 				) : null}
 
-				<div class="mt-4 block">
+				<div class="mt-3 block">
 					<SolutionReveal
 						questionId={question.id}
 						unitId={unitId}
@@ -108,23 +128,6 @@ export function QuestionCard({ question, unitId, year, examNumber }: Props): JSX
 						explanationHtml={view.explanationHtml}
 					/>
 				</div>
-
-				<a
-					href={`/${unitId}/${year}/exam?exam=${examNumber}&question=${question.id}`}
-					class="question-timer-link"
-				>
-					この問題だけ計測
-				</a>
-
-				{/* 6. ツール（控えめなフッター） */}
-				<footer class="q-footer">
-					<CopyButton
-						text={view.markdownText}
-						className="q-tool"
-						ariaLabel="Markdownでコピー"
-						title="Markdownでコピー"
-					/>
-				</footer>
 			</div>
 		</article>
 	);

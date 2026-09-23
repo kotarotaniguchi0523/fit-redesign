@@ -3,7 +3,9 @@
 	"files": {
 		"includes": [
 			"app/**",
+			"e2e/**",
 			"docs/**",
+			"playwright.config.ts",
 			"!!**/.claude",
 			"!!**/.serena",
 			"!!**/node_modules",

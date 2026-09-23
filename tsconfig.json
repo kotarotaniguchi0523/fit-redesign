@@ -22,7 +22,9 @@
 		]
 	},
 	"include": [
-		"app"
+		"app",
+		"e2e",
+		"playwright.config.ts"
 	],
 	"exclude": [
 		"app/**/*.test.ts",

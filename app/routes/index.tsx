@@ -30,7 +30,7 @@ export default createRoute(async (c) => {
 
 	c.header("Cache-Control", "public, s-maxage=31536000, max-age=3600");
 	return c.render(
-		<main id="main-content" class="study-shell">
+		<main id="main-content" class="study-shell study-shell--home">
 			<div class="page-container">
 				<section class="py-2">
 					<h1 class="home-title">問題を選ぶ</h1>

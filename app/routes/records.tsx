@@ -11,17 +11,17 @@ const unitNames = Object.fromEntries(unitBasedTabs.map((unit) => [unit.id, unit.
 export default createRoute((c) => {
 	const origin = new URL(c.req.url).origin;
 	return c.render(
-		<main id="main-content" class="study-shell">
-			<div class="page-container">
+		<main id="main-content" class="study-shell study-shell--records">
+			<div class="page-container page-container--records">
 				<PageHeading
 					eyebrow="任意機能"
 					title="学習記録"
 					description="答えを確認した問題を、この端末に記録します。"
 				/>
-				<div class="space-y-6">
+				<div class="records-stack">
 					<ProgressHistory unitNames={unitNames} />
 					<ChallengeHistory />
-					<details class="content-panel p-0!">
+					<details class="content-panel records-sync p-0!">
 						<summary class="flex min-h-14 cursor-pointer items-center justify-between gap-3 px-5 py-4">
 							<span>
 								<strong class="block text-[#1e3a5f]">端末間で同期</strong>

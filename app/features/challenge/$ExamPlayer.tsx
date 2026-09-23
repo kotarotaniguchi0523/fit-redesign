@@ -200,16 +200,36 @@ function PlayerList({
 	state,
 	questions,
 	onSelect,
+	onClose,
 }: Readonly<{
 	state: ChallengeState;
 	questions: readonly PlayerQuestion[];
 	onSelect: (index: number) => void;
+	onClose: () => void;
 }>): JSX.Element {
+	const totalElapsedMs = Object.values(state.questionElapsedMs).reduce<number>(
+		(sum, value) => sum + (value ?? 0),
+		0,
+	);
 	return (
 		<section class="exam-question-list" aria-label="問題一覧">
-			<div class="exam-question-list__header">
-				<h2>問題一覧</h2>
-				<p>判定済みの問題は色で確認できます。</p>
+			<div class="exam-question-list__toolbar">
+				<div class="exam-question-list__header">
+					<h2>問題一覧</h2>
+				</div>
+				<div class="exam-question-list__actions">
+					<p>
+						<span>全体</span>
+						<strong>{formatDuration(totalElapsedMs)}</strong>
+					</p>
+					<button
+						type="button"
+						class="exam-footer-button exam-footer-button--quiet"
+						onClick={onClose}
+					>
+						閉じる
+					</button>
+				</div>
 			</div>
 			<ol>
 				{state.questionIds.map((questionId, index) => {
@@ -220,6 +240,7 @@ function PlayerList({
 							<button
 								type="button"
 								class={`exam-question-list__item ${index === state.currentIndex ? "is-current" : ""}`}
+								aria-current={index === state.currentIndex ? "true" : undefined}
 								onClick={(): void => onSelect(index)}
 							>
 								<span>問{question?.number ?? index + 1}</span>
@@ -661,6 +682,15 @@ export default function ExamPlayer(props: Props): JSX.Element {
 			<PlayerList
 				state={state}
 				questions={questions}
+				onClose={(): void => {
+					const selectedQuestionId = state.questionIds[state.currentIndex];
+					if (selectedQuestionId) {
+						runtimeRef.current.currentQuestionId = selectedQuestionId;
+						runtimeRef.current.lastSample = performance.now();
+						runtimeRef.current.running = document.visibilityState === "visible";
+					}
+					setPhase("player");
+				}}
 				onSelect={(index): void => {
 					setPhase("player");
 					moveTo(index);
@@ -672,10 +702,7 @@ export default function ExamPlayer(props: Props): JSX.Element {
 	return (
 		<section class="exam-player-shell" aria-label="小テストプレイヤー">
 			<header class="exam-player__header">
-				<div>
-					<p class="exam-player__eyebrow">
-						{props.mode === "question" ? "単問計測" : `小テスト${props.examNumber}`}
-					</p>
+				<div class="exam-player__step">
 					<h2>
 						問{state.currentIndex + 1}
 						<span> / {state.questionIds.length}</span>

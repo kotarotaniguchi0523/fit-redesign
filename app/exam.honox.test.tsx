@@ -51,14 +51,15 @@ describe("単元ページ 描画", () => {
 		expect(body).toContain("/unit-negative/2013");
 	});
 
-	it("入力やタイマーを出さず答え確認とMarkdownコピーを描画する", async () => {
+	it("答え確認、コピー、時間計測の操作を描画する", async () => {
 		const res = await mounted().request("/unit-base-conversion/2013");
 		const body = await res.text();
 		expect(body).toContain("答えを確認");
 		// 解答本文はSSR済みのnative details内に置き、JavaScript失敗時も確認できる。
 		expect(body).toContain("<details");
 		expect(body).toContain('class="q-solution"');
-		expect(body).toContain("Markdownでコピー");
+		expect(body).toContain('aria-label="Copy"');
+		expect(body).toContain("時間を測る");
 		expect(body).not.toContain("data-question-timer");
 		expect(body).not.toContain("答え合わせをする");
 	});

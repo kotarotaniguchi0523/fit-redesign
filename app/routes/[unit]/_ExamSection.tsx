@@ -20,32 +20,35 @@ export function ExamSection({
 	showExamLabel,
 }: ExamSectionProps): JSX.Element {
 	return (
-		<section id={`exam-${examNumber}`} class="mt-6 scroll-mt-20">
-			<div
-				class={`mb-3 flex items-center gap-3 pb-2 ${showExamLabel ? "justify-between border-b-2 border-[#1e3a5f]" : "justify-end"}`}
-			>
-				{showExamLabel ? (
-					<h2 class="font-bold text-[#1e3a5f]">
-						小テスト{examNumber} — {title}
+		<section id={`exam-${examNumber}`} class="exam-section scroll-mt-20">
+			<header class="exam-section__header">
+				<div class="exam-section__title-group">
+					<h2 class="exam-section__title">
+						{showExamLabel ? `小テスト${examNumber} — ${title}` : `小テスト${examNumber}`}
 					</h2>
-				) : null}
-				{exam && (
-					<a
-						href={exam.pdfPath}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="shrink-0 text-sm font-bold text-[#1e3a5f] underline decoration-[#c9a227] underline-offset-4"
-					>
-						原本PDF ↗
-					</a>
-				)}
-			</div>
-			{exam ? (
-				<a href={`/${unitId}/${year}/exam?exam=${examNumber}`} class="exam-start-link">
-					小テストを始める
-				</a>
-			) : null}
-			<div class="space-y-4">
+				</div>
+				<div class="exam-section__actions">
+					{exam && (
+						<a
+							href={exam.pdfPath}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="exam-section__pdf"
+						>
+							原本PDF ↗
+						</a>
+					)}
+					{exam ? (
+						<a
+							href={`/${unitId}/${year}/exam?exam=${examNumber}`}
+							class="exam-start-link exam-section__start"
+						>
+							小テストを始める
+						</a>
+					) : null}
+				</div>
+			</header>
+			<div class="exam-section__questions">
 				{exam?.questions.map((q) => (
 					<QuestionCard question={q} unitId={unitId} year={year} examNumber={examNumber} />
 				))}

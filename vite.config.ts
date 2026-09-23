@@ -24,6 +24,7 @@ const clientPlugin: Plugin = {
 export default defineConfig({
 	// server 側 JSX は hono/jsx（islands は honox が hono/jsx/dom へ変換）。
 	oxc: { jsx: { importSource: "hono/jsx" } },
+	server: { allowedHosts: ["terminal.local"] },
 	plugins: [
 		// .mdx を hono/jsx の JSX コンポーネントへコンパイル（GFM テーブル対応）。honox より前に置く。
 		mdx({ jsxImportSource: "hono/jsx", remarkPlugins: [remarkGfm] }),

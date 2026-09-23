@@ -1,33 +1,60 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-test("quiz records a self-judgment and resumes after reload", async ({ page }) => {
-	await page.goto("/unit-base-conversion/2013/exam?exam=1");
-	await expect(page.getByRole("heading", { name: /小テスト/ })).toBeVisible();
-	await page.getByText("答えを確認", { exact: true }).click();
-	await expect(page.getByText("閉じる", { exact: true })).toBeVisible();
-	await page.getByRole("button", { name: "正解として記録", exact: true }).click();
-	await page.reload();
-	await expect(page.getByText("続きから", { exact: true })).toBeVisible();
-	await page.getByText("続きから", { exact: true }).click();
-	await page.getByText("答えを確認", { exact: true }).click();
-	await expect(page.getByRole("button", { name: "正解として記録", exact: true })).toBeDisabled();
+test("小テストの自己判定を保存し、再読み込み後に続きから再開できる", async ({
+	challengePlayer,
+}) => {
+	await challengePlayer.openForFreshAttempt();
+	await challengePlayer.revealAnswer();
+	await challengePlayer.judgeCorrect();
+
+	await challengePlayer.reloadToResumePrompt();
+	await challengePlayer.continueAttempt();
+	await challengePlayer.revealAnswer();
+
+	await expect(challengePlayer.correctButton).toBeDisabled();
 });
 
-test("results remain available when browser storage writes fail", async ({ page }) => {
+test("localStorageへの保存に失敗しても小テスト結果を表示する", async ({
+	page,
+	challengePlayer,
+}) => {
 	await page.addInitScript(() => {
 		const original = Storage.prototype.setItem;
 		Storage.prototype.setItem = function (key: string, value: string): void {
-			if (key === "fit-challenge-history-v1") throw new DOMException("quota", "QuotaExceededError");
+			if (key === "fit-challenge-history-v1") {
+				throw new DOMException("quota", "QuotaExceededError");
+			}
 			original.call(this, key, value);
 		};
 	});
-	await page.goto("/unit-base-conversion/2013/exam?exam=1");
+
+	await challengePlayer.openForFreshAttempt();
 	for (let question = 0; question < 5; question += 1) {
-		await page.getByText("答えを確認", { exact: true }).click();
-		await page.getByRole("button", { name: "正解として記録", exact: true }).click();
-		if (question < 4) await page.getByRole("button", { name: "次の問題" }).click();
+		await challengePlayer.revealAnswer();
+		await challengePlayer.judgeCorrect();
+		if (question < 4) {
+			await challengePlayer.moveToNextQuestion();
+		}
 	}
-	await page.getByRole("button", { name: "結果を見る" }).click();
-	await expect(page.getByRole("heading", { name: "小テストの結果" })).toBeVisible();
-	await expect(page.getByRole("status")).toContainText("保存できませんでした");
+	await challengePlayer.viewResults();
+
+	await expect(challengePlayer.saveStatus).toContainText("保存できませんでした");
+});
+
+test("スマホ幅の小テストで問題一覧を開閉できる", async ({ page, challengePlayer }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await challengePlayer.openForFreshAttempt();
+
+	await expect(challengePlayer.previousButton).toBeVisible();
+	await expect(challengePlayer.previousButton).toBeDisabled();
+	await expect(challengePlayer.questionListButton).toBeVisible();
+	await expect(challengePlayer.nextButton).toBeVisible();
+	const buttonWidths = await challengePlayer.getFooterButtonWidths();
+
+	expect(buttonWidths).toHaveLength(3);
+	expect(Math.max(...buttonWidths) - Math.min(...buttonWidths)).toBeLessThan(2);
+
+	await challengePlayer.openQuestionList();
+	await expect(challengePlayer.questionList.getByText("全体", { exact: true })).toBeVisible();
+	await challengePlayer.closeQuestionList();
 });
