@@ -5,7 +5,7 @@ import { unitBasedTabs } from "../../../data/units";
 import ExamPlayer from "../../../features/challenge/$ExamPlayer";
 import type { ExamNumber, QuestionId, Year } from "../../../types";
 import { ExamNumberSchema, isYear } from "../../../types";
-import { QuestionIdSchema } from "../../../types/browser";
+import { ChallengeIdSchema, QuestionIdSchema } from "../../../types/browser";
 
 type ExamRouteSelection = Readonly<{
 	unit: (typeof unitBasedTabs)[number];
@@ -49,6 +49,7 @@ function parseExamRouteSelection(
 }
 
 export default createRoute(async (c) => {
+	const challengeId = ChallengeIdSchema.safeParse(c.req.query("challenge"));
 	const selection = parseExamRouteSelection(
 		c.req.param("unit"),
 		c.req.param("year"),
@@ -99,7 +100,7 @@ export default createRoute(async (c) => {
 						questions={questions}
 						mode={mode}
 						requestedQuestionId={selectedQuestionId}
-						initialChallengeId={c.req.query("challenge")}
+						initialChallengeId={challengeId.success ? challengeId.data : undefined}
 						initialView={c.req.query("view") === "result" ? "result" : "player"}
 					/>
 				</div>

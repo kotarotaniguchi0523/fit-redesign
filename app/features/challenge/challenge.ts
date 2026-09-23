@@ -1,4 +1,4 @@
-import type { Judgment, QuestionId } from "../../types";
+import type { ExamId, Judgment, QuestionId } from "../../types";
 import type {
 	ChallengeId,
 	ChallengeResultSummary,
@@ -43,7 +43,7 @@ export function calculateElapsedDelta(runtime: TimerRuntime, now: number): numbe
 export function createInitialChallengeState(input: {
 	challengeId: ChallengeId;
 	scopeKey: string;
-	examId: string;
+	examId: ExamId;
 	mode: "exam" | "question";
 	questionIds: readonly QuestionId[];
 	createdAt: number;
@@ -146,12 +146,15 @@ function moveTo(state: ChallengeState, action: ActionOf<"MOVE_TO">): ChallengeSt
 }
 
 function completeChallenge(state: ChallengeState, action: ActionOf<"COMPLETE">): ChallengeState {
-	return isChallengeComplete(state)
+	return state.status === "active" && isChallengeComplete(state)
 		? { ...state, status: "completed", updatedAt: action.updatedAt }
 		: state;
 }
 
 export function challengeReducer(state: ChallengeState, action: ChallengeAction): ChallengeState {
+	if (state.status !== "active") {
+		return state;
+	}
 	switch (action.type) {
 		case "REVEAL_QUESTION":
 			return revealQuestion(state, action);
@@ -182,12 +185,14 @@ export function applyElapsedDelta(
 export function isChallengeComplete(state: ChallengeState): boolean {
 	return (
 		state.questionIds.length > 0 &&
-		state.questionIds.every((id) => state.judgments[id] !== undefined)
+		state.questionIds.every(
+			(id) => state.judgments[id] !== undefined && state.answerCreatedAt[id] !== undefined,
+		)
 	);
 }
 
 export function createChallengeSnapshot(state: ChallengeState): ChallengeSnapshot {
-	return {
+	const snapshot = {
 		version: 1,
 		challengeId: state.challengeId,
 		scopeKey: state.scopeKey,
@@ -195,16 +200,21 @@ export function createChallengeSnapshot(state: ChallengeState): ChallengeSnapsho
 		mode: state.mode,
 		questionIds: [...state.questionIds],
 		createdAt: state.createdAt,
-		updatedAt: state.updatedAt,
 		currentIndex: state.currentIndex,
 		revealedQuestionIds: [...state.revealedQuestionIds],
 		judgments: { ...state.judgments },
 		answerCreatedAt: { ...state.answerCreatedAt },
 		questionElapsedMs: { ...state.questionElapsedMs },
-		status: state.status,
-	};
+	} satisfies Omit<ChallengeSnapshot, "status" | "updatedAt">;
+	return state.status === "completed"
+		? { ...snapshot, status: "completed", updatedAt: state.updatedAt }
+		: { ...snapshot, status: state.status, updatedAt: null };
 }
 
+export function restoreChallengeState(
+	snapshot: Extract<ChallengeSnapshot, { status: "completed" }>,
+): Extract<ChallengeState, { status: "completed" }>;
+export function restoreChallengeState(snapshot: ChallengeSnapshot): ChallengeState;
 export function restoreChallengeState(snapshot: ChallengeSnapshot): ChallengeState {
 	return {
 		...snapshot,
@@ -217,10 +227,29 @@ export function restoreChallengeState(snapshot: ChallengeSnapshot): ChallengeSta
 }
 
 export function toCompletedChallengePayload(
-	state: ChallengeState,
+	state: Extract<ChallengeState, { status: "completed" }>,
 	updatedAt: number,
 ): CompletedChallengePayload | null {
 	if (!isChallengeComplete(state)) {
+		return null;
+	}
+	const answers = state.questionIds.flatMap((questionId) => {
+		const judgment = state.judgments[questionId];
+		const createdAt = state.answerCreatedAt[questionId];
+		if (judgment === undefined || createdAt === undefined) {
+			return [];
+		}
+		return [
+			{
+				questionId,
+				elapsedMs: Math.max(0, Math.round(state.questionElapsedMs[questionId] ?? 0)),
+				judgment,
+				createdAt,
+				updatedAt,
+			},
+		];
+	});
+	if (answers.length !== state.questionIds.length) {
 		return null;
 	}
 	return {
@@ -228,13 +257,7 @@ export function toCompletedChallengePayload(
 		examId: state.examId,
 		createdAt: state.createdAt,
 		updatedAt,
-		answers: state.questionIds.map((questionId) => ({
-			questionId,
-			elapsedMs: Math.max(0, Math.round(state.questionElapsedMs[questionId] ?? 0)),
-			judgment: state.judgments[questionId] as Judgment,
-			createdAt: state.answerCreatedAt[questionId] as number,
-			updatedAt,
-		})),
+		answers,
 	};
 }
 

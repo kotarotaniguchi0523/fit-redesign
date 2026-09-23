@@ -1,42 +1,46 @@
-import type { Judgment, QuestionId } from "../../types";
+import type { Judgment } from "../../types";
+import type { ChallengeId, ExamId, QuestionId } from "../../types/browser";
 
-export type ChallengeId = string;
+export type { ChallengeId } from "../../types/browser";
+
 export type ChallengeMode = "exam" | "question";
-export type ChallengeStatus = "active" | "incomplete" | "completed";
-
-export type ChallengeState = Readonly<{
+type ChallengeStateData = Readonly<{
 	version: 1;
 	challengeId: ChallengeId;
 	scopeKey: string;
-	examId: string;
+	examId: ExamId;
 	mode: ChallengeMode;
 	questionIds: readonly QuestionId[];
 	createdAt: number;
-	updatedAt: number | null;
 	currentIndex: number;
 	revealedQuestionIds: ReadonlySet<QuestionId>;
 	judgments: Readonly<Partial<Record<QuestionId, Judgment>>>;
 	answerCreatedAt: Readonly<Partial<Record<QuestionId, number>>>;
 	questionElapsedMs: Readonly<Partial<Record<QuestionId, number>>>;
-	status: ChallengeStatus;
 }>;
 
-export type ChallengeSnapshot = Readonly<{
+export type ChallengeState =
+	| (ChallengeStateData & Readonly<{ status: "active" | "incomplete"; updatedAt: null }>)
+	| (ChallengeStateData & Readonly<{ status: "completed"; updatedAt: number }>);
+
+type ChallengeSnapshotData = Readonly<{
 	version: 1;
 	challengeId: ChallengeId;
 	scopeKey: string;
-	examId: string;
+	examId: ExamId;
 	mode: ChallengeMode;
 	questionIds: readonly QuestionId[];
 	createdAt: number;
-	updatedAt: number | null;
 	currentIndex: number;
 	revealedQuestionIds: readonly QuestionId[];
 	judgments: Readonly<Partial<Record<QuestionId, Judgment>>>;
 	answerCreatedAt: Readonly<Partial<Record<QuestionId, number>>>;
 	questionElapsedMs: Readonly<Partial<Record<QuestionId, number>>>;
-	status: ChallengeStatus;
 }>;
+
+export type ChallengeSnapshot =
+	| (ChallengeSnapshotData & Readonly<{ status: "active" | "incomplete"; updatedAt: null }>)
+	| (ChallengeSnapshotData & Readonly<{ status: "completed"; updatedAt: number }>);
 
 export type CompletedAnswer = Readonly<{
 	questionId: QuestionId;

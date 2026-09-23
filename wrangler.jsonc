@@ -7,7 +7,12 @@
 	"assets": { "directory": "./dist", "binding": "ASSETS" },
 	"observability": { "enabled": true },
 	"d1_databases": [
-		{ "binding": "DB", "database_name": "fit-timer-db", "database_id": "57532062-e9cf-4a86-a89f-fc6fdb1e3ba5" }
+		{
+			"binding": "DB",
+			"database_name": "fit-timer-db",
+			"database_id": "57532062-e9cf-4a86-a89f-fc6fdb1e3ba5",
+			"migrations_dir": "migrations"
+		}
 	],
 	"ratelimits": [
 		{

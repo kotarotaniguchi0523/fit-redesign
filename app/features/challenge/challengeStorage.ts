@@ -1,5 +1,11 @@
 import type { Judgment, QuestionId } from "../../types";
 import {
+	ChallengeIdSchema,
+	ExamIdSchema,
+	JudgmentSchema,
+	QuestionIdSchema,
+} from "../../types/browser";
+import {
 	createChallengeSnapshot,
 	mergeCompletedChallenges,
 	restoreChallengeState,
@@ -11,7 +17,6 @@ export const ACTIVE_CHALLENGES_STORAGE_KEY = "fit-challenge-active-v1";
 export const CHALLENGE_HISTORY_STORAGE_KEY = "fit-challenge-history-v1";
 export const CHALLENGE_LOCKS_STORAGE_KEY = "fit-challenge-locks-v1";
 const CHALLENGE_CHANGE_EVENT = "fit:challenge-change";
-const QUESTION_ID_PATTERN = /^exam[1-9]-(2013|2014|2015|2016|2017)-q[1-9]\d*$/;
 const CHALLENGE_LOCK_TTL_MS = 15_000;
 
 type ChallengeLock = Readonly<{ ownerId: string; heartbeatAt: number }>;
@@ -21,15 +26,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isJudgment(value: unknown): value is Judgment {
-	return value === "correct" || value === "incorrect";
+	return JudgmentSchema.safeParse(value).success;
 }
 
 function isQuestionId(value: unknown): value is QuestionId {
-	return typeof value === "string" && QUESTION_ID_PATTERN.test(value);
+	return QuestionIdSchema.safeParse(value).success;
 }
 
 function isNumber(value: unknown): value is number {
 	return typeof value === "number" && Number.isFinite(value);
+}
+
+function isEpochMilliseconds(value: unknown): value is number {
+	return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
 }
 
 function isChallengeLock(value: unknown): value is ChallengeLock {
@@ -40,22 +49,9 @@ function isSnapshot(value: unknown): value is ChallengeSnapshot {
 	if (!isRecord(value)) {
 		return false;
 	}
-	const raw = value as {
-		version?: unknown;
-		challengeId?: unknown;
-		scopeKey?: unknown;
-		examId?: unknown;
-		mode?: unknown;
-		questionIds?: unknown;
-		createdAt?: unknown;
-		updatedAt?: unknown;
-		currentIndex?: unknown;
-		revealedQuestionIds?: unknown;
-		judgments?: unknown;
-		answerCreatedAt?: unknown;
-		questionElapsedMs?: unknown;
-		status?: unknown;
-	};
+	const raw = value;
+	const createdAt = raw.createdAt;
+	const updatedAt = raw.updatedAt;
 	const questionIds = raw.questionIds;
 	const revealedQuestionIds = raw.revealedQuestionIds;
 	const judgments = raw.judgments;
@@ -63,15 +59,15 @@ function isSnapshot(value: unknown): value is ChallengeSnapshot {
 	const questionElapsedMs = raw.questionElapsedMs;
 	if (
 		raw.version !== 1 ||
-		typeof raw.challengeId !== "string" ||
+		!ChallengeIdSchema.safeParse(raw.challengeId).success ||
 		typeof raw.scopeKey !== "string" ||
-		typeof raw.examId !== "string" ||
+		!ExamIdSchema.safeParse(raw.examId).success ||
 		(raw.mode !== "exam" && raw.mode !== "question") ||
 		!Array.isArray(questionIds) ||
 		questionIds.length === 0 ||
 		!questionIds.every(isQuestionId) ||
-		!isNumber(raw.createdAt) ||
-		(raw.updatedAt !== null && !isNumber(raw.updatedAt)) ||
+		!isEpochMilliseconds(createdAt) ||
+		(updatedAt !== null && !isEpochMilliseconds(updatedAt)) ||
 		typeof raw.currentIndex !== "number" ||
 		!Number.isInteger(raw.currentIndex) ||
 		raw.currentIndex < 0 ||
@@ -85,19 +81,30 @@ function isSnapshot(value: unknown): value is ChallengeSnapshot {
 	) {
 		return false;
 	}
-	const questionSet = new Set(questionIds);
+	const questionSet = new Set<string>(questionIds);
 	return (
 		Object.entries(judgments).every(
-			([questionId, judgment]) => questionSet.has(questionId as QuestionId) && isJudgment(judgment),
+			([questionId, judgment]) => questionSet.has(questionId) && isJudgment(judgment),
 		) &&
 		Object.entries(answerCreatedAt).every(
 			([questionId, timestamp]) =>
-				questionSet.has(questionId as QuestionId) && isNumber(timestamp) && timestamp > 0,
+				questionSet.has(questionId) && isEpochMilliseconds(timestamp) && timestamp >= createdAt,
 		) &&
 		Object.entries(questionElapsedMs).every(
 			([questionId, elapsedMs]) =>
-				questionSet.has(questionId as QuestionId) && isNumber(elapsedMs) && elapsedMs >= 0,
-		)
+				questionSet.has(questionId) && isNumber(elapsedMs) && elapsedMs >= 0,
+		) &&
+		Object.keys(judgments).length === Object.keys(answerCreatedAt).length &&
+		Object.keys(judgments).every((id) => Object.hasOwn(answerCreatedAt, id)) &&
+		Object.keys(judgments).every((id) =>
+			revealedQuestionIds.some((questionId) => questionId === id),
+		) &&
+		new Set(questionIds).size === questionIds.length &&
+		new Set(revealedQuestionIds).size === revealedQuestionIds.length &&
+		revealedQuestionIds.every((id) => questionSet.has(id)) &&
+		(raw.status === "completed") === (updatedAt !== null) &&
+		(updatedAt === null || updatedAt >= createdAt) &&
+		(raw.status !== "completed" || Object.keys(judgments).length === questionIds.length)
 	);
 }
 
@@ -268,7 +275,7 @@ export function archiveChallenge(state: ChallengeState): boolean {
 }
 
 export function markActiveChallengeIncomplete(state: ChallengeState): boolean {
-	return archiveChallenge({ ...state, status: "incomplete" });
+	return state.status === "active" && archiveChallenge({ ...state, status: "incomplete" });
 }
 
 export function discardActiveChallenge(challengeId: string): boolean {
@@ -281,7 +288,7 @@ function snapshotFromCompletedChallenge(payload: CompletedChallengePayload): Cha
 		version: 1,
 		challengeId: payload.challengeId,
 		scopeKey: `${payload.examId}/${questionIds.length === 1 ? `question/${questionIds[0]}` : "exam"}`,
-		examId: payload.examId,
+		examId: ExamIdSchema.parse(payload.examId),
 		mode: questionIds.length === 1 ? "question" : "exam",
 		questionIds,
 		createdAt: payload.createdAt,
@@ -308,7 +315,7 @@ export function readCompletedChallenges(): readonly CompletedChallengePayload[] 
 		}
 		const payload = toCompletedChallengePayload(
 			restoreChallengeState(snapshot),
-			snapshot.updatedAt ?? snapshot.createdAt,
+			snapshot.updatedAt,
 		);
 		return payload ? [payload] : [];
 	});
@@ -317,13 +324,16 @@ export function readCompletedChallenges(): readonly CompletedChallengePayload[] 
 export function archiveCompletedChallenge(
 	state: ChallengeState,
 	updatedAt: number,
-): CompletedChallengePayload | null {
-	const completed = { ...state, status: "completed" as const, updatedAt };
-	const payload = toCompletedChallengePayload(completed, updatedAt);
-	if (!(payload && archiveChallenge(completed))) {
+): Readonly<{ payload: CompletedChallengePayload; persisted: boolean }> | null {
+	if (state.status !== "active") {
 		return null;
 	}
-	return payload;
+	const completed = { ...state, status: "completed" as const, updatedAt };
+	const payload = toCompletedChallengePayload(completed, updatedAt);
+	if (!payload) {
+		return null;
+	}
+	return { payload, persisted: archiveChallenge(completed) };
 }
 
 export function mergeCompletedChallengeHistory(

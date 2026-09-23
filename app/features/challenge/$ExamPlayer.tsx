@@ -4,23 +4,30 @@ import { Figure } from "../../components/figures/Figure";
 import { systemClock } from "../../lib/dateTime";
 import type { DeepReadonly } from "../../lib/immutable";
 import { overlineToHtml } from "../../lib/overline";
-import type { ExamNumber, Judgment, Question, QuestionId, UnitTabId, Year } from "../../types";
-import { EpochMillisecondsSchema } from "../../types/browser";
+import type {
+	ChallengeId,
+	ExamId,
+	ExamNumber,
+	Judgment,
+	Question,
+	QuestionId,
+	UnitTabId,
+	Year,
+} from "../../types";
+import { ChallengeIdSchema, EpochMillisecondsSchema, QuestionIdSchema } from "../../types/browser";
 import { recordProgressEntry } from "../progress/progressPersistence";
 import { readSyncKey } from "../progress/progressStorage";
-import type { ChallengeAction } from "./challenge";
+import { ChallengeResult } from "./ChallengeResult";
+import type { ChallengeAction, TimerRuntime } from "./challenge";
 import {
-	aggregateChallengeResults,
 	applyElapsedDelta,
 	calculateElapsedDelta,
 	challengeReducer,
 	createChallengeSnapshot,
 	createInitialChallengeState,
-	formatAccuracy,
 	formatDuration,
 	isChallengeComplete,
 	restoreChallengeState,
-	summarizeChallenge,
 	toCompletedChallengePayload,
 } from "./challenge";
 import { challengeSyncErrorMessage, syncChallenges } from "./challengeApi";
@@ -43,16 +50,17 @@ import type { ChallengeSnapshot, ChallengeState, CompletedChallengePayload } fro
 
 type PlayerPhase = "player" | "resume" | "list" | "result" | "missing" | "locked";
 type PlayerQuestion = DeepReadonly<Question>;
+type MutableTimerRuntime = { -readonly [Key in keyof TimerRuntime]: TimerRuntime[Key] };
 
 type Props = Readonly<{
-	examId: string;
+	examId: ExamId;
 	examNumber: ExamNumber;
 	year: Year;
 	unitId: UnitTabId;
 	questions: readonly PlayerQuestion[];
 	mode: "exam" | "question";
 	requestedQuestionId?: QuestionId;
-	initialChallengeId?: string;
+	initialChallengeId?: ChallengeId;
 	initialView: "player" | "result";
 }>;
 
@@ -65,16 +73,18 @@ function playerReducer(state: ChallengeState | null, action: PlayerAction): Chal
 	return state ? challengeReducer(state, action) : state;
 }
 
-function generateChallengeId(): string {
+function generateChallengeId(): ChallengeId {
 	if (typeof crypto.randomUUID === "function") {
-		return crypto.randomUUID();
+		return ChallengeIdSchema.parse(crypto.randomUUID());
 	}
 	const bytes = new Uint8Array(16);
 	crypto.getRandomValues(bytes);
 	bytes[6] = (bytes[6] & 0x0f) | 0x40;
 	bytes[8] = (bytes[8] & 0x3f) | 0x80;
 	const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
-	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+	return ChallengeIdSchema.parse(
+		`${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`,
+	);
 }
 
 function questionScopeKey(examId: string, mode: Props["mode"], questionId?: QuestionId): string {
@@ -230,121 +240,6 @@ function PlayerList({
 	);
 }
 
-function ResultView({
-	payload,
-	history,
-	questions,
-	onRetry,
-	onBack,
-	syncMessage,
-}: Readonly<{
-	payload: CompletedChallengePayload;
-	history: readonly CompletedChallengePayload[];
-	questions: readonly PlayerQuestion[];
-	onRetry: () => void;
-	onBack: () => void;
-	syncMessage: string | null;
-}>): JSX.Element {
-	const current = summarizeChallenge(payload);
-	const aggregate = useMemo(() => aggregateChallengeResults(history), [history]);
-	return (
-		<section class="exam-result" aria-live="polite">
-			<div class="exam-result__heading">
-				<p class="page-heading__eyebrow">結果</p>
-				<h2>小テストの結果</h2>
-				<p>今回の結果と、これまでの完了分を分けて表示しています。</p>
-			</div>
-			<div class="exam-result__summary">
-				<div>
-					<span>正解</span>
-					<strong>
-						{current.correctCount}
-						<small> / {current.judgedCount}</small>
-					</strong>
-				</div>
-				<div>
-					<span>正解率</span>
-					<strong>{formatAccuracy(current.accuracy)}</strong>
-				</div>
-				<div>
-					<span>合計時間</span>
-					<strong>{formatDuration(current.totalElapsedMs)}</strong>
-				</div>
-			</div>
-			<section class="exam-result__panel">
-				<h3>今回の問題別結果</h3>
-				<ol class="exam-result__answers">
-					{payload.answers.map((answer) => {
-						const question = questions.find((item) => item.id === answer.questionId);
-						return (
-							<li>
-								<span
-									class={`exam-result__mark is-${answer.judgment}`}
-									role="img"
-									aria-label={answer.judgment === "correct" ? "正解" : "不正解"}
-								>
-									{answer.judgment === "correct" ? "○" : "×"}
-								</span>
-								<span>問{question?.number ?? answer.questionId}</span>
-								<time>{formatDuration(answer.elapsedMs)}</time>
-							</li>
-						);
-					})}
-				</ol>
-			</section>
-			<section class="exam-result__panel">
-				<h3>これまでの結果</h3>
-				<div class="exam-result__summary exam-result__summary--aggregate">
-					<div>
-						<span>試行回数</span>
-						<strong>{aggregate.challengeCount}</strong>
-					</div>
-					<div>
-						<span>総合正解率</span>
-						<strong>{formatAccuracy(aggregate.accuracy)}</strong>
-					</div>
-					<div>
-						<span>合計学習時間</span>
-						<strong>{formatDuration(aggregate.totalElapsedMs)}</strong>
-					</div>
-				</div>
-				<ol class="exam-result__history">
-					{history.map((item, index) => {
-						const summary = summarizeChallenge(item);
-						return (
-							<li>
-								<span>#{history.length - index}</span>
-								<span>
-									{summary.correctCount} / {summary.judgedCount}
-								</span>
-								<span>{formatAccuracy(summary.accuracy)}</span>
-								<time>{formatDuration(summary.totalElapsedMs)}</time>
-							</li>
-						);
-					})}
-				</ol>
-			</section>
-			<div class="exam-player__footer exam-player__footer--result">
-				<button type="button" class="exam-footer-button exam-footer-button--quiet" onClick={onBack}>
-					問題一覧
-				</button>
-				<button
-					type="button"
-					class="exam-footer-button exam-footer-button--primary"
-					onClick={onRetry}
-				>
-					もう一度挑戦
-				</button>
-			</div>
-			{syncMessage ? (
-				<p class="exam-sync-message" role="status">
-					{syncMessage}
-				</p>
-			) : null}
-		</section>
-	);
-}
-
 export default function ExamPlayer(props: Props): JSX.Element {
 	const { questions } = props;
 	const [state, dispatch] = useReducer(playerReducer, null);
@@ -357,10 +252,10 @@ export default function ExamPlayer(props: Props): JSX.Element {
 	const [syncMessage, setSyncMessage] = useState<string | null>(null);
 	const stateRef = useRef<ChallengeState | null>(null);
 	const phaseRef = useRef<PlayerPhase>(phase);
-	const runtimeRef = useRef({
+	const runtimeRef = useRef<MutableTimerRuntime>({
 		running: false,
-		lastSample: null as number | null,
-		currentQuestionId: questions[0]?.id ?? ("" as QuestionId),
+		lastSample: null,
+		currentQuestionId: QuestionIdSchema.parse(questions[0]?.id),
 	});
 	const ownerIdRef = useRef("");
 	const hasInitialized = useRef(false);
@@ -457,9 +352,13 @@ export default function ExamPlayer(props: Props): JSX.Element {
 			return;
 		}
 		const updatedAt = systemClock.nowEpochMilliseconds();
-		const payload = archiveCompletedChallenge(current, updatedAt);
-		if (!payload) {
+		const archived = archiveCompletedChallenge(current, updatedAt);
+		if (!archived) {
 			return;
+		}
+		const { payload, persisted } = archived;
+		if (!persisted) {
+			setSyncMessage("この端末に結果を保存できませんでした。画面を閉じる前に同期してください。");
 		}
 		runtimeRef.current.running = false;
 		dispatch({ type: "COMPLETE", updatedAt });
@@ -504,7 +403,7 @@ export default function ExamPlayer(props: Props): JSX.Element {
 			return true;
 		}
 		const restored = restoreChallengeState(snapshot);
-		const payload = toCompletedChallengePayload(restored, snapshot.updatedAt ?? snapshot.createdAt);
+		const payload = toCompletedChallengePayload(restored, snapshot.updatedAt);
 		if (!payload) {
 			setPhase("missing");
 			return true;
@@ -643,7 +542,7 @@ export default function ExamPlayer(props: Props): JSX.Element {
 
 	if (phase === "result" && resultPayload) {
 		return (
-			<ResultView
+			<ChallengeResult
 				payload={resultPayload}
 				history={resultHistory.length > 0 ? resultHistory : [resultPayload]}
 				questions={questions}

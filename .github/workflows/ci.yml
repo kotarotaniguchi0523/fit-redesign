@@ -38,6 +38,8 @@ jobs:
             run: pnpm knip
           - name: Test
             run: pnpm test:run
+          - name: Database schema and migrations
+            run: pnpm db:check && pnpm db:migrate:local
 
   build:
     runs-on: ubuntu-latest
