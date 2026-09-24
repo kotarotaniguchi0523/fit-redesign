@@ -1,8 +1,44 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
 const DURATION = /^\d{2,}:\d{2}(?::\d{2})?$/;
 const QUESTION_ROW = /^問\d+ /;
 const FIFTH_QUESTION = /^問5 /;
+const MODE_ENTRY_ANIMATION = /^mode-player-enter(?:-reduced)?$/;
+
+async function observeModeEntryAnimation(page: Page): Promise<void> {
+	await page.addInitScript(() => {
+		document.addEventListener("animationstart", (event) => {
+			const target = event.target;
+			if (
+				target instanceof Element &&
+				target.matches(".exam-player__question[data-mode-transition-target]")
+			) {
+				document.documentElement.setAttribute(
+					"data-test-mode-entry-animation",
+					(event as AnimationEvent).animationName,
+				);
+			}
+		});
+	});
+}
+
+async function expectModeEntryAnimation(page: Page): Promise<void> {
+	await expect
+		.poll(() => page.locator("html").getAttribute("data-test-mode-entry-animation"))
+		.toMatch(MODE_ENTRY_ANIMATION);
+}
+
+async function observeAnswerPanelTransition(page: Page): Promise<void> {
+	await page.evaluate(() => {
+		document.addEventListener("transitionrun", (event) => {
+			const target = event.target;
+			if (target instanceof Element && target.matches(".q-answer-panel, .exam-answer")) {
+				document.documentElement.setAttribute("data-test-answer-panel-transition", "started");
+			}
+		});
+	});
+}
 
 test("小テストの判定・経過時間・進捗を再読み込み後も維持する", async ({ challengePlayer }) => {
 	// Arrange
@@ -121,21 +157,26 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 	page,
 	challengePlayer,
 	questionSet,
-}) => {
+}, testInfo) => {
 	// Arrange
 	await page.setViewportSize({ width: 390, height: 844 });
 	await questionSet.open();
+	await observeModeEntryAnimation(page);
 
 	// Act
 	await questionSet.timerLink.click();
 
 	// Assert
 	await expect(challengePlayer.player).toBeVisible();
+	await expectModeEntryAnimation(page);
 	await expect(challengePlayer.questionElapsedTime).toHaveText(DURATION);
 	await expect(challengePlayer.totalElapsedTime).toHaveCount(0);
 	await expect(challengePlayer.previousButton).toBeDisabled();
 	await expect(challengePlayer.pauseButton).toHaveAttribute("aria-pressed", "true");
 	await expect(challengePlayer.answerPanel).toHaveCount(0);
+	const closedAnswerColor = await challengePlayer.answerToggle.evaluate(
+		(button) => getComputedStyle(button).backgroundColor,
+	);
 
 	// Act
 	await challengePlayer.openQuestionList();
@@ -152,7 +193,21 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 	await challengePlayer.previousButton.click();
 	await expect(challengePlayer.progress).toHaveAttribute("aria-valuenow", "4");
 	await challengePlayer.nextButton.click();
+	await observeAnswerPanelTransition(page);
 	await challengePlayer.revealAnswer();
+	await expect(page.locator("html")).toHaveAttribute(
+		"data-test-answer-panel-transition",
+		"started",
+	);
+	expect(
+		await challengePlayer.player
+			.getByRole("button", { name: "解答を隠す" })
+			.evaluate((button) => getComputedStyle(button).backgroundColor),
+	).not.toBe(closedAnswerColor);
+	await testInfo.attach("time-attack-answer-mobile", {
+		body: await page.screenshot({ fullPage: true, animations: "disabled" }),
+		contentType: "image/png",
+	});
 	await challengePlayer.judgeCorrect();
 
 	// Assert
@@ -160,4 +215,27 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 	await challengePlayer.resultButton.click();
 	await expect(challengePlayer.questionResultHeading).toBeVisible();
 	await expect(page.getByText("この問題の結果", { exact: true })).toBeVisible();
+});
+
+test("小テストを一覧から開始すると、プレイヤー表示中も計測が進む", async ({
+	page,
+	questionSet,
+	challengePlayer,
+}) => {
+	// Arrange
+	await questionSet.open();
+	await observeModeEntryAnimation(page);
+
+	// Act
+	await questionSet.startLink.click();
+
+	// Assert
+	await expect(challengePlayer.player).toBeVisible();
+	await expectModeEntryAnimation(page);
+	await expect(challengePlayer.totalElapsedTime).toHaveText(DURATION);
+	await expect(challengePlayer.questionElapsedTime).toHaveText(DURATION);
+	const entryTime = await challengePlayer.questionElapsedTime.textContent();
+	await expect
+		.poll(() => challengePlayer.questionElapsedTime.textContent(), { timeout: 5000 })
+		.not.toBe(entryTime);
 });

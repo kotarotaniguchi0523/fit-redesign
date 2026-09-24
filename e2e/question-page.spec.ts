@@ -17,10 +17,13 @@ test("問題ページの小テスト・PDF・一問ごとの操作が表示さ�
 	expect(timerTarget).toMatch(FOCUS_ROUTE);
 });
 
-test("解答は操作した問題だけに表示し、閉じると非表示になる", async ({ questionSet }) => {
+test("解答の開閉がボタンの見た目と内容に反映される", async ({ page, questionSet }, testInfo) => {
 	// Arrange
 	await questionSet.open();
 	await expect(questionSet.answerPanel).toHaveCount(0);
+	const closedColor = await questionSet.answerToggle.evaluate(
+		(button) => getComputedStyle(button).backgroundColor,
+	);
 
 	// Act
 	await questionSet.answerToggle.click();
@@ -28,13 +31,38 @@ test("解答は操作した問題だけに表示し、閉じると非表示に�
 	// Assert
 	await expect(questionSet.answerPanel).toBeVisible();
 	await expect(questionSet.answerToggle).toHaveAttribute("aria-expanded", "true");
+	await expect(questionSet.answerPanel).toHaveCSS("animation-name", "answer-panel-enter");
+	const openColor = await questionSet.answerToggle.evaluate(
+		(button) => getComputedStyle(button).backgroundColor,
+	);
+	expect(openColor).not.toBe(closedColor);
 	await expect(questionSet.question("exam1-2013-q2").locator(".q-answer-panel")).toHaveCount(0);
+	await testInfo.attach("answer-open-desktop", {
+		body: await questionSet.firstQuestion.screenshot({ animations: "disabled" }),
+		contentType: "image/png",
+	});
+	await page.setViewportSize({ width: 390, height: 844 });
+	await testInfo.attach("answer-open-mobile", {
+		body: await questionSet.firstQuestion.screenshot({ animations: "disabled" }),
+		contentType: "image/png",
+	});
 
 	// Act
 	await questionSet.firstQuestion.getByRole("button", { name: "解答を隠す" }).click();
 
 	// Assert
 	await expect(questionSet.answerPanel).toHaveCount(0);
+	await expect(questionSet.answerToggle).toHaveAttribute("aria-expanded", "false");
+	await expect
+		.poll(() =>
+			questionSet.answerToggle.evaluate((button) => getComputedStyle(button).backgroundColor),
+		)
+		.not.toBe(openColor);
+
+	// 動きを減らす端末設定では内容を即時表示する。
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await questionSet.answerToggle.click();
+	await expect(questionSet.answerPanel).toHaveCSS("animation-name", "none");
 });
 
 for (const viewport of [

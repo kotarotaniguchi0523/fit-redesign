@@ -1,6 +1,6 @@
-import { useState } from "hono/jsx";
+import { useEffect, useState } from "hono/jsx";
 import type { JSX } from "hono/jsx/jsx-runtime";
-import { AnswerSheetIcon } from "../../components/icons";
+import { AnswerSheetIcon, CloseIcon } from "../../components/icons";
 import type { QuestionId, UnitTabId } from "../../types";
 import { useSolutionReveal } from "./useSolutionReveal";
 
@@ -19,7 +19,18 @@ export default function SolutionReveal({
 }: SolutionRevealProps): JSX.Element {
 	const onToggle = useSolutionReveal(questionId, unitId);
 	const [isOpen, setIsOpen] = useState(false);
+	const [hasEntered, setHasEntered] = useState(false);
 	const answerId = `answer-${questionId}`;
+
+	useEffect((): (() => void) | undefined => {
+		if (!isOpen) {
+			setHasEntered(false);
+			return;
+		}
+
+		const frame = requestAnimationFrame(() => setHasEntered(true));
+		return () => cancelAnimationFrame(frame);
+	}, [isOpen]);
 
 	return (
 		<div class="q-answer-group">
@@ -36,11 +47,15 @@ export default function SolutionReveal({
 					onToggle(nextOpen);
 				}}
 			>
-				<AnswerSheetIcon />
+				{isOpen ? <CloseIcon /> : <AnswerSheetIcon />}
 				<span class="sr-only">{isOpen ? "解答を隠す" : "解答を表示"}</span>
 			</button>
 			{isOpen ? (
-				<section class="q-solution q-answer-panel" id={answerId} aria-live="polite">
+				<section
+					class={`q-solution q-answer-panel${hasEntered ? " q-answer-panel--entered" : ""}`}
+					id={answerId}
+					aria-live="polite"
+				>
 					<h3 class="q-solution__title">解答</h3>
 					{/* biome-ignore lint/security/noDangerouslySetInnerHtml: overline 変換済み HTML の注入（旧 set:html と同等） */}
 					<p dangerouslySetInnerHTML={{ __html: answerHtml }} />
