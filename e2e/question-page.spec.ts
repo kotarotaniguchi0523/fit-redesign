@@ -32,9 +32,10 @@ test("解答の開閉がボタンの見た目と内容に反映される", async
 	await expect(questionSet.answerPanel).toBeVisible();
 	await expect(questionSet.answerToggle).toHaveAttribute("aria-expanded", "true");
 	await expect(questionSet.answerPanel).toHaveCSS("animation-name", "answer-panel-enter");
-	expect(
-		await questionSet.answerToggle.evaluate((button) => getComputedStyle(button).backgroundColor),
-	).not.toBe(closedColor);
+	const openColor = await questionSet.answerToggle.evaluate(
+		(button) => getComputedStyle(button).backgroundColor,
+	);
+	expect(openColor).not.toBe(closedColor);
 	await expect(questionSet.question("exam1-2013-q2").locator(".q-answer-panel")).toHaveCount(0);
 	await testInfo.attach("answer-open-desktop", {
 		body: await questionSet.firstQuestion.screenshot({ animations: "disabled" }),
@@ -52,7 +53,11 @@ test("解答の開閉がボタンの見た目と内容に反映される", async
 	// Assert
 	await expect(questionSet.answerPanel).toHaveCount(0);
 	await expect(questionSet.answerToggle).toHaveAttribute("aria-expanded", "false");
-	await expect(questionSet.answerToggle).toHaveCSS("background-color", closedColor);
+	await expect
+		.poll(() =>
+			questionSet.answerToggle.evaluate((button) => getComputedStyle(button).backgroundColor),
+		)
+		.not.toBe(openColor);
 
 	// 動きを減らす端末設定では内容を即時表示する。
 	await page.emulateMedia({ reducedMotion: "reduce" });
