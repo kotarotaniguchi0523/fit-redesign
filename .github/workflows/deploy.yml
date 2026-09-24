@@ -33,17 +33,22 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile --prefer-offline
-      - parallel:
-          - name: Lint and format check
-            run: pnpm check
-          - name: Type check
-            run: pnpm typecheck:full
-          - name: Unused code check
-            run: pnpm knip
-          - name: Test
-            run: pnpm test:run
-          - name: Build
-            run: pnpm build
+      - name: Lint and format check
+        run: pnpm check
+      - name: Type check
+        run: pnpm typecheck:full
+      - name: Unused code check
+        run: pnpm knip
+      - name: Test
+        run: pnpm test:run
+      - name: Build
+        run: pnpm build
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+          SENTRY_RELEASE: ${{ github.sha }}
+          VITE_SENTRY_DSN: ${{ vars.VITE_SENTRY_DSN }}
 
       # 無条件で実行する（wrangler d1 migrations apply は冪等: 未適用のみ適用、無ければ no-op）。
       # 旧実装は push 差分で migration 変更を検出した時だけ適用していたが、migration 付きデプロイが

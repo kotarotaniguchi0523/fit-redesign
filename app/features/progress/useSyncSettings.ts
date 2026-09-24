@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "hono/jsx";
 import { type SyncKey, SyncKeySchema } from "../../types/browser";
+import { logClientEvent, reportClientError } from "../telemetry/client";
 import { createSyncLink, deleteRemoteProgress } from "./progressApi";
 import { readSyncKey, removeSyncKey, subscribeToSyncKey } from "./progressStorage";
 import { persistSyncKey, synchronizeProgress } from "./syncSettingsOperations";
@@ -31,19 +32,38 @@ export function useSyncSettings(origin: string): SyncSettings {
 		update(() => setFeedback({ kind: "success", message: "この端末と同期しました" }));
 	};
 	const run = (action: PendingAction, task: () => Promise<void>, fallback: string): void => {
+		const startedAt = performance.now();
+		logClientEvent("info", "sync.started", {
+			action,
+			outcome: "started",
+		});
 		update(() => {
 			setPendingAction(action);
 			setFeedback(null);
 		});
 		task()
-			.catch((error: unknown) =>
+			.then(() => {
+				logClientEvent("info", "sync.completed", {
+					action,
+					outcome: "success",
+					duration_ms: Math.round(performance.now() - startedAt),
+				});
+			})
+			.catch((error: unknown) => {
+				logClientEvent("error", "sync.failed", {
+					action,
+					outcome: "failure",
+					duration_ms: Math.round(performance.now() - startedAt),
+					error_type: error instanceof Error ? error.name : "non_error",
+				});
+				reportClientError(error, "sync-settings");
 				update(() =>
 					setFeedback({
 						kind: "error",
 						message: error instanceof Error ? error.message : fallback,
 					}),
-				),
-			)
+				);
+			})
 			.finally(() => update(() => setPendingAction(null)))
 			.catch(() => undefined);
 	};

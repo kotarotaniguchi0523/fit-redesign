@@ -1,6 +1,11 @@
 import type {} from "hono";
 import type { Db } from "./server/schema";
 
+declare global {
+	const __SENTRY_RELEASE__: string;
+	const __SENTRY_BROWSER_DSN_ORIGIN__: string;
+}
+
 // _renderer.tsx が受け取る props を c.render に型付けする（honox 規約）。
 declare module "hono" {
 	// hono への宣言マージには interface の呼び出しシグネチャが必須（type では不可）。

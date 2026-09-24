@@ -164,6 +164,39 @@ Pull Requestでは、GitHub Actionsが次を実行します。
 
 `main`へのpushでは、上記の検証に加えてD1 migrationを適用し、Cloudflare Workersへデプロイします。
 
+### Sentry監視
+
+Sentry DSNを設定すると、ブラウザの例外・同期設定画面の捕捉済みエラーと、Workerの例外・HTTPアクセスログを送信します。同期キーを含むURLのquery/fragment、リクエストヘッダー、cookie、bodyは送信前に除去します。Sentryの設定がない環境では監視は無効です。
+
+構造化ログは`schema_version`、`service`、`event_name`を共通項目とし、Sentry上でイベント名と属性を検索できるようにしています。
+
+| service | event_name | level | 主な属性 |
+| --- | --- | --- | --- |
+| `fit-redesign.browser` | `client.initialized` | info | `outcome` |
+| `fit-redesign.browser` | `sync.started` / `sync.completed` / `sync.failed` | info / error | `action`, `outcome`, `duration_ms`, `error_type` |
+| `fit-redesign.browser` | `client.exception` | error | `action`, `outcome`, `error_type` |
+| `fit-redesign.worker` | `http.request` | info | `request_id`, `method`, `route`, `status_code`, `outcome`, `duration_ms` |
+| `fit-redesign.worker` | `http.exception` | error | `request_id`, `method`, `route`, `outcome`, `error_type` |
+
+URL全体、query、cookie、header、request body、同期キー、ユーザー識別情報はログ属性に含めません。例外イベントも同じ送信前フィルターを通します。
+
+本番では、Cloudflare Workerに`SENTRY_DSN` secretを登録します。
+
+```bash
+pnpm exec wrangler secret put SENTRY_DSN
+```
+
+GitHub Actionsの`production` environmentには、次のVariablesとSecretを登録してください。ブラウザ用とWorker用のDSNは別プロジェクトでも構いません。
+
+| 種別 | 名前 | 用途 |
+| --- | --- | --- |
+| Variable | `VITE_SENTRY_DSN` | ブラウザSDKとCSPの送信先 |
+| Variable | `SENTRY_ORG` | ソースマップをアップロードするSentry組織slug |
+| Variable | `SENTRY_PROJECT` | ソースマップをアップロードするプロジェクトslug |
+| Secret | `SENTRY_AUTH_TOKEN` | ビルド時のソースマップアップロード |
+
+`SENTRY_AUTH_TOKEN`が設定されているproduction buildでは、ブラウザとWorkerのhidden source mapを同一の`github.sha` releaseへアップロードし、デプロイ成果物から`.map`ファイルを削除します。ローカルでWorker監視を試す場合は`.dev.vars`に`SENTRY_DSN`、ブラウザ監視を試す場合は`.env.local`に`VITE_SENTRY_DSN`を設定してください。これらのローカル設定ファイルはGit管理されません。
+
 本番のCloudflare設定は`wrangler.jsonc`で管理します。同期機能ではD1とRate Limiting bindingを使用します。手動デプロイは、明示的に必要な場合だけ次を実行してください。
 
 ```bash
