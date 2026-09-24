@@ -1540,19 +1540,43 @@ details summary::marker {
 		padding: 0.85rem;
 	}
 	.study-shell--question-set .q-card__layout {
-		grid-template-columns: minmax(0, 1fr);
-		gap: 0.6rem;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.55rem;
 	}
 	.study-shell--question-set .q-card__actions {
-		width: min(100%, 14rem);
-		margin-inline: auto;
+		grid-column: 2;
+		grid-row: 1;
+		grid-template-columns: repeat(2, 2.75rem);
+		width: auto;
+		margin: 0;
 	}
 	.study-shell--question-set .q-prompt {
-		gap: 0.55rem;
+		display: contents;
+	}
+	.study-shell--question-set .q-head {
+		grid-column: 1;
+		grid-row: 1;
+		min-height: 2.75rem;
+	}
+	.study-shell--question-set .q-text-wrap {
+		grid-column: 1 / -1;
 	}
 	.study-shell--question-set .q-card__actions .q-tool,
 	.study-shell--question-set .q-card__actions .question-timer-link {
+		width: 2.75rem;
 		min-height: 2.75rem;
+		padding: 0;
+	}
+	.study-shell--question-set .q-card__actions .q-tool {
+		border-right: 1px solid #e8edf3;
+		border-bottom: 0;
+	}
+	.study-shell--question-set .q-card__actions span {
+		@apply sr-only;
+	}
+	.study-shell--question-set .q-card__actions svg {
+		width: 1.125rem;
+		height: 1.125rem;
 	}
 	.study-shell--question-set .q-btn-primary {
 		min-height: 2.75rem;

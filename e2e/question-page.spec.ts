@@ -18,9 +18,18 @@ test("通常問題ページの操作欄をデスクトップとスマホで表�
 	await page.setViewportSize({ width: 390, height: 844 });
 	const mobile = await questionSet.readLayout();
 
-	expect(mobile.documentWidth).toBe(mobile.viewportWidth);
-	expect(mobile.actionsWidth).toBeLessThanOrEqual(224);
-	expect(mobile.actionsTop).toBeGreaterThanOrEqual(mobile.promptBottom);
-	expect(mobile.copyTop).toBeLessThan(mobile.timerTop);
-	expect(Math.abs(mobile.timerTop - mobile.copyBottom)).toBeLessThan(1);
+	expect(mobile.documentWidth).toBeLessThanOrEqual(mobile.documentClientWidth);
+	expect(mobile.actionsWidth).toBeLessThanOrEqual(100);
+	expect(mobile.actionsBottom).toBeLessThanOrEqual(mobile.promptTop);
+	expect(Math.abs(mobile.copyTop - mobile.timerTop)).toBeLessThan(1);
+	expect(Math.abs(mobile.copyRight - mobile.timerLeft)).toBeLessThan(1);
+	expect(mobile.copyWidth).toBeGreaterThanOrEqual(44);
+	expect(mobile.copyHeight).toBeGreaterThanOrEqual(44);
+	expect(mobile.timerWidth).toBeGreaterThanOrEqual(44);
+	expect(mobile.timerHeight).toBeGreaterThanOrEqual(44);
+
+	await page.setViewportSize({ width: 320, height: 640 });
+	const narrowMobile = await questionSet.readLayout();
+	expect(narrowMobile.documentWidth).toBeLessThanOrEqual(narrowMobile.documentClientWidth);
+	expect(narrowMobile.actionsBottom).toBeLessThanOrEqual(narrowMobile.promptTop);
 });

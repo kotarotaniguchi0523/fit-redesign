@@ -5,17 +5,25 @@ type Bounds = Readonly<{ x: number; y: number; width: number; height: number }>;
 export type QuestionSetLayout = Readonly<{
 	viewportWidth: number;
 	documentWidth: number;
+	documentClientWidth: number;
 	containerWidth: number;
 	containerCenterOffset: number;
 	answerWidth: number;
 	promptRight: number;
-	promptBottom: number;
+	promptTop: number;
 	actionsLeft: number;
 	actionsTop: number;
+	actionsBottom: number;
 	actionsWidth: number;
 	copyTop: number;
 	copyBottom: number;
+	copyRight: number;
+	copyWidth: number;
+	copyHeight: number;
 	timerTop: number;
+	timerLeft: number;
+	timerWidth: number;
+	timerHeight: number;
 }>;
 
 function requireBounds(bounds: Bounds | null, target: string): Bounds {
@@ -40,7 +48,7 @@ export class QuestionSetPage {
 		const main = page.locator("main.study-shell--question-set");
 		this.container = main.locator(".page-container--wide");
 		this.firstQuestion = main.locator(".q-card").first();
-		this.prompt = this.firstQuestion.locator(".q-prompt");
+		this.prompt = this.firstQuestion.locator(".q-text-wrap");
 		this.actions = this.firstQuestion.locator(".q-card__actions");
 		this.copyButton = this.actions.getByRole("button", { name: "Copy", exact: true });
 		this.timerLink = this.actions.getByRole("link", { name: "時間を測る", exact: true });
@@ -74,26 +82,37 @@ export class QuestionSetPage {
 		if (!viewport) {
 			throw new Error("The browser viewport is not configured");
 		}
-		const documentWidth = await this.page
+		const { scrollWidth: documentWidth, clientWidth: documentClientWidth } = await this.page
 			.locator("html")
-			.evaluate((element) => element.scrollWidth);
+			.evaluate((element) => ({
+				scrollWidth: element.scrollWidth,
+				clientWidth: element.clientWidth,
+			}));
 
 		return {
 			viewportWidth: viewport.width,
 			documentWidth,
+			documentClientWidth,
 			containerWidth: containerBounds.width,
 			containerCenterOffset: Math.abs(
 				containerBounds.x + containerBounds.width / 2 - viewport.width / 2,
 			),
 			answerWidth: answerBounds.width,
 			promptRight: promptBounds.x + promptBounds.width,
-			promptBottom: promptBounds.y + promptBounds.height,
+			promptTop: promptBounds.y,
 			actionsLeft: actionsBounds.x,
 			actionsTop: actionsBounds.y,
+			actionsBottom: actionsBounds.y + actionsBounds.height,
 			actionsWidth: actionsBounds.width,
 			copyTop: copyBounds.y,
 			copyBottom: copyBounds.y + copyBounds.height,
+			copyRight: copyBounds.x + copyBounds.width,
+			copyWidth: copyBounds.width,
+			copyHeight: copyBounds.height,
 			timerTop: timerBounds.y,
+			timerLeft: timerBounds.x,
+			timerWidth: timerBounds.width,
+			timerHeight: timerBounds.height,
 		};
 	}
 }
