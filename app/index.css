@@ -509,15 +509,8 @@ details summary::marker {
 		@apply mt-4 rounded-xl border border-indigo-200 p-4;
 		background-color: color-mix(in srgb, #eef2ff 70%, white);
 	}
-	.q-answer[open] > summary {
-		border-end-start-radius: 0;
-		border-end-end-radius: 0;
-	}
 	.q-answer[open] .q-solution {
-		margin-top: 0;
-		border-top: 0;
-		border-start-start-radius: 0;
-		border-start-end-radius: 0;
+		margin-top: 0.5rem;
 	}
 	.q-solution__title {
 		@apply flex items-center gap-2 text-sm font-bold text-indigo-900;
@@ -618,10 +611,10 @@ details summary::marker {
 		margin-top: 1rem;
 	}
 	.exam-section__header {
-		display: flex;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
 		align-items: center;
-		justify-content: space-between;
-		gap: 0.8rem;
+		gap: 0.55rem 0.8rem;
 		margin-bottom: 0.7rem;
 		padding-bottom: 0.65rem;
 		border-bottom: 1px solid #e2e8f0;
@@ -633,23 +626,26 @@ details summary::marker {
 		line-height: 1.45;
 	}
 	.exam-section__actions {
-		display: flex;
-		flex: none;
-		align-items: center;
-		gap: 0.7rem;
+		display: contents;
 	}
 	.exam-section__pdf {
+		grid-column: 2;
+		grid-row: 1;
+		white-space: nowrap;
 		color: var(--color-primary);
 		font-size: 0.75rem;
 		font-weight: 700;
 		text-underline-offset: 0.2rem;
 	}
 	.exam-section__start {
-		width: auto;
-		min-width: 10.5rem;
-		min-height: 2.5rem;
+		grid-column: 1 / -1;
+		grid-row: 2;
+		justify-self: end;
+		width: max-content;
+		min-width: 0;
+		min-height: 2.75rem;
 		margin: 0;
-		padding: 0.45rem 0.75rem;
+		padding: 0.45rem 0.9rem;
 		border-radius: 0.7rem;
 		box-shadow: 0 5px 13px rgb(30 58 95 / 14%);
 		font-size: 0.8125rem;
@@ -1177,17 +1173,7 @@ details summary::marker {
 		margin-bottom: 0.8rem;
 	}
 	.exam-section__header {
-		align-items: flex-start;
-		flex-direction: column;
-		gap: 0.55rem;
-	}
-	.exam-section__actions {
-		width: 100%;
-		justify-content: space-between;
-	}
-	.exam-section__start {
-		min-width: 0;
-		flex: 1;
+		align-items: center;
 	}
 	.q-card__body {
 		padding: 0.85rem;
@@ -1465,6 +1451,12 @@ details summary::marker {
 	margin: 0;
 }
 
+.study-shell--question-set .q-num {
+	width: 1.5rem;
+	height: 1.5rem;
+	font-size: 0.75rem;
+}
+
 .study-shell--question-set .q-text-wrap {
 	min-width: 0;
 	flex: 1;
@@ -1520,7 +1512,8 @@ details summary::marker {
 
 .study-shell--question-set .q-btn-primary {
 	display: flex;
-	width: min(100%, 15rem);
+	width: max-content;
+	max-width: 100%;
 	min-height: 2.7rem;
 	align-items: center;
 	justify-content: center;
@@ -1540,19 +1533,43 @@ details summary::marker {
 		padding: 0.85rem;
 	}
 	.study-shell--question-set .q-card__layout {
-		grid-template-columns: minmax(0, 1fr);
-		gap: 0.6rem;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.55rem;
 	}
 	.study-shell--question-set .q-card__actions {
-		width: min(100%, 14rem);
-		margin-inline: auto;
+		grid-column: 2;
+		grid-row: 1;
+		grid-template-columns: repeat(2, 2.75rem);
+		width: auto;
+		margin: 0;
 	}
 	.study-shell--question-set .q-prompt {
-		gap: 0.55rem;
+		display: contents;
+	}
+	.study-shell--question-set .q-head {
+		grid-column: 1;
+		grid-row: 1;
+		min-height: 2.75rem;
+	}
+	.study-shell--question-set .q-text-wrap {
+		grid-column: 1 / -1;
 	}
 	.study-shell--question-set .q-card__actions .q-tool,
 	.study-shell--question-set .q-card__actions .question-timer-link {
+		width: 2.75rem;
 		min-height: 2.75rem;
+		padding: 0;
+	}
+	.study-shell--question-set .q-card__actions .q-tool {
+		border-right: 1px solid #e8edf3;
+		border-bottom: 0;
+	}
+	.study-shell--question-set .q-card__actions span {
+		@apply sr-only;
+	}
+	.study-shell--question-set .q-card__actions svg {
+		width: 1.125rem;
+		height: 1.125rem;
 	}
 	.study-shell--question-set .q-btn-primary {
 		min-height: 2.75rem;

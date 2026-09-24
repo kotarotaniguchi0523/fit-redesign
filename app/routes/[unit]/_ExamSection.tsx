@@ -35,7 +35,7 @@ export function ExamSection({
 							rel="noopener noreferrer"
 							class="exam-section__pdf"
 						>
-							原本PDF ↗
+							テストPDF ↗
 						</a>
 					)}
 					{exam ? (
