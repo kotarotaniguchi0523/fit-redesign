@@ -8,6 +8,12 @@ export type QuestionSetLayout = Readonly<{
 	documentClientWidth: number;
 	containerWidth: number;
 	containerCenterOffset: number;
+	titleBottom: number;
+	titleRight: number;
+	pdfTop: number;
+	pdfLeft: number;
+	startTop: number;
+	startWidth: number;
 	answerWidth: number;
 	promptRight: number;
 	promptTop: number;
@@ -38,6 +44,9 @@ export class QuestionSetPage {
 	readonly timerLink: Locator;
 	private readonly page: Page;
 	private readonly container: Locator;
+	private readonly title: Locator;
+	private readonly pdfLink: Locator;
+	private readonly startLink: Locator;
 	private readonly firstQuestion: Locator;
 	private readonly prompt: Locator;
 	private readonly actions: Locator;
@@ -47,6 +56,9 @@ export class QuestionSetPage {
 		this.page = page;
 		const main = page.locator("main.study-shell--question-set");
 		this.container = main.locator(".page-container--wide");
+		this.title = main.locator(".exam-section__title").first();
+		this.pdfLink = main.locator(".exam-section__pdf").first();
+		this.startLink = main.locator(".exam-section__start").first();
 		this.firstQuestion = main.locator(".q-card").first();
 		this.prompt = this.firstQuestion.locator(".q-text-wrap");
 		this.actions = this.firstQuestion.locator(".q-card__actions");
@@ -64,8 +76,11 @@ export class QuestionSetPage {
 	}
 
 	async readLayout(): Promise<QuestionSetLayout> {
-		const [container, prompt, actions, copy, timer, answer] = await Promise.all([
+		const [container, title, pdf, start, prompt, actions, copy, timer, answer] = await Promise.all([
 			this.container.boundingBox(),
+			this.title.boundingBox(),
+			this.pdfLink.boundingBox(),
+			this.startLink.boundingBox(),
 			this.prompt.boundingBox(),
 			this.actions.boundingBox(),
 			this.copyButton.boundingBox(),
@@ -73,6 +88,9 @@ export class QuestionSetPage {
 			this.answerButton.boundingBox(),
 		]);
 		const containerBounds = requireBounds(container, "Question container");
+		const titleBounds = requireBounds(title, "Exam title");
+		const pdfBounds = requireBounds(pdf, "Test PDF link");
+		const startBounds = requireBounds(start, "Start test link");
 		const promptBounds = requireBounds(prompt, "Question prompt");
 		const actionsBounds = requireBounds(actions, "Question actions");
 		const copyBounds = requireBounds(copy, "Copy button");
@@ -97,6 +115,12 @@ export class QuestionSetPage {
 			containerCenterOffset: Math.abs(
 				containerBounds.x + containerBounds.width / 2 - viewport.width / 2,
 			),
+			titleBottom: titleBounds.y + titleBounds.height,
+			titleRight: titleBounds.x + titleBounds.width,
+			pdfTop: pdfBounds.y,
+			pdfLeft: pdfBounds.x,
+			startTop: startBounds.y,
+			startWidth: startBounds.width,
 			answerWidth: answerBounds.width,
 			promptRight: promptBounds.x + promptBounds.width,
 			promptTop: promptBounds.y,

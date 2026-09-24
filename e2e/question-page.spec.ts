@@ -3,13 +3,18 @@ import { expect, test } from "./fixtures";
 test("通常問題ページの操作欄をデスクトップとスマホで表示する", async ({ page, questionSet }) => {
 	await page.setViewportSize({ width: 1365, height: 936 });
 	await questionSet.open();
+	await expect(page.getByRole("link", { name: "テストPDF ↗" }).first()).toBeVisible();
 	const desktop = await questionSet.readLayout();
 
 	await expect(questionSet.copyButton).toBeVisible();
 	await expect(questionSet.timerLink).toBeVisible();
 	expect(desktop.containerWidth).toBeLessThanOrEqual(832);
 	expect(desktop.containerCenterOffset).toBeLessThan(1);
-	expect(desktop.answerWidth).toBeLessThanOrEqual(240);
+	expect(desktop.pdfTop).toBeLessThan(desktop.titleBottom);
+	expect(desktop.pdfLeft).toBeGreaterThanOrEqual(desktop.titleRight);
+	expect(desktop.startTop).toBeGreaterThanOrEqual(desktop.titleBottom);
+	expect(desktop.startWidth).toBeLessThanOrEqual(145);
+	expect(desktop.answerWidth).toBeLessThanOrEqual(125);
 	expect(desktop.promptRight).toBeLessThanOrEqual(desktop.actionsLeft);
 	expect(desktop.actionsWidth).toBeLessThanOrEqual(128);
 	expect(desktop.copyTop).toBeLessThan(desktop.timerTop);
@@ -19,6 +24,11 @@ test("通常問題ページの操作欄をデスクトップとスマホで表�
 	const mobile = await questionSet.readLayout();
 
 	expect(mobile.documentWidth).toBeLessThanOrEqual(mobile.documentClientWidth);
+	expect(mobile.pdfTop).toBeLessThan(mobile.titleBottom);
+	expect(mobile.pdfLeft).toBeGreaterThanOrEqual(mobile.titleRight);
+	expect(mobile.startTop).toBeGreaterThanOrEqual(mobile.titleBottom);
+	expect(mobile.startWidth).toBeLessThanOrEqual(145);
+	expect(mobile.answerWidth).toBeLessThanOrEqual(125);
 	expect(mobile.actionsWidth).toBeLessThanOrEqual(100);
 	expect(mobile.actionsBottom).toBeLessThanOrEqual(mobile.promptTop);
 	expect(Math.abs(mobile.copyTop - mobile.timerTop)).toBeLessThan(1);
@@ -31,5 +41,9 @@ test("通常問題ページの操作欄をデスクトップとスマホで表�
 	await page.setViewportSize({ width: 320, height: 640 });
 	const narrowMobile = await questionSet.readLayout();
 	expect(narrowMobile.documentWidth).toBeLessThanOrEqual(narrowMobile.documentClientWidth);
+	expect(narrowMobile.pdfTop).toBeLessThan(narrowMobile.titleBottom);
+	expect(narrowMobile.pdfLeft).toBeGreaterThanOrEqual(narrowMobile.titleRight);
+	expect(narrowMobile.startWidth).toBeLessThanOrEqual(145);
+	expect(narrowMobile.answerWidth).toBeLessThanOrEqual(125);
 	expect(narrowMobile.actionsBottom).toBeLessThanOrEqual(narrowMobile.promptTop);
 });
