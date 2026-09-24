@@ -316,6 +316,15 @@ function questionScopeKey(examId: string, mode: Props["mode"], questionId?: Ques
 	return `${examId}/${mode === "question" ? `question/${questionId ?? ""}` : "exam"}`;
 }
 
+function isModeEntryTarget(
+	mode: Props["mode"],
+	currentQuestionId: QuestionId,
+	requestedQuestionId: QuestionId | undefined,
+	currentIndex: number,
+): boolean {
+	return mode === "question" ? currentQuestionId === requestedQuestionId : currentIndex === 0;
+}
+
 function replaceChallengeView(view: "player" | "result", challengeId?: string): void {
 	const url = new URL(window.location.href);
 	if (view === "result" && challengeId) {
@@ -416,12 +425,23 @@ function AnswerPanel({
 	judgment: Judgment | undefined;
 	onJudge: (judgment: Judgment) => void;
 }>): JSX.Element | null {
+	const [hasEntered, setHasEntered] = useState(false);
+	useEffect((): (() => void) | undefined => {
+		if (!isOpen) {
+			setHasEntered(false);
+			return;
+		}
+
+		const frame = requestAnimationFrame(() => setHasEntered(true));
+		return () => cancelAnimationFrame(frame);
+	}, [isOpen]);
+
 	if (!isOpen) {
 		return null;
 	}
 	return (
 		<section
-			class="exam-answer"
+			class={`exam-answer${hasEntered ? " exam-answer--entered" : ""}`}
 			id="exam-answer"
 			aria-labelledby="exam-answer-heading"
 			aria-live="polite"
@@ -666,7 +686,9 @@ export default function ExamPlayer(props: Props): JSX.Element {
 	const [resultPayload, setResultPayload] = useState<CompletedChallengePayload | null>(null);
 	const [resultHistory, setResultHistory] = useState<readonly CompletedChallengePayload[]>([]);
 	const [syncMessage, setSyncMessage] = useState<string | null>(null);
-	const [navigationDirection, setNavigationDirection] = useState<"forward" | "backward">("forward");
+	const [navigationDirection, setNavigationDirection] = useState<"forward" | "backward" | "none">(
+		"none",
+	);
 	const stateRef = useRef<ChallengeState | null>(null);
 	const phaseRef = useRef<PlayerPhase>(phase);
 	const userPausedRef = useRef(false);
@@ -1107,6 +1129,12 @@ export default function ExamPlayer(props: Props): JSX.Element {
 	}
 	const currentJudgment = state.judgments[currentQuestionId];
 	const currentQuestionElapsedMs = state.questionElapsedMs[currentQuestionId] ?? 0;
+	const modeEntryTarget = isModeEntryTarget(
+		props.mode,
+		currentQuestionId,
+		props.requestedQuestionId,
+		state.currentIndex,
+	);
 	const totalElapsedMs = Object.values(state.questionElapsedMs).reduce<number>(
 		(sum, value) => sum + (value ?? 0),
 		0,
@@ -1255,6 +1283,7 @@ export default function ExamPlayer(props: Props): JSX.Element {
 			<div class="exam-player__workspace">
 				<div
 					class={`exam-player__question exam-player__question--${navigationDirection}`}
+					data-mode-transition-target={modeEntryTarget ? "" : undefined}
 					key={currentQuestionId}
 				>
 					<QuestionBody question={currentQuestion} />
