@@ -7,13 +7,10 @@ export function useSolutionReveal(
 	questionId: QuestionId,
 	unitId: UnitTabId,
 	clock: Clock = systemClock,
-): (event: Event) => void {
+): (isOpen: boolean) => void {
 	const wasOpen = useRef(false);
-	return (event: Event): void => {
-		if (!(event.currentTarget instanceof HTMLDetailsElement)) {
-			return;
-		}
-		if (!event.currentTarget.open) {
+	return (isOpen: boolean): void => {
+		if (!isOpen) {
 			wasOpen.current = false;
 			return;
 		}

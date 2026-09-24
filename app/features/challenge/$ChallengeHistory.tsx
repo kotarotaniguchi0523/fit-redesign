@@ -31,7 +31,7 @@ function matchesFilter(challenge: CompletedChallengePayload, filter: ResultFilte
 function challengeLabel(challenge: CompletedChallengePayload): string {
 	const [examNumber, year] = challenge.examId.replace("exam", "").split("-");
 	return isQuestionMode(challenge)
-		? `小テスト${examNumber}・${year}年度 / 単問`
+		? `小テスト${examNumber}・${year}年度 / タイムアタック`
 		: `小テスト${examNumber}・${year}年度`;
 }
 
@@ -54,16 +54,16 @@ export default function ChallengeHistory(): JSX.Element {
 	const filterOptions: readonly { value: ResultFilter; label: string }[] = [
 		{ value: "all", label: "すべて" },
 		{ value: "exam", label: "小テスト" },
-		{ value: "question", label: "単問計測" },
+		{ value: "question", label: "タイムアタック" },
 	];
 
 	return (
 		<section class="challenge-history" aria-labelledby="challenge-history-title">
 			<header class="challenge-history__header">
 				<div>
-					<p class="challenge-history__eyebrow">小テストの記録</p>
+					<p class="challenge-history__eyebrow">小テスト・タイムアタック</p>
 					<h2 id="challenge-history-title" class="challenge-history__title">
-						小テストの結果
+						学習の記録
 					</h2>
 					<p class="challenge-history__description">
 						自己判定した完了済みの試行を、あとから振り返れます。

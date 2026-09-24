@@ -73,30 +73,25 @@ export default createRoute(async (c) => {
 	) {
 		return c.notFound();
 	}
-	const questions = selectedQuestionId
-		? exam.questions.filter((question) => question.id === selectedQuestionId)
-		: exam.questions;
+	// The focus timer keeps one active question at a time, while the player needs
+	// the full set to render its question drawer and edge navigation.
+	const questions = exam.questions;
 	const mode = selectedQuestionId ? "question" : "exam";
+	const playerTitle = mode === "question" ? "タイムアタック" : `小テスト${examNumber}`;
 
 	return c.render(
 		<main id="main-content" class="study-shell study-shell--exam">
 			<div class="page-container page-container--wide">
-				<a href={`/${unit.id}/${year}`} class="page-backlink">
-					← 問題一覧へ戻る
-				</a>
 				<div class="content-panel exam-player-page">
-					<header class="exam-player-page__heading">
-						<p class="page-heading__eyebrow">
-							{unit.name}・{year}年度
-						</p>
-						<h1>{mode === "question" ? "この問題だけ計測" : `小テスト${examNumber}`}</h1>
-						<p>{exam.title}</p>
-					</header>
+					<h1 class="sr-only">
+						{playerTitle} — {exam.title}
+					</h1>
 					<ExamPlayer
 						examId={exam.id}
 						examNumber={examNumber}
 						year={year}
 						unitId={unit.id}
+						playerTitle={playerTitle}
 						questions={questions}
 						mode={mode}
 						requestedQuestionId={selectedQuestionId}
@@ -107,7 +102,7 @@ export default createRoute(async (c) => {
 			</div>
 		</main>,
 		{
-			title: `${mode === "question" ? "問題計測" : `小テスト${examNumber}`} - ${unit.name}・${year}年度`,
+			title: `${playerTitle} - ${unit.name}・${year}年度`,
 			description: "小テストを一問ずつ進め、問題ごとの時間と自己判定を記録できます。",
 			noindex: true,
 			noCanonical: true,

@@ -66,7 +66,7 @@ export const questionProgress = sqliteTable(
 	],
 );
 
-// 1回の小テストまたは単問計測。完了状態は answers の揃い方から導出する。
+// 1回の小テストまたはフォーカス計測。完了状態は answers の揃い方から導出する。
 export const challenges = sqliteTable(
 	"challenges",
 	{

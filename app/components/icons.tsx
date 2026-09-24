@@ -73,3 +73,120 @@ export function TimerIcon(): JSX.Element {
 		</svg>
 	);
 }
+
+export function AnswerSheetIcon(): JSX.Element {
+	return (
+		<svg
+			class="h-4 w-4"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			aria-hidden="true"
+		>
+			<path d="M7 3.5h7l4.5 4.5v12.5H7z" />
+			<path d="M14 3.5V8h4.5M9.5 14l2 2 4-4" />
+		</svg>
+	);
+}
+
+export function MenuIcon(): JSX.Element {
+	return (
+		<svg
+			class="h-4 w-4"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			stroke-linecap="round"
+			aria-hidden="true"
+		>
+			<path d="M4 6h16M4 12h16M4 18h16" />
+		</svg>
+	);
+}
+
+export function CloseIcon(): JSX.Element {
+	return (
+		<svg
+			class="h-4 w-4"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			stroke-linecap="round"
+			aria-hidden="true"
+		>
+			<path d="m6 6 12 12M18 6 6 18" />
+		</svg>
+	);
+}
+
+export function PlayIcon(): JSX.Element {
+	return (
+		<svg
+			class="h-4 w-4"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			aria-hidden="true"
+		>
+			<path d="m8 5 12 7-12 7z" />
+		</svg>
+	);
+}
+
+export function PauseIcon(): JSX.Element {
+	return (
+		<svg
+			class="h-4 w-4"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			stroke-linecap="round"
+			aria-hidden="true"
+		>
+			<path d="M9 5v14M15 5v14" />
+		</svg>
+	);
+}
+
+export function ChevronLeftIcon(): JSX.Element {
+	return (
+		<svg
+			class="h-4 w-4"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2.2"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			aria-hidden="true"
+		>
+			<path d="m15 18-6-6 6-6" />
+		</svg>
+	);
+}
+
+export function ChevronRightIcon(): JSX.Element {
+	return (
+		<svg
+			class="h-4 w-4"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2.2"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			aria-hidden="true"
+		>
+			<path d="m9 18 6-6-6-6" />
+		</svg>
+	);
+}

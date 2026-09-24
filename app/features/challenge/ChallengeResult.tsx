@@ -14,6 +14,7 @@ type Props = Readonly<{
 	payload: CompletedChallengePayload;
 	history: readonly CompletedChallengePayload[];
 	questions: readonly DeepReadonly<Question>[];
+	mode: "exam" | "question";
 	onRetry: () => void;
 	onBack: () => void;
 	syncMessage: string | null;
@@ -23,18 +24,24 @@ export function ChallengeResult({
 	payload,
 	history,
 	questions,
+	mode,
 	onRetry,
 	onBack,
 	syncMessage,
 }: Props): JSX.Element {
 	const current = summarizeChallenge(payload);
 	const aggregate = useMemo(() => aggregateChallengeResults(history), [history]);
+	const isSingleQuestion = mode === "question";
 	return (
 		<section class="exam-result" aria-live="polite">
 			<div class="exam-result__heading">
 				<p class="page-heading__eyebrow">結果</p>
-				<h2>小テストの結果</h2>
-				<p>今回の結果と、これまでの完了分を分けて表示しています。</p>
+				<h2>{isSingleQuestion ? "タイムアタックの結果" : "小テストの結果"}</h2>
+				<p>
+					{isSingleQuestion
+						? "今回の記録と、これまでのタイムアタック結果を表示しています。"
+						: "今回の結果と、これまでの完了分を分けて表示しています。"}
+				</p>
 			</div>
 			<div class="exam-result__summary">
 				<div>
@@ -49,12 +56,12 @@ export function ChallengeResult({
 					<strong>{formatAccuracy(current.accuracy)}</strong>
 				</div>
 				<div>
-					<span>合計時間</span>
+					<span>{isSingleQuestion ? "計測時間" : "合計時間"}</span>
 					<strong>{formatDuration(current.totalElapsedMs)}</strong>
 				</div>
 			</div>
 			<section class="exam-result__panel">
-				<h3>今回の問題別結果</h3>
+				<h3>{isSingleQuestion ? "この問題の結果" : "今回の問題別結果"}</h3>
 				<ol class="exam-result__answers">
 					{payload.answers.map((answer) => {
 						const question = questions.find((item) => item.id === answer.questionId);
@@ -75,7 +82,7 @@ export function ChallengeResult({
 				</ol>
 			</section>
 			<section class="exam-result__panel">
-				<h3>これまでの結果</h3>
+				<h3>{isSingleQuestion ? "これまでの計測" : "これまでの結果"}</h3>
 				<div class="exam-result__summary exam-result__summary--aggregate">
 					<div>
 						<span>試行回数</span>
@@ -115,7 +122,7 @@ export function ChallengeResult({
 					class="exam-footer-button exam-footer-button--primary"
 					onClick={onRetry}
 				>
-					もう一度挑戦
+					{isSingleQuestion ? "もう一度計測" : "もう一度挑戦"}
 				</button>
 			</div>
 			{syncMessage ? (

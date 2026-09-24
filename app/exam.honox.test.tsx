@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { jsxRenderer } from "hono/jsx-renderer";
 import { describe, expect, it } from "vitest";
 import examRoute from "./routes/[unit]/[year]";
+import examPlayerRoute from "./routes/[unit]/[year]/exam";
 
 /**
  * HonoX 版 単元ページ（app/routes/[unit]/[year].tsx）の古典派テスト（AAA）。
@@ -29,6 +30,7 @@ function mounted() {
 	const app = new Hono();
 	app.use("*", testRenderer);
 	app.get("/:unit/:year", ...examRoute);
+	app.get("/:unit/:year/exam", ...examPlayerRoute);
 	return app;
 }
 
@@ -54,12 +56,12 @@ describe("単元ページ 描画", () => {
 	it("答え確認、コピー、時間計測の操作を描画する", async () => {
 		const res = await mounted().request("/unit-base-conversion/2013");
 		const body = await res.text();
-		expect(body).toContain("答えを確認");
-		// 解答本文はSSR済みのnative details内に置き、JavaScript失敗時も確認できる。
-		expect(body).toContain("<details");
-		expect(body).toContain('class="q-solution"');
-		expect(body).toContain('aria-label="Copy"');
-		expect(body).toContain("時間を測る");
+		expect(body).toContain('aria-label="解答を表示"');
+		expect(body).toContain('aria-expanded="false"');
+		// 解答はボタンを押した後だけ表示し、初期HTMLには含めない。
+		expect(body).not.toContain('class="q-solution q-answer-panel"');
+		expect(body).toContain('aria-label="問題文をコピー"');
+		expect(body).toContain('aria-label="タイムアタック"');
 		expect(body).not.toContain("data-question-timer");
 		expect(body).not.toContain("答え合わせをする");
 	});
@@ -104,5 +106,26 @@ describe("単元ページ 描画", () => {
 		// ソート・探索は 2013/2014 のみ。2017 は examMapping に無い。
 		const res = await mounted().request("/unit-sort/2017");
 		expect(res.status).toBe(404);
+	});
+});
+
+describe("小テスト・タイムアタック経路", () => {
+	it("通常ページのタイムアタック対象を同じ問題のプレイヤーに渡す", async () => {
+		const questionPage = await mounted().request("/unit-sort/2014");
+		expect(questionPage.status).toBe(200);
+		expect(await questionPage.text()).toContain("question=exam9-2014-q1");
+		const response = await mounted().request("/unit-sort/2014/exam?exam=9&question=exam9-2014-q1");
+		expect(response.status).toBe(200);
+		const body = await response.text();
+		expect(body).toContain("タイムアタック — ソート・探索 (2014)");
+	});
+
+	it.each([
+		"/unit-sort/2014/exam?exam=9&question=exam9-2014-q999",
+		"/unit-sort/2014/exam?exam=7",
+		"/unit-sort/2017/exam?exam=9",
+	])("無効な小テスト URL %s は 404 を返す", async (path) => {
+		const response = await mounted().request(path);
+		expect(response.status).toBe(404);
 	});
 });
