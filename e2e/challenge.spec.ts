@@ -163,7 +163,7 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 			.evaluate((button) => getComputedStyle(button).backgroundColor),
 	).not.toBe(closedAnswerColor);
 	await testInfo.attach("time-attack-answer-mobile", {
-		body: await challengePlayer.player.screenshot({ animations: "disabled" }),
+		body: await page.screenshot({ fullPage: true, animations: "disabled" }),
 		contentType: "image/png",
 	});
 	await challengePlayer.judgeCorrect();
