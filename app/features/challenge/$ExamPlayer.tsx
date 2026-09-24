@@ -119,7 +119,7 @@ function QuestionActions({
 				class="exam-action exam-action--answer"
 				aria-label={answerOpen ? "解答を隠す" : "解答を表示"}
 				title={answerOpen ? "解答を隠す" : "解答を表示"}
-				aria-expanded={answerOpen}
+				aria-expanded={answerOpen ? "true" : "false"}
 				aria-controls={answerOpen ? "exam-answer" : undefined}
 				onClick={onToggleAnswer}
 			>
@@ -130,7 +130,7 @@ function QuestionActions({
 				class={`exam-action ${timerRunning ? "exam-action--timer-running" : ""}`}
 				aria-label={timerRunning ? "計測を一時停止" : "計測を再開"}
 				title={timerRunning ? "計測を一時停止" : "計測を再開"}
-				aria-pressed={timerRunning}
+				aria-pressed={timerRunning ? "true" : "false"}
 				onClick={onToggleTimer}
 			>
 				{timerRunning ? <PauseIcon /> : <TimerIcon />}

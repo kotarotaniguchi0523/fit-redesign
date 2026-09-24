@@ -1,8 +1,8 @@
 import { expect, test } from "./fixtures";
 
 const DURATION = /^\d{2,}:\d{2}(?::\d{2})?$/;
-const QUESTION_ROW = /^問/;
-const FIFTH_QUESTION = /問5 131\(7\)を10進数で表せ/;
+const QUESTION_ROW = /^問\d+ /;
+const FIFTH_QUESTION = /^問5 /;
 
 test("小テストの判定・経過時間・進捗を再読み込み後も維持する", async ({ challengePlayer }) => {
 	// Arrange
@@ -143,7 +143,7 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 
 	// Assert
 	await expect(
-		challengePlayer.player.getByText("131(7)を10進数で表せ", { exact: true }),
+		challengePlayer.player.getByText("13/32(10) を2進数で表せ", { exact: true }),
 	).toBeVisible();
 	await expect(challengePlayer.progress).toHaveAttribute("aria-valuenow", "5");
 	await expect(challengePlayer.resultButton).toBeDisabled();

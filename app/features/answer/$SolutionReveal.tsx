@@ -28,7 +28,7 @@ export default function SolutionReveal({
 				class="q-btn-primary q-answer-toggle"
 				aria-label={isOpen ? "解答を隠す" : "解答を表示"}
 				title={isOpen ? "解答を隠す" : "解答を表示"}
-				aria-expanded={isOpen}
+				aria-expanded={isOpen ? "true" : "false"}
 				aria-controls={isOpen ? answerId : undefined}
 				onClick={(): void => {
 					const nextOpen = !isOpen;
