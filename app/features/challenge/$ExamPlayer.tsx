@@ -123,11 +123,11 @@ function QuestionActions({
 				aria-controls={answerOpen ? "exam-answer" : undefined}
 				onClick={onToggleAnswer}
 			>
-				<AnswerSheetIcon />
+				{answerOpen ? <CloseIcon /> : <AnswerSheetIcon />}
 			</button>
 			<button
 				type="button"
-				class={`exam-action ${timerRunning ? "exam-action--timer-running" : ""}`}
+				class={`exam-action exam-action--timer ${timerRunning ? "exam-action--timer-running" : ""}`}
 				aria-label={timerRunning ? "計測を一時停止" : "計測を再開"}
 				title={timerRunning ? "計測を一時停止" : "計測を再開"}
 				aria-pressed={timerRunning ? "true" : "false"}

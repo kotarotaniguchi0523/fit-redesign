@@ -121,7 +121,7 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 	page,
 	challengePlayer,
 	questionSet,
-}) => {
+}, testInfo) => {
 	// Arrange
 	await page.setViewportSize({ width: 390, height: 844 });
 	await questionSet.open();
@@ -153,6 +153,11 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 	await expect(challengePlayer.progress).toHaveAttribute("aria-valuenow", "4");
 	await challengePlayer.nextButton.click();
 	await challengePlayer.revealAnswer();
+	await expect(challengePlayer.answerPanel).toHaveCSS("animation-name", "answer-panel-enter");
+	await testInfo.attach("time-attack-answer-mobile", {
+		body: await challengePlayer.player.screenshot(),
+		contentType: "image/png",
+	});
 	await challengePlayer.judgeCorrect();
 
 	// Assert

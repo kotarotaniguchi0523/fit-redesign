@@ -1,6 +1,6 @@
 import { useState } from "hono/jsx";
 import type { JSX } from "hono/jsx/jsx-runtime";
-import { AnswerSheetIcon } from "../../components/icons";
+import { AnswerSheetIcon, CloseIcon } from "../../components/icons";
 import type { QuestionId, UnitTabId } from "../../types";
 import { useSolutionReveal } from "./useSolutionReveal";
 
@@ -36,7 +36,7 @@ export default function SolutionReveal({
 					onToggle(nextOpen);
 				}}
 			>
-				<AnswerSheetIcon />
+				{isOpen ? <CloseIcon /> : <AnswerSheetIcon />}
 				<span class="sr-only">{isOpen ? "解答を隠す" : "解答を表示"}</span>
 			</button>
 			{isOpen ? (

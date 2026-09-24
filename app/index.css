@@ -1790,7 +1790,7 @@ details summary::marker {
 .study-shell--question-set .q-text {
 	color: var(--color-primary);
 	font-family: var(--font-serif);
-	font-size: 1.45rem;
+	font-size: 0.967rem;
 	font-weight: 700;
 	line-height: 1.65;
 	text-align: center;
@@ -1869,9 +1869,47 @@ details summary::marker {
 .study-shell--question-set .q-card__actions .q-btn-primary:hover {
 	background: var(--color-primary-light);
 }
+.study-shell--question-set .q-card__actions .q-answer-toggle[aria-expanded="true"],
+.study-shell--question-set .q-card__actions .q-answer-toggle[aria-expanded="true"]:hover {
+	border-color: var(--color-primary);
+	background: #e7f0f8;
+	color: var(--color-primary);
+	box-shadow: inset 0 0 0 1px var(--color-primary);
+}
 .study-shell--question-set .q-card__actions svg {
 	width: 1.125rem;
 	height: 1.125rem;
+}
+.study-shell--question-set .q-card__actions .question-timer-link {
+	position: relative;
+	border-color: transparent;
+	background: transparent;
+	box-shadow: none;
+}
+.study-shell--question-set .q-card__actions .question-timer-link:hover {
+	background: transparent;
+	box-shadow: none;
+}
+.study-shell--question-set .q-card__actions .question-timer-link::before {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 1.833rem;
+	height: 1.833rem;
+	border: 1px solid #d6dee6;
+	border-radius: 50%;
+	background: white;
+	box-shadow: 0 2px 7px rgb(27 50 74 / 8%);
+	content: "";
+	transform: translate(-50%, -50%);
+}
+.study-shell--question-set .q-card__actions .question-timer-link:hover::before {
+	background: #f0f4f7;
+}
+.study-shell--question-set .q-card__actions .question-timer-link svg {
+	position: relative;
+	width: 0.75rem;
+	height: 0.75rem;
 }
 .study-shell--question-set .q-card__actions .q-tool > span {
 	@apply sr-only;
@@ -2022,6 +2060,13 @@ details summary::marker {
 .exam-action--answer:hover:not(:disabled) {
 	background: var(--color-primary-light);
 }
+.exam-action--answer[aria-expanded="true"],
+.exam-action--answer[aria-expanded="true"]:hover:not(:disabled) {
+	border-color: var(--color-primary);
+	background: #e7f0f8;
+	color: var(--color-primary);
+	box-shadow: inset 0 0 0 1px var(--color-primary);
+}
 .exam-player__list-toggle {
 	background: transparent;
 }
@@ -2102,6 +2147,20 @@ details summary::marker {
 	border-color: #dce3e9;
 	background: #f2f5f8;
 }
+.study-shell--question-set .q-answer-panel,
+.exam-player__question .exam-answer {
+	animation: answer-panel-enter 220ms ease-out both;
+}
+@keyframes answer-panel-enter {
+	from {
+		opacity: 0;
+		transform: translateY(-0.4rem) scale(0.985);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
 .exam-answer__body {
 	border-top: 0;
 	background: transparent;
@@ -2139,7 +2198,7 @@ details summary::marker {
 
 @media (max-width: 639px) {
 	.study-shell--question-set .q-text {
-		font-size: 1.25rem;
+		font-size: 0.95rem;
 		line-height: 1.6;
 	}
 	.study-shell--question-set .q-card__actions {
@@ -2175,7 +2234,7 @@ details summary::marker {
 		padding: 1.5rem 2.5rem 1.25rem;
 	}
 	.exam-question__text {
-		font-size: 1.25rem;
+		font-size: 1rem;
 		line-height: 1.65;
 	}
 	.exam-player__actions {
@@ -2305,7 +2364,7 @@ details summary::marker {
 }
 .exam-question__text {
 	max-width: 54rem;
-	font-size: clamp(1.75rem, 3.6vw, 2.75rem);
+	font-size: clamp(1.167rem, 2.4vw, 1.833rem);
 	font-weight: 500;
 	line-height: 1.65;
 	text-align: center;
@@ -2323,6 +2382,15 @@ details summary::marker {
 .exam-player__actions .exam-action svg {
 	width: 1.75rem;
 	height: 1.75rem;
+}
+.exam-player__actions .exam-action--timer {
+	width: 3.5rem;
+	height: 3.5rem;
+	flex-basis: 3.5rem;
+}
+.exam-player__actions .exam-action--timer svg {
+	width: 1.167rem;
+	height: 1.167rem;
 }
 .exam-player__actions .exam-action[title]::after {
 	position: absolute;
@@ -2385,7 +2453,7 @@ details summary::marker {
 		padding: 3rem 2.8rem;
 	}
 	.exam-question__text {
-		font-size: clamp(1.45rem, 6vw, 2rem);
+		font-size: clamp(1rem, 4vw, 1.333rem);
 		line-height: 1.65;
 	}
 	.exam-player__actions {
@@ -2400,6 +2468,15 @@ details summary::marker {
 	.exam-player__actions .exam-action svg {
 		width: 1.45rem;
 		height: 1.45rem;
+	}
+	.exam-player__actions .exam-action--timer {
+		width: 2.75rem;
+		height: 2.75rem;
+		flex-basis: 2.75rem;
+	}
+	.exam-player__actions .exam-action--timer svg {
+		width: 0.967rem;
+		height: 0.967rem;
 	}
 	.exam-player__edge-nav {
 		inset-block-start: 55%;
@@ -2618,5 +2695,12 @@ details summary::marker {
 		width: 3rem;
 		height: 3rem;
 		font-size: 1rem;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.study-shell--question-set .q-answer-panel,
+	.exam-player__question .exam-answer {
+		animation: none;
 	}
 }
