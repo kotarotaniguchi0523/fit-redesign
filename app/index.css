@@ -1451,6 +1451,12 @@ details summary::marker {
 	margin: 0;
 }
 
+.study-shell--question-set .q-num {
+	width: 1.5rem;
+	height: 1.5rem;
+	font-size: 0.75rem;
+}
+
 .study-shell--question-set .q-text-wrap {
 	min-width: 0;
 	flex: 1;

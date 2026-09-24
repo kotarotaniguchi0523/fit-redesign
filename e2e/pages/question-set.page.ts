@@ -15,6 +15,8 @@ export type QuestionSetLayout = Readonly<{
 	startTop: number;
 	startWidth: number;
 	answerWidth: number;
+	numberBadgeWidth: number;
+	numberBadgeHeight: number;
 	promptRight: number;
 	promptTop: number;
 	actionsLeft: number;
@@ -49,6 +51,7 @@ export class QuestionSetPage {
 	private readonly startLink: Locator;
 	private readonly firstQuestion: Locator;
 	private readonly prompt: Locator;
+	private readonly numberBadge: Locator;
 	private readonly actions: Locator;
 	private readonly answerButton: Locator;
 
@@ -61,6 +64,7 @@ export class QuestionSetPage {
 		this.startLink = main.locator(".exam-section__start").first();
 		this.firstQuestion = main.locator(".q-card").first();
 		this.prompt = this.firstQuestion.locator(".q-text-wrap");
+		this.numberBadge = this.firstQuestion.locator(".q-num");
 		this.actions = this.firstQuestion.locator(".q-card__actions");
 		this.copyButton = this.actions.getByRole("button", { name: "Copy", exact: true });
 		this.timerLink = this.actions.getByRole("link", { name: "時間を測る", exact: true });
@@ -76,22 +80,25 @@ export class QuestionSetPage {
 	}
 
 	async readLayout(): Promise<QuestionSetLayout> {
-		const [container, title, pdf, start, prompt, actions, copy, timer, answer] = await Promise.all([
-			this.container.boundingBox(),
-			this.title.boundingBox(),
-			this.pdfLink.boundingBox(),
-			this.startLink.boundingBox(),
-			this.prompt.boundingBox(),
-			this.actions.boundingBox(),
-			this.copyButton.boundingBox(),
-			this.timerLink.boundingBox(),
-			this.answerButton.boundingBox(),
-		]);
+		const [container, title, pdf, start, prompt, numberBadge, actions, copy, timer, answer] =
+			await Promise.all([
+				this.container.boundingBox(),
+				this.title.boundingBox(),
+				this.pdfLink.boundingBox(),
+				this.startLink.boundingBox(),
+				this.prompt.boundingBox(),
+				this.numberBadge.boundingBox(),
+				this.actions.boundingBox(),
+				this.copyButton.boundingBox(),
+				this.timerLink.boundingBox(),
+				this.answerButton.boundingBox(),
+			]);
 		const containerBounds = requireBounds(container, "Question container");
 		const titleBounds = requireBounds(title, "Exam title");
 		const pdfBounds = requireBounds(pdf, "Test PDF link");
 		const startBounds = requireBounds(start, "Start test link");
 		const promptBounds = requireBounds(prompt, "Question prompt");
+		const numberBadgeBounds = requireBounds(numberBadge, "Question number badge");
 		const actionsBounds = requireBounds(actions, "Question actions");
 		const copyBounds = requireBounds(copy, "Copy button");
 		const timerBounds = requireBounds(timer, "Timer link");
@@ -122,6 +129,8 @@ export class QuestionSetPage {
 			startTop: startBounds.y,
 			startWidth: startBounds.width,
 			answerWidth: answerBounds.width,
+			numberBadgeWidth: numberBadgeBounds.width,
+			numberBadgeHeight: numberBadgeBounds.height,
 			promptRight: promptBounds.x + promptBounds.width,
 			promptTop: promptBounds.y,
 			actionsLeft: actionsBounds.x,

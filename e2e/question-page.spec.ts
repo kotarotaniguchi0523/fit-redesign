@@ -15,6 +15,8 @@ test("通常問題ページの操作欄をデスクトップとスマホで表�
 	expect(desktop.startTop).toBeGreaterThanOrEqual(desktop.titleBottom);
 	expect(desktop.startWidth).toBeLessThanOrEqual(145);
 	expect(desktop.answerWidth).toBeLessThanOrEqual(125);
+	expect(desktop.numberBadgeWidth).toBe(24);
+	expect(desktop.numberBadgeHeight).toBe(24);
 	expect(desktop.promptRight).toBeLessThanOrEqual(desktop.actionsLeft);
 	expect(desktop.actionsWidth).toBeLessThanOrEqual(128);
 	expect(desktop.copyTop).toBeLessThan(desktop.timerTop);
@@ -29,6 +31,8 @@ test("通常問題ページの操作欄をデスクトップとスマホで表�
 	expect(mobile.startTop).toBeGreaterThanOrEqual(mobile.titleBottom);
 	expect(mobile.startWidth).toBeLessThanOrEqual(145);
 	expect(mobile.answerWidth).toBeLessThanOrEqual(125);
+	expect(mobile.numberBadgeWidth).toBe(24);
+	expect(mobile.numberBadgeHeight).toBe(24);
 	expect(mobile.actionsWidth).toBeLessThanOrEqual(100);
 	expect(mobile.actionsBottom).toBeLessThanOrEqual(mobile.promptTop);
 	expect(Math.abs(mobile.copyTop - mobile.timerTop)).toBeLessThan(1);
@@ -45,5 +49,7 @@ test("通常問題ページの操作欄をデスクトップとスマホで表�
 	expect(narrowMobile.pdfLeft).toBeGreaterThanOrEqual(narrowMobile.titleRight);
 	expect(narrowMobile.startWidth).toBeLessThanOrEqual(145);
 	expect(narrowMobile.answerWidth).toBeLessThanOrEqual(125);
+	expect(narrowMobile.numberBadgeWidth).toBe(24);
+	expect(narrowMobile.numberBadgeHeight).toBe(24);
 	expect(narrowMobile.actionsBottom).toBeLessThanOrEqual(narrowMobile.promptTop);
 });
