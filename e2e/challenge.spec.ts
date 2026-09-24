@@ -136,6 +136,9 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 	await expect(challengePlayer.previousButton).toBeDisabled();
 	await expect(challengePlayer.pauseButton).toHaveAttribute("aria-pressed", "true");
 	await expect(challengePlayer.answerPanel).toHaveCount(0);
+	const closedAnswerColor = await challengePlayer.answerToggle.evaluate(
+		(button) => getComputedStyle(button).backgroundColor,
+	);
 
 	// Act
 	await challengePlayer.openQuestionList();
@@ -154,8 +157,13 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 	await challengePlayer.nextButton.click();
 	await challengePlayer.revealAnswer();
 	await expect(challengePlayer.answerPanel).toHaveCSS("animation-name", "answer-panel-enter");
+	expect(
+		await challengePlayer.player
+			.getByRole("button", { name: "解答を隠す" })
+			.evaluate((button) => getComputedStyle(button).backgroundColor),
+	).not.toBe(closedAnswerColor);
 	await testInfo.attach("time-attack-answer-mobile", {
-		body: await challengePlayer.player.screenshot(),
+		body: await challengePlayer.player.screenshot({ animations: "disabled" }),
 		contentType: "image/png",
 	});
 	await challengePlayer.judgeCorrect();
