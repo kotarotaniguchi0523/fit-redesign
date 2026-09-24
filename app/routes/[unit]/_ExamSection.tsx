@@ -1,4 +1,5 @@
 import type { JSX } from "hono/jsx/jsx-runtime";
+import { PlayIcon } from "../../components/icons";
 import type { Exam, ExamNumber, UnitTabId, Year } from "../../types";
 import { QuestionCard } from "./_QuestionCard";
 
@@ -42,8 +43,10 @@ export function ExamSection({
 						<a
 							href={`/${unitId}/${year}/exam?exam=${examNumber}`}
 							class="exam-start-link exam-section__start"
+							aria-label="小テストを開始"
+							title="小テストを開始"
 						>
-							小テストを始める
+							<PlayIcon />
 						</a>
 					) : null}
 				</div>

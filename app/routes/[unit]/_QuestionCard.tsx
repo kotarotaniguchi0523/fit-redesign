@@ -60,14 +60,7 @@ export function QuestionCard({ question, unitId, year, examNumber }: Props): JSX
 			<div class="q-card__body">
 				<div class="q-card__layout">
 					<div class="q-prompt">
-						<header class="q-head">
-							<span class="q-num">
-								<span class="sr-only">問題</span>
-								{question.number}
-							</span>
-							{view.hasOptions ? <p class="q-hint">選択肢から確認</p> : null}
-						</header>
-
+						<h2 class="sr-only">問{question.number}</h2>
 						<div class="q-text-wrap">
 							<p
 								class="q-text"
@@ -75,23 +68,6 @@ export function QuestionCard({ question, unitId, year, examNumber }: Props): JSX
 								dangerouslySetInnerHTML={{ __html: overlineToHtml(question.text) }}
 							/>
 						</div>
-					</div>
-
-					<div class="q-card__actions">
-						<CopyButton
-							text={view.markdownText}
-							className="q-tool"
-							ariaLabel="Copy"
-							title="Copy"
-							idleLabel="Copy"
-						/>
-						<a
-							href={`/${unitId}/${year}/exam?exam=${examNumber}&question=${question.id}`}
-							class="question-timer-link"
-						>
-							<TimerIcon />
-							<span>時間を測る</span>
-						</a>
 					</div>
 				</div>
 
@@ -120,14 +96,31 @@ export function QuestionCard({ question, unitId, year, examNumber }: Props): JSX
 					</ol>
 				) : null}
 
-				<div class="mt-3 block">
+				<fieldset class="q-card__actions">
+					<legend class="sr-only">問題の操作</legend>
+					<CopyButton
+						text={view.markdownText}
+						className="q-tool"
+						ariaLabel="問題文をコピー"
+						title="問題文をコピー"
+						idleLabel="コピー済み"
+					/>
 					<SolutionReveal
 						questionId={question.id}
 						unitId={unitId}
 						answerHtml={view.answerHtml}
 						explanationHtml={view.explanationHtml}
 					/>
-				</div>
+					<a
+						href={`/${unitId}/${year}/exam?exam=${examNumber}&question=${question.id}`}
+						class="question-timer-link"
+						aria-label="タイムアタック"
+						title="タイムアタック"
+					>
+						<TimerIcon />
+						<span class="sr-only">タイムアタック</span>
+					</a>
+				</fieldset>
 			</div>
 		</article>
 	);

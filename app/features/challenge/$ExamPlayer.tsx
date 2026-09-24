@@ -1,6 +1,20 @@
 import { useEffect, useMemo, useReducer, useRef, useState, useViewTransition } from "hono/jsx/dom";
 import type { JSX } from "hono/jsx/jsx-runtime";
 import { Figure } from "../../components/figures/Figure";
+import {
+	AnswerSheetIcon,
+	CheckIcon,
+	ChevronLeftIcon,
+	ChevronRightIcon,
+	CloseIcon,
+	CopyIcon,
+	ErrorIcon,
+	MenuIcon,
+	PauseIcon,
+	TimerIcon,
+} from "../../components/icons";
+import type { CopyState } from "../../components/useCopyFeedback";
+import { useCopyFeedback } from "../../components/useCopyFeedback";
 import { systemClock } from "../../lib/dateTime";
 import type { DeepReadonly } from "../../lib/immutable";
 import { overlineToHtml } from "../../lib/overline";
@@ -15,6 +29,7 @@ import type {
 	Year,
 } from "../../types";
 import { ChallengeIdSchema, EpochMillisecondsSchema, QuestionIdSchema } from "../../types/browser";
+import { questionToMarkdown } from "../markdown/questionToMarkdown";
 import { recordProgressEntry } from "../progress/progressPersistence";
 import { readSyncKey } from "../progress/progressStorage";
 import { ChallengeResult } from "./ChallengeResult";
@@ -48,21 +63,231 @@ import {
 } from "./challengeStorage";
 import type { ChallengeSnapshot, ChallengeState, CompletedChallengePayload } from "./types";
 
-type PlayerPhase = "player" | "resume" | "list" | "result" | "missing" | "locked";
+type PlayerPhase = "player" | "resume" | "result" | "missing" | "locked";
 type PlayerQuestion = DeepReadonly<Question>;
 type MutableTimerRuntime = { -readonly [Key in keyof TimerRuntime]: TimerRuntime[Key] };
+
+function resetTimerRuntime(runtime: MutableTimerRuntime, questionId: QuestionId | undefined): void {
+	if (questionId) {
+		runtime.currentQuestionId = questionId;
+	}
+	runtime.lastSample = null;
+	runtime.running = false;
+}
+
+function copyActionLabel(state: CopyState): string {
+	if (state === "success") {
+		return "問題文をコピーしました";
+	}
+	if (state === "error") {
+		return "問題文をコピーできませんでした";
+	}
+	return "問題文をコピー";
+}
+
+function QuestionActions({
+	copyState,
+	onCopy,
+	answerOpen,
+	onToggleAnswer,
+	timerRunning,
+	onToggleTimer,
+}: Readonly<{
+	copyState: CopyState;
+	onCopy: () => Promise<void>;
+	answerOpen: boolean;
+	onToggleAnswer: () => void;
+	timerRunning: boolean;
+	onToggleTimer: () => void;
+}>): JSX.Element | null {
+	return (
+		<fieldset class="exam-player__actions">
+			<legend class="sr-only">問題の操作</legend>
+			<button
+				type="button"
+				class="exam-action"
+				aria-label={copyActionLabel(copyState)}
+				title="問題文をコピー"
+				onClick={onCopy}
+			>
+				{copyState === "success" ? <CheckIcon /> : null}
+				{copyState === "error" ? <ErrorIcon /> : null}
+				{copyState === "idle" ? <CopyIcon /> : null}
+			</button>
+			<button
+				type="button"
+				class="exam-action exam-action--answer"
+				aria-label={answerOpen ? "解答を隠す" : "解答を表示"}
+				title={answerOpen ? "解答を隠す" : "解答を表示"}
+				aria-expanded={answerOpen ? "true" : "false"}
+				aria-controls={answerOpen ? "exam-answer" : undefined}
+				onClick={onToggleAnswer}
+			>
+				<AnswerSheetIcon />
+			</button>
+			<button
+				type="button"
+				class={`exam-action ${timerRunning ? "exam-action--timer-running" : ""}`}
+				aria-label={timerRunning ? "計測を一時停止" : "計測を再開"}
+				title={timerRunning ? "計測を一時停止" : "計測を再開"}
+				aria-pressed={timerRunning ? "true" : "false"}
+				onClick={onToggleTimer}
+			>
+				{timerRunning ? <PauseIcon /> : <TimerIcon />}
+			</button>
+			<span class="sr-only" role="status" aria-live="polite">
+				{copyState === "success" ? "問題文をコピーしました" : null}
+				{copyState === "error" ? "問題文をコピーできませんでした" : null}
+			</span>
+		</fieldset>
+	);
+}
+
+function ChallengeTimerDisplay({
+	mode,
+	totalElapsedMs,
+	questionElapsedMs,
+}: Readonly<{
+	mode: Props["mode"];
+	totalElapsedMs: number;
+	questionElapsedMs: number;
+}>): JSX.Element {
+	return (
+		<fieldset class={`exam-player__timers ${mode === "question" ? "is-single" : ""}`}>
+			<legend class="sr-only">経過時間</legend>
+			{mode === "exam" ? (
+				<div>
+					<span>全体</span>
+					<strong data-testid="challenge-total-time" aria-live="off">
+						{formatDuration(totalElapsedMs)}
+					</strong>
+				</div>
+			) : null}
+			<div>
+				<span>{mode === "question" ? "計測時間" : "この問題"}</span>
+				<strong data-testid="challenge-question-time" aria-live="off">
+					{formatDuration(questionElapsedMs)}
+				</strong>
+			</div>
+		</fieldset>
+	);
+}
+
+function getNavigationPosition(
+	mode: Props["mode"],
+	currentQuestionId: QuestionId,
+	state: ChallengeState,
+	questions: readonly PlayerQuestion[],
+	getQuestionIndex: (questionId?: QuestionId) => number,
+): Readonly<{ currentQuestionIndex: number; navigationLength: number }> {
+	return {
+		currentQuestionIndex:
+			mode === "question" ? getQuestionIndex(currentQuestionId) : state.currentIndex,
+		navigationLength: mode === "question" ? questions.length : state.questionIds.length,
+	};
+}
+
+function PlayerEdgeNavigation({
+	showPrevious,
+	isFirst,
+	isLast,
+	canFinish,
+	onPrevious,
+	onNext,
+	onFinish,
+}: Readonly<{
+	showPrevious: boolean;
+	isFirst: boolean;
+	isLast: boolean;
+	canFinish: boolean;
+	onPrevious: () => void;
+	onNext: () => void;
+	onFinish: () => void;
+}>): JSX.Element | null {
+	if (!(showPrevious || isLast)) {
+		return null;
+	}
+	return (
+		<nav class="exam-player__edge-nav" aria-label="問題移動">
+			{showPrevious ? (
+				<button
+					type="button"
+					class="exam-action exam-player__edge-nav-button exam-player__edge-nav-button--previous"
+					aria-label="前の問題"
+					title="前の問題"
+					disabled={isFirst}
+					onClick={onPrevious}
+				>
+					<ChevronLeftIcon />
+				</button>
+			) : null}
+			<button
+				type="button"
+				class="exam-action exam-player__edge-nav-button exam-player__edge-nav-button--next"
+				aria-label={isLast ? "結果を見る" : "次の問題"}
+				title={isLast ? "結果を見る" : "次の問題"}
+				disabled={isLast && !canFinish}
+				onClick={isLast ? onFinish : onNext}
+			>
+				{isLast ? <CheckIcon /> : <ChevronRightIcon />}
+			</button>
+		</nav>
+	);
+}
 
 type Props = Readonly<{
 	examId: ExamId;
 	examNumber: ExamNumber;
 	year: Year;
 	unitId: UnitTabId;
+	playerTitle: string;
 	questions: readonly PlayerQuestion[];
 	mode: "exam" | "question";
 	requestedQuestionId?: QuestionId;
 	initialChallengeId?: ChallengeId;
 	initialView: "player" | "result";
 }>;
+
+function createPlayerChallenge(
+	props: Props,
+	questions: readonly PlayerQuestion[],
+	scopeKey: string,
+	requestedIndex: number | undefined,
+	activeQuestionId: QuestionId | undefined,
+	getQuestionIndex: (questionId?: QuestionId) => number,
+): Readonly<{ state: ChallengeState; question: PlayerQuestion }> | null {
+	const requestedQuestionIndex =
+		requestedIndex ??
+		(props.mode === "question"
+			? getQuestionIndex(activeQuestionId ?? props.requestedQuestionId)
+			: 0);
+	const initialIndex = Math.min(
+		Math.max(requestedQuestionIndex, 0),
+		Math.max(questions.length - 1, 0),
+	);
+	const question = questions[initialIndex] ?? questions[0];
+	if (!question) {
+		return null;
+	}
+	const questionIds = props.mode === "question" ? [question.id] : questions.map((item) => item.id);
+	const challengeScopeKey =
+		props.mode === "question" ? questionScopeKey(props.examId, props.mode, question.id) : scopeKey;
+	const state = createInitialChallengeState({
+		challengeId: generateChallengeId(),
+		scopeKey: challengeScopeKey,
+		examId: props.examId,
+		mode: props.mode,
+		questionIds,
+		createdAt: systemClock.nowEpochMilliseconds(),
+		initialIndex: props.mode === "question" ? 0 : initialIndex,
+	});
+	return { state, question };
+}
+
+type InitialResultView =
+	| Readonly<{ kind: "not-result" }>
+	| Readonly<{ kind: "missing" }>
+	| Readonly<{ kind: "ready"; payload: CompletedChallengePayload }>;
 
 type PlayerAction = ChallengeAction | Readonly<{ type: "INIT"; state: ChallengeState }>;
 
@@ -103,14 +328,53 @@ function replaceChallengeView(view: "player" | "result", challengeId?: string): 
 	window.history.replaceState(null, "", url);
 }
 
+function replaceQuestionInUrl(questionId: QuestionId): void {
+	const url = new URL(window.location.href);
+	url.searchParams.set("question", questionId);
+	window.history.replaceState(null, "", url);
+}
+
 function countJudgments(state: ChallengeState): number {
 	return Object.keys(state.judgments).length;
+}
+
+function filterChallengeHistory(
+	history: readonly CompletedChallengePayload[],
+	examId: string,
+	mode: Props["mode"],
+	requestedQuestionId?: QuestionId,
+): CompletedChallengePayload[] {
+	return history.filter((item) => {
+		if (item.examId !== examId) {
+			return false;
+		}
+		if (mode === "exam") {
+			return item.answers.length > 1;
+		}
+		return item.answers.length === 1 && item.answers[0]?.questionId === requestedQuestionId;
+	});
+}
+
+function resolveInitialResultView(props: Props): InitialResultView {
+	if (props.initialView !== "result") {
+		return { kind: "not-result" };
+	}
+	if (!props.initialChallengeId) {
+		return { kind: "missing" };
+	}
+	const snapshot = findChallenge(props.initialChallengeId);
+	if (snapshot?.status !== "completed") {
+		return { kind: "missing" };
+	}
+	const restored = restoreChallengeState(snapshot);
+	const payload = toCompletedChallengePayload(restored, snapshot.updatedAt);
+	return payload ? { kind: "ready", payload } : { kind: "missing" };
 }
 
 function QuestionBody({ question }: Readonly<{ question: PlayerQuestion }>): JSX.Element {
 	return (
 		<>
-			<div class="exam-question__number">問{question.number}</div>
+			<h3 class="sr-only">問{question.number}</h3>
 			<div
 				class="exam-question__text"
 				/* biome-ignore lint/security/noDangerouslySetInnerHtml: overlineToHtmlで生成した限定HTML */
@@ -145,20 +409,27 @@ function AnswerPanel({
 	question,
 	isOpen,
 	judgment,
-	onToggle,
 	onJudge,
 }: Readonly<{
 	question: PlayerQuestion;
 	isOpen: boolean;
 	judgment: Judgment | undefined;
-	onToggle: (event: Event) => void;
 	onJudge: (judgment: Judgment) => void;
-}>): JSX.Element {
+}>): JSX.Element | null {
+	if (!isOpen) {
+		return null;
+	}
 	return (
-		<details class="exam-answer" open={isOpen} onToggle={onToggle}>
-			<summary class="exam-answer__toggle">{isOpen ? "閉じる" : "答えを確認"}</summary>
+		<section
+			class="exam-answer"
+			id="exam-answer"
+			aria-labelledby="exam-answer-heading"
+			aria-live="polite"
+		>
 			<div class="exam-answer__body" aria-live="polite">
-				<p class="exam-answer__label">解答</p>
+				<h3 class="exam-answer__label" id="exam-answer-heading">
+					解答
+				</h3>
 				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: overlineToHtmlで生成した限定HTML */}
 				<p dangerouslySetInnerHTML={{ __html: overlineToHtml(question.answer) }} />
 				{question.explanation ? (
@@ -192,72 +463,194 @@ function AnswerPanel({
 					</button>
 				</fieldset>
 			</div>
-		</details>
+		</section>
+	);
+}
+
+function PlayerListItem({
+	question,
+	index,
+	mode,
+	state,
+	currentQuestionId,
+	onSelect,
+}: Readonly<{
+	question: PlayerQuestion;
+	index: number;
+	mode: Props["mode"];
+	state: ChallengeState;
+	currentQuestionId: QuestionId | undefined;
+	onSelect: (index: number) => void;
+}>): JSX.Element {
+	const judgment = state.judgments[question.id];
+	const isCurrent = question.id === currentQuestionId;
+	return (
+		<li>
+			<button
+				type="button"
+				class={`exam-question-list__item ${mode === "question" ? "exam-question-list__item--focus" : ""} ${isCurrent ? "is-current" : ""}`}
+				aria-label={`問${question.number ?? index + 1} ${question.text}`}
+				aria-current={isCurrent ? "true" : undefined}
+				onClick={(): void => onSelect(index)}
+			>
+				<span>問{question.number ?? index + 1}</span>
+				{mode === "exam" ? (
+					<span class="exam-question-list__time">
+						{formatDuration(state.questionElapsedMs[question.id] ?? 0)}
+					</span>
+				) : null}
+				{mode === "exam" && judgment ? (
+					<span class={`exam-question-list__judgment is-${judgment}`}>
+						{judgment === "correct" ? "○" : "×"}
+					</span>
+				) : null}
+				<span class="exam-question-list__prompt">{question.text}</span>
+			</button>
+		</li>
 	);
 }
 
 function PlayerList({
 	state,
 	questions,
+	mode,
+	open,
 	onSelect,
 	onClose,
 }: Readonly<{
 	state: ChallengeState;
 	questions: readonly PlayerQuestion[];
+	mode: Props["mode"];
+	open: boolean;
 	onSelect: (index: number) => void;
 	onClose: () => void;
-}>): JSX.Element {
+}>): JSX.Element | null {
+	if (!open) {
+		return null;
+	}
+	const currentQuestionId = state.questionIds[state.currentIndex];
+	const listedQuestions =
+		mode === "question"
+			? questions
+			: state.questionIds
+					.map((questionId) => questions.find((item) => item.id === questionId))
+					.filter((question): question is PlayerQuestion => question !== undefined);
 	const totalElapsedMs = Object.values(state.questionElapsedMs).reduce<number>(
 		(sum, value) => sum + (value ?? 0),
 		0,
 	);
 	return (
-		<section class="exam-question-list" aria-label="問題一覧">
-			<div class="exam-question-list__toolbar">
-				<div class="exam-question-list__header">
-					<h2>問題一覧</h2>
+		<>
+			<button
+				class="exam-question-list__backdrop"
+				type="button"
+				aria-label="問題一覧を閉じる"
+				onClick={onClose}
+			/>
+			<aside class="exam-question-list" aria-label="問題一覧">
+				<div class="exam-question-list__toolbar">
+					<div class="exam-question-list__header">
+						<h2>問題一覧</h2>
+					</div>
+					<div class="exam-question-list__actions">
+						{mode === "exam" ? (
+							<p>
+								<span>全体</span>
+								<strong>{formatDuration(totalElapsedMs)}</strong>
+							</p>
+						) : null}
+						<button
+							type="button"
+							class="exam-action"
+							aria-label="問題一覧を閉じる"
+							title="問題一覧を閉じる"
+							onClick={onClose}
+						>
+							<CloseIcon />
+						</button>
+					</div>
 				</div>
-				<div class="exam-question-list__actions">
-					<p>
-						<span>全体</span>
-						<strong>{formatDuration(totalElapsedMs)}</strong>
-					</p>
+				<ol>
+					{listedQuestions.map((question, index) => (
+						<PlayerListItem
+							key={question.id}
+							question={question}
+							index={index}
+							mode={mode}
+							state={state}
+							currentQuestionId={currentQuestionId}
+							onSelect={onSelect}
+						/>
+					))}
+				</ol>
+			</aside>
+		</>
+	);
+}
+
+function PlayerHeader({
+	playerTitle,
+	questions,
+	currentQuestionIndex,
+	onOpenQuestionList,
+	onSelectQuestion,
+}: Readonly<{
+	playerTitle: string;
+	questions: readonly PlayerQuestion[];
+	currentQuestionIndex: number;
+	onOpenQuestionList: () => void;
+	onSelectQuestion: (index: number) => void;
+}>): JSX.Element {
+	return (
+		<header class="exam-player__header">
+			<div class="exam-player__identity">
+				{questions.length > 1 ? (
 					<button
 						type="button"
-						class="exam-footer-button exam-footer-button--quiet"
-						onClick={onClose}
+						class="exam-action exam-player__list-toggle"
+						aria-label="問題一覧を開く"
+						title="問題一覧を開く"
+						onClick={onOpenQuestionList}
 					>
-						閉じる
+						<MenuIcon />
 					</button>
-				</div>
+				) : null}
+				<h2>{playerTitle}</h2>
 			</div>
-			<ol>
-				{state.questionIds.map((questionId, index) => {
-					const question = questions.find((item) => item.id === questionId);
-					const judgment = state.judgments[questionId];
-					return (
-						<li>
-							<button
-								type="button"
-								class={`exam-question-list__item ${index === state.currentIndex ? "is-current" : ""}`}
-								aria-current={index === state.currentIndex ? "true" : undefined}
-								onClick={(): void => onSelect(index)}
-							>
-								<span>問{question?.number ?? index + 1}</span>
-								<span class="exam-question-list__time">
-									{formatDuration(state.questionElapsedMs[questionId] ?? 0)}
-								</span>
-								{judgment ? (
-									<span class={`exam-question-list__judgment is-${judgment}`}>
-										{judgment === "correct" ? "○" : "×"}
-									</span>
-								) : null}
-							</button>
-						</li>
-					);
-				})}
-			</ol>
-		</section>
+			<nav class="exam-player__progress" aria-label="問題番号">
+				<div class="exam-player__progress-steps">
+					<ol>
+						{questions.map((question, index) => (
+							<li key={question.id}>
+								<button
+									type="button"
+									aria-label={`問${index + 1}`}
+									aria-current={index === currentQuestionIndex ? "step" : undefined}
+									class={index === currentQuestionIndex ? "is-current" : ""}
+									onClick={(): void => onSelectQuestion(index)}
+								>
+									{index + 1}
+								</button>
+							</li>
+						))}
+					</ol>
+					<div
+						class="exam-player__progress-track"
+						role="progressbar"
+						aria-label="問題の進捗"
+						aria-valuemin={0}
+						aria-valuemax={questions.length}
+						aria-valuenow={currentQuestionIndex + 1}
+						aria-valuetext={`問${currentQuestionIndex + 1} / ${questions.length}`}
+					>
+						<span style={`width: ${((currentQuestionIndex + 1) / questions.length) * 100}%;`} />
+					</div>
+				</div>
+				<span>
+					{currentQuestionIndex + 1} / {questions.length}
+				</span>
+			</nav>
+		</header>
 	);
 }
 
@@ -268,11 +661,15 @@ export default function ExamPlayer(props: Props): JSX.Element {
 		props.initialView === "result" ? "result" : "player",
 	);
 	const [solutionOpen, setSolutionOpen] = useState(false);
+	const [questionListOpen, setQuestionListOpen] = useState(false);
+	const [timerRunning, setTimerRunning] = useState(false);
 	const [resultPayload, setResultPayload] = useState<CompletedChallengePayload | null>(null);
 	const [resultHistory, setResultHistory] = useState<readonly CompletedChallengePayload[]>([]);
 	const [syncMessage, setSyncMessage] = useState<string | null>(null);
+	const [navigationDirection, setNavigationDirection] = useState<"forward" | "backward">("forward");
 	const stateRef = useRef<ChallengeState | null>(null);
 	const phaseRef = useRef<PlayerPhase>(phase);
+	const userPausedRef = useRef(false);
 	const runtimeRef = useRef<MutableTimerRuntime>({
 		running: false,
 		lastSample: null,
@@ -294,6 +691,21 @@ export default function ExamPlayer(props: Props): JSX.Element {
 	const questionById = useMemo(
 		() => new Map(questions.map((question) => [question.id, question])),
 		[questions],
+	);
+	const questionIndexById = useMemo(
+		() => new Map(questions.map((question, index) => [question.id, index])),
+		[questions],
+	);
+	const getQuestionIndex = (questionId?: QuestionId): number => {
+		if (!questionId) {
+			return 0;
+		}
+		return questionIndexById.get(questionId) ?? 0;
+	};
+	const copyQuestionId = state?.questionIds[state.currentIndex];
+	const copyQuestion = copyQuestionId ? questionById.get(copyQuestionId) : undefined;
+	const { state: copyState, copy: copyQuestionToClipboard } = useCopyFeedback(
+		copyQuestion ? questionToMarkdown(copyQuestion) : "",
 	);
 	const scopeKey = questionScopeKey(props.examId, props.mode, props.requestedQuestionId);
 
@@ -323,49 +735,88 @@ export default function ExamPlayer(props: Props): JSX.Element {
 		return next;
 	};
 
-	const startNewChallenge = (initialIndex = 0): void => {
-		const createdAt = systemClock.nowEpochMilliseconds();
-		const next = createInitialChallengeState({
-			challengeId: generateChallengeId(),
+	const startNewChallenge = (requestedIndex?: number, animate = false, shouldRun = true): void => {
+		const activeQuestionId = stateRef.current?.questionIds[stateRef.current.currentIndex];
+		const challenge = createPlayerChallenge(
+			props,
+			questions,
 			scopeKey,
-			examId: props.examId,
-			mode: props.mode,
-			questionIds: questions.map((question) => question.id),
-			createdAt,
-			initialIndex,
-		});
-		if (!tryAcquireChallengeLock(next.challengeId, getOwnerId())) {
-			dispatch({ type: "INIT", state: next });
+			requestedIndex,
+			activeQuestionId,
+			getQuestionIndex,
+		);
+		if (!challenge) {
+			return;
+		}
+		const { state: next, question: initialQuestion } = challenge;
+		const acquiredLock = tryAcquireChallengeLock(next.challengeId, getOwnerId());
+		if (acquiredLock) {
+			resetTimerRuntime(runtimeRef.current, next.questionIds[next.currentIndex]);
+			saveActiveChallenge(next);
+			lastPersistAt.current = typeof performance === "undefined" ? 0 : performance.now();
+		}
+		const initializeState = (): void => dispatch({ type: "INIT", state: next });
+		if (animate) {
+			startViewTransition(initializeState);
+		} else {
+			initializeState();
+		}
+		if (!acquiredLock) {
+			setTimerRunning(false);
 			setPhase("locked");
 			return;
 		}
-		saveActiveChallenge(next);
-		lastPersistAt.current = typeof performance === "undefined" ? 0 : performance.now();
-		dispatch({ type: "INIT", state: next });
 		setResultPayload(null);
+		setQuestionListOpen(false);
+		userPausedRef.current = !shouldRun;
+		setTimerRunning(shouldRun && document.visibilityState === "visible");
 		setPhase("player");
+		if (props.mode === "question") {
+			replaceQuestionInUrl(initialQuestion.id);
+		}
 		replaceChallengeView("player");
 	};
 
-	const resumeChallenge = (snapshot: ChallengeSnapshot): void => {
+	const resumeChallenge = (
+		snapshot: ChallengeSnapshot,
+		animate = false,
+		shouldRun = true,
+	): void => {
 		const next = createChallengeStateFromSnapshot(snapshot);
-		dispatch({ type: "INIT", state: next });
+		resetTimerRuntime(runtimeRef.current, next.questionIds[next.currentIndex]);
+		if (animate) {
+			startViewTransition(() => dispatch({ type: "INIT", state: next }));
+		} else {
+			dispatch({ type: "INIT", state: next });
+		}
 		setResultPayload(null);
-		setPhase(tryAcquireChallengeLock(next.challengeId, getOwnerId()) ? "player" : "locked");
+		const canResume = tryAcquireChallengeLock(next.challengeId, getOwnerId());
+		userPausedRef.current = !shouldRun;
+		setTimerRunning(canResume && shouldRun && document.visibilityState === "visible");
+		setQuestionListOpen(false);
+		setPhase(canResume ? "player" : "locked");
+		if (props.mode === "question") {
+			const questionId = next.questionIds[next.currentIndex];
+			if (questionId) {
+				replaceQuestionInUrl(questionId);
+			}
+		}
 	};
 
 	const challengeHistoryForScope = (
 		payload: CompletedChallengePayload,
-	): CompletedChallengePayload[] =>
-		readCompletedChallenges().filter((item) => {
-			if (item.examId !== payload.examId) {
-				return false;
-			}
-			if (props.mode === "exam") {
-				return item.answers.length > 1;
-			}
-			return item.answers.length === 1 && item.answers[0]?.questionId === props.requestedQuestionId;
-		});
+	): CompletedChallengePayload[] => {
+		const questionId =
+			props.mode === "question"
+				? (payload.answers[0]?.questionId ?? props.requestedQuestionId)
+				: props.requestedQuestionId;
+		return filterChallengeHistory(
+			readCompletedChallenges(),
+			payload.examId,
+			props.mode,
+			questionId,
+		);
+	};
 
 	const finishChallenge = (): void => {
 		const current = flushTimer();
@@ -382,6 +833,7 @@ export default function ExamPlayer(props: Props): JSX.Element {
 			setSyncMessage("この端末に結果を保存できませんでした。画面を閉じる前に同期してください。");
 		}
 		runtimeRef.current.running = false;
+		setTimerRunning(false);
 		dispatch({ type: "COMPLETE", updatedAt });
 		setResultPayload(payload);
 		replaceChallengeView("result", payload.challengeId);
@@ -394,15 +846,14 @@ export default function ExamPlayer(props: Props): JSX.Element {
 				(merged) => {
 					mergeCompletedChallengeHistory(merged);
 					setResultHistory(
-						merged.filter((item) => {
-							if (item.examId !== props.examId) {
-								return false;
-							}
-							return props.mode === "exam"
-								? item.answers.length > 1
-								: item.answers.length === 1 &&
-										item.answers[0]?.questionId === props.requestedQuestionId;
-						}),
+						filterChallengeHistory(
+							merged,
+							props.examId,
+							props.mode,
+							props.mode === "question"
+								? (payload.answers[0]?.questionId ?? props.requestedQuestionId)
+								: props.requestedQuestionId,
+						),
 					);
 				},
 				(error) => setSyncMessage(challengeSyncErrorMessage(error)),
@@ -411,24 +862,15 @@ export default function ExamPlayer(props: Props): JSX.Element {
 	};
 
 	const initializeResultView = (): boolean => {
-		if (props.initialView !== "result") {
+		const resultView = resolveInitialResultView(props);
+		if (resultView.kind === "not-result") {
 			return false;
 		}
-		if (!props.initialChallengeId) {
+		if (resultView.kind === "missing") {
 			setPhase("missing");
 			return true;
 		}
-		const snapshot = findChallenge(props.initialChallengeId);
-		if (snapshot?.status !== "completed") {
-			setPhase("missing");
-			return true;
-		}
-		const restored = restoreChallengeState(snapshot);
-		const payload = toCompletedChallengePayload(restored, snapshot.updatedAt);
-		if (!payload) {
-			setPhase("missing");
-			return true;
-		}
+		const { payload } = resultView;
 		setResultPayload(payload);
 		setResultHistory(challengeHistoryForScope(payload));
 		return true;
@@ -444,7 +886,7 @@ export default function ExamPlayer(props: Props): JSX.Element {
 			setPhase("resume");
 			return;
 		}
-		startNewChallenge(0);
+		startNewChallenge();
 	};
 
 	useEffect(() => {
@@ -468,11 +910,13 @@ export default function ExamPlayer(props: Props): JSX.Element {
 			runtimeRef.current.lastSample === null
 		) {
 			runtimeRef.current.currentQuestionId = currentQuestionId;
-			runtimeRef.current.running = document.visibilityState === "visible";
+			runtimeRef.current.running =
+				document.visibilityState === "visible" && !questionListOpen && !userPausedRef.current;
 			runtimeRef.current.lastSample = performance.now();
+			setTimerRunning(runtimeRef.current.running);
 		}
 		setSolutionOpen(false);
-	}, [phase, state?.currentIndex]);
+	}, [phase, questionListOpen, state?.currentIndex]);
 
 	useEffect(() => {
 		const interval = window.setInterval(() => {
@@ -485,12 +929,14 @@ export default function ExamPlayer(props: Props): JSX.Element {
 			if (document.visibilityState === "hidden") {
 				const flushed = flushTimer(true);
 				runtimeRef.current.running = false;
+				setTimerRunning(false);
 				if (flushed) {
 					saveActiveChallenge(flushed);
 				}
 			} else if (phaseRef.current === "player") {
 				runtimeRef.current.lastSample = performance.now();
-				runtimeRef.current.running = true;
+				runtimeRef.current.running = !(questionListOpen || userPausedRef.current);
+				setTimerRunning(runtimeRef.current.running);
 			}
 		};
 		const onPageHide = (): void => {
@@ -499,11 +945,13 @@ export default function ExamPlayer(props: Props): JSX.Element {
 				saveActiveChallenge(flushed);
 			}
 			runtimeRef.current.running = false;
+			setTimerRunning(false);
 		};
 		const onPageShow = (): void => {
 			if (phaseRef.current === "player" && document.visibilityState === "visible") {
 				runtimeRef.current.lastSample = performance.now();
-				runtimeRef.current.running = true;
+				runtimeRef.current.running = !(questionListOpen || userPausedRef.current);
+				setTimerRunning(runtimeRef.current.running);
 			}
 		};
 		document.addEventListener("visibilitychange", onVisibilityChange);
@@ -515,7 +963,7 @@ export default function ExamPlayer(props: Props): JSX.Element {
 			window.removeEventListener("pagehide", onPageHide);
 			window.removeEventListener("pageshow", onPageShow);
 		};
-	}, []);
+	}, [questionListOpen]);
 
 	useEffect(() => {
 		if (phase !== "player" || !state) {
@@ -567,6 +1015,7 @@ export default function ExamPlayer(props: Props): JSX.Element {
 				payload={resultPayload}
 				history={resultHistory.length > 0 ? resultHistory : [resultPayload]}
 				questions={questions}
+				mode={props.mode}
 				onRetry={(): void => startNewChallenge()}
 				onBack={(): void => {
 					window.location.href = `/${props.unitId}/${props.year}`;
@@ -657,15 +1106,29 @@ export default function ExamPlayer(props: Props): JSX.Element {
 		return <div class="exam-player-message">問題を表示できませんでした。</div>;
 	}
 	const currentJudgment = state.judgments[currentQuestionId];
-	const isLast = state.currentIndex === state.questionIds.length - 1;
-	const isFirst = state.currentIndex === 0;
+	const currentQuestionElapsedMs = state.questionElapsedMs[currentQuestionId] ?? 0;
+	const totalElapsedMs = Object.values(state.questionElapsedMs).reduce<number>(
+		(sum, value) => sum + (value ?? 0),
+		0,
+	);
+	const { currentQuestionIndex, navigationLength } = getNavigationPosition(
+		props.mode,
+		currentQuestionId,
+		state,
+		questions,
+		getQuestionIndex,
+	);
+	const isLast = currentQuestionIndex === navigationLength - 1;
+	const isFirst = currentQuestionIndex === 0;
 
 	const moveTo = (index: number): void => {
 		const current = flushTimer(true);
 		if (!current || index < 0 || index >= current.questionIds.length) {
 			return;
 		}
+		setNavigationDirection(index >= state.currentIndex ? "forward" : "backward");
 		runtimeRef.current.running = false;
+		setTimerRunning(false);
 		startViewTransition(() => dispatch({ type: "MOVE_TO", index }));
 		persistState({ ...current, currentIndex: index }, true);
 	};
@@ -675,148 +1138,184 @@ export default function ExamPlayer(props: Props): JSX.Element {
 			saveActiveChallenge(current);
 		}
 		runtimeRef.current.running = false;
-		setPhase("list");
+		setTimerRunning(false);
+		setQuestionListOpen(true);
 	};
-	if (phase === "list") {
-		return (
+	const closeQuestionList = (): void => {
+		const selectedQuestionId = state.questionIds[state.currentIndex];
+		if (selectedQuestionId) {
+			runtimeRef.current.currentQuestionId = selectedQuestionId;
+			runtimeRef.current.lastSample = performance.now();
+			runtimeRef.current.running = document.visibilityState === "visible" && !userPausedRef.current;
+			setTimerRunning(runtimeRef.current.running);
+		}
+		setQuestionListOpen(false);
+	};
+	const moveFocusTo = (index: number): void => {
+		const targetQuestion = questions[index];
+		if (!targetQuestion) {
+			return;
+		}
+		if (targetQuestion.id === currentQuestionId) {
+			closeQuestionList();
+			return;
+		}
+		const current = flushTimer(true);
+		if (!current) {
+			return;
+		}
+		saveActiveChallenge(current);
+		releaseChallengeLock(current.challengeId, getOwnerId());
+		runtimeRef.current.running = false;
+		setTimerRunning(false);
+		setNavigationDirection(index > currentQuestionIndex ? "forward" : "backward");
+		setQuestionListOpen(false);
+		setSolutionOpen(false);
+		const targetScopeKey = questionScopeKey(props.examId, "question", targetQuestion.id);
+		const active = findStoredActiveChallenge(targetScopeKey);
+		if (active) {
+			resumeChallenge(active, true, !userPausedRef.current);
+			return;
+		}
+		startNewChallenge(index, true, !userPausedRef.current);
+	};
+	const toggleTimer = (): void => {
+		const nextRunning = !timerRunning;
+		if (!nextRunning) {
+			flushTimer(true);
+		}
+		runtimeRef.current.lastSample = performance.now();
+		runtimeRef.current.running = nextRunning;
+		userPausedRef.current = !nextRunning;
+		setTimerRunning(nextRunning);
+	};
+	const toggleAnswer = (): void => {
+		if (solutionOpen) {
+			setSolutionOpen(false);
+			return;
+		}
+		setSolutionOpen(true);
+		const current = stateRef.current;
+		if (!current) {
+			return;
+		}
+		const revealAction = {
+			type: "REVEAL_QUESTION" as const,
+			questionId: currentQuestionId,
+		};
+		dispatch(revealAction);
+		saveActiveChallenge(challengeReducer(current, revealAction));
+		const timestamp = EpochMillisecondsSchema.safeParse(systemClock.nowEpochMilliseconds());
+		if (!timestamp.success) {
+			return;
+		}
+		recordProgressEntry({
+			questionId: currentQuestionId,
+			unitId: props.unitId,
+			createdAt: timestamp.data,
+			updatedAt: timestamp.data,
+		});
+	};
+
+	return (
+		<section
+			class="exam-player-shell"
+			aria-label={props.mode === "exam" ? "小テストプレイヤー" : "タイムアタックプレイヤー"}
+		>
+			<PlayerHeader
+				playerTitle={props.playerTitle}
+				questions={questions}
+				currentQuestionIndex={currentQuestionIndex}
+				onOpenQuestionList={openQuestionList}
+				onSelectQuestion={(index): void => {
+					if (props.mode === "question") {
+						moveFocusTo(index);
+					} else if (index !== state.currentIndex) {
+						moveTo(index);
+					}
+				}}
+			/>
 			<PlayerList
 				state={state}
 				questions={questions}
-				onClose={(): void => {
-					const selectedQuestionId = state.questionIds[state.currentIndex];
-					if (selectedQuestionId) {
-						runtimeRef.current.currentQuestionId = selectedQuestionId;
-						runtimeRef.current.lastSample = performance.now();
-						runtimeRef.current.running = document.visibilityState === "visible";
-					}
-					setPhase("player");
-				}}
+				mode={props.mode}
+				open={questionListOpen}
+				onClose={closeQuestionList}
 				onSelect={(index): void => {
-					setPhase("player");
-					moveTo(index);
+					if (props.mode === "question") {
+						moveFocusTo(index);
+					} else if (index === state.currentIndex) {
+						closeQuestionList();
+					} else {
+						setQuestionListOpen(false);
+						moveTo(index);
+					}
 				}}
 			/>
-		);
-	}
-
-	return (
-		<section class="exam-player-shell" aria-label="小テストプレイヤー">
-			<header class="exam-player__header">
-				<div class="exam-player__step">
-					<h2>
-						問{state.currentIndex + 1}
-						<span> / {state.questionIds.length}</span>
-					</h2>
-				</div>
-				<fieldset class="exam-player__timers">
-					<legend class="sr-only">経過時間</legend>
-					<div>
-						<span>全体</span>
-						<strong>
-							{formatDuration(
-								Object.values(state.questionElapsedMs).reduce<number>(
-									(sum, value) => sum + (value ?? 0),
-									0,
-								),
-							)}
-						</strong>
-					</div>
-					<div>
-						<span>この問題</span>
-						<strong>{formatDuration(state.questionElapsedMs[currentQuestionId] ?? 0)}</strong>
-					</div>
-				</fieldset>
-			</header>
-			<div class="exam-player__question" key={currentQuestionId}>
-				<QuestionBody question={currentQuestion} />
-				<AnswerPanel
-					question={currentQuestion}
-					isOpen={solutionOpen}
-					judgment={currentJudgment}
-					onToggle={(event: Event): void => {
-						if (!(event.currentTarget instanceof HTMLDetailsElement)) {
-							return;
-						}
-						setSolutionOpen(event.currentTarget.open);
-						if (event.currentTarget.open) {
-							const current = stateRef.current;
+			<div class="exam-player__workspace">
+				<div
+					class={`exam-player__question exam-player__question--${navigationDirection}`}
+					key={currentQuestionId}
+				>
+					<QuestionBody question={currentQuestion} />
+					<ChallengeTimerDisplay
+						mode={props.mode}
+						totalElapsedMs={totalElapsedMs}
+						questionElapsedMs={currentQuestionElapsedMs}
+					/>
+					<QuestionActions
+						copyState={copyState}
+						onCopy={copyQuestionToClipboard}
+						answerOpen={solutionOpen}
+						onToggleAnswer={toggleAnswer}
+						timerRunning={timerRunning}
+						onToggleTimer={toggleTimer}
+					/>
+					<AnswerPanel
+						question={currentQuestion}
+						isOpen={solutionOpen}
+						judgment={currentJudgment}
+						onJudge={(judgment): void => {
+							if (state.judgments[currentQuestionId]) {
+								return;
+							}
+							const current = flushTimer(true);
 							if (!current) {
 								return;
 							}
-							const revealAction = {
-								type: "REVEAL_QUESTION" as const,
+							const judgmentAction = {
+								type: "JUDGE_QUESTION" as const,
 								questionId: currentQuestionId,
+								judgment,
+								answerCreatedAt: systemClock.nowEpochMilliseconds(),
 							};
-							dispatch(revealAction);
-							saveActiveChallenge(challengeReducer(current, revealAction));
-							const timestamp = EpochMillisecondsSchema.safeParse(
-								systemClock.nowEpochMilliseconds(),
-							);
-							if (!timestamp.success) {
-								return;
-							}
-							recordProgressEntry({
-								questionId: currentQuestionId,
-								unitId: props.unitId,
-								createdAt: timestamp.data,
-								updatedAt: timestamp.data,
-							});
+							dispatch(judgmentAction);
+							saveActiveChallenge(challengeReducer(current, judgmentAction));
+						}}
+					/>
+				</div>
+				<PlayerEdgeNavigation
+					showPrevious={navigationLength > 1}
+					isFirst={isFirst}
+					isLast={isLast}
+					canFinish={isChallengeComplete(state)}
+					onPrevious={(): void => {
+						if (props.mode === "question") {
+							moveFocusTo(currentQuestionIndex - 1);
+						} else {
+							moveTo(state.currentIndex - 1);
 						}
 					}}
-					onJudge={(judgment): void => {
-						if (state.judgments[currentQuestionId]) {
-							return;
+					onNext={(): void => {
+						if (props.mode === "question") {
+							moveFocusTo(currentQuestionIndex + 1);
+						} else {
+							moveTo(state.currentIndex + 1);
 						}
-						const current = flushTimer(true);
-						if (!current) {
-							return;
-						}
-						const judgmentAction = {
-							type: "JUDGE_QUESTION" as const,
-							questionId: currentQuestionId,
-							judgment,
-							answerCreatedAt: systemClock.nowEpochMilliseconds(),
-						};
-						dispatch(judgmentAction);
-						saveActiveChallenge(challengeReducer(current, judgmentAction));
 					}}
+					onFinish={finishChallenge}
 				/>
 			</div>
-			<footer class="exam-player__footer">
-				<button
-					type="button"
-					class="exam-footer-button exam-footer-button--quiet"
-					disabled={isFirst}
-					onClick={(): void => moveTo(state.currentIndex - 1)}
-				>
-					前の問題
-				</button>
-				<button
-					type="button"
-					class="exam-footer-button exam-footer-button--quiet"
-					onClick={openQuestionList}
-				>
-					問題一覧
-				</button>
-				{isLast ? (
-					<button
-						type="button"
-						class="exam-footer-button exam-footer-button--primary"
-						disabled={!isChallengeComplete(state)}
-						onClick={finishChallenge}
-					>
-						結果を見る
-					</button>
-				) : (
-					<button
-						type="button"
-						class="exam-footer-button exam-footer-button--primary"
-						onClick={(): void => moveTo(state.currentIndex + 1)}
-					>
-						次の問題
-					</button>
-				)}
-			</footer>
 		</section>
 	);
 }
