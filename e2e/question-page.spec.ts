@@ -1,6 +1,21 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
 const FOCUS_ROUTE = /^\/unit-base-conversion\/2013\/exam\?exam=1&question=exam1-2013-q1$/;
+
+async function observeAnswerPanelMotion(page: Page): Promise<void> {
+	await page.evaluate(() => {
+		document.addEventListener("transitionrun", recordMotionStart);
+		document.addEventListener("animationstart", recordMotionStart);
+
+		function recordMotionStart(event: Event): void {
+			const target = event.target;
+			if (target instanceof Element && target.matches(".q-answer-panel, .exam-answer")) {
+				document.documentElement.setAttribute("data-test-answer-panel-motion", "started");
+			}
+		}
+	});
+}
 
 test("問題ページの小テスト・PDF・一問ごとの操作が表示される", async ({ questionSet }) => {
 	// Arrange
@@ -21,6 +36,7 @@ test("解答の開閉がボタンの見た目と内容に反映される", async
 	// Arrange
 	await questionSet.open();
 	await expect(questionSet.answerPanel).toHaveCount(0);
+	await observeAnswerPanelMotion(page);
 	const closedColor = await questionSet.answerToggle.evaluate(
 		(button) => getComputedStyle(button).backgroundColor,
 	);
@@ -31,7 +47,7 @@ test("解答の開閉がボタンの見た目と内容に反映される", async
 	// Assert
 	await expect(questionSet.answerPanel).toBeVisible();
 	await expect(questionSet.answerToggle).toHaveAttribute("aria-expanded", "true");
-	await expect(questionSet.answerPanel).toHaveCSS("animation-name", "answer-panel-enter");
+	await expect(page.locator("html")).toHaveAttribute("data-test-answer-panel-motion", "started");
 	const openColor = await questionSet.answerToggle.evaluate(
 		(button) => getComputedStyle(button).backgroundColor,
 	);
@@ -62,7 +78,9 @@ test("解答の開閉がボタンの見た目と内容に反映される", async
 	// 動きを減らす端末設定では内容を即時表示する。
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await questionSet.answerToggle.click();
-	await expect(questionSet.answerPanel).toHaveCSS("animation-name", "none");
+	await expect(questionSet.answerPanel).toHaveCSS("transform", "none");
+	await expect(questionSet.answerPanel).toHaveCSS("transition-property", "opacity");
+	await expect(questionSet.answerPanel).toHaveCSS("transition-duration", "0.12s");
 });
 
 for (const viewport of [
