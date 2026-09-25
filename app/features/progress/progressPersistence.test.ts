@@ -3,6 +3,7 @@ import { ProgressEntrySchema, SyncKeySchema } from "../../types";
 import { syncProgress } from "./progressApi";
 import {
 	PROGRESS_STORAGE_KEY,
+	parseProgressSnapshot,
 	readProgress,
 	recordReveal,
 	removeSyncKey,
@@ -33,6 +34,19 @@ describe("progress persistence", () => {
 	it("壊れたlocalStorageを空の記録として扱う", () => {
 		localStorage.setItem(PROGRESS_STORAGE_KEY, "broken");
 		expect(readProgress()).toEqual({});
+	});
+	it("旧形式の開示時刻を現在の進捗形式へ移行する", () => {
+		const migrated = parseProgressSnapshot(
+			JSON.stringify({
+				[entry.questionId]: {
+					questionId: entry.questionId,
+					unitId: entry.unitId,
+					revealedAt: entry.createdAt,
+				},
+			}),
+		);
+
+		expect(migrated).toEqual({ [entry.questionId]: entry });
 	});
 	it("同期キーの保存と削除に失敗したらResultで返す", () => {
 		vi.spyOn(Storage.prototype, "setItem").mockImplementationOnce(() => {

@@ -1,3 +1,5 @@
+import { isRecord } from "../../lib/guards";
+import { subscribeToStorageChanges } from "../../lib/storageSubscription";
 import {
 	EpochMillisecondsSchema,
 	ProgressEntrySchema,
@@ -22,26 +24,12 @@ function notifyStorageChange(eventName: string): void {
 	window.dispatchEvent(new Event(eventName));
 }
 
-function subscribeToStorage(key: string, eventName: string, onStoreChange: () => void): () => void {
-	const onStorage = (event: StorageEvent): void => {
-		if (event.key === key) {
-			onStoreChange();
-		}
-	};
-	window.addEventListener("storage", onStorage);
-	window.addEventListener(eventName, onStoreChange);
-	return (): void => {
-		window.removeEventListener("storage", onStorage);
-		window.removeEventListener(eventName, onStoreChange);
-	};
-}
-
 export function subscribeToProgress(onStoreChange: () => void): () => void {
-	return subscribeToStorage(PROGRESS_STORAGE_KEY, PROGRESS_CHANGE_EVENT, onStoreChange);
+	return subscribeToStorageChanges([PROGRESS_STORAGE_KEY], PROGRESS_CHANGE_EVENT, onStoreChange);
 }
 
 export function subscribeToSyncKey(onStoreChange: () => void): () => void {
-	return subscribeToStorage(SYNC_KEY_STORAGE_KEY, SYNC_KEY_CHANGE_EVENT, onStoreChange);
+	return subscribeToStorageChanges([SYNC_KEY_STORAGE_KEY], SYNC_KEY_CHANGE_EVENT, onStoreChange);
 }
 
 export function readProgressSnapshot(): string | null {
@@ -105,18 +93,13 @@ export function parseProgressSnapshot(snapshot: string | null): ProgressMap {
 				if (entry.success) {
 					return [[key, entry.data] as const];
 				}
-				if (typeof value !== "object" || value === null || !("revealedAt" in value)) {
+				if (!(isRecord(value) && "revealedAt" in value)) {
 					return [];
 				}
-				const legacy = value as {
-					questionId?: unknown;
-					unitId?: unknown;
-					revealedAt?: unknown;
-				};
-				const timestamp = EpochMillisecondsSchema.safeParse(legacy.revealedAt);
+				const timestamp = EpochMillisecondsSchema.safeParse(value.revealedAt);
 				const migrated = ProgressEntrySchema.safeParse({
-					questionId: legacy.questionId ?? key,
-					unitId: legacy.unitId,
+					questionId: value.questionId ?? key,
+					unitId: value.unitId,
 					createdAt: timestamp.success ? timestamp.data : undefined,
 					updatedAt: timestamp.success ? timestamp.data : undefined,
 				});

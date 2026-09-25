@@ -1,3 +1,5 @@
+import { isRecord } from "../../lib/guards";
+import { subscribeToStorageChanges } from "../../lib/storageSubscription";
 import type { Judgment, QuestionId } from "../../types";
 import {
 	ChallengeIdSchema,
@@ -20,10 +22,6 @@ const CHALLENGE_CHANGE_EVENT = "fit:challenge-change";
 const CHALLENGE_LOCK_TTL_MS = 15_000;
 
 type ChallengeLock = Readonly<{ ownerId: string; heartbeatAt: number }>;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 function isJudgment(value: unknown): value is Judgment {
 	return JudgmentSchema.safeParse(value).success;
@@ -113,20 +111,11 @@ function notifyChallengeChange(): void {
 }
 
 export function subscribeToChallenges(onStoreChange: () => void): () => void {
-	const onStorage = (event: StorageEvent): void => {
-		if (
-			event.key === ACTIVE_CHALLENGES_STORAGE_KEY ||
-			event.key === CHALLENGE_HISTORY_STORAGE_KEY
-		) {
-			onStoreChange();
-		}
-	};
-	window.addEventListener("storage", onStorage);
-	window.addEventListener(CHALLENGE_CHANGE_EVENT, onStoreChange);
-	return (): void => {
-		window.removeEventListener("storage", onStorage);
-		window.removeEventListener(CHALLENGE_CHANGE_EVENT, onStoreChange);
-	};
+	return subscribeToStorageChanges(
+		[ACTIVE_CHALLENGES_STORAGE_KEY, CHALLENGE_HISTORY_STORAGE_KEY],
+		CHALLENGE_CHANGE_EVENT,
+		onStoreChange,
+	);
 }
 
 function readJson(key: string): unknown {
@@ -164,32 +153,34 @@ function writeChallengeLocks(locks: Readonly<Record<string, ChallengeLock>>): bo
 }
 
 export function tryAcquireChallengeLock(challengeId: string, ownerId: string): boolean {
-	const locks = { ...readChallengeLocks() };
+	const locks = readChallengeLocks();
 	const current = locks[challengeId];
 	const now = Date.now();
 	if (current && current.ownerId !== ownerId && now - current.heartbeatAt < CHALLENGE_LOCK_TTL_MS) {
 		return false;
 	}
-	locks[challengeId] = { ownerId, heartbeatAt: now };
-	return writeChallengeLocks(locks);
+	return writeChallengeLocks({ ...locks, [challengeId]: { ownerId, heartbeatAt: now } });
 }
 
 export function renewChallengeLock(challengeId: string, ownerId: string): boolean {
-	const locks = { ...readChallengeLocks() };
+	const locks = readChallengeLocks();
 	if (locks[challengeId]?.ownerId !== ownerId) {
 		return false;
 	}
-	locks[challengeId] = { ownerId, heartbeatAt: Date.now() };
-	return writeChallengeLocks(locks);
+	return writeChallengeLocks({
+		...locks,
+		[challengeId]: { ownerId, heartbeatAt: Date.now() },
+	});
 }
 
 export function releaseChallengeLock(challengeId: string, ownerId: string): boolean {
-	const locks = { ...readChallengeLocks() };
+	const locks = readChallengeLocks();
 	if (locks[challengeId]?.ownerId !== ownerId) {
 		return true;
 	}
-	delete locks[challengeId];
-	return writeChallengeLocks(locks);
+	return writeChallengeLocks(
+		Object.fromEntries(Object.entries(locks).filter(([id]) => id !== challengeId)),
+	);
 }
 
 export function hasActiveChallengeLock(challengeId: string, ownerId: string): boolean {
@@ -255,9 +246,9 @@ function writeHistory(history: readonly ChallengeSnapshot[]): boolean {
 }
 
 function removeActiveChallenge(challengeId: string): Readonly<Record<string, ChallengeSnapshot>> {
-	const active = { ...readActiveChallenges() };
-	delete active[challengeId];
-	return active;
+	return Object.fromEntries(
+		Object.entries(readActiveChallenges()).filter(([id]) => id !== challengeId),
+	);
 }
 
 export function archiveChallenge(state: ChallengeState): boolean {

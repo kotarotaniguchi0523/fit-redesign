@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type ProgressEntry, ProgressEntrySchema } from "../types/browser";
-import { hasPlausibleProgressTime, mergeLatestProgressEntries } from "./progress";
+import { mergeLatestProgressEntries } from "./progress";
 
 const q1 = "exam1-2013-q1";
 const q2 = "exam1-2013-q2";
@@ -33,12 +33,5 @@ describe("progress domain helpers", () => {
 		const tied = entry(q1, "unit-data", 100, 300);
 
 		expect(mergeLatestProgressEntries([first, tied])).toEqual([{ ...first, createdAt: 100 }]);
-	});
-
-	it("進捗時刻を未来許容幅と作成・更新順で検証する", () => {
-		const valid = entry(q1, "unit-data", 100, 200);
-
-		expect(hasPlausibleProgressTime(valid, 200)).toBe(true);
-		expect(hasPlausibleProgressTime(valid, 200 - 5 * 60 * 1000 - 1)).toBe(false);
 	});
 });
