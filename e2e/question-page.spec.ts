@@ -49,8 +49,10 @@ test("一つのコピー操作からMarkdown・ChatGPT・Geminiを選べる", as
 	await expect(markdownCopy).toBeVisible();
 	await expect(chatGptLink).toHaveAttribute("href", CHATGPT_HREF);
 	await expect(chatGptLink).toHaveAttribute("target", "_blank");
+	expect(await chatGptLink.evaluate((element) => element.tagName)).toBe("A");
 	await expect(geminiLink).toHaveAttribute("href", GEMINI_HREF);
 	await expect(geminiLink).toHaveAttribute("target", "_blank");
+	expect(await geminiLink.evaluate((element) => element.tagName)).toBe("A");
 	await testInfo.attach("copy-menu-desktop", {
 		body: await page.screenshot({ animations: "disabled" }),
 		contentType: "image/png",
