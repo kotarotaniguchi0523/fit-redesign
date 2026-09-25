@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
 const FOCUS_ROUTE = /^\/unit-base-conversion\/2013\/exam\?exam=1&question=exam1-2013-q1$/;
@@ -16,6 +16,19 @@ async function observeAnswerPanelMotion(page: Page): Promise<void> {
 				document.documentElement.setAttribute("data-test-answer-panel-motion", "started");
 			}
 		}
+	});
+}
+
+function isTopmostAtCenter(locator: Locator): Promise<boolean> {
+	return locator.evaluate((element) => {
+		const bounds = element.getBoundingClientRect();
+		const elementAtCenter = document.elementFromPoint(
+			bounds.left + bounds.width / 2,
+			bounds.top + bounds.height / 2,
+		);
+		return (
+			elementAtCenter === element || (elementAtCenter !== null && element.contains(elementAtCenter))
+		);
 	});
 }
 
@@ -50,6 +63,7 @@ test("一つのコピー操作からMarkdown・ChatGPT・Geminiを選べる", as
 	await expect(chatGptLink).toHaveAttribute("href", CHATGPT_HREF);
 	await expect(chatGptLink).toHaveAttribute("target", "_blank");
 	expect(await chatGptLink.evaluate((element) => element.tagName)).toBe("A");
+	expect(await isTopmostAtCenter(chatGptLink)).toBe(true);
 	await expect(geminiLink).toHaveAttribute("href", GEMINI_HREF);
 	await expect(geminiLink).toHaveAttribute("target", "_blank");
 	expect(await geminiLink.evaluate((element) => element.tagName)).toBe("A");
@@ -58,6 +72,7 @@ test("一つのコピー操作からMarkdown・ChatGPT・Geminiを選べる", as
 		contentType: "image/png",
 	});
 	await page.setViewportSize({ width: 390, height: 844 });
+	expect(await isTopmostAtCenter(chatGptLink)).toBe(true);
 	await testInfo.attach("copy-menu-mobile", {
 		body: await page.screenshot({ animations: "disabled" }),
 		contentType: "image/png",
