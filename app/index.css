@@ -1946,6 +1946,13 @@ details summary::marker {
 .study-shell--question-set .q-card__actions .copy-control__copy:hover {
 	background: #f0f4f7;
 }
+.study-shell--question-set .q-card:has(.copy-ai-menu) {
+	z-index: 31;
+	overflow: visible;
+}
+.study-shell--question-set .q-card__actions:has(.copy-ai-menu) {
+	overflow: visible;
+}
 .copy-control__copy[aria-expanded="true"] {
 	background: #eaf1f7;
 	color: var(--color-primary);
