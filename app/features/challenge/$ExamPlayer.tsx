@@ -1,20 +1,17 @@
 import { useEffect, useMemo, useReducer, useRef, useState, useViewTransition } from "hono/jsx/dom";
 import type { JSX } from "hono/jsx/jsx-runtime";
-import { Figure } from "../../components/figures/Figure";
+import CopyButton from "../../components/$CopyButton";
 import {
 	AnswerSheetIcon,
 	CheckIcon,
 	ChevronLeftIcon,
 	ChevronRightIcon,
 	CloseIcon,
-	CopyIcon,
-	ErrorIcon,
 	MenuIcon,
 	PauseIcon,
 	TimerIcon,
 } from "../../components/icons";
-import type { CopyState } from "../../components/useCopyFeedback";
-import { useCopyFeedback } from "../../components/useCopyFeedback";
+import { QuestionContent } from "../../components/QuestionContent";
 import { systemClock } from "../../lib/dateTime";
 import type { DeepReadonly } from "../../lib/immutable";
 import { overlineToHtml } from "../../lib/overline";
@@ -75,26 +72,16 @@ function resetTimerRuntime(runtime: MutableTimerRuntime, questionId: QuestionId 
 	runtime.running = false;
 }
 
-function copyActionLabel(state: CopyState): string {
-	if (state === "success") {
-		return "問題文をコピーしました";
-	}
-	if (state === "error") {
-		return "問題文をコピーできませんでした";
-	}
-	return "問題文をコピー";
-}
-
 function QuestionActions({
-	copyState,
-	onCopy,
+	copyText,
+	askText,
 	answerOpen,
 	onToggleAnswer,
 	timerRunning,
 	onToggleTimer,
 }: Readonly<{
-	copyState: CopyState;
-	onCopy: () => Promise<void>;
+	copyText: string;
+	askText: string;
 	answerOpen: boolean;
 	onToggleAnswer: () => void;
 	timerRunning: boolean;
@@ -103,17 +90,14 @@ function QuestionActions({
 	return (
 		<fieldset class="exam-player__actions">
 			<legend class="sr-only">問題の操作</legend>
-			<button
-				type="button"
-				class="exam-action"
-				aria-label={copyActionLabel(copyState)}
+			<CopyButton
+				text={copyText}
+				askText={askText}
+				className="exam-action exam-action--copy"
+				ariaLabel="問題文をコピー"
 				title="問題文をコピー"
-				onClick={onCopy}
-			>
-				{copyState === "success" ? <CheckIcon /> : null}
-				{copyState === "error" ? <ErrorIcon /> : null}
-				{copyState === "idle" ? <CopyIcon /> : null}
-			</button>
+				idleLabel="問題文をコピー"
+			/>
 			<button
 				type="button"
 				class="exam-action exam-action--answer"
@@ -135,10 +119,6 @@ function QuestionActions({
 			>
 				{timerRunning ? <PauseIcon /> : <TimerIcon />}
 			</button>
-			<span class="sr-only" role="status" aria-live="polite">
-				{copyState === "success" ? "問題文をコピーしました" : null}
-				{copyState === "error" ? "問題文をコピーできませんでした" : null}
-			</span>
 		</fieldset>
 	);
 }
@@ -378,40 +358,6 @@ function resolveInitialResultView(props: Props): InitialResultView {
 	const restored = restoreChallengeState(snapshot);
 	const payload = toCompletedChallengePayload(restored, snapshot.updatedAt);
 	return payload ? { kind: "ready", payload } : { kind: "missing" };
-}
-
-function QuestionBody({ question }: Readonly<{ question: PlayerQuestion }>): JSX.Element {
-	return (
-		<>
-			<h3 class="sr-only">問{question.number}</h3>
-			<div
-				class="exam-question__text"
-				/* biome-ignore lint/security/noDangerouslySetInnerHtml: overlineToHtmlで生成した限定HTML */
-				dangerouslySetInnerHTML={{ __html: overlineToHtml(question.text) }}
-			/>
-			{question.figureData ? (
-				<div class="exam-question__figure">
-					<Figure data={question.figureData as NonNullable<Question["figureData"]>} />
-				</div>
-			) : null}
-			{!question.figureData && question.figureDescription ? (
-				<p class="exam-question__figure-fallback">
-					<strong>図:</strong> {question.figureDescription}
-				</p>
-			) : null}
-			{question.options?.length ? (
-				<ol class="exam-question__options" aria-label="選択肢">
-					{question.options.map((option) => (
-						<li>
-							<span class="exam-question__option-label">{option.label}</span>
-							{/* biome-ignore lint/security/noDangerouslySetInnerHtml: overlineToHtmlで生成した限定HTML */}
-							<span dangerouslySetInnerHTML={{ __html: overlineToHtml(option.value) }} />
-						</li>
-					))}
-				</ol>
-			) : null}
-		</>
-	);
 }
 
 function AnswerPanel({
@@ -724,11 +670,6 @@ export default function ExamPlayer(props: Props): JSX.Element {
 		}
 		return questionIndexById.get(questionId) ?? 0;
 	};
-	const copyQuestionId = state?.questionIds[state.currentIndex];
-	const copyQuestion = copyQuestionId ? questionById.get(copyQuestionId) : undefined;
-	const { state: copyState, copy: copyQuestionToClipboard } = useCopyFeedback(
-		copyQuestion ? questionToMarkdown(copyQuestion) : "",
-	);
 	const scopeKey = questionScopeKey(props.examId, props.mode, props.requestedQuestionId);
 
 	const persistState = (nextState: ChallengeState, force = false): void => {
@@ -1286,15 +1227,15 @@ export default function ExamPlayer(props: Props): JSX.Element {
 					data-mode-transition-target={modeEntryTarget ? "" : undefined}
 					key={currentQuestionId}
 				>
-					<QuestionBody question={currentQuestion} />
+					<QuestionContent question={currentQuestion} variant="exam-player" />
 					<ChallengeTimerDisplay
 						mode={props.mode}
 						totalElapsedMs={totalElapsedMs}
 						questionElapsedMs={currentQuestionElapsedMs}
 					/>
 					<QuestionActions
-						copyState={copyState}
-						onCopy={copyQuestionToClipboard}
+						copyText={questionToMarkdown(currentQuestion)}
+						askText={questionToMarkdown(currentQuestion, { includeSolution: false })}
 						answerOpen={solutionOpen}
 						onToggleAnswer={toggleAnswer}
 						timerRunning={timerRunning}

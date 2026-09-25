@@ -1,9 +1,10 @@
+import { sortNewestFirst } from "../../lib/sort";
 import type { ProgressEntry, SyncKey } from "../../types/browser";
 import { syncProgress, syncProgressErrorMessage } from "./progressApi";
 import { readProgress, saveProgressEntries, saveSyncKey } from "./progressStorage";
 
 function localEntries(): readonly ProgressEntry[] {
-	return Object.values(readProgress()).sort((a, b) => b.updatedAt - a.updatedAt);
+	return sortNewestFirst(Object.values(readProgress()));
 }
 
 export async function synchronizeProgress(key: SyncKey): Promise<void> {

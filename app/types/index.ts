@@ -43,6 +43,4 @@ export type {
 	StateNode,
 	Transition,
 	TreeNode,
-	TruthTableColumn,
-	TruthTableRow,
 } from "./figures";

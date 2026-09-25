@@ -1,5 +1,6 @@
 export type { ProgressEntry } from "../../types/domain";
 
+import { sortNewestFirst } from "../../lib/sort";
 import type { ProgressEntry } from "../../types/domain";
 
 export type ProgressMap = Readonly<Record<string, ProgressEntry>>;
@@ -40,9 +41,7 @@ export function mergeProgressEntries(
 	local: readonly ProgressEntry[],
 	remote: readonly ProgressEntry[],
 ): ProgressEntry[] {
-	return [...indexLatestProgress([...local, ...remote]).values()].sort(
-		(a, b) => b.updatedAt - a.updatedAt,
-	);
+	return sortNewestFirst([...indexLatestProgress([...local, ...remote]).values()]);
 }
 
 export function toProgressMap(entries: readonly ProgressEntry[]): ProgressMap {

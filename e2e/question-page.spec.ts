@@ -1,7 +1,9 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
 const FOCUS_ROUTE = /^\/unit-base-conversion\/2013\/exam\?exam=1&question=exam1-2013-q1$/;
+const CHATGPT_HREF = /https:\/\/chatgpt\.com\/\?q=/;
+const GEMINI_HREF = /^https:\/\/gemini\.google\.com\/app\?q=/;
 
 async function observeAnswerPanelMotion(page: Page): Promise<void> {
 	await page.evaluate(() => {
@@ -14,6 +16,19 @@ async function observeAnswerPanelMotion(page: Page): Promise<void> {
 				document.documentElement.setAttribute("data-test-answer-panel-motion", "started");
 			}
 		}
+	});
+}
+
+function isTopmostAtCenter(locator: Locator): Promise<boolean> {
+	return locator.evaluate((element) => {
+		const bounds = element.getBoundingClientRect();
+		const elementAtCenter = document.elementFromPoint(
+			bounds.left + bounds.width / 2,
+			bounds.top + bounds.height / 2,
+		);
+		return (
+			elementAtCenter === element || (elementAtCenter !== null && element.contains(elementAtCenter))
+		);
 	});
 }
 
@@ -30,6 +45,39 @@ test("問題ページの小テスト・PDF・一問ごとの操作が表示さ�
 	await expect(questionSet.copyButton).toBeVisible();
 	await expect(questionSet.answerToggle).toBeVisible();
 	expect(timerTarget).toMatch(FOCUS_ROUTE);
+});
+
+test("一つのコピー操作からMarkdown・ChatGPT・Geminiを選べる", async ({
+	page,
+	questionSet,
+}, testInfo) => {
+	await questionSet.open();
+	await questionSet.copyButton.click();
+
+	const markdownCopy = questionSet.firstQuestion.getByRole("menuitem", {
+		name: "Markdownをコピー",
+	});
+	const chatGptLink = questionSet.firstQuestion.getByRole("menuitem", { name: "ChatGPTに質問" });
+	const geminiLink = questionSet.firstQuestion.getByRole("menuitem", { name: "Geminiに質問" });
+	await expect(markdownCopy).toBeVisible();
+	await expect(chatGptLink).toHaveAttribute("href", CHATGPT_HREF);
+	await expect(chatGptLink).toHaveAttribute("target", "_blank");
+	expect(await chatGptLink.evaluate((element) => element.tagName)).toBe("A");
+	expect(await isTopmostAtCenter(chatGptLink)).toBe(true);
+	await expect(geminiLink).toHaveAttribute("href", GEMINI_HREF);
+	await expect(geminiLink).toHaveAttribute("target", "_blank");
+	expect(await geminiLink.evaluate((element) => element.tagName)).toBe("A");
+	await testInfo.attach("copy-menu-desktop", {
+		body: await page.screenshot({ animations: "disabled" }),
+		contentType: "image/png",
+	});
+	await page.setViewportSize({ width: 390, height: 844 });
+	await expect(chatGptLink.locator("span")).toHaveCSS("position", "static");
+	expect(await isTopmostAtCenter(chatGptLink)).toBe(true);
+	await testInfo.attach("copy-menu-mobile", {
+		body: await page.screenshot({ animations: "disabled" }),
+		contentType: "image/png",
+	});
 });
 
 test("解答の開閉がボタンの見た目と内容に反映される", async ({ page, questionSet }, testInfo) => {

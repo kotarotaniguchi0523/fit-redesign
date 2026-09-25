@@ -23,8 +23,6 @@ function tableToMarkdown(
 function figureDataToMarkdown(figureData: DeepReadonly<FigureData>): string {
 	switch (figureData.type) {
 		case "truthTable":
-			return tableToMarkdown(figureData.columns, figureData.rows);
-
 		case "dataTable":
 			return tableToMarkdown(figureData.columns, figureData.rows);
 
@@ -114,9 +112,9 @@ function figureDataToMarkdown(figureData: DeepReadonly<FigureData>): string {
 	}
 }
 
-function buildFigureSection(question: DeepReadonly<Question>): string[] {
+function buildFigureSection(question: DeepReadonly<Question>, sectionHeading: string): string[] {
 	if (question.figureData) {
-		return ["### 図", "", figureDataToMarkdown(question.figureData), ""];
+		return [`${sectionHeading} 図`, "", figureDataToMarkdown(question.figureData), ""];
 	}
 	if (question.figureDescription) {
 		return [`> **図**: ${question.figureDescription}`, ""];
@@ -127,14 +125,22 @@ function buildFigureSection(question: DeepReadonly<Question>): string[] {
 /**
  * Question オブジェクトを Markdown 文字列に変換する
  */
-export function questionToMarkdown(question: DeepReadonly<Question>): string {
-	const base = [`## 問題 ${question.number}`, "", question.text, ""];
+export function questionToMarkdown(
+	question: DeepReadonly<Question>,
+	{
+		includeSolution = true,
+		headingLevel = 2,
+	}: Readonly<{ includeSolution?: boolean; headingLevel?: 2 | 3 }> = {},
+): string {
+	const heading = "#".repeat(headingLevel);
+	const sectionHeading = `${heading}#`;
+	const base = [`${heading} 問題 ${question.number}`, "", question.text, ""];
 
-	const figure = buildFigureSection(question);
+	const figure = buildFigureSection(question, sectionHeading);
 
 	const options =
 		question.options && question.options.length > 0
-			? ["### 選択肢"]
+			? [`${sectionHeading} 選択肢`]
 					.concat(
 						question.options.map(
 							(option) => `- **${option.label}**: ${option.value || "(未入力)"}`,
@@ -143,9 +149,10 @@ export function questionToMarkdown(question: DeepReadonly<Question>): string {
 					.concat("")
 			: [];
 
-	const answer = ["### 解答", question.answer, ""];
+	const answer = includeSolution ? [`${sectionHeading} 解答`, question.answer, ""] : [];
 
-	const explanation = question.explanation ? ["### 解説", question.explanation] : [];
+	const explanation =
+		includeSolution && question.explanation ? [`${sectionHeading} 解説`, question.explanation] : [];
 
 	return base.concat(figure, options, answer, explanation).join("\n").trim();
 }

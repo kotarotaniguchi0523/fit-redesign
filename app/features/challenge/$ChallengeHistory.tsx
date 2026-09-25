@@ -1,6 +1,8 @@
 import { useState, useSyncExternalStore } from "hono/jsx";
 import type { JSX } from "hono/jsx/jsx-runtime";
 import { formatLocalDateTime } from "../../lib/dateTime";
+import { sortByQuestionId } from "../../lib/questionOrder";
+import { sortNewestFirst } from "../../lib/sort";
 import {
 	aggregateChallengeResults,
 	formatAccuracy,
@@ -47,9 +49,9 @@ export default function ChallengeHistory(): JSX.Element {
 		() => null,
 	);
 	const [filter, setFilter] = useState<ResultFilter>("all");
-	const completed = readCompletedChallenges()
-		.filter((challenge) => matchesFilter(challenge, filter))
-		.sort((a, b) => b.updatedAt - a.updatedAt);
+	const completed = sortNewestFirst(
+		readCompletedChallenges().filter((challenge) => matchesFilter(challenge, filter)),
+	);
 	const aggregate = aggregateChallengeResults(completed);
 	const filterOptions: readonly { value: ResultFilter; label: string }[] = [
 		{ value: "all", label: "すべて" },
@@ -146,8 +148,7 @@ export default function ChallengeHistory(): JSX.Element {
 						<section class="challenge-history__panel">
 							<h3 class="font-bold text-[#1e3a5f]">問題別の累計</h3>
 							<ol class="mt-3 divide-y divide-gray-100">
-								{Object.values(aggregate.byQuestion)
-									.sort((a, b) => a.questionId.localeCompare(b.questionId))
+								{sortByQuestionId(Object.values(aggregate.byQuestion))
 									.slice(0, 12)
 									.map((question) => (
 										<li class="flex items-center justify-between gap-3 py-3 text-sm">

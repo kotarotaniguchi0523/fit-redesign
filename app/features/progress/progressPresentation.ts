@@ -1,4 +1,3 @@
-import { formatLocalDateTime } from "../../lib/dateTime";
 import type { ProgressEntry } from "./progress";
 
 const QUESTION_ID_PATTERN = /^exam(\d+)-(\d{4})-q(\d+)$/;
@@ -14,8 +13,4 @@ export function progressQuestionLink(
 			: entry.questionId,
 		href: year ? `/${entry.unitId}/${year}#question-${entry.questionId}` : "/",
 	};
-}
-
-export function formatProgressDateTime(timestamp: number): string {
-	return formatLocalDateTime(timestamp);
 }

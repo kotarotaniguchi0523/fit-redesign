@@ -60,7 +60,7 @@ describe("単元ページ 描画", () => {
 		expect(body).toContain('aria-expanded="false"');
 		// 解答はボタンを押した後だけ表示し、初期HTMLには含めない。
 		expect(body).not.toContain('class="q-solution q-answer-panel"');
-		expect(body).toContain('aria-label="問題文をコピー"');
+		expect(body).toContain('aria-label="問題文をコピー、コピー方法を選択"');
 		expect(body).toContain('aria-label="タイムアタック"');
 		expect(body).not.toContain("data-question-timer");
 		expect(body).not.toContain("答え合わせをする");

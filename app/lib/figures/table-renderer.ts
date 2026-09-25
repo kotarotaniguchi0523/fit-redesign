@@ -3,6 +3,7 @@ import type { FigureData, LinkedListEntry, NormalDistributionEntry } from "../..
 export type TableFigureData = Extract<
 	FigureData,
 	| { type: "dataTable" }
+	| { type: "truthTable" }
 	| { type: "huffmanTable" }
 	| { type: "linkedListTable" }
 	| { type: "normalDistributionTable" }
@@ -20,9 +21,10 @@ function assertNever(value: never): never {
 
 export function buildTableConfig(data: TableFigureData): TableConfig {
 	switch (data.type) {
+		case "truthTable":
 		case "dataTable":
 			return {
-				ariaLabel: "Data table",
+				ariaLabel: data.type === "truthTable" ? "真理値表" : "Data table",
 				columns: data.columns,
 				rows: data.rows,
 			};

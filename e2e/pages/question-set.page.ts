@@ -18,7 +18,9 @@ export class QuestionSetPage {
 		this.page = page;
 		this.main = page.locator("main");
 		this.firstQuestion = this.main.locator("[data-question-card]").first();
-		this.copyButton = this.firstQuestion.getByRole("button", { name: "問題文をコピー" });
+		this.copyButton = this.firstQuestion.getByRole("button", {
+			name: "問題文をコピー、コピー方法を選択",
+		});
 		this.timerLink = this.firstQuestion.getByRole("link", { name: "タイムアタック" });
 		this.answerToggle = this.firstQuestion.getByRole("button", { name: ANSWER_TOGGLE });
 		this.answerPanel = this.firstQuestion.locator(".q-answer-panel");
