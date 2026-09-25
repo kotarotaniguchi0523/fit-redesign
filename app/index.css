@@ -1581,9 +1581,6 @@ details summary::marker {
 		border-right: 1px solid #e8edf3;
 		border-bottom: 0;
 	}
-	.study-shell--question-set .q-card__actions span {
-		@apply sr-only;
-	}
 	.study-shell--question-set .q-card__actions svg {
 		width: 1.125rem;
 		height: 1.125rem;
