@@ -72,6 +72,7 @@ test("一つのコピー操作からMarkdown・ChatGPT・Geminiを選べる", as
 		contentType: "image/png",
 	});
 	await page.setViewportSize({ width: 390, height: 844 });
+	await expect(chatGptLink.locator("span")).toHaveCSS("position", "static");
 	expect(await isTopmostAtCenter(chatGptLink)).toBe(true);
 	await testInfo.attach("copy-menu-mobile", {
 		body: await page.screenshot({ animations: "disabled" }),
