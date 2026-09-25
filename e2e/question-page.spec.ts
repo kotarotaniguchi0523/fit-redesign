@@ -44,8 +44,8 @@ test("一つのコピー操作からMarkdown・ChatGPT・Geminiを選べる", as
 	const markdownCopy = questionSet.firstQuestion.getByRole("menuitem", {
 		name: "Markdownをコピー",
 	});
-	const chatGptLink = questionSet.firstQuestion.getByRole("link", { name: "ChatGPTに質問" });
-	const geminiLink = questionSet.firstQuestion.getByRole("link", { name: "Geminiに質問" });
+	const chatGptLink = questionSet.firstQuestion.getByRole("menuitem", { name: "ChatGPTに質問" });
+	const geminiLink = questionSet.firstQuestion.getByRole("menuitem", { name: "Geminiに質問" });
 	await expect(markdownCopy).toBeVisible();
 	await expect(chatGptLink).toHaveAttribute("href", CHATGPT_HREF);
 	await expect(chatGptLink).toHaveAttribute("target", "_blank");
