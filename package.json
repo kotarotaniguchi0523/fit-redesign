@@ -50,9 +50,8 @@
 		"wrangler": "^4.136.1"
 	},
 	"dependencies": {
+		"@hono/structured-logger": "1.0.0",
 		"@hono/zod-validator": "^0.9.1",
-		"@takumi-rs/helpers": "2.14.0",
-		"@takumi-rs/wasm": "2.14.0",
 		"dayjs": "^1.11.23",
 		"drizzle-orm": "1.0.0-rc.4",
 		"hono": "^4.13.8",

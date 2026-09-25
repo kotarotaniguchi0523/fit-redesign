@@ -180,8 +180,6 @@ migrations/              # D1 migration SQL
 - `/slide-only` — 講義資料
 - `/health` — ヘルスチェック
 
-`/dashboard`、`/exercises`、`/today/{unit}` は互換用リダイレクト。新機能の導線には使わない。
-
 ## セキュリティ
 
 - 同期キーはURLや `X-Sync-Key` ヘッダーで扱われる秘密情報として保護する。

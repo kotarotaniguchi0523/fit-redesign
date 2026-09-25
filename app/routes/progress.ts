@@ -1,7 +1,9 @@
 import { zValidator } from "@hono/zod-validator";
+import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { csrf } from "hono/csrf";
+import { createMiddleware } from "hono/factory";
 import { ResultAsync } from "neverthrow";
 import { getAllExams } from "../data/exams";
 import { unitBasedTabs } from "../data/units";
@@ -130,6 +132,11 @@ const validateSyncHeader = zValidator("header", SyncHeaderSchema, (result, c) =>
 	result.success ? undefined : c.json(UNKNOWN_LINK, 404),
 );
 
+const initializeDatabase = createMiddleware<Env>(async (c, next) => {
+	c.set("db", drizzle(c.env.DB));
+	await next();
+});
+
 // biome-ignore lint/nursery/useExplicitReturnType: Honoのレスポンス型推論を維持する
 const createLink = async (c: Context<Env>) => {
 	const ipAddress = c.req.header("CF-Connecting-IP") ?? "unknown";
@@ -161,8 +168,8 @@ const createLink = async (c: Context<Env>) => {
 
 const progress = new Hono<Env>()
 	.use("/*", csrf())
+	.use("/*", initializeDatabase)
 	.post("/links", postBodyLimit, createLink)
-	.post("/spaces", postBodyLimit, createLink)
 	.post(
 		"/sync",
 		postBodyLimit,

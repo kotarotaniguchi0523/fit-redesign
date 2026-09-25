@@ -5,13 +5,11 @@ import { jsxRenderer } from "hono/jsx-renderer";
 import { describe, expect, it } from "vitest";
 import index from "./routes";
 import notFound from "./routes/_404";
-import dashboardIndex from "./routes/dashboard";
-import exercises from "./routes/exercises";
 import guide from "./routes/guide";
 import slideOnly from "./routes/slide-only";
 
 /**
- * 静的ページルート（home / guide / slide-only / 404 / dashboard index）の
+ * 静的ページルート（home / guide / slide-only / 404）の
  * 古典派 integration テスト（AAA）。
  *
  * 本番では honox の createApp() が _renderer.tsx を全ページにミドルウェアとして適用するが、
@@ -72,14 +70,6 @@ describe("home（/）", () => {
 	});
 });
 
-describe("exercises（/exercises）", () => {
-	it("ホームへ301リダイレクトする", async () => {
-		const res = await mountGet(exercises).request("/");
-		expect(res.status).toBe(301);
-		expect(res.headers.get("Location")).toBe("/");
-	});
-});
-
 describe("guide（/guide）", () => {
 	it("200・タイトル・MDX 本文を SSR で描画する（外部 lobster.js 非依存）", async () => {
 		const res = await mountGet(guide).request("/");
@@ -128,13 +118,5 @@ describe("404（_404.tsx / NotFoundHandler）", () => {
 		const html = await res.text();
 		expect(html).toContain("ページが見つかりません");
 		expect(html).toContain('name="robots"');
-	});
-});
-
-describe("dashboard index（/dashboard）", () => {
-	it("/records へ301リダイレクトする", async () => {
-		const res = await mountGet(dashboardIndex).request("/");
-		expect(res.status).toBe(301);
-		expect(res.headers.get("Location")).toBe("/records");
 	});
 });

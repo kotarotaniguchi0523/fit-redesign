@@ -22,10 +22,8 @@ describe("Header", () => {
 		expect(html).toContain(`href="${href}" aria-current="page">${label}`);
 	});
 
-	it("404や内部プレビューでは問題を現在地にしない", async () => {
-		for (const path of ["/missing", "/figures/logic-gates"]) {
-			const html = await (await renderHeader(path)).text();
-			expect(html).not.toContain('aria-current="page"');
-		}
+	it("404では問題を現在地にしない", async () => {
+		const html = await (await renderHeader("/missing")).text();
+		expect(html).not.toContain('aria-current="page"');
 	});
 });
