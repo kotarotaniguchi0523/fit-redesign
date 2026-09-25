@@ -53,7 +53,5 @@ export async function renderHonoJsxToPng(
 	});
 
 	const bytes = new Uint8Array(image);
-	const body = new ArrayBuffer(bytes.byteLength);
-	new Uint8Array(body).set(bytes);
-	return body;
+	return bytes.slice().buffer;
 }

@@ -1,4 +1,4 @@
-import { deepFreeze } from "../lib/immutable";
+import { deepFreezeInPlace } from "../lib/immutable";
 import { safeParseOrThrow } from "../lib/zod";
 import { type Slide, SlideIdSchema, SlideSchema } from "../types";
 
@@ -73,7 +73,7 @@ const slidesData = [
 ];
 
 const parsedSlides = safeParseOrThrow(SlidesSchema, slidesData, "Invalid slides");
-deepFreeze(parsedSlides);
+deepFreezeInPlace(parsedSlides);
 export const slides = parsedSlides;
 
 const slidesById = new Map(slides.map((slide) => [slide.id, slide] as const));

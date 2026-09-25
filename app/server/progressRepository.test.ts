@@ -73,7 +73,7 @@ describe("progressRepository", () => {
 		expect(result._unsafeUnwrap()).toHaveLength(201);
 	}, 15_000);
 
-	it("同じ問題は最新日時とその単元を採用する", async () => {
+	it("同じ問題は最新の単元と更新時刻、最初の作成時刻を採用する", async () => {
 		const { db } = await testDb();
 		const id = await syncLinkId();
 		await createSyncLink(db, id, 1_700_000_000_000);
@@ -85,7 +85,7 @@ describe("progressRepository", () => {
 			updatedAt: 2_000_000_000_000,
 		})._unsafeUnwrap();
 		const result = await syncProgress(db, id, [newer, older]);
-		expect(result._unsafeUnwrap()).toEqual([newer]);
+		expect(result._unsafeUnwrap()).toEqual([{ ...newer, createdAt: older.createdAt }]);
 	});
 
 	it("存在しない同期領域は判別可能なエラーを返す", async () => {

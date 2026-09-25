@@ -1,4 +1,4 @@
-import { type DeepReadonly, deepFreeze } from "../../lib/immutable";
+import { type DeepReadonly, deepFreezeInPlace } from "../../lib/immutable";
 import { safeParseOrThrow } from "../../lib/zod";
 import type { ExamByYear } from "../../types";
 import metaJson from "../exams-json/exams-meta.json";
@@ -47,6 +47,6 @@ export async function loadExams(): Promise<DeepReadonly<ExamByYear[]>> {
 	const parsedMeta = safeParseOrThrow(ExamsMetaSchema, metaJson, "Invalid exams meta");
 	const entries = parseExamEntries();
 	const exams = assembleExamsByYear(parsedMeta.exams, entries);
-	deepFreeze(exams);
+	deepFreezeInPlace(exams);
 	return exams;
 }

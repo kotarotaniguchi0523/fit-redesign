@@ -1,4 +1,4 @@
-import { deepFreeze } from "../lib/immutable";
+import { deepFreezeInPlace } from "../lib/immutable";
 import { safeParseOrThrow } from "../lib/zod";
 import { type Unit, UnitBasedTabsSchema, UnitSchema } from "../types";
 import { getSlide } from "./slides";
@@ -44,7 +44,7 @@ const parsedSlideOnlyUnits = safeParseOrThrow(
 	slideOnlyUnitsData,
 	"Invalid slideOnlyUnits",
 );
-deepFreeze(parsedSlideOnlyUnits);
+deepFreezeInPlace(parsedSlideOnlyUnits);
 export const slideOnlyUnits = parsedSlideOnlyUnits;
 
 // ===== 単元ベースのタブ構造 =====
@@ -206,5 +206,5 @@ const parsedUnitBasedTabs = safeParseOrThrow(
 	unitBasedTabsData,
 	"Invalid unitBasedTabs",
 );
-deepFreeze(parsedUnitBasedTabs);
+deepFreezeInPlace(parsedUnitBasedTabs);
 export const unitBasedTabs = parsedUnitBasedTabs;
