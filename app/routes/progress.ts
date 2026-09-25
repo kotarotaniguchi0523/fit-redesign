@@ -7,8 +7,8 @@ import { getAllExams } from "../data/exams";
 import { unitBasedTabs } from "../data/units";
 import { CompletedChallengesRequestSchema } from "../features/challenge/challengeWire";
 import type { CompletedChallengePayload } from "../features/challenge/types";
-import { hasPlausibleProgressTime, MAX_FUTURE_CLOCK_SKEW_MS } from "../features/progress/progress";
 import { systemClock } from "../lib/dateTime";
+import { hasPlausibleProgressTime, MAX_FUTURE_CLOCK_SKEW_MS } from "../lib/progress";
 import { ChallengeRepositoryError, syncChallenges } from "../server/challengeRepository";
 import {
 	createSyncLink,
@@ -161,42 +161,48 @@ const createLink = async (c: Context<Env>) => {
 
 const progress = new Hono<Env>()
 	.use("/*", csrf())
-	.use("/*", postBodyLimit)
-	.post("/links", createLink)
-	.post("/spaces", createLink)
-	.post("/sync", validateSyncHeader, validate("json", ProgressSyncRequestSchema), async (c) => {
-		const syncLink = await resolveLink(c.req.valid("header")["x-sync-key"]);
-		if (syncLink.isErr()) {
-			return c.json(UNKNOWN_LINK, 404);
-		}
-		const allowed = await allow(c, `sync:${syncLink.value}`);
-		if (allowed.isErr()) {
-			return c.json(INTERNAL_ERROR, 500);
-		}
-		if (!allowed.value) {
-			return c.json(RATE_LIMITED, 429);
-		}
+	.post("/links", postBodyLimit, createLink)
+	.post("/spaces", postBodyLimit, createLink)
+	.post(
+		"/sync",
+		postBodyLimit,
+		validateSyncHeader,
+		validate("json", ProgressSyncRequestSchema),
+		async (c) => {
+			const syncLink = await resolveLink(c.req.valid("header")["x-sync-key"]);
+			if (syncLink.isErr()) {
+				return c.json(UNKNOWN_LINK, 404);
+			}
+			const allowed = await allow(c, `sync:${syncLink.value}`);
+			if (allowed.isErr()) {
+				return c.json(INTERNAL_ERROR, 500);
+			}
+			if (!allowed.value) {
+				return c.json(RATE_LIMITED, 429);
+			}
 
-		const submitted = c.req.valid("json").entries;
-		const nowEpochMilliseconds = systemClock.nowEpochMilliseconds();
-		if (!submitted.every((entry) => hasPlausibleProgressTime(entry, nowEpochMilliseconds))) {
-			return c.json(INVALID_PROGRESS, 400);
-		}
-		const catalogKeys = await getCatalogKeys();
-		if (submitted.some((entry) => !catalogKeys.has(`${entry.questionId}|${entry.unitId}`))) {
-			return c.json(INVALID_PROGRESS, 400);
-		}
-		const result = await syncProgress(c.var.db, syncLink.value, submitted);
-		return result.match(
-			(entries) => c.json({ entries }),
-			(error) =>
-				ProgressRepositoryError.isUnknownLink(error)
-					? c.json(UNKNOWN_LINK, 404)
-					: c.json(INTERNAL_ERROR, 500),
-		);
-	})
+			const submitted = c.req.valid("json").entries;
+			const nowEpochMilliseconds = systemClock.nowEpochMilliseconds();
+			if (!submitted.every((entry) => hasPlausibleProgressTime(entry, nowEpochMilliseconds))) {
+				return c.json(INVALID_PROGRESS, 400);
+			}
+			const catalogKeys = await getCatalogKeys();
+			if (submitted.some((entry) => !catalogKeys.has(`${entry.questionId}|${entry.unitId}`))) {
+				return c.json(INVALID_PROGRESS, 400);
+			}
+			const result = await syncProgress(c.var.db, syncLink.value, submitted);
+			return result.match(
+				(entries) => c.json({ entries }),
+				(error) =>
+					ProgressRepositoryError.isUnknownLink(error)
+						? c.json(UNKNOWN_LINK, 404)
+						: c.json(INTERNAL_ERROR, 500),
+			);
+		},
+	)
 	.post(
 		"/challenges",
+		postBodyLimit,
 		validateSyncHeader,
 		validate("json", CompletedChallengesRequestSchema),
 		async (c) => {

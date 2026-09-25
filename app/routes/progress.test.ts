@@ -8,6 +8,7 @@ import { createSyncLink } from "../server/progressRepository";
 import { SyncKey } from "../server/syncKey";
 import { SyncLinkId } from "../server/syncLinkId";
 import { createTestD1, type TestD1 } from "../types/test/d1";
+import { MAX_POST_BODY_BYTES } from "./_lib";
 import progress from "./progress";
 
 class TestRateLimit implements RateLimit {
@@ -99,6 +100,39 @@ describe("progress routes", () => {
 			env(),
 		);
 		expect(response.status).toBe(403);
+	});
+
+	it("POST body limitは過大な書き込みを413で止める", async () => {
+		const response = await mountedApp().request(
+			"/progress/links",
+			{
+				method: "POST",
+				headers: { "Content-Type": "text/plain", Origin: "http://localhost" },
+				body: "x".repeat(MAX_POST_BODY_BYTES + 1),
+			},
+			env(),
+		);
+
+		expect(response.status).toBe(413);
+	});
+
+	it("POST専用のbody limitはDELETEを妨げない", async () => {
+		await seedSyncLink();
+		const response = await mountedApp().request(
+			"/progress",
+			{
+				method: "DELETE",
+				headers: {
+					"Content-Type": "application/json",
+					"X-Sync-Key": "a".repeat(43),
+					Origin: "http://localhost",
+				},
+				body: "x".repeat(MAX_POST_BODY_BYTES + 1),
+			},
+			env(),
+		);
+
+		expect(response.status).toBe(200);
 	});
 
 	it("同期キーがないリクエストは404にする", async () => {

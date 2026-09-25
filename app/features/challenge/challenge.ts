@@ -70,16 +70,6 @@ export function createInitialChallengeState(input: {
 	};
 }
 
-function copyRecord<T>(
-	record: Readonly<Partial<Record<QuestionId, T>>>,
-): Partial<Record<QuestionId, T>> {
-	return { ...record };
-}
-
-function copySet(values: ReadonlySet<QuestionId>): Set<QuestionId> {
-	return new Set(values);
-}
-
 type ActionOf<Type extends ChallengeAction["type"]> = Extract<ChallengeAction, { type: Type }>;
 
 function revealQuestion(
@@ -92,9 +82,10 @@ function revealQuestion(
 	) {
 		return state;
 	}
-	const revealedQuestionIds = copySet(state.revealedQuestionIds);
-	revealedQuestionIds.add(action.questionId);
-	return { ...state, revealedQuestionIds };
+	return {
+		...state,
+		revealedQuestionIds: new Set([...state.revealedQuestionIds, action.questionId]),
+	};
 }
 
 function judgeQuestion(state: ChallengeState, action: ActionOf<"JUDGE_QUESTION">): ChallengeState {
@@ -109,9 +100,9 @@ function judgeQuestion(state: ChallengeState, action: ActionOf<"JUDGE_QUESTION">
 	}
 	return {
 		...state,
-		judgments: { ...copyRecord(state.judgments), [action.questionId]: action.judgment },
+		judgments: { ...state.judgments, [action.questionId]: action.judgment },
 		answerCreatedAt: {
-			...copyRecord(state.answerCreatedAt),
+			...state.answerCreatedAt,
 			[action.questionId]: action.answerCreatedAt,
 		},
 	};
@@ -128,7 +119,7 @@ function applyElapsed(state: ChallengeState, action: ActionOf<"APPLY_ELAPSED">):
 	return {
 		...state,
 		questionElapsedMs: {
-			...copyRecord(state.questionElapsedMs),
+			...state.questionElapsedMs,
 			[action.questionId]: current + action.deltaMs,
 		},
 	};
@@ -306,30 +297,32 @@ export function aggregateChallengeResults(
 	const answers = completed.flatMap((challenge) => challenge.answers);
 	const { correctCount, incorrectCount } = countJudgments(answers);
 	const judgedCount = correctCount + incorrectCount;
-	const byQuestion = answers.reduce<Record<string, QuestionResultSummary>>((result, answer) => {
-		const current = result[answer.questionId] ?? {
-			questionId: answer.questionId,
-			challengeCount: 0,
-			correctCount: 0,
-			incorrectCount: 0,
-			judgedCount: 0,
-			totalElapsedMs: 0,
-			averageElapsedMs: null,
-		};
-		const next = {
-			...current,
-			challengeCount: current.challengeCount + 1,
-			correctCount: current.correctCount + (answer.judgment === "correct" ? 1 : 0),
-			incorrectCount: current.incorrectCount + (answer.judgment === "incorrect" ? 1 : 0),
-			judgedCount: current.judgedCount + 1,
-			totalElapsedMs: current.totalElapsedMs + answer.elapsedMs,
-		};
-		result[answer.questionId] = {
-			...next,
-			averageElapsedMs: next.totalElapsedMs / next.judgedCount,
-		};
-		return result;
-	}, {});
+	const byQuestion = Object.fromEntries(
+		Array.from(
+			Map.groupBy(answers, (answer) => answer.questionId),
+			([questionId, questionAnswers]) => {
+				const questionJudgments = countJudgments(questionAnswers);
+				const questionJudgedCount =
+					questionJudgments.correctCount + questionJudgments.incorrectCount;
+				const totalElapsedMs = questionAnswers.reduce(
+					(total, answer) => total + answer.elapsedMs,
+					0,
+				);
+				return [
+					questionId,
+					{
+						questionId,
+						challengeCount: questionAnswers.length,
+						judgedCount: questionJudgedCount,
+						correctCount: questionJudgments.correctCount,
+						incorrectCount: questionJudgments.incorrectCount,
+						totalElapsedMs,
+						averageElapsedMs: totalElapsedMs / questionJudgedCount,
+					} satisfies QuestionResultSummary,
+				] as const;
+			},
+		),
+	);
 	return {
 		challengeCount: completed.length,
 		judgedCount,
@@ -352,15 +345,18 @@ export function mergeCompletedChallenges(
 	local: readonly CompletedChallengePayload[],
 	remote: readonly CompletedChallengePayload[],
 ): CompletedChallengePayload[] {
-	const merged = new Map<string, CompletedChallengePayload>();
-	for (const challenge of [...local, ...remote]) {
-		const normalized = canonicalChallenge(challenge);
-		const current = merged.get(challenge.challengeId);
-		if (!current || JSON.stringify(current) === JSON.stringify(normalized)) {
-			merged.set(challenge.challengeId, normalized);
-		}
-	}
-	return sortNewestFirst([...merged.values()]);
+	const grouped = Map.groupBy(
+		[...local, ...remote].map(canonicalChallenge),
+		(challenge) => challenge.challengeId,
+	);
+	const merged = Array.from(grouped.values(), ([first, ...duplicates]) =>
+		duplicates.reduce(
+			(current, candidate) =>
+				JSON.stringify(current) === JSON.stringify(candidate) ? candidate : current,
+			first,
+		),
+	);
+	return sortNewestFirst(merged);
 }
 
 export function isCompletedChallengePayload(value: unknown): value is CompletedChallengePayload {

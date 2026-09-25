@@ -1,5 +1,6 @@
 import { desc, eq, sql } from "drizzle-orm";
 import { errAsync, okAsync, ResultAsync } from "neverthrow";
+import { mergeLatestProgressEntries } from "../lib/progress";
 import { ProgressEntry, type ProgressEntry as ProgressEntryType } from "./progressEntry";
 import { type Db, questionProgress, syncLinks } from "./schema";
 import type { SyncLinkId } from "./syncLinkId";
@@ -28,24 +29,6 @@ function repositoryError(
 	return (cause): ProgressRepositoryError => ({ kind: "RepositoryError", operation, cause });
 }
 
-function mergeProgressEntries(entries: readonly ProgressEntryType[]): readonly ProgressEntryType[] {
-	const merged = entries.reduce<Map<string, ProgressEntryType>>((result, entry) => {
-		const current = result.get(entry.questionId);
-		if (!current) {
-			result.set(entry.questionId, entry);
-		} else if (entry.updatedAt > current.updatedAt) {
-			result.set(entry.questionId, {
-				...entry,
-				createdAt: Math.min(entry.createdAt, current.createdAt) as ProgressEntryType["createdAt"],
-			});
-		} else if (entry.updatedAt === current.updatedAt && entry.createdAt < current.createdAt) {
-			result.set(entry.questionId, { ...current, createdAt: entry.createdAt });
-		}
-		return result;
-	}, new Map());
-	return [...merged.values()];
-}
-
 function chunksOf<T>(values: readonly T[], size: number): readonly (readonly T[])[] {
 	return Array.from({ length: Math.ceil(values.length / size) }, (_, index) =>
 		values.slice(index * size, (index + 1) * size),
@@ -71,7 +54,7 @@ function writeProgress(
 	syncLinkId: SyncLinkId,
 	entries: readonly ProgressEntryType[],
 ): ResultAsync<void, ProgressRepositoryError> {
-	return chunksOf(mergeProgressEntries(entries), BATCH_SIZE).reduce<
+	return chunksOf(mergeLatestProgressEntries(entries), BATCH_SIZE).reduce<
 		ResultAsync<void, ProgressRepositoryError>
 	>(
 		(result, chunk) =>

@@ -40,5 +40,5 @@ export function validate<T extends z.$ZodType, Target extends keyof ValidationTa
 }
 
 /** POST ボディの上限（過大ペイロードは 413）。 */
-const POST_BODY_LIMIT = 256 * 1024;
-export const postBodyLimit = bodyLimit({ maxSize: POST_BODY_LIMIT });
+export const MAX_POST_BODY_BYTES = 256 * 1024;
+export const postBodyLimit = bodyLimit({ maxSize: MAX_POST_BODY_BYTES });

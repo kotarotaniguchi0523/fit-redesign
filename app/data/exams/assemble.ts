@@ -9,11 +9,7 @@ export interface ParsedExamEntry {
 }
 
 function indexExamsByYear(entries: readonly ParsedExamEntry[]): Partial<Record<Year, Exam>> {
-	const byYear: Partial<Record<Year, Exam>> = {};
-	for (const entry of entries) {
-		byYear[entry.year] = entry.data;
-	}
-	return byYear;
+	return Object.fromEntries(entries.map((entry) => [entry.year, entry.data]));
 }
 
 /**
@@ -34,5 +30,5 @@ export function assembleExamsByYear(
 			availableYears: meta.availableYears,
 			exams: indexExamsByYear(examsByNumber.get(meta.examNumber) ?? []),
 		}))
-		.sort((a, b) => a.examNumber - b.examNumber);
+		.toSorted((a, b) => a.examNumber - b.examNumber);
 }

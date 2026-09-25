@@ -36,16 +36,23 @@ export const CompletedChallengeSchema = z
 				message: "updatedAt must not precede createdAt",
 			});
 		}
-		const questionIds = new Set<string>();
-		for (const [index, answer] of challenge.answers.entries()) {
-			if (questionIds.has(answer.questionId)) {
+		const indexedAnswers = challenge.answers.map((answer, index) => ({
+			questionId: answer.questionId,
+			index,
+		}));
+		for (const duplicateAnswers of Map.groupBy(
+			indexedAnswers,
+			(answer) => answer.questionId,
+		).values()) {
+			for (const { index } of duplicateAnswers.slice(1)) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["answers", index, "questionId"],
 					message: "duplicate questionId",
 				});
 			}
-			questionIds.add(answer.questionId);
+		}
+		for (const [index, answer] of challenge.answers.entries()) {
 			if (answer.createdAt > answer.updatedAt || answer.updatedAt !== challenge.updatedAt) {
 				ctx.addIssue({
 					code: "custom",

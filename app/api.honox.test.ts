@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { Hono } from "hono";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import apiMiddleware from "./routes/_middleware";
 import health from "./routes/health";
 import markdown from "./routes/markdown";
@@ -37,6 +37,10 @@ afterAll(async () => {
 	await database?.dispose();
 });
 
+afterEach(() => {
+	vi.restoreAllMocks();
+});
+
 describe("API routes（HonoXマウント越し）", () => {
 	it("GET /health は稼働状態を返す", async () => {
 		const response = await mountedApp().request("/health", {}, env());
@@ -71,5 +75,21 @@ describe("API routes（HonoXマウント越し）", () => {
 		const response = await mountedApp().request("/health", {}, env());
 		expect(response.headers.get("X-Request-Id")).toBeTruthy();
 		expect(response.headers.get("Server-Timing")).toBeTruthy();
+	});
+
+	it("共通ログはrequest-id付きJSONで、クエリ文字列を記録しない", async () => {
+		const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+		const response = await mountedApp().request("/health?sync-key=must-not-be-logged", {}, env());
+		const entry = JSON.parse(String(log.mock.calls[0]?.[0])) as Record<string, unknown>;
+
+		expect(log).toHaveBeenCalledOnce();
+		expect(entry).toMatchObject({
+			requestId: response.headers.get("X-Request-Id"),
+			method: "GET",
+			path: "/health",
+			status: 200,
+		});
+		expect(entry.durationMs).toEqual(expect.any(Number));
+		expect(JSON.stringify(entry)).not.toContain("must-not-be-logged");
 	});
 });
