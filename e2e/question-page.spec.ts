@@ -2,6 +2,8 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
 const FOCUS_ROUTE = /^\/unit-base-conversion\/2013\/exam\?exam=1&question=exam1-2013-q1$/;
+const CHATGPT_HREF = /https:\/\/chatgpt\.com\/\?q=/;
+const GEMINI_HREF = /^https:\/\/gemini\.google\.com\/app\?q=/;
 
 async function observeAnswerPanelMotion(page: Page): Promise<void> {
 	await page.evaluate(() => {
@@ -30,6 +32,34 @@ test("問題ページの小テスト・PDF・一問ごとの操作が表示さ�
 	await expect(questionSet.copyButton).toBeVisible();
 	await expect(questionSet.answerToggle).toBeVisible();
 	expect(timerTarget).toMatch(FOCUS_ROUTE);
+});
+
+test("一つのコピー操作からMarkdown・ChatGPT・Geminiを選べる", async ({
+	page,
+	questionSet,
+}, testInfo) => {
+	await questionSet.open();
+	await questionSet.copyButton.click();
+
+	const markdownCopy = questionSet.firstQuestion.getByRole("menuitem", {
+		name: "Markdownをコピー",
+	});
+	const chatGptLink = questionSet.firstQuestion.getByRole("link", { name: "ChatGPTに質問" });
+	const geminiLink = questionSet.firstQuestion.getByRole("link", { name: "Geminiに質問" });
+	await expect(markdownCopy).toBeVisible();
+	await expect(chatGptLink).toHaveAttribute("href", CHATGPT_HREF);
+	await expect(chatGptLink).toHaveAttribute("target", "_blank");
+	await expect(geminiLink).toHaveAttribute("href", GEMINI_HREF);
+	await expect(geminiLink).toHaveAttribute("target", "_blank");
+	await testInfo.attach("copy-menu-desktop", {
+		body: await page.screenshot({ animations: "disabled" }),
+		contentType: "image/png",
+	});
+	await page.setViewportSize({ width: 390, height: 844 });
+	await testInfo.attach("copy-menu-mobile", {
+		body: await page.screenshot({ animations: "disabled" }),
+		contentType: "image/png",
+	});
 });
 
 test("解答の開閉がボタンの見た目と内容に反映される", async ({ page, questionSet }, testInfo) => {

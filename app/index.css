@@ -1924,6 +1924,114 @@ details summary::marker {
 	background: #8091a1;
 }
 
+/* One copy control opens Markdown and AI destinations. */
+.study-shell--question-set .q-card__actions {
+	grid-template-columns: minmax(0, 1fr) 2.75rem 2.75rem 2.75rem minmax(0, 1fr);
+}
+.study-shell--question-set .q-card__actions .q-tool.copy-control {
+	position: relative;
+	display: inline-grid;
+	width: 2.75rem;
+	height: 2.75rem;
+	min-width: 2.75rem;
+	grid-column: 2;
+	grid-row: 1;
+	place-items: center;
+	overflow: visible;
+}
+.study-shell--question-set .q-card__actions .copy-control__copy {
+	width: 100%;
+	height: 100%;
+}
+.study-shell--question-set .q-card__actions .copy-control__copy:hover {
+	background: #f0f4f7;
+}
+.copy-control__copy[aria-expanded="true"] {
+	background: #eaf1f7;
+	color: var(--color-primary);
+}
+.copy-control__copy:focus-visible {
+	outline: 2px solid var(--color-primary);
+	outline-offset: 2px;
+}
+.copy-ai-menu {
+	position: absolute;
+	top: calc(100% + 0.4rem);
+	left: 0;
+	z-index: 30;
+	display: grid;
+	width: max-content;
+	max-width: calc(100vw - 1rem);
+	min-width: 12rem;
+	gap: 0.2rem;
+	padding: 0.35rem;
+	border: 1px solid #dbe3ec;
+	border-radius: 0.7rem;
+	background: white;
+	box-shadow: 0 8px 24px rgb(27 50 74 / 18%);
+}
+.copy-ai-menu__item {
+	display: flex;
+	width: 100%;
+	min-height: 2.75rem;
+	align-items: center;
+	gap: 0.65rem;
+	padding: 0.5rem 0.7rem;
+	border-radius: 0.45rem;
+	color: #26394d;
+	font-size: 0.875rem;
+	font-weight: 650;
+	text-decoration: none;
+	border: 0;
+	background: transparent;
+	cursor: pointer;
+	text-align: left;
+}
+.copy-ai-menu__item:hover,
+.copy-ai-menu__item:focus-visible {
+	background: #f0f4f7;
+	color: var(--color-primary);
+	outline: none;
+}
+.copy-ai-menu__item svg {
+	width: 1rem;
+	height: 1rem;
+	flex: 0 0 1rem;
+}
+.exam-player__actions .copy-control.exam-action {
+	position: relative;
+	width: 5.25rem;
+	height: 5.25rem;
+	flex: 0 0 5.25rem;
+}
+.exam-player__actions .copy-control__copy {
+	width: 100%;
+	height: 100%;
+	border: 1px solid #d6dee6;
+	border-radius: 50%;
+	background: white;
+	color: var(--color-primary);
+	box-shadow: 0 3px 12px rgb(27 50 74 / 8%);
+}
+.exam-player__actions .copy-control__copy svg {
+	width: 1.75rem;
+	height: 1.75rem;
+}
+@media (max-width: 639px) {
+	.study-shell--question-set .q-card__actions {
+		grid-template-columns: minmax(0, 1fr) 2.75rem 2.75rem 2.75rem minmax(0, 1fr);
+	}
+	.exam-player__actions .copy-control.exam-action {
+		width: 4rem;
+		height: 4rem;
+		flex-basis: 4rem;
+	}
+	.exam-player__actions .copy-control__copy svg {
+		width: 1.45rem;
+		height: 1.45rem;
+	}
+}
+
 .study-shell--exam .exam-player-page {
 	max-width: 52rem;
 	position: relative;

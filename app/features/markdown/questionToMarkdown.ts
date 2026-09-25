@@ -127,7 +127,10 @@ function buildFigureSection(question: DeepReadonly<Question>): string[] {
 /**
  * Question オブジェクトを Markdown 文字列に変換する
  */
-export function questionToMarkdown(question: DeepReadonly<Question>): string {
+export function questionToMarkdown(
+	question: DeepReadonly<Question>,
+	{ includeSolution = true }: Readonly<{ includeSolution?: boolean }> = {},
+): string {
 	const base = [`## 問題 ${question.number}`, "", question.text, ""];
 
 	const figure = buildFigureSection(question);
@@ -143,9 +146,10 @@ export function questionToMarkdown(question: DeepReadonly<Question>): string {
 					.concat("")
 			: [];
 
-	const answer = ["### 解答", question.answer, ""];
+	const answer = includeSolution ? ["### 解答", question.answer, ""] : [];
 
-	const explanation = question.explanation ? ["### 解説", question.explanation] : [];
+	const explanation =
+		includeSolution && question.explanation ? ["### 解説", question.explanation] : [];
 
 	return base.concat(figure, options, answer, explanation).join("\n").trim();
 }

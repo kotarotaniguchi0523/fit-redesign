@@ -20,6 +20,7 @@ interface Props {
 
 interface QuestionView {
 	markdownText: string;
+	aiMarkdownText: string;
 	hasOptions: boolean;
 	figure: JSX.Element | null;
 	answerHtml: string;
@@ -38,6 +39,7 @@ function buildQuestionView(question: Question): QuestionView {
 
 	return {
 		markdownText: questionToMarkdown(question),
+		aiMarkdownText: questionToMarkdown(question, { includeSolution: false }),
 		hasOptions,
 		figure: question.figureData ? <Figure data={question.figureData} /> : null,
 		answerHtml,
@@ -100,6 +102,7 @@ export function QuestionCard({ question, unitId, year, examNumber }: Props): JSX
 					<legend class="sr-only">問題の操作</legend>
 					<CopyButton
 						text={view.markdownText}
+						askText={view.aiMarkdownText}
 						className="q-tool"
 						ariaLabel="問題文をコピー"
 						title="問題文をコピー"
