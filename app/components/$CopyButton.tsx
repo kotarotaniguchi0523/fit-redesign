@@ -80,12 +80,12 @@ export default function CopyButton({
 
 	const askGemini = async (): Promise<void> => {
 		if (!geminiUrlIsShortEnough) {
-			try {
-				await navigator.clipboard.writeText(askPrompt);
-				setShareMessage("質問文が長いためコピーしました。Geminiで貼り付けてください。");
-			} catch {
-				setShareMessage("質問文をコピーできませんでした。通常のコピーをお試しください。");
-			}
+			const copyState = await copy(askPrompt);
+			setShareMessage(
+				copyState === "success"
+					? "質問文が長いためコピーしました。Geminiで貼り付けてください。"
+					: "質問文をコピーできませんでした。通常のコピーをお試しください。",
+			);
 		}
 		setMenuOpen(false);
 	};

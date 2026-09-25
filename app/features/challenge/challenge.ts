@@ -1,3 +1,5 @@
+import { sortByQuestionId } from "../../lib/questionOrder";
+import { sortNewestFirst } from "../../lib/sort";
 import type { ExamId, Judgment, QuestionId } from "../../types";
 import type {
 	ChallengeId,
@@ -342,7 +344,7 @@ export function aggregateChallengeResults(
 function canonicalChallenge(challenge: CompletedChallengePayload): CompletedChallengePayload {
 	return {
 		...challenge,
-		answers: [...challenge.answers].sort((a, b) => a.questionId.localeCompare(b.questionId)),
+		answers: sortByQuestionId(challenge.answers),
 	};
 }
 
@@ -358,7 +360,7 @@ export function mergeCompletedChallenges(
 			merged.set(challenge.challengeId, normalized);
 		}
 	}
-	return [...merged.values()].sort((a, b) => b.updatedAt - a.updatedAt);
+	return sortNewestFirst([...merged.values()]);
 }
 
 export function isCompletedChallengePayload(value: unknown): value is CompletedChallengePayload {

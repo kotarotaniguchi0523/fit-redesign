@@ -3,6 +3,21 @@ import type { TableFigureData } from "./table-renderer";
 import { buildTableConfig } from "./table-renderer";
 
 describe("buildTableConfig", () => {
+	describe("truthTable", () => {
+		it("uses the shared table configuration without changing its content", () => {
+			const data: TableFigureData = {
+				type: "truthTable",
+				columns: [{ key: "A", label: "A" }],
+				rows: [{ A: 1 }],
+			};
+			const config = buildTableConfig(data);
+
+			expect(config.ariaLabel).toBe("真理値表");
+			expect(config.columns).toEqual(data.columns);
+			expect(config.rows).toEqual(data.rows);
+		});
+	});
+
 	describe("dataTable", () => {
 		it("passes through columns and rows as-is", () => {
 			const data: TableFigureData = {

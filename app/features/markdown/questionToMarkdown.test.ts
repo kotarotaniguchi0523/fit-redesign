@@ -34,6 +34,22 @@ describe("questionToMarkdown", () => {
 		});
 	});
 
+	it("別のMarkdown見出し階層を指定できる", () => {
+		const question: Question = {
+			id: "exam1-2013-q1",
+			number: 1,
+			text: "入れ子の問題",
+			answer: "ア",
+			options: [{ label: "ア", value: "候補" }],
+		};
+
+		const result = questionToMarkdown(question, { headingLevel: 3 });
+
+		expect(result).toContain("### 問題 1");
+		expect(result).toContain("#### 選択肢");
+		expect(result).toContain("#### 解答");
+	});
+
 	it("AI向けMarkdownでは解答と解説を除いて問題文を渡せる", () => {
 		const question: Question = {
 			id: "exam1-2013-q1",

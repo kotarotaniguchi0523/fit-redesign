@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useReducer, useRef, useState, useViewTransition } from "hono/jsx/dom";
 import type { JSX } from "hono/jsx/jsx-runtime";
 import CopyButton from "../../components/$CopyButton";
-import { Figure } from "../../components/figures/Figure";
 import {
 	AnswerSheetIcon,
 	CheckIcon,
@@ -12,6 +11,7 @@ import {
 	PauseIcon,
 	TimerIcon,
 } from "../../components/icons";
+import { QuestionContent } from "../../components/QuestionContent";
 import { systemClock } from "../../lib/dateTime";
 import type { DeepReadonly } from "../../lib/immutable";
 import { overlineToHtml } from "../../lib/overline";
@@ -358,40 +358,6 @@ function resolveInitialResultView(props: Props): InitialResultView {
 	const restored = restoreChallengeState(snapshot);
 	const payload = toCompletedChallengePayload(restored, snapshot.updatedAt);
 	return payload ? { kind: "ready", payload } : { kind: "missing" };
-}
-
-function QuestionBody({ question }: Readonly<{ question: PlayerQuestion }>): JSX.Element {
-	return (
-		<>
-			<h3 class="sr-only">問{question.number}</h3>
-			<div
-				class="exam-question__text"
-				/* biome-ignore lint/security/noDangerouslySetInnerHtml: overlineToHtmlで生成した限定HTML */
-				dangerouslySetInnerHTML={{ __html: overlineToHtml(question.text) }}
-			/>
-			{question.figureData ? (
-				<div class="exam-question__figure">
-					<Figure data={question.figureData as NonNullable<Question["figureData"]>} />
-				</div>
-			) : null}
-			{!question.figureData && question.figureDescription ? (
-				<p class="exam-question__figure-fallback">
-					<strong>図:</strong> {question.figureDescription}
-				</p>
-			) : null}
-			{question.options?.length ? (
-				<ol class="exam-question__options" aria-label="選択肢">
-					{question.options.map((option) => (
-						<li>
-							<span class="exam-question__option-label">{option.label}</span>
-							{/* biome-ignore lint/security/noDangerouslySetInnerHtml: overlineToHtmlで生成した限定HTML */}
-							<span dangerouslySetInnerHTML={{ __html: overlineToHtml(option.value) }} />
-						</li>
-					))}
-				</ol>
-			) : null}
-		</>
-	);
 }
 
 function AnswerPanel({
@@ -1261,7 +1227,7 @@ export default function ExamPlayer(props: Props): JSX.Element {
 					data-mode-transition-target={modeEntryTarget ? "" : undefined}
 					key={currentQuestionId}
 				>
-					<QuestionBody question={currentQuestion} />
+					<QuestionContent question={currentQuestion} variant="exam-player" />
 					<ChallengeTimerDisplay
 						mode={props.mode}
 						totalElapsedMs={totalElapsedMs}

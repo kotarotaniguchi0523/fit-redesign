@@ -1,6 +1,7 @@
 import { desc, eq, inArray } from "drizzle-orm";
 import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import type { CompletedChallengePayload } from "../features/challenge/types";
+import { sortByQuestionId } from "../lib/questionOrder";
 import {
 	ChallengeIdSchema,
 	EpochMillisecondsSchema,
@@ -39,7 +40,7 @@ function canonicalPayload(payload: CompletedChallengePayload): string {
 		examId: payload.examId,
 		createdAt: payload.createdAt,
 		updatedAt: payload.updatedAt,
-		answers: [...payload.answers].sort((a, b) => a.questionId.localeCompare(b.questionId)),
+		answers: sortByQuestionId(payload.answers),
 	});
 }
 

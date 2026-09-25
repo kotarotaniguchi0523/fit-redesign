@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "hono/jsx";
+import { writeClipboardText } from "../../lib/clipboard";
 import { type SyncKey, SyncKeySchema } from "../../types/browser";
 import { createSyncLink, deleteRemoteProgress } from "./progressApi";
 import { readSyncKey, removeSyncKey, subscribeToSyncKey } from "./progressStorage";
@@ -106,19 +107,23 @@ export function useSyncSettings(origin: string): SyncSettings {
 					"同期リンクを作成できませんでした",
 				);
 				return;
-			case "copy":
-				navigator.clipboard.writeText(syncKey ? `${origin}/records#sync=${syncKey}` : "").then(
-					() =>
-						update(() => setFeedback({ kind: "success", message: "同期リンクをコピーしました" })),
-					() =>
-						update(() =>
-							setFeedback({
-								kind: "error",
-								message: "コピーできませんでした。下のリンクを選択してコピーしてください",
-							}),
+			case "copy": {
+				const showCopyFeedback = (copied: boolean): void =>
+					update(() =>
+						setFeedback(
+							copied
+								? { kind: "success", message: "同期リンクをコピーしました" }
+								: {
+										kind: "error",
+										message: "コピーできませんでした。下のリンクを選択してコピーしてください",
+									},
 						),
-				);
+					);
+				writeClipboardText(syncKey ? `${origin}/records#sync=${syncKey}` : "")
+					.then(showCopyFeedback)
+					.catch(() => showCopyFeedback(false));
 				return;
+			}
 			case "disconnect":
 				disconnect();
 				return;

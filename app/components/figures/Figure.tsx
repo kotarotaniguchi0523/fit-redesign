@@ -6,7 +6,6 @@ import { LogicCircuit } from "./LogicCircuit";
 import { ParityCheck } from "./ParityCheck";
 import { StateDiagram } from "./StateDiagram";
 import { TableRenderer } from "./TableRenderer";
-import { TruthTable } from "./TruthTable";
 
 interface FigureProps {
 	data: FigureData;
@@ -26,8 +25,6 @@ export function Figure({ data, mode = "responsive" }: FigureProps): JSX.Element 
 			return <StateDiagram nodes={data.nodes} transitions={data.transitions} />;
 		case "binaryTree":
 			return <BinaryTree root={data.root} width={data.width} height={data.height} />;
-		case "truthTable":
-			return <TruthTable columns={data.columns} rows={data.rows} />;
 		case "parityCheck":
 			return <ParityCheck data={data.data} />;
 		case "logicCircuit":
@@ -37,6 +34,7 @@ export function Figure({ data, mode = "responsive" }: FigureProps): JSX.Element 
 				<Flowchart nodes={data.nodes} edges={data.edges} width={data.width} height={data.height} />
 			);
 		case "dataTable":
+		case "truthTable":
 		case "huffmanTable":
 		case "linkedListTable":
 		case "normalDistributionTable":

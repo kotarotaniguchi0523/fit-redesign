@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import { SITE_URL } from "./data/site";
 import llmsTxt from "./routes/llms.txt";
+import llmsFullTxt from "./routes/llms-full.txt";
 import robotsTxt from "./routes/robots.txt";
 
 /**
@@ -106,5 +107,17 @@ describe("llms.txt ルート", () => {
 		const body = await res.text();
 		expect(body).toContain("HonoX");
 		expect(body).toContain("Cloudflare Workers");
+	});
+});
+
+describe("llms-full.txt ルート", () => {
+	it("共通の問題 Markdown 形式で図表データを含む", async () => {
+		const res = await mountGet(llmsFullTxt).request("/");
+		expect(res.status).toBe(200);
+		const body = await res.text();
+		expect(body).toContain("### 問題 2");
+		expect(body).toContain("#### 図");
+		expect(body).toContain("**論理回路**");
+		expect(body).toContain("ゲート: AND1(AND)");
 	});
 });

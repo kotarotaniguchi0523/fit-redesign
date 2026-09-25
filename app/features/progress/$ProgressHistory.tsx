@@ -1,7 +1,9 @@
 import { useSyncExternalStore } from "hono/jsx";
 import type { JSX } from "hono/jsx/jsx-runtime";
+import { formatLocalDateTime } from "../../lib/dateTime";
+import { sortNewestFirst } from "../../lib/sort";
 import { latestProgress } from "./progress";
-import { formatProgressDateTime, progressQuestionLink } from "./progressPresentation";
+import { progressQuestionLink } from "./progressPresentation";
 import {
 	parseProgressSnapshot,
 	readProgressSnapshot,
@@ -12,9 +14,7 @@ type ProgressHistoryProps = Readonly<{ unitNames: Readonly<Record<string, string
 
 export default function ProgressHistory({ unitNames }: ProgressHistoryProps): JSX.Element {
 	const snapshot = useSyncExternalStore(subscribeToProgress, readProgressSnapshot, () => null);
-	const entries = Object.values(parseProgressSnapshot(snapshot)).sort(
-		(a, b) => b.updatedAt - a.updatedAt,
-	);
+	const entries = sortNewestFirst(Object.values(parseProgressSnapshot(snapshot)));
 	const latest = latestProgress(entries);
 	const latestLink = latest ? progressQuestionLink(latest, unitNames) : null;
 
@@ -55,7 +55,7 @@ export default function ProgressHistory({ unitNames }: ProgressHistoryProps): JS
 										{detail.label}
 									</a>
 									<time class="mt-1 block text-xs text-gray-500">
-										{formatProgressDateTime(entry.updatedAt)}
+										{formatLocalDateTime(entry.updatedAt)}
 									</time>
 								</li>
 							);

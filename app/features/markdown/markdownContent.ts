@@ -2,6 +2,7 @@ import { getExamByNumber } from "../../data/exams";
 import { unitBasedTabs } from "../../data/units";
 import type { DeepReadonly } from "../../lib/immutable";
 import { type ExamNumber, isYear, type Question, type Year } from "../../types";
+import { questionToMarkdown } from "./questionToMarkdown";
 
 /**
  * AI エージェント向け Markdown コンテンツ生成（純粋ロジック）。
@@ -84,27 +85,7 @@ function generateSiteOverview(): string {
 }
 
 function questionMarkdownLines(question: DeepReadonly<Question>): string[] {
-	const options = question.options ?? [];
-	const optionLines =
-		options.length > 0
-			? [...options.map((option) => `- **${option.label}**: ${option.value}`), ""]
-			: [];
-	const figureLines = question.figureDescription ? [`*図: ${question.figureDescription}*`, ""] : [];
-	const explanationLines = question.explanation ? [`**解説:** ${question.explanation}`, ""] : [];
-
-	return [
-		`### 問題 ${question.number}`,
-		"",
-		question.text,
-		"",
-		...optionLines,
-		...figureLines,
-		`**解答:** ${question.answer}`,
-		"",
-		...explanationLines,
-		"---",
-		"",
-	];
+	return [...questionToMarkdown(question, { headingLevel: 3 }).split("\n"), "---", ""];
 }
 
 async function examMarkdownLines(examNum: ExamNumber, year: Year): Promise<string[]> {

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "hono/jsx";
 import { FEEDBACK_DURATION } from "../constants";
+import { writeClipboardText } from "../lib/clipboard";
 
 export type CopyState = "idle" | "success" | "error";
 
 export function useCopyFeedback(text: string): Readonly<{
 	state: CopyState;
-	copy: () => Promise<void>;
+	copy: (value?: string) => Promise<CopyState>;
 }> {
 	const [state, setState] = useState<CopyState>("idle");
 	const resetTimer = useRef<number | null>(null);
@@ -19,13 +20,9 @@ export function useCopyFeedback(text: string): Readonly<{
 	);
 	return {
 		state,
-		copy: async (): Promise<void> => {
-			try {
-				await navigator.clipboard.writeText(text);
-				setState("success");
-			} catch {
-				setState("error");
-			}
+		copy: async (value = text): Promise<CopyState> => {
+			const nextState: CopyState = (await writeClipboardText(value)) ? "success" : "error";
+			setState(nextState);
 			if (resetTimer.current !== null) {
 				window.clearTimeout(resetTimer.current);
 			}
@@ -33,6 +30,7 @@ export function useCopyFeedback(text: string): Readonly<{
 				resetTimer.current = null;
 				setState("idle");
 			}, FEEDBACK_DURATION);
+			return nextState;
 		},
 	};
 }

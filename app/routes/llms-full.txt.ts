@@ -1,29 +1,12 @@
 import { createRoute } from "honox/factory";
 import { getExamByNumber } from "../data/exams";
 import { unitBasedTabs } from "../data/units";
+import { questionToMarkdown } from "../features/markdown/questionToMarkdown";
 import type { DeepReadonly } from "../lib/immutable";
 import type { ExamNumber, Question, Year } from "../types";
 
 function questionLines(question: DeepReadonly<Question>): string[] {
-	const options = question.options ?? [];
-	const optionLines =
-		options.length > 0
-			? [...options.map((option) => `- **${option.label}**: ${option.value}`), ""]
-			: [];
-	const explanationLines = question.explanation ? ["", `**解説:** ${question.explanation}`] : [];
-
-	return [
-		`### 問題 ${question.number}`,
-		"",
-		question.text,
-		"",
-		...optionLines,
-		`**解答:** ${question.answer}`,
-		...explanationLines,
-		"",
-		"---",
-		"",
-	];
+	return [...questionToMarkdown(question, { headingLevel: 3 }).split("\n"), "---", ""];
 }
 
 async function examLines(unitName: string, year: Year, examNum: ExamNumber): Promise<string[]> {

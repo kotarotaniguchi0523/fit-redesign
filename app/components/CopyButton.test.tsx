@@ -155,5 +155,40 @@ describe("CopyButton", () => {
 		geminiLink?.click();
 		await vi.waitFor(() => expect(writeText).toHaveBeenCalledOnce());
 		expect(writeText).toHaveBeenCalledWith(expect.stringContaining(longQuestion));
+		await vi.waitFor(() =>
+			expect(container.textContent).toContain("質問文が長いためコピーしました"),
+		);
+	});
+
+	it("Geminiの長文フォールバックでコピーに失敗したら案内を出す", async () => {
+		const longQuestion = "問題文".repeat(400);
+		Object.defineProperty(navigator, "clipboard", {
+			configurable: true,
+			value: { writeText: vi.fn().mockRejectedValue(new Error("denied")) },
+		});
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		render(
+			<CopyButton
+				text={longQuestion}
+				askText={longQuestion}
+				className="copy"
+				ariaLabel="コピー"
+				title="コピー"
+			/>,
+			container,
+		);
+
+		container.querySelector<HTMLButtonElement>('[aria-haspopup="menu"]')?.click();
+		await vi.waitFor(() => expect(container.querySelector("div.copy-ai-menu")).not.toBeNull());
+		const geminiLink = container.querySelector<HTMLAnchorElement>(
+			'a[href="https://gemini.google.com/app"]',
+		);
+		geminiLink?.addEventListener("click", (event) => event.preventDefault());
+		geminiLink?.click();
+
+		await vi.waitFor(() =>
+			expect(container.textContent).toContain("質問文をコピーできませんでした"),
+		);
 	});
 });
