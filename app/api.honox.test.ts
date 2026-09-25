@@ -1,9 +1,10 @@
 // @vitest-environment node
 import { Hono } from "hono";
+import { trimTrailingSlash } from "hono/trailing-slash";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import apiMiddleware from "./routes/_middleware";
 import health from "./routes/health";
 import markdown from "./routes/markdown";
+import { requestLoggingMiddleware } from "./server/requestLogging";
 import { createTestD1, type TestD1 } from "./types/test/d1";
 
 class AllowAllRateLimit implements RateLimit {
@@ -23,7 +24,8 @@ function env(): Cloudflare.Env {
 
 function mountedApp(): Hono {
 	const app = new Hono();
-	app.use("*", ...apiMiddleware);
+	app.use("*", ...requestLoggingMiddleware);
+	app.use(trimTrailingSlash());
 	app.get("/health", ...health);
 	app.route("/markdown", markdown);
 	return app;
@@ -71,14 +73,14 @@ describe("API routes（HonoXマウント越し）", () => {
 		expect(second.status).toBe(304);
 	});
 
-	it("共通middlewareが観測ヘッダーを付与する", async () => {
+	it("request-idを付与し、Server-Timingは付与しない", async () => {
 		const response = await mountedApp().request("/health", {}, env());
 		expect(response.headers.get("X-Request-Id")).toBeTruthy();
-		expect(response.headers.get("Server-Timing")).toBeTruthy();
+		expect(response.headers.get("Server-Timing")).toBeNull();
 	});
 
-	it("共通ログはrequest-id付きJSONで、クエリ文字列を記録しない", async () => {
-		const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+	it("構造化ログは最終statusとrequest-idを記録し、クエリを含めない", async () => {
+		const log = vi.spyOn(console, "info").mockImplementation(() => undefined);
 		const response = await mountedApp().request("/health?sync-key=must-not-be-logged", {}, env());
 		const entry = JSON.parse(String(log.mock.calls[0]?.[0])) as Record<string, unknown>;
 
@@ -91,5 +93,14 @@ describe("API routes（HonoXマウント越し）", () => {
 		});
 		expect(entry.durationMs).toEqual(expect.any(Number));
 		expect(JSON.stringify(entry)).not.toContain("must-not-be-logged");
+	});
+
+	it("末尾スラッシュの301を最終statusとして記録する", async () => {
+		const log = vi.spyOn(console, "info").mockImplementation(() => undefined);
+		const response = await mountedApp().request("/health/", {}, env());
+		const entry = JSON.parse(String(log.mock.calls[0]?.[0])) as Record<string, unknown>;
+
+		expect(response.status).toBe(301);
+		expect(entry.status).toBe(301);
 	});
 });

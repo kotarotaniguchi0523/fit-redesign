@@ -11,7 +11,7 @@ import type * as z from "zod/v4/core";
  * 主形態は機能ごとの chained Hono sub-app（progress.ts / markdown.ts）で、検証は `validate`
  * を使い hc 用に型を export する。health 等の単発エンドポイントは `apiRoute`（Bindingsを型付けした
  * createRoute。honox の createRoute は Bindings 空のため必要）で `export default apiRoute(...)`(GET) でよい。
- * cross-cutting middleware は app/routes/_middleware.ts（logger/request-id/timing、全ルート適用）。
+ * cross-cutting middleware は app/server.ts（request-id / structured logger / security headers）。
  * 機能固有スキーマは features/<x>/、複数機能横断スキーマは types/ に置く（ここには集約しない）。
  */
 export type Env = { Bindings: Cloudflare.Env };

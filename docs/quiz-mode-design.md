@@ -506,7 +506,7 @@ JUDGE_QUESTION の不変条件:
 | POST | /progress/challenges | 完了済み試行を統合 |
 | DELETE | /progress/ | 答え確認履歴と試行結果を削除 |
 
-既存の `/progress/spaces` は移行期間だけ `/progress/links` の別名として残せる。内部のテーブル名・型名は `sync_links` / `SyncLinkId` に統一する。APIの `syncLinkId` はD1の `sync_links.id` に、APIの `challengeId` はD1の `challenges.id` に対応付ける。D1の主キー名をAPIの用途名に合わせて変更しない。
+同期リンク作成APIは `/progress/links` に統一する。内部のテーブル名・型名は `sync_links` / `SyncLinkId` に統一する。APIの `syncLinkId` はD1の `sync_links.id` に、APIの `challengeId` はD1の `challenges.id` に対応付ける。D1の主キー名をAPIの用途名に合わせて変更しない。
 
 POST /progress/challenges は空の challenges を受け取った場合でも、同期リンクにある完了済み試行を返せるようにする。これにより新しい端末が先にデータを取得できる。
 
