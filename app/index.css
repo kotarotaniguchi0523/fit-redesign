@@ -278,14 +278,14 @@ details summary::marker {
 	cursor: pointer;
 }
 
-.study-navigator > summary > span:first-child {
+.study-navigator > :where(summary) > span:first-child {
 	display: flex;
 	min-width: 0;
 	align-items: baseline;
 	gap: 0.65rem;
 }
 
-.study-navigator summary strong {
+.study-navigator :where(summary) strong {
 	color: var(--color-primary);
 }
 
@@ -1311,7 +1311,7 @@ details summary::marker {
 	padding: 0.65rem 1rem;
 }
 
-.records-sync[open] > div {
+.records-sync:where([open]) > div {
 	padding: 0.85rem 1rem 1rem;
 }
 
@@ -1737,7 +1737,7 @@ details summary::marker {
 }
 
 /* Question-first study layout: keep the problem primary and group its three tools. */
-.study-shell--question-set .question-set-heading > div > span {
+.study-shell--question-set :where(.question-set-heading > div) > span {
 	color: #657487;
 }
 .study-shell--question-set .exam-section__start {
@@ -1752,7 +1752,7 @@ details summary::marker {
 	background: var(--color-primary);
 	box-shadow: 0 3px 10px rgb(30 58 95 / 16%);
 }
-.study-shell--question-set .exam-section__start svg {
+.study-shell--question-set :where(.exam-section__start) svg {
 	width: 1.125rem;
 	height: 1.125rem;
 }
@@ -1870,7 +1870,7 @@ details summary::marker {
 	color: var(--color-primary);
 	box-shadow: inset 0 0 0 1px var(--color-primary);
 }
-.study-shell--question-set .q-card__actions svg {
+.study-shell--question-set :where(.q-card__actions) svg {
 	width: 1.125rem;
 	height: 1.125rem;
 }
@@ -1900,12 +1900,12 @@ details summary::marker {
 .study-shell--question-set .q-card__actions .question-timer-link:hover::before {
 	background: #f0f4f7;
 }
-.study-shell--question-set .q-card__actions .question-timer-link svg {
+.study-shell--question-set :where(.q-card__actions .question-timer-link) svg {
 	position: relative;
 	width: 0.75rem;
 	height: 0.75rem;
 }
-.study-shell--question-set .q-card__actions .q-tool > span {
+.study-shell--question-set :where(.q-card__actions .q-tool) > span {
 	@apply sr-only;
 }
 .study-shell--question-set .q-card__actions .q-answer-panel {
@@ -1936,11 +1936,11 @@ details summary::marker {
 	place-items: center;
 	overflow: visible;
 }
-.study-shell--question-set .q-card__actions .copy-control__copy {
+:where(.study-shell--question-set .q-card__actions) .copy-control__copy {
 	width: 100%;
 	height: 100%;
 }
-.study-shell--question-set .q-card__actions .copy-control__copy:hover {
+:where(.study-shell--question-set .q-card__actions) .copy-control__copy:hover {
 	background: #f0f4f7;
 }
 .study-shell--question-set .q-card:has(.copy-ai-menu) {
@@ -2002,12 +2002,6 @@ details summary::marker {
 	height: 1rem;
 	flex: 0 0 1rem;
 }
-.exam-player__actions .copy-control.exam-action {
-	position: relative;
-	width: 5.25rem;
-	height: 5.25rem;
-	flex: 0 0 5.25rem;
-}
 .exam-player__actions .copy-control__copy {
 	width: 100%;
 	height: 100%;
@@ -2017,22 +2011,9 @@ details summary::marker {
 	color: var(--color-primary);
 	box-shadow: 0 3px 12px rgb(27 50 74 / 8%);
 }
-.exam-player__actions .copy-control__copy svg {
-	width: 1.75rem;
-	height: 1.75rem;
-}
 @media (max-width: 639px) {
 	.study-shell--question-set .q-card__actions {
 		grid-template-columns: minmax(0, 1fr) 2.75rem 2.75rem 2.75rem minmax(0, 1fr);
-	}
-	.exam-player__actions .copy-control.exam-action {
-		width: 4rem;
-		height: 4rem;
-		flex-basis: 4rem;
-	}
-	.exam-player__actions .copy-control__copy svg {
-		width: 1.45rem;
-		height: 1.45rem;
 	}
 }
 
@@ -2076,7 +2057,7 @@ details summary::marker {
 	border-radius: 0.65rem;
 	background: white;
 }
-.exam-player__timers > div > span {
+.exam-player__timers > :where(div) > span {
 	font-size: 0.7rem;
 }
 .exam-player__timers strong {
@@ -2483,7 +2464,7 @@ details summary::marker {
 	flex-basis: 5.25rem;
 	box-shadow: 0 3px 12px rgb(27 50 74 / 8%);
 }
-.exam-player__actions .exam-action svg {
+.exam-player__actions :where(.exam-action) svg {
 	width: 1.75rem;
 	height: 1.75rem;
 }
@@ -2492,7 +2473,7 @@ details summary::marker {
 	height: 3.5rem;
 	flex-basis: 3.5rem;
 }
-.exam-player__actions .exam-action--timer svg {
+.exam-player__actions :where(.exam-action--timer) svg {
 	width: 1.167rem;
 	height: 1.167rem;
 }
@@ -2613,7 +2594,7 @@ details summary::marker {
 	align-items: start;
 	gap: 1.25rem;
 }
-.exam-player-shell:has(> .exam-question-list) > .exam-player__header {
+:where(.exam-player-shell:has(> .exam-question-list)) > .exam-player__header {
 	grid-row: 1;
 	grid-column: 1 / -1;
 	margin-bottom: 0;
@@ -2638,7 +2619,7 @@ details summary::marker {
 	display: none;
 }
 .exam-player__header,
-.exam-player-shell:has(> .exam-question-list) > .exam-player__header {
+:where(.exam-player-shell:has(> .exam-question-list)) > .exam-player__header {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 	align-items: center;

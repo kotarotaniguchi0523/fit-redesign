@@ -1,8 +1,7 @@
-import { hc } from "hono/client";
 import { err, ResultAsync } from "neverthrow";
-import type { ProgressApp } from "../../routes/progress";
 import type { SyncKey } from "../../types";
 import { mergeProgressEntries, type ProgressEntry } from "./progress";
+import { progressClient } from "./progressClient";
 
 function assertNever(value: never): never {
 	throw new Error(`Unexpected sync error: ${String(value)}`);
@@ -12,8 +11,6 @@ export type SyncProgressError =
 	| Readonly<{ kind: "InvalidSyncLink" }>
 	| Readonly<{ kind: "RequestFailed"; cause: unknown }>
 	| Readonly<{ kind: "InvalidResponse"; cause?: unknown }>;
-
-const progressClient = hc<ProgressApp>("/progress");
 
 export function createSyncLink(): ReturnType<typeof progressClient.links.$post> {
 	return progressClient.links.$post();
