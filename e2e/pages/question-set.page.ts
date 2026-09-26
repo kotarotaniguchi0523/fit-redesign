@@ -23,7 +23,7 @@ export class QuestionSetPage {
 		});
 		this.timerLink = this.firstQuestion.getByRole("link", { name: "タイムアタック" });
 		this.answerToggle = this.firstQuestion.getByRole("button", { name: ANSWER_TOGGLE });
-		this.answerPanel = this.firstQuestion.locator(".q-answer-panel");
+		this.answerPanel = this.firstQuestion.getByRole("region", { name: "解答", exact: true });
 		this.pdfLink = this.main.getByRole("link", { name: TEST_PDF }).first();
 		this.startLink = this.main.getByRole("link", { name: "小テストを開始" }).first();
 	}

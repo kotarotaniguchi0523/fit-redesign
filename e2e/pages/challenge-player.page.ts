@@ -53,7 +53,7 @@ export class ChallengePlayerPage {
 		this.questionList = page.getByRole("complementary", { name: "問題一覧" });
 		this.pauseButton = this.player.getByRole("button", { name: "計測を一時停止", exact: true });
 		this.resumeTimerButton = this.player.getByRole("button", { name: "計測を再開", exact: true });
-		this.answerPanel = this.player.locator("#exam-answer");
+		this.answerPanel = this.player.getByRole("region", { name: "解答", exact: true });
 		this.progress = this.player.getByRole("progressbar", { name: "問題の進捗" });
 	}
 

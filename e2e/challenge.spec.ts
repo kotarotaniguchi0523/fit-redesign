@@ -69,6 +69,7 @@ test("小テストの判定・経過時間・進捗を再読み込み後も維�
 
 test("一時停止・再開と前後移動で問題ごとの計測を維持する", async ({ challengePlayer, page }) => {
 	// Arrange
+	await page.clock.install();
 	await challengePlayer.openForFreshAttempt();
 	await expect(challengePlayer.pauseButton).toHaveAttribute("aria-pressed", "true");
 
@@ -76,7 +77,7 @@ test("一時停止・再開と前後移動で問題ごとの計測を維持す�
 	await challengePlayer.pauseButton.click();
 	await expect(challengePlayer.resumeTimerButton).toHaveAttribute("aria-pressed", "false");
 	const stopped = await challengePlayer.questionElapsedTime.textContent();
-	await page.waitForTimeout(1200);
+	await page.clock.runFor(1200);
 
 	// Assert
 	await expect(challengePlayer.questionElapsedTime).toHaveText(stopped ?? "");

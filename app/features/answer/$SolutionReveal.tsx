@@ -54,9 +54,12 @@ export default function SolutionReveal({
 				<section
 					class={`q-solution q-answer-panel${hasEntered ? " q-answer-panel--entered" : ""}`}
 					id={answerId}
+					aria-labelledby={`${answerId}-heading`}
 					aria-live="polite"
 				>
-					<h3 class="q-solution__title">解答</h3>
+					<h3 class="q-solution__title" id={`${answerId}-heading`}>
+						解答
+					</h3>
 					{/* biome-ignore lint/security/noDangerouslySetInnerHtml: overline 変換済み HTML の注入（旧 set:html と同等） */}
 					<p dangerouslySetInnerHTML={{ __html: answerHtml }} />
 					{explanationHtml ? (
