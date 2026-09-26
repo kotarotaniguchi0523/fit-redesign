@@ -7,9 +7,9 @@ lat:
 
 リクエストログはHonoXルート越しに検証する。状態を持つテストはstorage、DOM、D1、spyをテスト単位で準備・後片付けし、Playwright全シナリオは5つすべてのブラウザー・端末プロジェクトで実行する。
 
-## Query redaction and request correlation
+## Route template logging and query redaction
 
-構造化ログにはrequest ID・HTTP method・queryを除いたpath・最終statusを含め、query内の同期キーを含めない。これにより障害調査と秘密値の保護を両立する。
+アプリ構造化ログにはHonoXのroute template・HTTP method・最終statusを含め、request timing・request ID・URLを重複保存しない。query内の同期キーを含めず、Cloudflare invocation logとRay IDを照合元にする。
 
 ## Redirect status
 

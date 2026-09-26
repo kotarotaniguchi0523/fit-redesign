@@ -23,6 +23,8 @@
 		"test": "vitest",
 		"test:run": "vitest run",
 		"test:coverage": "vitest run --coverage",
+		"perf:report": "node scripts/perf-report.mjs",
+		"perf:compare": "node scripts/compare-perf.mjs",
 		"deploy": "wrangler deploy",
 		"e2e": "pnpm build && playwright test"
 	},

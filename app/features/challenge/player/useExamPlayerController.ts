@@ -2,6 +2,7 @@ import { useEffect, useMemo, useReducer, useRef, useState, useViewTransition } f
 import { systemClock } from "../../../lib/dateTime";
 import type { Judgment, QuestionId } from "../../../types";
 import { EpochMillisecondsSchema, QuestionIdSchema } from "../../../types/browser";
+import { measureUserInteraction } from "../../performance/userTiming";
 import { recordProgressEntry } from "../../progress/progressPersistence";
 import { readSyncKey } from "../../progress/progressStorage";
 import type { ChallengeAction } from "../challenge";
@@ -489,7 +490,11 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		setNavigationDirection(index >= currentQuestionIndexInState ? "forward" : "backward");
 		runtimeRef.current.running = false;
 		setTimerRunning(false);
-		startViewTransition(() => dispatch({ type: "MOVE_TO", index }));
+		startViewTransition(() =>
+			measureUserInteraction("fit-redesign:quiz-question-update", () =>
+				dispatch({ type: "MOVE_TO", index }),
+			),
+		);
 		persistState({ ...current, currentIndex: index }, true);
 	};
 	const openQuestionList = (): void => {
