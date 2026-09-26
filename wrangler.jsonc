@@ -5,7 +5,19 @@
 	"compatibility_date": "2025-08-03",
 	"compatibility_flags": ["nodejs_compat"],
 	"assets": { "directory": "./dist", "binding": "ASSETS" },
-	"observability": { "enabled": true },
+	"observability": {
+		"enabled": true,
+		"redact_query_string": true,
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true,
+			"head_sampling_rate": 0.1
+		},
+		"traces": {
+			"enabled": true,
+			"head_sampling_rate": 0.05
+		}
+	},
 	"d1_databases": [
 		{
 			"binding": "DB",

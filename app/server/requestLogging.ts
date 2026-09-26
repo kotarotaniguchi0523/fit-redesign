@@ -3,35 +3,29 @@ import type { Context } from "hono";
 import { requestId } from "hono/request-id";
 
 type RequestLogEntry = Readonly<{
-	timestamp: string;
-	requestId: string | null;
+	event: "app.route.response" | "app.route.error";
+	route: string;
 	method: string;
-	path: string;
 	status: number;
-	durationMs: number;
 	error?: string;
 }>;
 
-function requestLogEntry(c: Context, elapsedMs: number, error?: Error): RequestLogEntry {
+function requestLogEntry(c: Context, error?: Error): RequestLogEntry {
 	return {
-		timestamp: new Date().toISOString(),
-		requestId: c.res.headers.get("X-Request-Id"),
+		event: error ? "app.route.error" : "app.route.response",
+		route: c.req.routePath || "unmatched",
 		method: c.req.method,
-		path: c.req.path,
 		status: c.res.status,
-		durationMs: Math.round(elapsedMs),
 		...(error ? { error: error.name } : {}),
 	};
 }
 
-// Keep the log side effect at the server boundary; paths exclude query strings and secrets.
+// Cloudflare invocation logs already carry request timing and status; this adds only Hono's matched route.
 export const requestLoggingMiddleware = [
 	structuredLogger({
 		createLogger: () => console,
-		onResponse: (logger, c, elapsedMs) =>
-			logger.info(JSON.stringify(requestLogEntry(c, elapsedMs))),
-		onError: (logger, error, c, elapsedMs) =>
-			logger.error(JSON.stringify(requestLogEntry(c, elapsedMs, error))),
+		onResponse: (logger, c) => logger.info(JSON.stringify(requestLogEntry(c))),
+		onError: (logger, error, c) => logger.error(JSON.stringify(requestLogEntry(c, error))),
 	}),
 	requestId(),
 ] as const;

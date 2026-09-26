@@ -5,3 +5,4 @@
 - [[architecture]] — Workerの実行境界とリクエスト処理
 - [[features]] — 問題データ・進捗・小テストの所有権
 - [[testing]] — ログのプライバシーと応答statusのテスト契約
+- [[performance-observability]] — Performance signals and local measurement commands.

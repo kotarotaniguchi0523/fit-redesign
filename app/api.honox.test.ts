@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import health from "./routes/health";
 import markdown from "./routes/markdown";
 import { requestLoggingMiddleware } from "./server/requestLogging";
+import { securityHeadersMiddleware } from "./server/securityHeaders";
 import { createTestD1, type TestD1 } from "./types/test/d1";
 
 class AllowAllRateLimit implements RateLimit {
@@ -29,6 +30,7 @@ function mountedApp(): Hono {
 	const app = new Hono();
 	app.use("*", ...requestLoggingMiddleware);
 	app.use(trimTrailingSlash());
+	app.use("*", securityHeadersMiddleware);
 	app.get("/health", ...health);
 	app.route("/markdown", markdown);
 	return app;
@@ -75,26 +77,33 @@ describe("API routes（HonoXマウント越し）", () => {
 		expect(second.status).toBe(304);
 	});
 
-	it("request-idを付与し、Server-Timingは付与しない", async () => {
+	it("request-idを付与し、Server-Timingの独自計測を追加しない", async () => {
 		const response = await mountedApp().request("/health", {}, env());
 		expect(response.headers.get("X-Request-Id")).toBeTruthy();
 		expect(response.headers.get("Server-Timing")).toBeNull();
+		expect(response.headers.get("Content-Security-Policy")).toContain(
+			"https://static.cloudflareinsights.com",
+		);
+		expect(response.headers.get("Content-Security-Policy")).toContain(
+			"https://cloudflareinsights.com",
+		);
 	});
 
-	// @lat: [[testing#Query redaction and request correlation]]
-	it("構造化ログは最終statusとrequest-idを記録し、クエリを含めない", async () => {
+	// @lat: [[testing#Route template logging and query redaction]]
+	it("構造化ログはHonoXのroute templateとstatusを記録し、クエリを含めない", async () => {
 		const log = vi.spyOn(console, "info").mockImplementation(() => undefined);
-		const response = await mountedApp().request("/health?sync-key=must-not-be-logged", {}, env());
+		await mountedApp().request("/health?sync-key=must-not-be-logged", {}, env());
 		const entry = JSON.parse(String(log.mock.calls[0]?.[0])) as Record<string, unknown>;
 
 		expect(log).toHaveBeenCalledOnce();
 		expect(entry).toMatchObject({
-			requestId: response.headers.get("X-Request-Id"),
+			event: "app.route.response",
+			route: "/health",
 			method: "GET",
-			path: "/health",
 			status: 200,
 		});
-		expect(entry.durationMs).toEqual(expect.any(Number));
+		expect(entry).not.toHaveProperty("durationMs");
+		expect(entry).not.toHaveProperty("requestId");
 		expect(JSON.stringify(entry)).not.toContain("must-not-be-logged");
 	});
 

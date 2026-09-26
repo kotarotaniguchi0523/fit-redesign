@@ -91,6 +91,7 @@ pnpm db:query:local -- "SELECT name FROM sqlite_master WHERE type = 'table'"
 | `pnpm test` | Vitestのwatch実行 |
 | `pnpm test:run` | Vitestを1回実行 |
 | `pnpm test:coverage` | カバレッジ付きテスト |
+| `pnpm perf:report` | representative route の SSR/HTML/island と production bundle サイズを測定（`pnpm build` 後） |
 | `pnpm knip` | 未使用コード・依存・exportの検査 |
 | `pnpm db:migrate:local` | ローカルD1へmigrationを適用 |
 | `pnpm db:query:local -- "SQL"` | ローカルD1でSQLを実行 |
@@ -165,6 +166,8 @@ Pull Requestでは、GitHub Actionsが次を実行します。
 `main`へのpushでは、上記の検証に加えてD1 migrationを適用し、Cloudflare Workersへデプロイします。
 
 本番のCloudflare設定は`wrangler.jsonc`で管理します。同期機能ではD1とRate Limiting bindingを使用します。手動デプロイは、明示的に必要な場合だけ次を実行してください。
+
+パフォーマンス劣化の切り分け手順、Cloudflare Observability/RUM、ローカルWorkerのTrace/CPU/Memory、Chrome DevTools、SSR・bundle比較は[パフォーマンス計測ガイド](docs/performance-observability.md)を参照してください。
 
 ```bash
 pnpm deploy
