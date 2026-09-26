@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { Hono } from "hono";
 import { trimTrailingSlash } from "hono/trailing-slash";
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import health from "./routes/health";
 import markdown from "./routes/markdown";
 import { requestLoggingMiddleware } from "./server/requestLogging";
@@ -13,9 +13,12 @@ class AllowAllRateLimit implements RateLimit {
 	}
 }
 
-let database: TestD1;
+let database: TestD1 | undefined;
 
 function env(): Cloudflare.Env {
+	if (!database) {
+		throw new Error("Test D1 has not been initialized");
+	}
 	return {
 		DB: database.binding,
 		PROGRESS_RATE_LIMITER: new AllowAllRateLimit(),
@@ -31,16 +34,15 @@ function mountedApp(): Hono {
 	return app;
 }
 
-beforeAll(async () => {
+beforeEach(async () => {
 	database = await createTestD1();
 });
 
-afterAll(async () => {
-	await database?.dispose();
-});
-
-afterEach(() => {
+afterEach(async () => {
+	const currentDatabase = database;
+	database = undefined;
 	vi.restoreAllMocks();
+	await currentDatabase?.dispose();
 });
 
 describe("API routes（HonoXマウント越し）", () => {

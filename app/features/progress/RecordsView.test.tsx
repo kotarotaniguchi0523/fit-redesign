@@ -12,6 +12,8 @@ describe("RecordsView の同期リンク受け入れ", () => {
 
 	afterEach(() => {
 		document.body.replaceChildren();
+		localStorage.clear();
+		history.replaceState(null, "", "/records");
 		vi.restoreAllMocks();
 	});
 

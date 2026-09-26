@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ProgressEntrySchema, SyncKeySchema } from "../../types";
 import { syncProgress } from "./progressApi";
 import {
@@ -21,7 +21,7 @@ const entry = ProgressEntrySchema.parse({
 const syncKey = SyncKeySchema.parse("a".repeat(43));
 
 describe("progress persistence", () => {
-	beforeEach(() => {
+	afterEach(() => {
 		localStorage.clear();
 		vi.restoreAllMocks();
 	});

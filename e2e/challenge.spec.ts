@@ -40,8 +40,12 @@ async function observeAnswerPanelTransition(page: Page): Promise<void> {
 	});
 }
 
-test("小テストの判定・経過時間・進捗を再読み込み後も維持する", async ({ challengePlayer }) => {
+test("小テストの判定・経過時間・進捗を再読み込み後も維持する", async ({
+	challengePlayer,
+	page,
+}) => {
 	// Arrange
+	await page.clock.install();
 	await challengePlayer.openForFreshAttempt();
 	await expect(challengePlayer.totalElapsedTime).toHaveText(DURATION);
 	await expect(challengePlayer.questionElapsedTime).toHaveText(DURATION);
@@ -50,15 +54,18 @@ test("小テストの判定・経過時間・進捗を再読み込み後も維�
 	const initialTime = await challengePlayer.questionElapsedTime.textContent();
 
 	// Act
-	await expect
-		.poll(() => challengePlayer.questionElapsedTime.textContent(), { timeout: 15_000 })
-		.not.toBe(initialTime);
+	await page.clock.runFor(1200);
+	await expect(challengePlayer.questionElapsedTime).not.toHaveText(initialTime ?? "");
 	await challengePlayer.pauseButton.click();
 	await expect(challengePlayer.questionElapsedTime).not.toHaveText(initialTime ?? "");
+	const persistedQuestionTime = await challengePlayer.questionElapsedTime.textContent();
 	await challengePlayer.revealAnswer();
 	await challengePlayer.judgeCorrect();
 	await challengePlayer.reloadToResumePrompt();
 	await challengePlayer.continueAttempt();
+	await expect(challengePlayer.questionElapsedTime).toHaveText(persistedQuestionTime ?? "");
+	await page.clock.runFor(1200);
+	await expect(challengePlayer.questionElapsedTime).not.toHaveText(persistedQuestionTime ?? "");
 	await challengePlayer.revealAnswer();
 
 	// Assert
@@ -85,9 +92,8 @@ test("一時停止・再開と前後移動で問題ごとの計測を維持す�
 	// Act
 	await challengePlayer.resumeTimerButton.click();
 	await expect(challengePlayer.pauseButton).toHaveAttribute("aria-pressed", "true");
-	await expect
-		.poll(() => challengePlayer.questionElapsedTime.textContent(), { timeout: 5000 })
-		.not.toBe(stopped);
+	await page.clock.runFor(1200);
+	await expect(challengePlayer.questionElapsedTime).not.toHaveText(stopped ?? "");
 	await challengePlayer.moveToNextQuestion();
 	await expect(challengePlayer.progress).toHaveAttribute("aria-valuenow", "2");
 	await challengePlayer.previousButton.click();
