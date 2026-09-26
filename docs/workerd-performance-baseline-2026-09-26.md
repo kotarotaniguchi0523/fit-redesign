@@ -34,6 +34,27 @@ Wrangler's `check startup` completed and generated a CPU profile:
 
 The route CPU profiles were collected with the Wrangler inspector's CDP `Profiler` domain, after warmups and 30 requests per route. They contain idle and runtime/facade frames and do not provide a stable per-request timing. The exam route profile included named Zod parser frames (`e17._zod.run`, `run`), while all routes included Hono/runtime routing and facade frames. The home route had the largest SSR HTML and more anonymous/minified frames, but the profile does not prove that its JSX tree, list rendering, or serialization is a CPU bottleneck. Preserve the raw profiles outside the repository for deeper source-map-based inspection if a regression appears.
 
+### Post-change Wrangler recheck
+
+After the home island payload change, `pnpm build`, local D1 migration check, `wrangler check startup`, and `wrangler dev --local` were rerun without Cloudflare login. The sandbox blocks Node's `os.networkInterfaces()` call, which Wrangler uses to enumerate local hosts; for the local dev run only, a temporary `/tmp` preload returned the loopback interface and Wrangler listened on `127.0.0.1`. No Worker source or runtime behavior was changed by this environment workaround.
+
+| Local Wrangler request | Warm samples | p50 / p95 request duration | Status / HTML bytes |
+| --- | --- | ---: | ---: |
+| `/` | 8, 8, 6, 6, 5 ms | 6 / 8 ms | 200 / 29,380 B |
+| `/guide` | 4, 5, 3, 3, 3 ms | 3 / 5 ms | 200 / 9,939 B |
+| `/unit-base-conversion/2013` | 6, 5, 4, 4, 4 ms | 4 / 6 ms | 200 / 21,765 B |
+| `/unit-base-conversion/2013/exam?exam=1` | 6, 4, 4, 4, 6 ms | 4 / 6 ms | 200 / 4,891 B |
+| `/records` | 7, 4, 4, 3, 3 ms | 4 / 7 ms | 200 / 6,784 B |
+| `/health` | 4, 5, 3, 3, 2 ms | 3 / 5 ms | 200 / 15 B |
+
+These are local Wrangler request durations, not Workers CPU time or production latency. The first request after each local Worker launch took 375–430 ms end-to-end in two launches; `wrangler check startup` separately measured 50.0 ms active CPU. The first-request delay includes local process/runtime startup and should not be subtracted from or treated as per-request CPU.
+
+The refreshed startup check reported **759.56 KiB raw / 178.79 KiB gzip** Worker plus assets, with an **80.0 ms** profile window, **70.2 ms** sampled, **50.0 ms** active including **1.1 ms GC**, **20.1 ms** idle, and **38 samples**. Relative to the earlier 759.27 KiB / 178.70 KiB and 55.4 ms active / 43 samples, the bundle grew by 0.29 KiB raw and 0.09 KiB gzip; the startup profile difference is too small and sample counts too low to establish a CPU improvement or regression.
+
+The Wrangler Inspector CPU profiler was also recorded for 30 warmed requests each to `/`, the exam route, and `/records` (36, 16, and 22 samples respectively). Home frames included Hono's `toStringToBuffer` HTML serialization; the exam profile included Zod parser frames. Anonymous frames refer to the minified generated `index.js`, which has no source map in this build. The profiles do not identify a new actionable hot function or justify removing validation. All sampled routes returned 200; Local Explorer root-span CPU/wall attributes were 0 ms at this short-request precision, with no child I/O span on the SSR routes.
+
+No further code optimization was made from this recheck: warm request durations are short, startup/bundle changes are within profile noise, and the CPU frames cannot be mapped to a specific application function. The measured home HTML reduction remains the only confirmed actionable result.
+
 ### Home island payload change
 
 Inspecting the actual workerd HTML showed that the `ContinueLearning` island serialized 260 flat location objects. Repeated `unitName`, `year`, `href`, and JSON property names made that one island account for **53,405 bytes** of a **67,575-byte** response. The props were grouped by unit/year, retaining each question ID but storing the repeated display and URL prefix once per group. The client reconstructs the same first matching route as before.
