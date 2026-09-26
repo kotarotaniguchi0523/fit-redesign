@@ -1902,8 +1902,6 @@ details summary::marker {
 }
 .study-shell--question-set :where(.q-card__actions .question-timer-link) svg {
 	position: relative;
-	width: 0.75rem;
-	height: 0.75rem;
 }
 .study-shell--question-set :where(.q-card__actions .q-tool) > span {
 	@apply sr-only;
