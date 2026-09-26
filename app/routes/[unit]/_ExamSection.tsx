@@ -41,7 +41,7 @@ export function ExamSection({
 					)}
 					{exam ? (
 						<a
-							href={`/${unitId}/${year}/exam?exam=${examNumber}`}
+							href={`/${unitId}/${year}/exam/${examNumber}`}
 							class="exam-start-link exam-section__start"
 							aria-label="小テストを開始"
 							title="小テストを開始"

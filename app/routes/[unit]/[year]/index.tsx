@@ -1,4 +1,6 @@
 /** @jsxImportSource hono/jsx */
+
+import { ssgParams } from "hono/ssg";
 import { createRoute } from "honox/factory";
 import { getExamByNumber, selectVisibleExamNumbers } from "../../../data/exams";
 import { unitBasedTabs } from "../../../data/units";
@@ -11,15 +13,17 @@ import { StudyNavigator } from "../_unitNav";
 /**
  * 単元ページ（単元 × 年度の演習）。
  *
- * SSG は使わず、Workers の SSR + エッジキャッシュで配信する。
+ * ビルド時に Hono SSG helper で、登録された単元 × 年度を静的 HTML として生成する。
+ * 静的生成されない環境では同じ route handler が通常の SSR として動作する。
  * - c.req.param("unit") / ("year") でパラメータを取得し、
  * - loader（app/data/exams の getExamByNumber）から試験データを取得して描画。
  * - JSON-LD（Quiz / LearningResource）は c.render の props で _renderer.tsx に渡す。
+ * - 静的生成するパスは ssgParams で unitBasedTabs から列挙する。
  * - パラメータが既知の単元・年度に一致しなければ 404。
  *
  */
 
-export default createRoute(async (c) => {
+const renderUnitYearPage = createRoute(async (c) => {
 	const unitId = c.req.param("unit");
 	const yearParam = c.req.param("year");
 
@@ -136,3 +140,12 @@ export default createRoute(async (c) => {
 		},
 	);
 });
+
+export default createRoute(
+	ssgParams(() =>
+		unitBasedTabs.flatMap((unit) =>
+			unit.examMapping.map((mapping) => ({ unit: unit.id, year: mapping.year })),
+		),
+	),
+	...renderUnitYearPage,
+);

@@ -64,6 +64,13 @@ describe("API routes（HonoXマウント越し）", () => {
 		);
 	});
 
+	it("GET /markdown/{unit}/{year} は登録済み単元のMarkdownを返す", async () => {
+		const response = await mountedApp().request("/markdown/unit-base-conversion/2013", {}, env());
+		expect(response.status).toBe(200);
+		expect(response.headers.get("Content-Type")).toBe("text/markdown; charset=utf-8");
+		expect(await response.text()).toContain("# 単元1: 基数変換 (2013年度)");
+	});
+
 	it("markdown はETag一致時に304を返す", async () => {
 		const first = await mountedApp().request("/markdown", {}, env());
 		const etag = first.headers.get("ETag");

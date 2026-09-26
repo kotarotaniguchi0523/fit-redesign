@@ -58,7 +58,7 @@ export class ChallengePlayerPage {
 	}
 
 	async openForFreshAttempt(examNumber = 1): Promise<void> {
-		await this.page.goto(`/unit-base-conversion/2013/exam?exam=${examNumber}`);
+		await this.page.goto(`/unit-base-conversion/2013/exam/${examNumber}`);
 		await expect(this.player.or(this.resumeHeading)).toBeVisible();
 
 		if (await this.resumeHeading.isVisible()) {

@@ -1,11 +1,12 @@
 import { type Context, Hono } from "hono";
 import { etag } from "hono/etag";
+import { ssgParams } from "hono/ssg";
+import { unitBasedTabs } from "../data/units";
 import { renderMarkdown } from "../features/markdown/markdownContent";
 import type { Env } from "./_lib";
 
 // /markdown（サイト概要）と /markdown/{unit}/{year}（単元）を扱う sub-app。
-// 基底＋ワイルドカードの二重経路のため per-endpoint ではなく Hono インスタンスで分離する。
-// ETag は markdown 配下にスコープ（If-None-Match 一致で 304）。
+// Hono インスタンス内で ETag をスコープし、If-None-Match 一致時は304を返す。
 async function respond(c: Context<Env>, path: string): Promise<Response> {
 	const { status, body } = await renderMarkdown(path);
 	if (status === 200) {
@@ -20,6 +21,15 @@ async function respond(c: Context<Env>, path: string): Promise<Response> {
 const markdown = new Hono<Env>()
 	.use("*", etag())
 	.get("/", (c) => respond(c, ""))
+	.get(
+		"/:unit/:year",
+		ssgParams(() =>
+			unitBasedTabs.flatMap((unit) =>
+				unit.examMapping.map((mapping) => ({ unit: unit.id, year: mapping.year })),
+			),
+		),
+		(c) => respond(c, `${c.req.param("unit")}/${c.req.param("year")}`),
+	)
 	.get("/*", (c) => respond(c, c.req.path.slice("/markdown/".length)));
 
 export default markdown;

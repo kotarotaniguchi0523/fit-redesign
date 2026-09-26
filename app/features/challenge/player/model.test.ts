@@ -36,7 +36,6 @@ function props(
 		questions,
 		mode,
 		requestedQuestionId,
-		initialView: "player",
 	};
 }
 

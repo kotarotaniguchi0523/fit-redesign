@@ -42,6 +42,9 @@ importers:
       '@hono/cli':
         specifier: ^0.1.11
         version: 0.1.11
+      '@hono/ssg-plugins-essential':
+        specifier: 0.1.0
+        version: 0.1.0(hono@4.13.8)
       '@hono/vite-build':
         specifier: ^1.11.1
         version: 1.11.1(hono@4.13.8)
@@ -726,6 +729,11 @@ packages:
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
+
+  '@hono/ssg-plugins-essential@0.1.0':
+    resolution: {integrity: sha512-b9rtOCcJQwZRnFph+pTK8MZ3qO2QEfWiCHF4c02ZUdln9cI/QWrDRIVMZbERslFxyz7uQbg4+rEerBNtSELOCw==}
+    peerDependencies:
+      hono: '>=4.8.0'
 
   '@hono/structured-logger@1.0.0':
     resolution: {integrity: sha512-MozQvH7oFsi/Pc/0sK6ai7cYpDX81t4UnrxgOo/MslfC7lPFnRcvayVkY3g1Wi/cX6dFmtLhZoGALOfdvAIDgA==}
@@ -4192,6 +4200,10 @@ snapshots:
       hono: 4.12.34
 
   '@hono/node-server@1.19.17(hono@4.13.8)':
+    dependencies:
+      hono: 4.13.8
+
+  '@hono/ssg-plugins-essential@0.1.0(hono@4.13.8)':
     dependencies:
       hono: 4.13.8
 
