@@ -17,7 +17,7 @@ export class QuestionSetPage {
 	constructor(page: Page) {
 		this.page = page;
 		this.main = page.locator("main");
-		this.firstQuestion = this.main.locator("[data-question-card]").first();
+		this.firstQuestion = this.main.getByRole("article").first();
 		this.copyButton = this.firstQuestion.getByRole("button", {
 			name: "問題文をコピー、コピー方法を選択",
 		});
@@ -35,7 +35,7 @@ export class QuestionSetPage {
 	}
 
 	question(id: string): Locator {
-		return this.main.locator(`[data-question-id="${id}"]`);
+		return this.main.locator(`#question-${id}`);
 	}
 
 	horizontalOverflow(): Promise<number> {
