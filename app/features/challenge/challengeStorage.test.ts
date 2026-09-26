@@ -4,7 +4,10 @@ import { challengeReducer, createInitialChallengeState } from "./challenge";
 import {
 	archiveCompletedChallenge,
 	CHALLENGE_HISTORY_STORAGE_KEY,
+	hasActiveChallengeLock,
 	readChallengeHistory,
+	releaseChallengeLock,
+	tryAcquireChallengeLock,
 } from "./challengeStorage";
 import type { ChallengeState } from "./types";
 
@@ -70,5 +73,22 @@ describe("challengeStorage validation", () => {
 		const result = archiveCompletedChallenge(completedState(), timestamp + 2);
 		expect(result?.payload.answers).toHaveLength(1);
 		expect(result?.persisted).toBe(false);
+	});
+});
+
+describe("challenge locks", () => {
+	it("keeps ownership isolated and removes only the released lock", () => {
+		const firstChallenge = "challenge-one";
+		const secondChallenge = "challenge-two";
+
+		expect(tryAcquireChallengeLock(firstChallenge, "owner-one")).toBe(true);
+		expect(tryAcquireChallengeLock(firstChallenge, "owner-two")).toBe(false);
+		expect(tryAcquireChallengeLock(secondChallenge, "owner-two")).toBe(true);
+		expect(releaseChallengeLock(firstChallenge, "owner-two")).toBe(true);
+		expect(hasActiveChallengeLock(firstChallenge, "owner-two")).toBe(true);
+
+		expect(releaseChallengeLock(firstChallenge, "owner-one")).toBe(true);
+		expect(hasActiveChallengeLock(firstChallenge, "owner-two")).toBe(false);
+		expect(hasActiveChallengeLock(secondChallenge, "owner-one")).toBe(true);
 	});
 });

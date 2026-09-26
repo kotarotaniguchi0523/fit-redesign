@@ -10,7 +10,7 @@ import { unitBasedTabs } from "../data/units";
 import { CompletedChallengesRequestSchema } from "../features/challenge/challengeWire";
 import type { CompletedChallengePayload } from "../features/challenge/types";
 import { systemClock } from "../lib/dateTime";
-import { hasPlausibleProgressTime, MAX_FUTURE_CLOCK_SKEW_MS } from "../lib/progress";
+import { isPlausibleSyncTimeRange } from "../lib/syncTime";
 import { ChallengeRepositoryError, syncChallenges } from "../server/challengeRepository";
 import {
 	createSyncLink,
@@ -35,13 +35,17 @@ const INTERNAL_ERROR = { error: "Internal server error" } as const;
 type RateLimitError = Readonly<{ kind: "RateLimitError"; cause: unknown }>;
 type HashRateLimitSubjectError = Readonly<{ kind: "HashRateLimitSubjectError"; cause: unknown }>;
 
-let catalogKeysPromise: Promise<Set<string>> | undefined;
-let examQuestionIdsPromise: Promise<ReadonlyMap<string, readonly string[]>> | undefined;
+type ProgressCatalog = Readonly<{
+	validProgressKeys: ReadonlySet<string>;
+	questionIdsByExam: ReadonlyMap<string, readonly string[]>;
+}>;
 
-async function buildCatalogKeys(): Promise<Set<string>> {
+let progressCatalogPromise: Promise<ProgressCatalog> | undefined;
+
+async function buildProgressCatalog(): Promise<ProgressCatalog> {
 	const exams = await getAllExams();
 	const byNumber = new Map(exams.map((exam) => [exam.examNumber, exam]));
-	return new Set(
+	const validProgressKeys = new Set(
 		unitBasedTabs.flatMap((unit) =>
 			unit.examMapping.flatMap((mapping) =>
 				mapping.examNumbers.flatMap((examNumber) => {
@@ -51,40 +55,21 @@ async function buildCatalogKeys(): Promise<Set<string>> {
 			),
 		),
 	);
-}
-
-function getCatalogKeys(): Promise<Set<string>> {
-	if (!catalogKeysPromise) {
-		catalogKeysPromise = buildCatalogKeys();
-	}
-	return catalogKeysPromise;
-}
-
-async function buildExamQuestionIds(): Promise<ReadonlyMap<string, readonly string[]>> {
-	const exams = await getAllExams();
-	return new Map(
+	const questionIdsByExam = new Map(
 		exams.flatMap((examByYear) =>
 			Object.values(examByYear.exams).flatMap((exam) =>
 				exam ? [[exam.id, exam.questions.map((q) => q.id)] as const] : [],
 			),
 		),
 	);
+	return { validProgressKeys, questionIdsByExam };
 }
 
-function getExamQuestionIds(): Promise<ReadonlyMap<string, readonly string[]>> {
-	if (!examQuestionIdsPromise) {
-		examQuestionIdsPromise = buildExamQuestionIds();
+function getProgressCatalog(): Promise<ProgressCatalog> {
+	if (!progressCatalogPromise) {
+		progressCatalogPromise = buildProgressCatalog();
 	}
-	return examQuestionIdsPromise;
-}
-
-function hasPlausibleChallengeTime(payload: CompletedChallengePayload, now: number): boolean {
-	const maximum = now + MAX_FUTURE_CLOCK_SKEW_MS;
-	return [
-		payload.createdAt,
-		payload.updatedAt,
-		...payload.answers.flatMap((answer) => [answer.createdAt, answer.updatedAt]),
-	].every((timestamp) => timestamp <= maximum);
+	return progressCatalogPromise;
 }
 
 function isValidChallengeShape(
@@ -190,11 +175,17 @@ const progress = new Hono<Env>()
 
 			const submitted = c.req.valid("json").entries;
 			const nowEpochMilliseconds = systemClock.nowEpochMilliseconds();
-			if (!submitted.every((entry) => hasPlausibleProgressTime(entry, nowEpochMilliseconds))) {
+			if (
+				!submitted.every((entry) =>
+					isPlausibleSyncTimeRange(entry.createdAt, entry.updatedAt, nowEpochMilliseconds),
+				)
+			) {
 				return c.json(INVALID_PROGRESS, 400);
 			}
-			const catalogKeys = await getCatalogKeys();
-			if (submitted.some((entry) => !catalogKeys.has(`${entry.questionId}|${entry.unitId}`))) {
+			const { validProgressKeys } = await getProgressCatalog();
+			if (
+				submitted.some((entry) => !validProgressKeys.has(`${entry.questionId}|${entry.unitId}`))
+			) {
 				return c.json(INVALID_PROGRESS, 400);
 			}
 			const result = await syncProgress(c.var.db, syncLink.value, submitted);
@@ -228,12 +219,19 @@ const progress = new Hono<Env>()
 			const submitted = c.req.valid("json").challenges;
 			const nowEpochMilliseconds = systemClock.nowEpochMilliseconds();
 			if (
-				submitted.some((challenge) => !hasPlausibleChallengeTime(challenge, nowEpochMilliseconds))
+				submitted.some(
+					(challenge) =>
+						!isPlausibleSyncTimeRange(
+							challenge.createdAt,
+							challenge.updatedAt,
+							nowEpochMilliseconds,
+						),
+				)
 			) {
 				return c.json(INVALID_PROGRESS, 400);
 			}
-			const examQuestionIds = await getExamQuestionIds();
-			if (submitted.some((challenge) => !isValidChallengeShape(challenge, examQuestionIds))) {
+			const { questionIdsByExam } = await getProgressCatalog();
+			if (submitted.some((challenge) => !isValidChallengeShape(challenge, questionIdsByExam))) {
 				return c.json(INVALID_PROGRESS, 400);
 			}
 			const result = await syncChallenges(c.var.db, syncLink.value, submitted);

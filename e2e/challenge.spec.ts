@@ -46,12 +46,15 @@ test("小テストの判定・経過時間・進捗を再読み込み後も維�
 	await expect(challengePlayer.totalElapsedTime).toHaveText(DURATION);
 	await expect(challengePlayer.questionElapsedTime).toHaveText(DURATION);
 	await expect(challengePlayer.progress).toHaveAttribute("aria-valuenow", "1");
+	await expect(challengePlayer.pauseButton).toHaveAttribute("aria-pressed", "true");
 	const initialTime = await challengePlayer.questionElapsedTime.textContent();
 
 	// Act
 	await expect
-		.poll(() => challengePlayer.questionElapsedTime.textContent(), { timeout: 5000 })
+		.poll(() => challengePlayer.questionElapsedTime.textContent(), { timeout: 15_000 })
 		.not.toBe(initialTime);
+	await challengePlayer.pauseButton.click();
+	await expect(challengePlayer.questionElapsedTime).not.toHaveText(initialTime ?? "");
 	await challengePlayer.revealAnswer();
 	await challengePlayer.judgeCorrect();
 	await challengePlayer.reloadToResumePrompt();

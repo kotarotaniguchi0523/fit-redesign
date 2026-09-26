@@ -1,7 +1,6 @@
-import { hc } from "hono/client";
 import { err, okAsync, ResultAsync } from "neverthrow";
-import type { ProgressApp } from "../../routes/progress";
 import type { SyncKey } from "../../types";
+import { progressClient } from "../progress/progressClient";
 import { isCompletedChallengePayload, mergeCompletedChallenges } from "./challenge";
 import type { CompletedChallengePayload } from "./types";
 
@@ -10,8 +9,6 @@ export type ChallengeSyncError =
 	| Readonly<{ kind: "Conflict" }>
 	| Readonly<{ kind: "RequestFailed"; cause: unknown }>
 	| Readonly<{ kind: "InvalidResponse"; cause?: unknown }>;
-
-const progressClient = hc<ProgressApp>("/progress");
 
 function parseResponse(body: unknown): readonly CompletedChallengePayload[] | null {
 	if (
