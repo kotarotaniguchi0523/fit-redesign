@@ -1,7 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
-const FOCUS_ROUTE = /^\/unit-base-conversion\/2013\/exam\?exam=1&question=exam1-2013-q1$/;
+const FOCUS_ROUTE = /^\/unit-base-conversion\/2013\/exam\/1\/question\/exam1-2013-q1$/;
 const CHATGPT_HREF = /https:\/\/chatgpt\.com\/\?q=/;
 const GEMINI_HREF = /^https:\/\/gemini\.google\.com\/app\?q=/;
 

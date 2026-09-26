@@ -2,7 +2,7 @@
 import type { JSX } from "hono/jsx/jsx-runtime";
 import { getAllExams, getExamByNumber } from "../data/exams";
 import { unitBasedTabs } from "../data/units";
-import ExamPlayer from "../features/challenge/$ExamPlayer";
+import type { ExamPlayerProps } from "../features/challenge/player/types";
 import type { ExamNumber, QuestionId, Year } from "../types";
 import { ExamNumberSchema, isYear } from "../types";
 import { QuestionIdSchema } from "../types/browser";
@@ -50,6 +50,21 @@ export type ExamPageData = Readonly<{
 	exam: NonNullable<NonNullable<Awaited<ReturnType<typeof getExamByNumber>>>["exams"][Year]>;
 }>;
 
+export function getExamPlayerProps(data: ExamPageData): ExamPlayerProps {
+	const { unit, year, examNumber, exam, questionId } = data;
+	const mode = questionId ? "question" : "exam";
+	return {
+		examId: exam.id,
+		examNumber,
+		year,
+		unitId: unit.id,
+		playerTitle: mode === "question" ? "タイムアタック" : `小テスト${examNumber}`,
+		questions: exam.questions,
+		mode,
+		requestedQuestionId: questionId,
+	};
+}
+
 export async function resolveExamPage(
 	unitId: string | undefined,
 	yearParam: string | undefined,
@@ -88,8 +103,11 @@ export async function resolveExamPage(
 	return { unit, year, examNumber, exam, questionId };
 }
 
-export function ExamPage({ data }: Readonly<{ data: ExamPageData }>): JSX.Element {
-	const { unit, year, examNumber, exam, questionId } = data;
+export function ExamPage({
+	data,
+	children,
+}: Readonly<{ data: ExamPageData; children: JSX.Element }>): JSX.Element {
+	const { examNumber, exam, questionId } = data;
 	const mode = questionId ? "question" : "exam";
 	const playerTitle = mode === "question" ? "タイムアタック" : `小テスト${examNumber}`;
 	return (
@@ -99,16 +117,7 @@ export function ExamPage({ data }: Readonly<{ data: ExamPageData }>): JSX.Elemen
 					<h1 class="sr-only">
 						{playerTitle} — {exam.title}
 					</h1>
-					<ExamPlayer
-						examId={exam.id}
-						examNumber={examNumber}
-						year={year}
-						unitId={unit.id}
-						playerTitle={playerTitle}
-						questions={exam.questions}
-						mode={mode}
-						requestedQuestionId={questionId}
-					/>
+					{children}
 				</div>
 			</div>
 		</main>

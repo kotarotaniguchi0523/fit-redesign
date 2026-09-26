@@ -49,13 +49,17 @@ try {
 			dir: resolve("dist"),
 			beforeRequestHook: (request) => {
 				const { pathname } = new URL(request.url);
-				return staticRoutePaths.has(pathname) ||
+				const shouldGenerate = staticRoutePaths.has(pathname) ||
 					unitYearRoute.test(pathname) ||
 					examRoute.test(pathname) ||
 					questionRoute.test(pathname) ||
-					pathname === "/markdown/:unit/:year"
-					? request
-					: false;
+					pathname === "/markdown/:unit/:year";
+				if (!shouldGenerate) {
+					return false;
+				}
+				const headers = new Headers(request.headers);
+				headers.set("x-honox-ssg", "true");
+				return new Request(request, { headers });
 			},
 			extensionMap: { "text/markdown": "md", ...defaultExtensionMap },
 			plugins: [
