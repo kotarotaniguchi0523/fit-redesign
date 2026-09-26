@@ -7,7 +7,7 @@ import ContinueLearning from "../features/answer/$ContinueLearning";
 import { YEARS } from "../types";
 
 export default createRoute(async (c) => {
-	const { examCounts, locations } = await loadHomeExamCatalog();
+	const { examCounts, locationGroups } = await loadHomeExamCatalog();
 
 	const jsonLd = {
 		"@context": "https://schema.org",
@@ -97,7 +97,7 @@ export default createRoute(async (c) => {
 						</tbody>
 					</table>
 				</div>
-				<ContinueLearning locations={locations} />
+				<ContinueLearning locationGroups={locationGroups} />
 			</div>
 		</main>,
 		{
