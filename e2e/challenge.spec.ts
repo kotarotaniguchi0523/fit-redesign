@@ -40,10 +40,7 @@ async function observeAnswerPanelTransition(page: Page): Promise<void> {
 	});
 }
 
-test("小テストの判定・経過時間・進捗を再読み込み後も維持する", async ({
-	challengePlayer,
-	page,
-}) => {
+test("小テストの判定・経過時間・進捗を再読み込み後も維持する", async ({ challengePlayer }) => {
 	// Arrange
 	await challengePlayer.openForFreshAttempt();
 	await expect(challengePlayer.totalElapsedTime).toHaveText(DURATION);
@@ -53,7 +50,9 @@ test("小テストの判定・経過時間・進捗を再読み込み後も維�
 	const initialTime = await challengePlayer.questionElapsedTime.textContent();
 
 	// Act
-	await page.waitForTimeout(1500);
+	await expect
+		.poll(() => challengePlayer.questionElapsedTime.textContent(), { timeout: 15_000 })
+		.not.toBe(initialTime);
 	await challengePlayer.pauseButton.click();
 	await expect(challengePlayer.questionElapsedTime).not.toHaveText(initialTime ?? "");
 	await challengePlayer.revealAnswer();

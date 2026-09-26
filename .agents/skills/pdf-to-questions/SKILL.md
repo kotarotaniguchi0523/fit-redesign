@@ -1,165 +1,30 @@
 ---
 name: pdf-to-questions
-description: PDFファイルから問題データを抽出し、TypeScriptコードとして出力する
-allowed-tools: Bash(uv:*), Bash(python:*)
+description: 情報処理技術者試験のPDFを確認し、リポジトリの検証済み試験JSONに追加・修正する。
 ---
 
-# PDF to Questions Skill
+# PDFから試験問題データを作る
 
-PDFファイルから問題データを抽出し、TypeScriptコードとして出力するスキル。
-Doclingを使用して図も正確に抽出する。
+問題PDFと解答資料から内容を確認し、`app/data/exams-json/`のJSONを更新する。抽出結果だけで正解を推測しない。
 
-## 引数
+## 手順
 
-```
-/pdf-to-questions <pdf-path>
-```
+1. 対象年度・試験番号と対応する問題PDF・解答資料を確認する。
+2. 初回だけ依存関係を用意し、PDFを一時ディレクトリへ抽出する。
 
-- `<pdf-path>`: 変換するPDFファイルのパス（相対パスまたは絶対パス）
+   ```bash
+   uv sync --project .agents/skills/pdf-to-questions
+   uv run --project .agents/skills/pdf-to-questions python .agents/skills/pdf-to-questions/scripts/extract_pdf.py <pdf-path> --output /tmp/fit-redesign-extracted
+   ```
 
-## 環境セットアップ（初回のみ）
+3. `text.md`、`metadata.json`、抽出された全図を確認し、重要な箇所は元PDFと照合する。正解と解説は解答資料や根拠から確認する。
+4. `app/data/exams/schema.ts`と近い年度のJSONを参照して、`app/data/exams-json/exam{番号}-{年度}.json`を編集する。JSONの項目名、図の`type`、値の形を推測で作らない。
+5. 問題ID・問題番号・選択肢・正解・図表・解説を原資料と照合する。読めない箇所は推測で埋めず、不確実な点を報告する。
+6. `pnpm exec vitest run app/data/exams/exams.integrity.test.ts`を実行し、データ検証を確認する。コードも変更した場合は、変更に対応する検査も実行する。
 
-スキルディレクトリで `uv sync` を実行する（`.venv` が自動作成される）。
+## データ上の注意
 
-```bash
-cd .Codex/skills/pdf-to-questions
-uv sync
-```
-
-依存関係を追加する場合は `uv add` を使用:
-
-```bash
-cd .Codex/skills/pdf-to-questions
-uv add <package-name>
-```
-
-## 実行手順
-
-### Step 1: PDFをDoclingで変換
-
-```bash
-uv run python .Codex/skills/pdf-to-questions/scripts/extract_pdf.py "$ARGUMENTS" --output .Codex/skills/pdf-to-questions/extracted/
-```
-
-出力:
-- `extracted/text.md` - Markdown形式のテキスト
-- `extracted/figures/` - 抽出された図（PNG）
-- `extracted/metadata.json` - 図の分類情報
-
-### Step 2: 抽出結果を確認
-
-Readツールで以下を読み込む:
-1. `extracted/text.md` - 問題文と選択肢
-2. `extracted/metadata.json` - 図の種類と位置情報
-3. `extracted/figures/*.png` - 図の画像
-
-### Step 3: 問題データを構造化
-
-抽出した情報から以下を特定:
-- 問題番号、問題文、選択肢、正解
-- 各図の種類（状態遷移図、二分木、真理値表、パリティ検査）
-
-### Step 4: 図をデータ形式に変換
-
-図の画像を見て、既存コンポーネントのデータ形式に変換:
-
-| 図の種類 | type値 | 変換先 |
-|---------|--------|--------|
-| 状態遷移図（丸と矢印） | `"state-diagram"` | `StateDiagramProps` |
-| 二分木（木構造） | `"binary-tree"` | `BinaryTreeProps` |
-| 真理値表（表形式） | `"truth-table"` | `TruthTableProps` |
-| パリティ検査（グリッド） | `"parity-check"` | `ParityCheckProps` |
-
-**図データの詳細形式は [reference.md](reference.md) を参照すること。**
-
-### Step 5: TypeScriptコードを生成
-
-以下の形式で出力:
-
-```typescript
-import type { Question } from "@/types/question";
-
-export const exam6_2013: Question[] = [
-  {
-    id: "exam6-2013-q3",
-    number: 3,
-    text: "問題文...",
-    figure: {
-      type: "state-diagram",
-      data: {
-        // StateDiagramProps形式
-      }
-    },
-    options: [
-      { label: "ア", text: "選択肢ア" },
-      { label: "イ", text: "選択肢イ" },
-      { label: "ウ", text: "選択肢ウ" },
-      { label: "エ", text: "選択肢エ" }
-    ],
-    answer: "ア"
-  }
-];
-```
-
-## ディレクトリ構造
-
-```
-.Codex/skills/pdf-to-questions/
-├── SKILL.md              # この定義ファイル
-├── reference.md          # 図コンポーネントのデータ形式
-├── pyproject.toml        # 依存関係定義
-├── scripts/
-│   └── extract_pdf.py    # PDF変換スクリプト
-└── extracted/            # 抽出結果（自動生成）
-    ├── text.md
-    ├── metadata.json
-    └── figures/
-```
-
-## 出力例
-
-```typescript
-import type { Question } from "@/types/question";
-
-export const exam6_2013: Question[] = [
-  {
-    id: "exam6-2013-q3",
-    number: 3,
-    text: "以下の状態遷移図で定義される有限オートマトンがある。この有限オートマトンが受理する文字列はどれか。",
-    figure: {
-      type: "state-diagram",
-      data: {
-        nodes: [
-          { id: "S0", label: "S₀", x: 60, y: 75, isInitial: true },
-          { id: "S1", label: "S₁", x: 200, y: 75 },
-          { id: "S2", label: "S₂", x: 340, y: 75, isAccepting: true }
-        ],
-        transitions: [
-          { from: "S0", to: "S0", label: "0" },
-          { from: "S0", to: "S1", label: "1" },
-          { from: "S1", to: "S0", label: "0", curveOffset: 20 },
-          { from: "S1", to: "S2", label: "1" },
-          { from: "S2", to: "S1", label: "0", curveOffset: 20 },
-          { from: "S2", to: "S2", label: "1" }
-        ],
-        width: 400,
-        height: 150
-      }
-    },
-    options: [
-      { label: "ア", text: "0100" },
-      { label: "イ", text: "0110" },
-      { label: "ウ", text: "1001" },
-      { label: "エ", text: "1100" }
-    ],
-    answer: "イ"
-  }
-];
-```
-
-## 注意事項
-
-- 問題文は原文のまま抽出（改行は適宜整形）
-- 数式は可能な限りUnicodeで表現（例: S₀, S₁）
-- 図の座標は見やすいレイアウトになるよう調整
-- 選択肢ラベルは日本語（ア、イ、ウ、エ）
+- 問題データはTypeScript配列ではなく、既存形式のJSONとして保存する。
+- 試験メタデータを追加・変更する必要がある場合は`app/data/exams-json/exams-meta.json`も確認する。
+- 図表は既存の`figureData`形式に合わせる。スキーマや表示コンポーネントの型をこのスキル内に複製しない。
+- 生成物や一時ファイルをリポジトリへ残さない。
