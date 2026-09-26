@@ -17,13 +17,13 @@ export class QuestionSetPage {
 	constructor(page: Page) {
 		this.page = page;
 		this.main = page.locator("main");
-		this.firstQuestion = this.main.locator("[data-question-card]").first();
+		this.firstQuestion = this.main.getByRole("article").first();
 		this.copyButton = this.firstQuestion.getByRole("button", {
 			name: "問題文をコピー、コピー方法を選択",
 		});
 		this.timerLink = this.firstQuestion.getByRole("link", { name: "タイムアタック" });
 		this.answerToggle = this.firstQuestion.getByRole("button", { name: ANSWER_TOGGLE });
-		this.answerPanel = this.firstQuestion.locator(".q-answer-panel");
+		this.answerPanel = this.firstQuestion.getByRole("region", { name: "解答", exact: true });
 		this.pdfLink = this.main.getByRole("link", { name: TEST_PDF }).first();
 		this.startLink = this.main.getByRole("link", { name: "小テストを開始" }).first();
 	}
@@ -35,7 +35,7 @@ export class QuestionSetPage {
 	}
 
 	question(id: string): Locator {
-		return this.main.locator(`[data-question-id="${id}"]`);
+		return this.main.locator(`#question-${id}`);
 	}
 
 	horizontalOverflow(): Promise<number> {

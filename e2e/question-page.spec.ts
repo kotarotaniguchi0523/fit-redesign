@@ -100,7 +100,9 @@ test("解答の開閉がボタンの見た目と内容に反映される", async
 		(button) => getComputedStyle(button).backgroundColor,
 	);
 	expect(openColor).not.toBe(closedColor);
-	await expect(questionSet.question("exam1-2013-q2").locator(".q-answer-panel")).toHaveCount(0);
+	await expect(
+		questionSet.question("exam1-2013-q2").getByRole("region", { name: "解答", exact: true }),
+	).toHaveCount(0);
 	await testInfo.attach("answer-open-desktop", {
 		body: await questionSet.firstQuestion.screenshot({ animations: "disabled" }),
 		contentType: "image/png",
