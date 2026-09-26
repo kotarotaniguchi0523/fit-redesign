@@ -1,12 +1,13 @@
 import type { JSX } from "hono/jsx/jsx-runtime";
-import { type QuestionLocation, useContinueLearning } from "./useContinueLearning";
+import type { QuestionLocationGroup } from "./continueLearningTypes";
+import { useContinueLearning } from "./useContinueLearning";
 
 export default function ContinueLearning({
-	locations,
+	locationGroups,
 }: {
-	locations: readonly QuestionLocation[];
+	locationGroups: readonly QuestionLocationGroup[];
 }): JSX.Element | null {
-	const location = useContinueLearning(locations);
+	const location = useContinueLearning(locationGroups);
 	if (!location) {
 		return null;
 	}

@@ -1,16 +1,10 @@
+import type { QuestionLocationGroup } from "../../features/answer/continueLearningTypes";
 import { unitBasedTabs } from "../units";
 import { getExamByNumber, selectVisibleExamNumbers } from "./index";
 
-export type QuestionLocation = Readonly<{
-	questionId: string;
-	unitName: string;
-	year: string;
-	href: string;
-}>;
-
 export type HomeExamCatalog = Readonly<{
 	examCounts: ReadonlyMap<string, number>;
-	locations: readonly QuestionLocation[];
+	locationGroups: readonly QuestionLocationGroup[];
 }>;
 
 export async function loadHomeExamCatalog(): Promise<HomeExamCatalog> {
@@ -34,22 +28,27 @@ export async function loadHomeExamCatalog(): Promise<HomeExamCatalog> {
 				return {
 					key: `${unit.id}|${mapping.year}`,
 					examCount: visible.size,
-					locations: candidates
+					locationGroups: candidates
 						.filter(({ examNumber }) => visible.has(examNumber))
-						.flatMap(({ exam }) =>
-							(exam?.questions ?? []).map((question) => ({
-								questionId: question.id,
-								unitName: unit.name,
-								year: mapping.year,
-								href: `/${unit.id}/${mapping.year}#question-${question.id}`,
-							})),
-						),
+						.flatMap(({ exam }) => {
+							const questionIds = (exam?.questions ?? []).map((question) => question.id);
+							return questionIds.length > 0
+								? [
+										{
+											unitName: unit.name,
+											year: mapping.year,
+											hrefPrefix: `/${unit.id}/${mapping.year}#question-`,
+											questionIds,
+										},
+									]
+								: [];
+						}),
 				};
 			}),
 		),
 	);
 	return {
 		examCounts: new Map(catalogs.map(({ key, examCount }) => [key, examCount])),
-		locations: catalogs.flatMap((catalog) => catalog.locations),
+		locationGroups: catalogs.flatMap((catalog) => catalog.locationGroups),
 	};
 }
