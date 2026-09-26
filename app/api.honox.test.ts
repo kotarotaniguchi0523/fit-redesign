@@ -79,6 +79,7 @@ describe("API routes（HonoXマウント越し）", () => {
 		expect(response.headers.get("Server-Timing")).toBeNull();
 	});
 
+	// @lat: [[testing#Query redaction and request correlation]]
 	it("構造化ログは最終statusとrequest-idを記録し、クエリを含めない", async () => {
 		const log = vi.spyOn(console, "info").mockImplementation(() => undefined);
 		const response = await mountedApp().request("/health?sync-key=must-not-be-logged", {}, env());
@@ -95,6 +96,7 @@ describe("API routes（HonoXマウント越し）", () => {
 		expect(JSON.stringify(entry)).not.toContain("must-not-be-logged");
 	});
 
+	// @lat: [[testing#Redirect status]]
 	it("末尾スラッシュの301を最終statusとして記録する", async () => {
 		const log = vi.spyOn(console, "info").mockImplementation(() => undefined);
 		const response = await mountedApp().request("/health/", {}, env());

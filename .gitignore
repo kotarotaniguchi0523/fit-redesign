@@ -39,3 +39,4 @@ playwright-report/
 *.db
 .beads-credential-key
 .dev.vars
+.codex
