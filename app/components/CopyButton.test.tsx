@@ -2,11 +2,18 @@ import { render } from "hono/jsx/dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import CopyButton from "./$CopyButton";
 
+const originalClipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+
 describe("CopyButton", () => {
 	afterEach(() => {
 		document.body.replaceChildren();
 		vi.restoreAllMocks();
 		vi.useRealTimers();
+		if (originalClipboardDescriptor) {
+			Object.defineProperty(navigator, "clipboard", originalClipboardDescriptor);
+		} else {
+			Reflect.deleteProperty(navigator, "clipboard");
+		}
 	});
 
 	it("Markdownをコピーして成功表示を元に戻す", async () => {

@@ -4,9 +4,16 @@ import { challengeReducer, createInitialChallengeState } from "./challenge";
 import {
 	archiveCompletedChallenge,
 	CHALLENGE_HISTORY_STORAGE_KEY,
+	findActiveChallenge,
+	findChallenge,
 	hasActiveChallengeLock,
+	markActiveChallengeIncomplete,
+	readActiveChallenges,
 	readChallengeHistory,
+	readCompletedChallenges,
 	releaseChallengeLock,
+	renewChallengeLock,
+	saveActiveChallenge,
 	tryAcquireChallengeLock,
 } from "./challengeStorage";
 import type { ChallengeState } from "./types";
@@ -36,6 +43,7 @@ function completedState(): ChallengeState {
 afterEach(() => {
 	localStorage.clear();
 	vi.restoreAllMocks();
+	vi.useRealTimers();
 });
 
 describe("challengeStorage validation", () => {
@@ -74,6 +82,34 @@ describe("challengeStorage validation", () => {
 		expect(result?.payload.answers).toHaveLength(1);
 		expect(result?.persisted).toBe(false);
 	});
+
+	// @lat: [[testing#Challenge client and player#Active attempts become restorable completed history]]
+	it("restores an active attempt and moves its completed result into history", () => {
+		const state = completedState();
+		expect(saveActiveChallenge(state)).toBe(true);
+		expect(findActiveChallenge(state.scopeKey)).toMatchObject({
+			challengeId: state.challengeId,
+			status: "active",
+		});
+
+		const archived = archiveCompletedChallenge(state, timestamp + 2);
+
+		expect(archived?.persisted).toBe(true);
+		expect(readActiveChallenges()).toEqual({});
+		expect(readCompletedChallenges()).toEqual([archived?.payload]);
+		expect(findChallenge(state.challengeId)?.status).toBe("completed");
+	});
+
+	it("keeps an abandoned attempt out of completed results", () => {
+		const state = completedState();
+		expect(saveActiveChallenge(state)).toBe(true);
+
+		expect(markActiveChallengeIncomplete(state)).toBe(true);
+
+		expect(findActiveChallenge(state.scopeKey)).toBeUndefined();
+		expect(readChallengeHistory()).toMatchObject([{ status: "incomplete" }]);
+		expect(readCompletedChallenges()).toEqual([]);
+	});
 });
 
 describe("challenge locks", () => {
@@ -90,5 +126,33 @@ describe("challenge locks", () => {
 		expect(releaseChallengeLock(firstChallenge, "owner-one")).toBe(true);
 		expect(hasActiveChallengeLock(firstChallenge, "owner-two")).toBe(false);
 		expect(hasActiveChallengeLock(secondChallenge, "owner-one")).toBe(true);
+	});
+
+	// @lat: [[testing#Challenge client and player#Timer locks remain owner-scoped until their heartbeat expires]]
+	it("renews a lock only for its owner and expires it after the heartbeat window", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(10_000);
+		const challengeId = "challenge-renewal";
+		expect(tryAcquireChallengeLock(challengeId, "owner-one")).toBe(true);
+
+		vi.setSystemTime(20_000);
+		expect(renewChallengeLock(challengeId, "owner-two")).toBe(false);
+		expect(renewChallengeLock(challengeId, "owner-one")).toBe(true);
+		vi.setSystemTime(34_000);
+		expect(hasActiveChallengeLock(challengeId, "owner-two")).toBe(true);
+		vi.setSystemTime(35_001);
+		expect(hasActiveChallengeLock(challengeId, "owner-two")).toBe(false);
+	});
+
+	it("allows a different owner to acquire a lock after it expires", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(10_000);
+		const challengeId = "challenge-expired";
+		expect(tryAcquireChallengeLock(challengeId, "owner-one")).toBe(true);
+
+		vi.setSystemTime(25_001);
+
+		expect(tryAcquireChallengeLock(challengeId, "owner-two")).toBe(true);
+		expect(hasActiveChallengeLock(challengeId, "owner-one")).toBe(true);
 	});
 });
