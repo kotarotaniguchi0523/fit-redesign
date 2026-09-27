@@ -146,6 +146,37 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 	await expect(challengePlayer.questionElapsedTime).toHaveText(DURATION);
 	await expect(challengePlayer.totalElapsedTime).toHaveCount(0);
 	await expect(challengePlayer.player.getByText("1 / 5", { exact: true })).toHaveCount(0);
+	const progressLayout = await challengePlayer.player.evaluate((player) => {
+		const buttons = Array.from(
+			player.querySelectorAll<HTMLElement>(".exam-player__progress ol button"),
+		);
+		const track = player.querySelector<HTMLElement>(".exam-player__progress-track");
+		if (!track) {
+			throw new Error("Question progress track is missing");
+		}
+		const trackBounds = track.getBoundingClientRect();
+		return {
+			centers: buttons.map((button) => {
+				const bounds = button.getBoundingClientRect();
+				return bounds.left + bounds.width / 2;
+			}),
+			trackStart: trackBounds.left,
+			trackEnd: trackBounds.right,
+		};
+	});
+	expect(progressLayout.centers).toHaveLength(5);
+	expect(Math.abs(progressLayout.centers[0] - progressLayout.trackStart)).toBeLessThan(1);
+	const lastCenter = progressLayout.centers.at(-1);
+	if (lastCenter === undefined) {
+		throw new Error("Question progress steps are missing");
+	}
+	expect(Math.abs(lastCenter - progressLayout.trackEnd)).toBeLessThan(1);
+	const stepDistances = progressLayout.centers
+		.slice(1)
+		.map((center, index) => center - progressLayout.centers[index]);
+	for (const distance of stepDistances.slice(1)) {
+		expect(Math.abs(distance - stepDistances[0])).toBeLessThan(1);
+	}
 	await expect(challengePlayer.previousButton).toBeDisabled();
 	await expect(challengePlayer.pauseButton).toHaveAttribute("aria-pressed", "true");
 	await expect(challengePlayer.answerPanel).toHaveCount(0);
