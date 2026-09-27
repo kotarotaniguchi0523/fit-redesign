@@ -130,4 +130,3 @@ if (typeof document !== "undefined") {
 	document.addEventListener("animationend", onModeEntryAnimationEnd);
 	document.addEventListener("animationcancel", onModeEntryAnimationEnd);
 }
-
