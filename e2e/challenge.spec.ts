@@ -145,6 +145,7 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 	await challengePlayer.expectModeEntryAnimation();
 	await expect(challengePlayer.questionElapsedTime).toHaveText(DURATION);
 	await expect(challengePlayer.totalElapsedTime).toHaveCount(0);
+	await expect(challengePlayer.player.getByText("1 / 5", { exact: true })).toHaveCount(0);
 	await expect(challengePlayer.previousButton).toBeDisabled();
 	await expect(challengePlayer.pauseButton).toHaveAttribute("aria-pressed", "true");
 	await expect(challengePlayer.answerPanel).toHaveCount(0);
