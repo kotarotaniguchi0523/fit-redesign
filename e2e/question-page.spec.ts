@@ -19,8 +19,31 @@ function isTopmostAtCenter(locator: Locator): Promise<boolean> {
 	});
 }
 
-test("問題ページの小テスト・PDF・一問ごとの操作が表示される", async ({ questionSet }) => {
+async function expectIconCentered(locator: Locator): Promise<void> {
+	const offset = await locator.evaluate((element) => {
+		const icon = element.querySelector("svg");
+		if (!icon) {
+			return null;
+		}
+
+		const buttonBounds = element.getBoundingClientRect();
+		const iconBounds = icon.getBoundingClientRect();
+		return {
+			x: Math.abs(buttonBounds.x + buttonBounds.width / 2 - (iconBounds.x + iconBounds.width / 2)),
+			y: Math.abs(
+				buttonBounds.y + buttonBounds.height / 2 - (iconBounds.y + iconBounds.height / 2),
+			),
+		};
+	});
+
+	expect(offset).not.toBeNull();
+	expect(offset?.x).toBeLessThanOrEqual(1);
+	expect(offset?.y).toBeLessThanOrEqual(1);
+}
+
+test("問題ページの小テスト・PDF・一問ごとの操作が表示される", async ({ page, questionSet }) => {
 	// Arrange
+	await page.setViewportSize({ width: 390, height: 844 });
 	await questionSet.open();
 
 	// Act
@@ -31,6 +54,9 @@ test("問題ページの小テスト・PDF・一問ごとの操作が表示さ�
 	await expect(questionSet.startLink).toBeVisible();
 	await expect(questionSet.copyButton).toBeVisible();
 	await expect(questionSet.answerToggle).toBeVisible();
+	await expectIconCentered(questionSet.copyButton);
+	await expectIconCentered(questionSet.answerToggle);
+	await expectIconCentered(questionSet.timerLink);
 	expect(timerTarget).toMatch(FOCUS_ROUTE);
 });
 

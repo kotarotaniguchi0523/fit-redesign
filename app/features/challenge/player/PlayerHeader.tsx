@@ -1,15 +1,17 @@
 import type { JSX } from "hono/jsx/jsx-runtime";
 import { MenuIcon } from "../../../components/icons";
-import type { PlayerQuestion } from "./types";
+import type { PlayerMode, PlayerQuestion } from "./types";
 
 export function PlayerHeader({
 	playerTitle,
+	mode,
 	questions,
 	currentQuestionIndex,
 	onOpenQuestionList,
 	onSelectQuestion,
 }: Readonly<{
 	playerTitle: string;
+	mode: PlayerMode;
 	questions: readonly PlayerQuestion[];
 	currentQuestionIndex: number;
 	onOpenQuestionList: () => void;
@@ -48,17 +50,19 @@ export function PlayerHeader({
 							</li>
 						))}
 					</ol>
-					<div
-						class="exam-player__progress-track"
-						role="progressbar"
-						aria-label="問題の進捗"
-						aria-valuemin={0}
-						aria-valuemax={questions.length}
-						aria-valuenow={currentQuestionIndex + 1}
-						aria-valuetext={`問${currentQuestionIndex + 1} / ${questions.length}`}
-					>
-						<span style={`width: ${((currentQuestionIndex + 1) / questions.length) * 100}%;`} />
-					</div>
+					{mode === "exam" ? (
+						<div
+							class="exam-player__progress-track"
+							role="progressbar"
+							aria-label="問題の進捗"
+							aria-valuemin={0}
+							aria-valuemax={questions.length}
+							aria-valuenow={currentQuestionIndex + 1}
+							aria-valuetext={`問${currentQuestionIndex + 1} / ${questions.length}`}
+						>
+							<span style={`width: ${((currentQuestionIndex + 1) / questions.length) * 100}%;`} />
+						</div>
+					) : null}
 				</div>
 				<span>
 					{currentQuestionIndex + 1} / {questions.length}

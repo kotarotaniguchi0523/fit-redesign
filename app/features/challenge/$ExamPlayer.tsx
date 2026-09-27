@@ -106,6 +106,7 @@ export default function ExamPlayer(props: ExamPlayerProps): JSX.Element {
 		>
 			<PlayerHeader
 				playerTitle={props.playerTitle}
+				mode={props.mode}
 				questions={props.questions}
 				currentQuestionIndex={player.currentQuestionIndex}
 				onOpenQuestionList={player.openQuestionList}
