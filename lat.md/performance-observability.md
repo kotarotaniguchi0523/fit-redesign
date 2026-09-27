@@ -30,3 +30,5 @@ The SSG document includes the first question before the Hono JSX island initiali
 
 - Page Object readiness and no-JavaScript coverage: [[testing#Challenge client and player#Initial HTML shows the first question before island hydration]].
 - Browser measurement: `docs/performance-observability.md`, section “Quiz player first render”.
+
+D1 is accessed only by explicit synchronization. Challenge answer reads use 75-ID chunks with at most six concurrent requests; full history is returned to preserve cross-device merge behavior.

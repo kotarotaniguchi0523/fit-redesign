@@ -58,6 +58,23 @@ describe("challengeRepository", () => {
 		expect((await syncChallenges(db, link, [input, input]))._unsafeUnwrap()).toHaveLength(1);
 	});
 
+	it("75件を超える履歴を複数の読み取りバッチから全件復元する", async () => {
+		const { db } = await testDb();
+		const link = await syncLinkId("c".repeat(43));
+		await createSyncLink(db, link, 1_700_000_000_000);
+		const inputs = Array.from({ length: 76 }, (_, index) =>
+			completedChallenge(`550e8400-e29b-41d4-a716-${String(index + 1).padStart(12, "0")}`),
+		);
+
+		await syncChallenges(db, link, inputs.slice(0, 38));
+		const result = await syncChallenges(db, link, inputs.slice(38));
+		const restored = result._unsafeUnwrap();
+
+		expect(restored).toHaveLength(76);
+		expect(restored.every((challenge) => challenge.answers.length === 1)).toBe(true);
+		expect(new Set(restored.map((challenge) => challenge.challengeId)).size).toBe(76);
+	}, 15_000);
+
 	it("同じchallengeIdの異なるpayloadと別リンクへの横流しを拒否する", async () => {
 		const { db } = await testDb();
 		const firstLink = await syncLinkId("a".repeat(43));
