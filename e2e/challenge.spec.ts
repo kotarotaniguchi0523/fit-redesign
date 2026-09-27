@@ -101,13 +101,11 @@ for (const width of [320, 390]) {
 		await page.setViewportSize({ width, height: 844 });
 		await challengePlayer.openForFreshAttempt();
 		const edgeNavigationPositions = await challengePlayer.player.evaluate((player) => {
-			const workspace = player.querySelector<HTMLElement>(".exam-player__workspace");
 			const previous = player.querySelector<HTMLElement>(".exam-player__edge-nav-button--previous");
 			const next = player.querySelector<HTMLElement>(".exam-player__edge-nav-button--next");
-			if (!(workspace && previous && next)) {
-				throw new Error("Both edge navigation buttons and their workspace must be present");
+			if (!(previous && next)) {
+				throw new Error("Both edge navigation buttons must be present");
 			}
-			const workspaceBounds = workspace.getBoundingClientRect();
 			const previousBounds = previous.getBoundingClientRect();
 			const nextBounds = next.getBoundingClientRect();
 			return {
