@@ -1,20 +1,9 @@
-import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
+import { expectAnswerPanelMotion, observeAnswerPanelMotion } from "./helpers/answer-panel-motion";
 
 const DURATION = /^\d{2,}:\d{2}(?::\d{2})?$/;
 const QUESTION_ROW = /^問\d+ /;
 const FIFTH_QUESTION = /^問5 /;
-async function observeAnswerPanelTransition(page: Page): Promise<void> {
-	await page.evaluate(() => {
-		document.addEventListener("transitionrun", (event) => {
-			const target = event.target;
-			if (target instanceof Element && target.matches(".q-answer-panel, .exam-answer")) {
-				document.documentElement.setAttribute("data-test-answer-panel-transition", "started");
-			}
-		});
-	});
-}
-
 test("小テストの判定・経過時間・進捗を再読み込み後も維持する", async ({
 	challengePlayer,
 	page,
@@ -178,12 +167,9 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 	await challengePlayer.previousButton.click();
 	await expect(challengePlayer.progress).toHaveAttribute("aria-valuenow", "4");
 	await challengePlayer.nextButton.click();
-	await observeAnswerPanelTransition(page);
+	await observeAnswerPanelMotion(page);
 	await challengePlayer.revealAnswer();
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-test-answer-panel-transition",
-		"started",
-	);
+	await expectAnswerPanelMotion(page);
 	expect(
 		await challengePlayer.player
 			.getByRole("button", { name: "解答を隠す" })
