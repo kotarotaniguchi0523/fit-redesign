@@ -2502,7 +2502,7 @@
 		padding: 2rem 4.5rem 4rem;
 	}
 	.exam-player__edge-nav {
-		position: absolute;
+		position: fixed;
 		inset: 60% 0 auto;
 		width: auto;
 		height: 0;
