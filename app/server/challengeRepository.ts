@@ -68,6 +68,9 @@ type StoredChallenge = Readonly<{
 	syncLinkId: string;
 }>;
 
+const CHALLENGE_QUERY_BATCH_SIZE = 75;
+const MAX_CONCURRENT_D1_READS = 6;
+
 function readChallenges(
 	db: Db,
 	syncLinkId: SyncLinkIdType,
@@ -80,16 +83,36 @@ function readChallenges(
 			.orderBy(desc(challenges.updatedAt))
 			.then(async (challengeRows) => {
 				const groupedAnswers = new Map<string, (typeof answers.$inferSelect)[]>();
-				for (let offset = 0; offset < challengeRows.length; offset += 75) {
-					const batch = challengeRows.slice(offset, offset + 75);
-					const ids = batch.map((challenge) => challenge.id);
-					const rows = await db.select().from(answers).where(inArray(answers.challengeId, ids));
-					for (const answer of rows) {
-						const grouped = groupedAnswers.get(answer.challengeId) ?? [];
-						grouped.push(answer);
-						groupedAnswers.set(answer.challengeId, grouped);
+				const answerIdBatches = Array.from(
+					{ length: Math.ceil(challengeRows.length / CHALLENGE_QUERY_BATCH_SIZE) },
+					(_, index) =>
+						challengeRows
+							.slice(
+								index * CHALLENGE_QUERY_BATCH_SIZE,
+								(index + 1) * CHALLENGE_QUERY_BATCH_SIZE,
+							)
+							.map((challenge) => challenge.id),
+				);
+
+				for (
+					let offset = 0;
+					offset < answerIdBatches.length;
+					offset += MAX_CONCURRENT_D1_READS
+				) {
+					const answerRowsBatches = await Promise.all(
+						answerIdBatches
+							.slice(offset, offset + MAX_CONCURRENT_D1_READS)
+							.map((ids) => db.select().from(answers).where(inArray(answers.challengeId, ids))),
+					);
+					for (const rows of answerRowsBatches) {
+						for (const answer of rows) {
+							const grouped = groupedAnswers.get(answer.challengeId) ?? [];
+							grouped.push(answer);
+							groupedAnswers.set(answer.challengeId, grouped);
+						}
 					}
 				}
+
 				return challengeRows.map((challenge) =>
 					toPayload(challenge, groupedAnswers.get(challenge.id) ?? []),
 				);
@@ -128,28 +151,26 @@ export function syncChallenges(
 		const submitted = [...uniquePayloads.values()];
 		return ResultAsync.fromPromise(
 			Promise.all(
-				Array.from({ length: Math.ceil(submitted.length / 75) }, async (_, index) => {
-					const batch = submitted.slice(index * 75, (index + 1) * 75);
-					const rows = await db
-						.select({ challenge: challenges, syncLinkId: challenges.syncLinkId })
-						.from(challenges)
-						.where(
-							inArray(
-								challenges.id,
-								batch.map((payload) => ChallengeIdSchema.parse(payload.challengeId)),
-							),
+				Array.from(
+					{ length: Math.ceil(submitted.length / CHALLENGE_QUERY_BATCH_SIZE) },
+					async (_, index) => {
+						const batch = submitted.slice(
+							index * CHALLENGE_QUERY_BATCH_SIZE,
+							(index + 1) * CHALLENGE_QUERY_BATCH_SIZE,
 						);
-					const answerRows = await db
-						.select()
-						.from(answers)
-						.where(
-							inArray(
-								answers.challengeId,
-								batch.map((payload) => ChallengeIdSchema.parse(payload.challengeId)),
-							),
+						const ids = batch.map((payload) =>
+							ChallengeIdSchema.parse(payload.challengeId),
 						);
-					return { rows, answerRows };
-				}),
+						const [rows, answerRows] = await db.batch([
+							db
+								.select({ challenge: challenges, syncLinkId: challenges.syncLinkId })
+								.from(challenges)
+								.where(inArray(challenges.id, ids)),
+							db.select().from(answers).where(inArray(answers.challengeId, ids)),
+						]);
+						return { rows, answerRows };
+					},
+				),
 			),
 			repositoryError("ReadChallenge"),
 		).andThen((batches) => {
