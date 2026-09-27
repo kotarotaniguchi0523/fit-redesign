@@ -8,12 +8,14 @@ export function PlayerHeader({
 	currentQuestionIndex,
 	onOpenQuestionList,
 	onSelectQuestion,
+	disabled = false,
 }: Readonly<{
 	playerTitle: string;
 	questions: readonly PlayerQuestion[];
 	currentQuestionIndex: number;
 	onOpenQuestionList: () => void;
 	onSelectQuestion: (index: number) => void;
+	disabled?: boolean;
 }>): JSX.Element {
 	return (
 		<header class="exam-player__header">
@@ -24,6 +26,7 @@ export function PlayerHeader({
 						class="exam-action exam-player__list-toggle"
 						aria-label="問題一覧を開く"
 						title="問題一覧を開く"
+						disabled={disabled}
 						onClick={onOpenQuestionList}
 					>
 						<MenuIcon />
@@ -41,6 +44,7 @@ export function PlayerHeader({
 									aria-label={`問${index + 1}`}
 									aria-current={index === currentQuestionIndex ? "step" : undefined}
 									class={index === currentQuestionIndex ? "is-current" : ""}
+									disabled={disabled}
 									onClick={(): void => onSelectQuestion(index)}
 								>
 									{index + 1}
