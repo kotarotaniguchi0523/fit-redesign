@@ -113,7 +113,7 @@ for (const width of [320, 390]) {
 			return {
 				previousCenter: previousBounds.top + previousBounds.height / 2,
 				nextCenter: nextBounds.top + nextBounds.height / 2,
-				expectedCenter: workspaceBounds.top + workspaceBounds.height * 0.6,
+				expectedCenter: window.innerHeight * 0.6,
 			};
 		});
 		expect(
