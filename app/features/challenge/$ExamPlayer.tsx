@@ -16,6 +16,7 @@ import type { ExamPlayerProps } from "./player/types";
 import { useExamPlayerController } from "./player/useExamPlayerController";
 
 const StableQuestionContent = memo(QuestionContent);
+const ignorePreviewInteraction = (): void => undefined;
 
 export default function ExamPlayer(props: ExamPlayerProps): JSX.Element {
 	const player = useExamPlayerController(props);
@@ -191,17 +192,13 @@ function ExamPlayerPreview(props: ExamPlayerProps): JSX.Element {
 				questions={props.questions}
 				currentQuestionIndex={0}
 				disabled
-				onOpenQuestionList={(): void => {}}
-				onSelectQuestion={(): void => {}}
+				onOpenQuestionList={ignorePreviewInteraction}
+				onSelectQuestion={ignorePreviewInteraction}
 			/>
 			<div class="exam-player__workspace">
 				<div class="exam-player__question">
 					<StableQuestionContent question={question} variant="exam-player" />
-					<ChallengeTimerDisplay
-						mode={props.mode}
-						totalElapsedMs={0}
-						questionElapsedMs={0}
-					/>
+					<ChallengeTimerDisplay mode={props.mode} totalElapsedMs={0} questionElapsedMs={0} />
 				</div>
 			</div>
 		</section>

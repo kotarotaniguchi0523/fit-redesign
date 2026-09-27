@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
-import { ChallengePlayerPage } from "./pages/challenge-player.page";
 import { expectAnswerPanelMotion, observeAnswerPanelMotion } from "./helpers/answer-panel-motion";
+import { ChallengePlayerPage } from "./pages/challenge-player.page";
 
 const DURATION = /^\d{2,}:\d{2}(?::\d{2})?$/;
 const QUESTION_ROW = /^問\d+ /;
