@@ -2316,15 +2316,6 @@
 		width: 1.75rem;
 		height: 1.75rem;
 	}
-	.exam-player__actions .exam-action--timer {
-		width: 3.5rem;
-		height: 3.5rem;
-		flex-basis: 3.5rem;
-	}
-	.exam-player__actions :where(.exam-action--timer) svg {
-		width: 1.167rem;
-		height: 1.167rem;
-	}
 	.exam-player__actions .exam-action[title]::after {
 		position: absolute;
 		bottom: calc(100% + 0.7rem);
@@ -2401,15 +2392,6 @@
 		.exam-player__actions .exam-action svg {
 			width: 1.45rem;
 			height: 1.45rem;
-		}
-		.exam-player__actions .exam-action--timer {
-			width: 2.75rem;
-			height: 2.75rem;
-			flex-basis: 2.75rem;
-		}
-		.exam-player__actions .exam-action--timer svg {
-			width: 0.967rem;
-			height: 0.967rem;
 		}
 		.exam-player__edge-nav {
 			inset-block-start: 55%;

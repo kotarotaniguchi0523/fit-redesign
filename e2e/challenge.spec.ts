@@ -167,6 +167,18 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 	await expect(challengePlayer.questionElapsedTime).toHaveText(DURATION);
 	await expect(challengePlayer.totalElapsedTime).toHaveCount(0);
 	await expect(challengePlayer.player.getByText("1 / 5", { exact: true })).toHaveCount(0);
+	const actionButtonSizes = await Promise.all([
+		challengePlayer.answerToggle.evaluate((button) => {
+			const { width, height } = button.getBoundingClientRect();
+			return { width, height };
+		}),
+		challengePlayer.pauseButton.evaluate((button) => {
+			const { width, height } = button.getBoundingClientRect();
+			return { width, height };
+		}),
+	]);
+	expect(Math.abs(actionButtonSizes[0].width - actionButtonSizes[1].width)).toBeLessThan(1);
+	expect(Math.abs(actionButtonSizes[0].height - actionButtonSizes[1].height)).toBeLessThan(1);
 	const progressLayout = await challengePlayer.player.evaluate((player) => {
 		const buttons = Array.from(
 			player.querySelectorAll<HTMLElement>(".exam-player__progress ol button"),
@@ -183,6 +195,7 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 			}),
 			trackStart: trackBounds.left,
 			trackEnd: trackBounds.right,
+			trackBottom: trackBounds.bottom,
 			promptTop: (() => {
 				const prompt = player.querySelector<HTMLElement>(".exam-question__text");
 				if (!prompt) {
@@ -205,8 +218,8 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 	for (const distance of stepDistances.slice(1)) {
 		expect(Math.abs(distance - stepDistances[0])).toBeLessThan(1);
 	}
-	expect(progressLayout.promptTop).toBeGreaterThan(progressLayout.trackEnd);
-	expect(progressLayout.promptTop - progressLayout.trackEnd).toBeLessThan(100);
+	expect(progressLayout.promptTop).toBeGreaterThan(progressLayout.trackBottom);
+	expect(progressLayout.promptTop - progressLayout.trackBottom).toBeLessThan(100);
 	await expect(challengePlayer.previousButton).toBeDisabled();
 	await expect(challengePlayer.pauseButton).toHaveAttribute("aria-pressed", "true");
 	await expect(challengePlayer.answerPanel).toHaveCount(0);
