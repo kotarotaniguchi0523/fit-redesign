@@ -24,7 +24,7 @@ test("JavaScriptなしでも小テストの最初の問題を表示する", asyn
 		// Assert
 		await expect(challengePlayer.player).toHaveAttribute("aria-busy", "true");
 		await expect(challengePlayer.initialQuestionHeading).toBeVisible();
-		await expect(challengePlayer.questionPrompt).toContainText("数表現のけた数に限度があるので");
+		await expect(challengePlayer.questionPrompt).toContainText("10110(2) を10進数で表せ");
 	} finally {
 		await context.close();
 	}
