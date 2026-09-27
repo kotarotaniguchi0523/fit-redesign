@@ -100,6 +100,28 @@ for (const width of [320, 390]) {
 		// Arrange
 		await page.setViewportSize({ width, height: 844 });
 		await challengePlayer.openForFreshAttempt();
+		const edgeNavigationPositions = await challengePlayer.player.evaluate((player) => {
+			const workspace = player.querySelector<HTMLElement>(".exam-player__workspace");
+			const previous = player.querySelector<HTMLElement>(".exam-player__edge-nav-button--previous");
+			const next = player.querySelector<HTMLElement>(".exam-player__edge-nav-button--next");
+			if (!(workspace && previous && next)) {
+				throw new Error("Both edge navigation buttons and their workspace must be present");
+			}
+			const workspaceBounds = workspace.getBoundingClientRect();
+			const previousBounds = previous.getBoundingClientRect();
+			const nextBounds = next.getBoundingClientRect();
+			return {
+				previousCenter: previousBounds.top + previousBounds.height / 2,
+				nextCenter: nextBounds.top + nextBounds.height / 2,
+				expectedCenter: workspaceBounds.top + workspaceBounds.height * 0.6,
+			};
+		});
+		expect(
+			Math.abs(edgeNavigationPositions.previousCenter - edgeNavigationPositions.nextCenter),
+		).toBeLessThan(1);
+		expect(
+			Math.abs(edgeNavigationPositions.previousCenter - edgeNavigationPositions.expectedCenter),
+		).toBeLessThan(1);
 		const timerCards = await challengePlayer.player.evaluate((player) =>
 			Array.from(player.querySelectorAll<HTMLElement>(".exam-player__timers > div")).map((card) => {
 				const label = card.querySelector("span");
@@ -129,6 +151,12 @@ for (const width of [320, 390]) {
 		await expect(
 			challengePlayer.questionList.getByRole("heading", { name: "問題一覧" }),
 		).toBeVisible();
+		const questionListBounds = await challengePlayer.questionList.evaluate((list) => {
+			const { left, width: panelWidth } = list.getBoundingClientRect();
+			return { left, panelWidth, viewportWidth: window.innerWidth };
+		});
+		expect(questionListBounds.left).toBe(0);
+		expect(questionListBounds.panelWidth).toBeLessThan(questionListBounds.viewportWidth * 0.85);
 		await expect(
 			challengePlayer.questionList.getByRole("button", { name: QUESTION_ROW }),
 		).toHaveCount(5);
