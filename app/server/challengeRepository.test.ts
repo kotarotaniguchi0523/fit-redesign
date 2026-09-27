@@ -63,9 +63,7 @@ describe("challengeRepository", () => {
 		const link = await syncLinkId("c".repeat(43));
 		await createSyncLink(db, link, 1_700_000_000_000);
 		const inputs = Array.from({ length: 76 }, (_, index) =>
-			completedChallenge(
-				`550e8400-e29b-41d4-a716-${String(index + 1).padStart(12, "0")}`,
-			),
+			completedChallenge(`550e8400-e29b-41d4-a716-${String(index + 1).padStart(12, "0")}`),
 		);
 
 		await syncChallenges(db, link, inputs.slice(0, 38));
