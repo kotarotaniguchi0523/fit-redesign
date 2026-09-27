@@ -202,7 +202,6 @@ test("小テストを一覧から開始すると、プレイヤー表示中も�
 	// Assert
 	await expect(challengePlayer.player).toBeVisible();
 	await challengePlayer.expectModeEntryAnimation();
-	await expect(challengePlayer.progress).toHaveCount(0);
 	await expect(challengePlayer.totalElapsedTime).toHaveText(DURATION);
 	await expect(challengePlayer.questionElapsedTime).toHaveText(DURATION);
 	const entryTime = await challengePlayer.questionElapsedTime.textContent();

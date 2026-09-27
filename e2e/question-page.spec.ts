@@ -41,6 +41,24 @@ async function expectIconCentered(locator: Locator): Promise<void> {
 	expect(offset?.y).toBeLessThanOrEqual(1);
 }
 
+async function expectActionsSameSize(locators: Locator[]): Promise<void> {
+	const sizes = await Promise.all(
+		locators.map((locator) =>
+			locator.evaluate((element) => {
+				const { width, height } = element.getBoundingClientRect();
+				return { width, height };
+			}),
+		),
+	);
+	const [reference, ...remaining] = sizes;
+	if (!reference) {
+		throw new Error("Expected at least one question action");
+	}
+	for (const size of remaining) {
+		expect(Math.abs(size.width - reference.width)).toBeLessThanOrEqual(1);
+		expect(Math.abs(size.height - reference.height)).toBeLessThanOrEqual(1);
+	}
+}
 test("問題ページの小テスト・PDF・一問ごとの操作が表示される", async ({ page, questionSet }) => {
 	// Arrange
 	await page.setViewportSize({ width: 390, height: 844 });
@@ -57,6 +75,11 @@ test("問題ページの小テスト・PDF・一問ごとの操作が表示さ�
 	await expectIconCentered(questionSet.copyButton);
 	await expectIconCentered(questionSet.answerToggle);
 	await expectIconCentered(questionSet.timerLink);
+	await expectActionsSameSize([
+		questionSet.copyButton,
+		questionSet.answerToggle,
+		questionSet.timerLink,
+	]);
 	expect(timerTarget).toMatch(FOCUS_ROUTE);
 });
 
