@@ -60,9 +60,6 @@ export function PlayerHeader({
 						<span style={`width: ${((currentQuestionIndex + 1) / questions.length) * 100}%;`} />
 					</div>
 				</div>
-				<span>
-					{currentQuestionIndex + 1} / {questions.length}
-				</span>
 			</nav>
 		</header>
 	);
