@@ -100,6 +100,27 @@ for (const width of [320, 390]) {
 		// Arrange
 		await page.setViewportSize({ width, height: 844 });
 		await challengePlayer.openForFreshAttempt();
+		const timerCards = await challengePlayer.player.evaluate((player) =>
+			Array.from(player.querySelectorAll<HTMLElement>(".exam-player__timers > div")).map((card) => {
+				const label = card.querySelector("span");
+				const value = card.querySelector("strong");
+				if (!(label && value)) {
+					throw new Error("Timer label or value is missing");
+				}
+				const bounds = card.getBoundingClientRect();
+				return {
+					width: bounds.width,
+					height: bounds.height,
+					labelSize: getComputedStyle(label).fontSize,
+					valueSize: getComputedStyle(value).fontSize,
+				};
+			}),
+		);
+		expect(timerCards).toHaveLength(2);
+		expect(Math.abs(timerCards[0].width - timerCards[1].width)).toBeLessThan(1);
+		expect(Math.abs(timerCards[0].height - timerCards[1].height)).toBeLessThan(1);
+		expect(timerCards[0].labelSize).toBe(timerCards[1].labelSize);
+		expect(timerCards[0].valueSize).toBe(timerCards[1].valueSize);
 
 		// Act
 		await challengePlayer.openQuestionList();
@@ -162,6 +183,13 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 			}),
 			trackStart: trackBounds.left,
 			trackEnd: trackBounds.right,
+			promptTop: (() => {
+				const prompt = player.querySelector<HTMLElement>(".exam-question__text");
+				if (!prompt) {
+					throw new Error("Question prompt is missing");
+				}
+				return prompt.getBoundingClientRect().top;
+			})(),
 		};
 	});
 	expect(progressLayout.centers).toHaveLength(5);
@@ -177,6 +205,8 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 	for (const distance of stepDistances.slice(1)) {
 		expect(Math.abs(distance - stepDistances[0])).toBeLessThan(1);
 	}
+	expect(progressLayout.promptTop).toBeGreaterThan(progressLayout.trackEnd);
+	expect(progressLayout.promptTop - progressLayout.trackEnd).toBeLessThan(100);
 	await expect(challengePlayer.previousButton).toBeDisabled();
 	await expect(challengePlayer.pauseButton).toHaveAttribute("aria-pressed", "true");
 	await expect(challengePlayer.answerPanel).toHaveCount(0);
