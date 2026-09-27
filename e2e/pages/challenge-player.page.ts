@@ -253,7 +253,14 @@ export class ChallengePlayerPage {
 	}
 
 	async moveToNextQuestion(): Promise<void> {
+		const currentIndex = Number(await this.progress.getAttribute("aria-valuenow"));
+		if (!Number.isInteger(currentIndex)) {
+			throw new Error("Current question progress is missing");
+		}
+
 		await this.nextButton.click();
+		await expect(this.progress).toHaveAttribute("aria-valuenow", String(currentIndex + 1));
+		await this.waitForAnimationToFinish(this.player.locator(".exam-player__question"));
 	}
 
 	async openQuestionList(): Promise<void> {
