@@ -38,6 +38,8 @@ Use Core Web Vitals p75 first (Cloudflare also exposes other percentiles in elem
 
 The generated quiz route previously contained an empty player shell until the Hono JSX island initialized. The initial document now renders the first question, progress header, and zeroed timer; the header controls remain disabled until hydration. Starting a quiz uses local browser storage and does not fetch question data from an API or D1. The live view reuses question markup and Markdown while the current question is unchanged, avoiding that work on each timer tick. A no-JavaScript Playwright check guards the server-rendered first question, while Page Objects wait for the interactive player before performing actions. No fixed duration threshold is used; use Chrome Performance and Network for browser timing.
 
+D1 is used only by explicit progress/challenge synchronization. Challenge synchronization still returns the full history to preserve cross-device merging, while answer rows are loaded in 75-ID chunks with at most six concurrent D1 reads. A 76-record repository test checks reconstruction across a chunk boundary. Full-history transfer remains proportional to a sync link's history; replacing it requires a cursor-based protocol and migration, so it is retained for correctness.
+
 ## Browser profiling
 
 1. Run `pnpm dev` for browser-only JSX/island iteration. For Worker bindings and SSR parity, run `pnpm db:migrate:local`, `pnpm build`, then `pnpm preview` (`wrangler dev`).
