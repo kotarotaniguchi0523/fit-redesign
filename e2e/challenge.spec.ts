@@ -4,31 +4,6 @@ import { expect, test } from "./fixtures";
 const DURATION = /^\d{2,}:\d{2}(?::\d{2})?$/;
 const QUESTION_ROW = /^問\d+ /;
 const FIFTH_QUESTION = /^問5 /;
-const MODE_ENTRY_ANIMATION = /^mode-player-enter(?:-reduced)?$/;
-
-async function observeModeEntryAnimation(page: Page): Promise<void> {
-	await page.addInitScript(() => {
-		document.addEventListener("animationstart", (event) => {
-			const target = event.target;
-			if (
-				target instanceof Element &&
-				target.matches(".exam-player__question[data-mode-transition-target]")
-			) {
-				document.documentElement.setAttribute(
-					"data-test-mode-entry-animation",
-					(event as AnimationEvent).animationName,
-				);
-			}
-		});
-	});
-}
-
-async function expectModeEntryAnimation(page: Page): Promise<void> {
-	await expect
-		.poll(() => page.locator("html").getAttribute("data-test-mode-entry-animation"))
-		.toMatch(MODE_ENTRY_ANIMATION);
-}
-
 async function observeAnswerPanelTransition(page: Page): Promise<void> {
 	await page.evaluate(() => {
 		document.addEventListener("transitionrun", (event) => {
@@ -171,14 +146,14 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 	// Arrange
 	await page.setViewportSize({ width: 390, height: 844 });
 	await questionSet.open();
-	await observeModeEntryAnimation(page);
+	await challengePlayer.observeModeEntryAnimation();
 
 	// Act
-	await questionSet.timerLink.click();
+	await questionSet.startTimeAttack();
 
 	// Assert
 	await expect(challengePlayer.player).toBeVisible();
-	await expectModeEntryAnimation(page);
+	await challengePlayer.expectModeEntryAnimation();
 	await expect(challengePlayer.questionElapsedTime).toHaveText(DURATION);
 	await expect(challengePlayer.totalElapsedTime).toHaveCount(0);
 	await expect(challengePlayer.previousButton).toBeDisabled();
@@ -228,20 +203,19 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 });
 
 test("小テストを一覧から開始すると、プレイヤー表示中も計測が進む", async ({
-	page,
 	questionSet,
 	challengePlayer,
 }) => {
 	// Arrange
 	await questionSet.open();
-	await observeModeEntryAnimation(page);
+	await challengePlayer.observeModeEntryAnimation();
 
 	// Act
-	await questionSet.startLink.click();
+	await questionSet.startExam();
 
 	// Assert
 	await expect(challengePlayer.player).toBeVisible();
-	await expectModeEntryAnimation(page);
+	await challengePlayer.expectModeEntryAnimation();
 	await expect(challengePlayer.totalElapsedTime).toHaveText(DURATION);
 	await expect(challengePlayer.questionElapsedTime).toHaveText(DURATION);
 	const entryTime = await challengePlayer.questionElapsedTime.textContent();
