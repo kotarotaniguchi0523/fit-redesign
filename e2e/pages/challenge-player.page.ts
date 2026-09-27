@@ -133,7 +133,7 @@ export class ChallengePlayerPage {
 		};
 	}
 
-	async getTimerCardStyles(): Promise<
+	getTimerCardStyles(): Promise<
 		Array<{ width: number; height: number; labelSize: string; valueSize: string }>
 	> {
 		return this.timerCards.evaluateAll((cards) =>
@@ -207,7 +207,7 @@ export class ChallengePlayerPage {
 		return { left: panel.x, width: panel.width, viewportWidth };
 	}
 
-	async getHorizontalOverflow(): Promise<number> {
+	getHorizontalOverflow(): Promise<number> {
 		return this.page.evaluate(
 			() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth,
 		);
