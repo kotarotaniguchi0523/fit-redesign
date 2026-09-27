@@ -2490,7 +2490,7 @@
 		border-radius: 999px;
 		background: #dce3e9;
 	}
-	.exam-player__progress-track span {
+	.exam-player__progress > .exam-player__progress-track > span {
 		display: block;
 		height: 100%;
 		border-radius: inherit;
