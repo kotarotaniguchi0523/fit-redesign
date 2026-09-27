@@ -34,6 +34,7 @@ try {
 		server.ssrLoadModule("/app/data/units.ts"),
 		server.ssrLoadModule("/app/data/site.ts"),
 	]);
+	const pageDocumentCache = new Map();
 	const markdownAssetRewrites = ["/markdown /markdown.md 200"];
 	for (const unit of unitBasedTabs) {
 		for (const { year } of unit.examMapping) {
@@ -80,7 +81,7 @@ try {
 			extensionMap: { "text/markdown": "md", ...defaultExtensionMap },
 			plugins: [
 				defaultPlugin(),
-				createIndexableSitemapPlugin(SITE_URL),
+				createIndexableSitemapPlugin(SITE_URL, pageDocumentCache),
 				robotsTxtPlugin({
 					rules: [
 						...[
@@ -98,7 +99,11 @@ try {
 					sitemapUrl: `${SITE_URL}/sitemap.xml`,
 					extraLines: ["# AI Search Engine Bots - Allowed"],
 				}),
-				createStaticSiteIntegrityPlugin({ baseUrl: SITE_URL, routes: app.routes }),
+				createStaticSiteIntegrityPlugin({
+					baseUrl: SITE_URL,
+					routes: app.routes,
+					pageDocumentCache,
+				}),
 			],
 		},
 	);

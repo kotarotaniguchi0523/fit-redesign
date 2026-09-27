@@ -75,6 +75,9 @@ importers:
       better-sqlite3:
         specifier: ^13.0.3
         version: 13.0.3
+      css-tree:
+        specifier: ^3.2.1
+        version: 3.2.1
       drizzle-kit:
         specifier: 1.0.0-rc.4
         version: 1.0.0-rc.4

@@ -61,7 +61,23 @@ Hono SSG の生成物をデプロイ前に検証する。出力パスの重複�
 
 ## Valid internal links and assets pass
 
-生成HTMLとCSSから参照する内部ページ・fragment・アセット、および内部rewrite先が実在するときにビルドを通す。
+生成HTMLとCSSから参照する内部ページ・fragment・アセット、および内部rewrite先が実在するときにビルドを通す。CSS構文はCSS parser、srcsetはdata URLのカンマを保つtokenizerで読み取り、コメント中のURLは参照扱いしない。
+
+## HonoX fallback routes do not mask broken links
+
+全体middlewareとHonoXのnot-found fallback routeだけでは、存在しない内部リンクを有効にしない。
+
+## Hono route patterns follow Hono routing semantics
+
+GETやPOSTなどの具体的なroute patternはHono routerで照合し、form actionはformのHTTP methodで検査する。`ALL` routeはHonoXのmiddlewareと区別するため明示的に許可したものだけを対象にする。
+
+## Cloudflare redirect placeholders resolve to generated pages
+
+`_redirects`の単一splatとnamed placeholderを事前compileし、置換後の内部リンク先が生成ページまたはWorker routeに解決することを確認する。
+
+## HTML base URLs resolve internal references
+
+相対URLはHTMLの`<base>`要素を含む実際のdocument base URIを基準に解決する。
 
 ## Internal links can target parameterized Worker routes
 
@@ -74,6 +90,10 @@ Hono SSG の生成物をデプロイ前に検証する。出力パスの重複�
 ## Missing static assets fail the build
 
 生成HTML/CSSがWorker routeしかない場所をアセットとして参照した場合や、出力にない静的ファイルを参照した場合に失敗する。
+
+## Missing srcset and imported CSS assets fail the build
+
+`srcset`の各候補とCSS `@import` の参照先も静的アセットとして検査する。
 
 ## Canonical URLs match generated pages
 
