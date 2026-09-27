@@ -16,6 +16,10 @@ import type { ExamPlayerProps } from "./player/types";
 import { useExamPlayerController } from "./player/useExamPlayerController";
 
 const StableQuestionContent = memo(QuestionContent);
+const StableAnswerPanel = memo(AnswerPanel);
+const StablePlayerHeader = memo(PlayerHeader);
+const StableQuestionActions = memo(QuestionActions);
+const StablePlayerEdgeNavigation = memo(PlayerEdgeNavigation);
 const ignorePreviewInteraction = (): void => undefined;
 
 export default function ExamPlayer(props: ExamPlayerProps): JSX.Element {
@@ -119,7 +123,7 @@ export default function ExamPlayer(props: ExamPlayerProps): JSX.Element {
 			aria-label={props.mode === "exam" ? "小テストプレイヤー" : "タイムアタックプレイヤー"}
 			aria-busy="false"
 		>
-			<PlayerHeader
+			<StablePlayerHeader
 				playerTitle={props.playerTitle}
 				questions={props.questions}
 				currentQuestionIndex={player.currentQuestionIndex}
@@ -145,8 +149,10 @@ export default function ExamPlayer(props: ExamPlayerProps): JSX.Element {
 						mode={props.mode}
 						totalElapsedMs={player.totalElapsedMs}
 						questionElapsedMs={player.currentQuestionElapsedMs}
+						timerRunning={player.timerRunning}
+						timerStartedAt={player.timerStartedAt}
 					/>
-					<QuestionActions
+					<StableQuestionActions
 						copyText={markdown?.copyText ?? ""}
 						askText={markdown?.askText ?? ""}
 						answerOpen={player.solutionOpen}
@@ -154,14 +160,14 @@ export default function ExamPlayer(props: ExamPlayerProps): JSX.Element {
 						timerRunning={player.timerRunning}
 						onToggleTimer={player.toggleTimer}
 					/>
-					<AnswerPanel
+					<StableAnswerPanel
 						question={currentQuestion}
 						isOpen={player.solutionOpen}
 						judgment={player.currentJudgment}
 						onJudge={player.judgeCurrentQuestion}
 					/>
 				</div>
-				<PlayerEdgeNavigation
+				<StablePlayerEdgeNavigation
 					showPrevious={player.navigationLength > 1}
 					isFirst={player.isFirst}
 					isLast={player.isLast}
@@ -187,7 +193,7 @@ function ExamPlayerPreview(props: ExamPlayerProps): JSX.Element {
 			aria-label={props.mode === "exam" ? "小テストプレイヤー" : "タイムアタックプレイヤー"}
 			aria-busy="true"
 		>
-			<PlayerHeader
+			<StablePlayerHeader
 				playerTitle={props.playerTitle}
 				questions={props.questions}
 				currentQuestionIndex={0}
@@ -198,7 +204,13 @@ function ExamPlayerPreview(props: ExamPlayerProps): JSX.Element {
 			<div class="exam-player__workspace">
 				<div class="exam-player__question">
 					<StableQuestionContent question={question} variant="exam-player" />
-					<ChallengeTimerDisplay mode={props.mode} totalElapsedMs={0} questionElapsedMs={0} />
+					<ChallengeTimerDisplay
+						mode={props.mode}
+						totalElapsedMs={0}
+						questionElapsedMs={0}
+						timerRunning={false}
+						timerStartedAt={null}
+					/>
 				</div>
 			</div>
 		</section>

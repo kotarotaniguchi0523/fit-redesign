@@ -6,6 +6,7 @@ import { SITE_URL } from "../data/site";
 
 const SITE_NAME = "基本情報技術 I - 明治大学";
 const DEFAULT_DESC = "明治大学 基本情報技術 I 演習問題サイト";
+const EXAM_PLAYER_PRELOAD_PATH = /^\/[^/]+\/\d{4}\/exam\/[^/]+(?:\/question\/[^/]+)?\/?$/;
 type ClientManifest = Readonly<Record<string, Readonly<{ file: string }>>>;
 const clientManifest = Object.values(
 	import.meta.glob<ClientManifest>("/dist/.vite/manifest.json", {
@@ -18,6 +19,10 @@ export default jsxRenderer(
 	({ children, title, description, jsonLd, noindex, canonical: canonicalPath, noCanonical }) => {
 		const c = useRequestContext();
 		const useBuiltAssets = import.meta.env.PROD || c.req.header("x-honox-ssg") === "true";
+		const examPlayerModule =
+			useBuiltAssets && EXAM_PLAYER_PRELOAD_PATH.test(c.req.path)
+				? clientManifest?.["app/features/challenge/$ExamPlayer.tsx"]?.file
+				: undefined;
 		const canonical = noCanonical ? null : new URL(canonicalPath ?? c.req.path, SITE_URL).href;
 		const desc = description ?? DEFAULT_DESC;
 		return (
@@ -53,6 +58,9 @@ export default jsxRenderer(
 						prod={useBuiltAssets}
 						manifest={clientManifest}
 					/>
+					{examPlayerModule ? (
+						<link rel="modulepreload" href={`${import.meta.env.BASE_URL}${examPlayerModule}`} />
+					) : null}
 					<Script src="/app/client.ts" prod={useBuiltAssets} manifest={clientManifest} />
 					<title>{title}</title>
 				</head>

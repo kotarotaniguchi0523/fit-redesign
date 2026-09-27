@@ -31,6 +31,18 @@ lat:
 
 問題切り替え時にタイマーの計測状態を止め、次の問題のサンプル開始へ移る。
 
+### Initial session is prepared without committing storage during render
+
+ブラウザー初回描画前に既存試行・結果を解決し、新規試行の保存とタブロック取得はマウント時に一度だけ行う。
+
+### Timer display projects elapsed time independently of player state
+
+表示時計の1秒更新をプレイヤー状態・保存スナップショットの更新から分離し、無効な時計差分を加算しない。
+
+### Elapsed samples accumulate without a player render
+
+5秒間隔の保存サンプルでref上の経過時間を積み上げ、描画状態はユーザー操作時に最新値へ同期する。
+
 ### Initial HTML shows the first question before island hydration
 
 小テストの最初の問題がJavaScript初期化前のHTMLに含まれ、Page Objectが操作可能な状態まで待ってから操作する。

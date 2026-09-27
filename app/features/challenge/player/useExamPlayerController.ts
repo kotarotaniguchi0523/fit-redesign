@@ -1,26 +1,25 @@
-import { useEffect, useMemo, useReducer, useRef, useState, useViewTransition } from "hono/jsx/dom";
+import {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+	useViewTransition,
+} from "hono/jsx/dom";
 import { systemClock } from "../../../lib/dateTime";
-import type { ChallengeId, Judgment, QuestionId } from "../../../types";
+import type { Judgment, QuestionId } from "../../../types";
 import { EpochMillisecondsSchema, QuestionIdSchema } from "../../../types/browser";
 import { measureUserInteraction } from "../../performance/userTiming";
 import { recordProgressEntry } from "../../progress/progressPersistence";
 import { readSyncKey } from "../../progress/progressStorage";
 import type { ChallengeAction } from "../challenge";
-import {
-	applyElapsedDelta,
-	calculateElapsedDelta,
-	challengeReducer,
-	createChallengeSnapshot,
-	isChallengeComplete,
-	restoreChallengeState,
-	toCompletedChallengePayload,
-} from "../challenge";
+import { challengeReducer, createChallengeSnapshot, isChallengeComplete } from "../challenge";
 import { challengeSyncErrorMessage, syncChallenges } from "../challengeApi";
 import {
 	archiveCompletedChallenge,
 	createChallengeStateFromSnapshot,
 	discardActiveChallenge,
-	findChallenge,
 	findActiveChallenge as findStoredActiveChallenge,
 	hasActiveChallengeLock,
 	markActiveChallengeIncomplete,
@@ -33,7 +32,7 @@ import {
 } from "../challengeStorage";
 import type { ChallengeSnapshot, ChallengeState, CompletedChallengePayload } from "../types";
 import { generateChallengeId } from "./id";
-import { readInitialChallengeView } from "./initialView";
+import { resolveInitialPlayerSession } from "./initialPlayerSession";
 import {
 	countJudgments,
 	createPlayerChallenge,
@@ -43,10 +42,22 @@ import {
 	questionScopeKey,
 } from "./model";
 import { replaceChallengeView, replaceQuestionInUrl } from "./navigation";
-import { type MutableTimerRuntime, resetTimerRuntimeInPlace } from "./timerRuntime";
+import {
+	type MutableTimerRuntime,
+	resetTimerRuntimeInPlace,
+	sampleChallengeTimer,
+} from "./timerRuntime";
 import type { ExamPlayerProps, PlayerQuestion } from "./types";
 
 export type PlayerPhase = "player" | "resume" | "result" | "missing" | "locked";
+
+function useStableCallback<Args extends unknown[], Result>(
+	callback: (...args: Args) => Result,
+): (...args: Args) => Result {
+	const callbackRef = useRef(callback);
+	callbackRef.current = callback;
+	return useCallback((...args: Args): Result => callbackRef.current(...args), []);
+}
 
 export type ExamPlayerController = Readonly<{
 	state: ChallengeState | null;
@@ -54,6 +65,7 @@ export type ExamPlayerController = Readonly<{
 	solutionOpen: boolean;
 	questionListOpen: boolean;
 	timerRunning: boolean;
+	timerStartedAt: number | null;
 	resultPayload: CompletedChallengePayload | null;
 	resultHistory: readonly CompletedChallengePayload[];
 	syncMessage: string | null;
@@ -84,72 +96,78 @@ export type ExamPlayerController = Readonly<{
 	restartCurrentChallenge: () => void;
 }>;
 
-type PlayerAction = ChallengeAction | Readonly<{ type: "INIT"; state: ChallengeState }>;
-
-function playerReducer(state: ChallengeState | null, action: PlayerAction): ChallengeState | null {
-	if (action.type === "INIT") {
-		return action.state;
-	}
-	return state ? challengeReducer(state, action) : state;
-}
-
-type InitialResultView =
-	| Readonly<{ kind: "not-result" }>
-	| Readonly<{ kind: "missing" }>
-	| Readonly<{ kind: "ready"; payload: CompletedChallengePayload }>;
-
-function resolveInitialResultView(
-	initialView: "player" | "result",
-	initialChallengeId: ChallengeId | undefined,
-): InitialResultView {
-	if (initialView !== "result") {
-		return { kind: "not-result" };
-	}
-	if (!initialChallengeId) {
-		return { kind: "missing" };
-	}
-	const snapshot = findChallenge(initialChallengeId);
-	if (snapshot?.status !== "completed") {
-		return { kind: "missing" };
-	}
-	const restored = restoreChallengeState(snapshot);
-	const payload = toCompletedChallengePayload(restored, snapshot.updatedAt);
-	return payload ? { kind: "ready", payload } : { kind: "missing" };
-}
-
 export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerController {
 	const { questions } = props;
-	const [state, dispatch] = useReducer(playerReducer, null);
-	const [phase, setPhase] = useState<PlayerPhase>("player");
+	const scopeKey = questionScopeKey(props.examId, props.mode, props.requestedQuestionId);
+	const [initialSession] = useState(() => {
+		if (typeof window !== "undefined" && typeof performance !== "undefined") {
+			performance.mark("fit-redesign:quiz-player-initialize-start");
+		}
+		return resolveInitialPlayerSession(props);
+	});
+	const [state, setState] = useState(initialSession.state);
+	const [phase, setPhase] = useState<PlayerPhase>(initialSession.phase);
 	const [solutionOpen, setSolutionOpen] = useState(false);
 	const [questionListOpen, setQuestionListOpen] = useState(false);
-	const [timerRunning, setTimerRunning] = useState(false);
-	const [resultPayload, setResultPayload] = useState<CompletedChallengePayload | null>(null);
-	const [resultHistory, setResultHistory] = useState<readonly CompletedChallengePayload[]>([]);
+	const [initialTimerRuntime] = useState(() => {
+		const running =
+			initialSession.kind === "new" &&
+			typeof document !== "undefined" &&
+			document.visibilityState === "visible";
+		return {
+			running,
+			lastSample: running && typeof performance !== "undefined" ? performance.now() : null,
+			currentQuestionId: QuestionIdSchema.parse(questions[0]?.id),
+		};
+	});
+	const [timerRunning, setTimerRunning] = useState(initialTimerRuntime.running);
+	const [resultPayload, setResultPayload] = useState<CompletedChallengePayload | null>(
+		initialSession.resultPayload,
+	);
+	const [resultHistory, setResultHistory] = useState<readonly CompletedChallengePayload[]>(
+		initialSession.resultHistory,
+	);
 	const [syncMessage, setSyncMessage] = useState<string | null>(null);
 	const [navigationDirection, setNavigationDirection] = useState<"forward" | "backward" | "none">(
 		"none",
 	);
-	const stateRef = useRef<ChallengeState | null>(null);
+	const stateRef = useRef<ChallengeState | null>(state);
 	const phaseRef = useRef<PlayerPhase>(phase);
 	const userPausedRef = useRef(false);
-	const runtimeRef = useRef<MutableTimerRuntime>({
-		running: false,
-		lastSample: null,
-		currentQuestionId: QuestionIdSchema.parse(questions[0]?.id),
-	});
+	const ownedLocksRef = useRef(new Set<string>());
+	const runtimeRef = useRef<MutableTimerRuntime>(initialTimerRuntime);
 	const ownerIdRef = useRef("");
 	const hasInitialized = useRef(false);
+	const startupMeasured = useRef(false);
 	const lastPersistAt = useRef(0);
 	const [, startViewTransition] = useViewTransition();
-	stateRef.current = state;
 	phaseRef.current = phase;
+	const commitState = (nextState: ChallengeState): void => {
+		stateRef.current = nextState;
+		setState(nextState);
+	};
+	const applyChallengeAction = (action: ChallengeAction): ChallengeState | null => {
+		const current = stateRef.current;
+		if (!current) {
+			return null;
+		}
+		const next = challengeReducer(current, action);
+		commitState(next);
+		return next;
+	};
 
 	const getOwnerId = (): string => {
 		if (!ownerIdRef.current) {
 			ownerIdRef.current = generateChallengeId();
 		}
 		return ownerIdRef.current;
+	};
+	const acquireLock = (challengeId: string): boolean => {
+		const acquired = tryAcquireChallengeLock(challengeId, getOwnerId());
+		if (acquired) {
+			ownedLocksRef.current.add(challengeId);
+		}
+		return acquired;
 	};
 	const questionById = useMemo(
 		() => new Map(questions.map((question) => [question.id, question])),
@@ -165,7 +183,6 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		}
 		return questionIndexById.get(questionId) ?? 0;
 	};
-	const scopeKey = questionScopeKey(props.examId, props.mode, props.requestedQuestionId);
 
 	const persistState = (nextState: ChallengeState, force = false): void => {
 		const now = typeof performance === "undefined" ? 0 : performance.now();
@@ -182,15 +199,13 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		}
 		const runtime = runtimeRef.current;
 		const now = performance.now();
-		const deltaMs = calculateElapsedDelta(runtime, now);
-		runtime.lastSample = now;
-		if (!runtime.running || deltaMs <= 0) {
+		const sample = sampleChallengeTimer(current, runtime, now);
+		if (sample.deltaMs <= 0) {
 			return current;
 		}
-		const next = applyElapsedDelta(current, runtime.currentQuestionId, deltaMs);
-		dispatch({ type: "APPLY_ELAPSED", questionId: runtime.currentQuestionId, deltaMs });
-		persistState(next, forcePersist);
-		return next;
+		stateRef.current = sample.state;
+		persistState(sample.state, forcePersist);
+		return sample.state;
 	};
 
 	const startNewChallenge = (requestedIndex?: number, animate = false, shouldRun = true): void => {
@@ -212,13 +227,13 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 			return;
 		}
 		const { state: next, question: initialQuestion } = challenge;
-		const acquiredLock = tryAcquireChallengeLock(next.challengeId, getOwnerId());
+		const acquiredLock = acquireLock(next.challengeId);
 		if (acquiredLock) {
 			resetTimerRuntimeInPlace(runtimeRef.current, next.questionIds[next.currentIndex]);
 			saveActiveChallenge(next);
 			lastPersistAt.current = typeof performance === "undefined" ? 0 : performance.now();
 		}
-		const initializeState = (): void => dispatch({ type: "INIT", state: next });
+		const initializeState = (): void => commitState(next);
 		if (animate) {
 			startViewTransition(initializeState);
 		} else {
@@ -247,13 +262,14 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 	): void => {
 		const next = createChallengeStateFromSnapshot(snapshot);
 		resetTimerRuntimeInPlace(runtimeRef.current, next.questionIds[next.currentIndex]);
+		const initializeState = (): void => commitState(next);
 		if (animate) {
-			startViewTransition(() => dispatch({ type: "INIT", state: next }));
+			startViewTransition(initializeState);
 		} else {
-			dispatch({ type: "INIT", state: next });
+			initializeState();
 		}
 		setResultPayload(null);
-		const canResume = tryAcquireChallengeLock(next.challengeId, getOwnerId());
+		const canResume = acquireLock(next.challengeId);
 		userPausedRef.current = !shouldRun;
 		setTimerRunning(canResume && shouldRun && document.visibilityState === "visible");
 		setQuestionListOpen(false);
@@ -297,7 +313,7 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		}
 		runtimeRef.current.running = false;
 		setTimerRunning(false);
-		dispatch({ type: "COMPLETE", updatedAt });
+		applyChallengeAction({ type: "COMPLETE", updatedAt });
 		setResultPayload(payload);
 		replaceChallengeView("result", payload.challengeId);
 		setResultHistory(challengeHistoryForScope(payload));
@@ -323,43 +339,39 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		}
 	};
 
-	const initializeResultView = (): boolean => {
-		const { view, challengeId } = readInitialChallengeView(window.location.search);
-		const resultView = resolveInitialResultView(view, challengeId);
-		if (resultView.kind === "not-result") {
-			return false;
-		}
-		if (resultView.kind === "missing") {
-			setPhase("missing");
-			return true;
-		}
-		setResultPayload(resultView.payload);
-		setResultHistory(challengeHistoryForScope(resultView.payload));
-		return true;
-	};
-
-	const initializeChallenge = (): void => {
-		if (initializeResultView()) {
-			return;
-		}
-		const active = findStoredActiveChallenge(scopeKey);
-		if (active) {
-			dispatch({ type: "INIT", state: restoreChallengeState(active) });
-			setPhase("resume");
-			return;
-		}
-		startNewChallenge();
-	};
-
-	useEffect(() => {
+	useLayoutEffect(() => {
 		if (hasInitialized.current) {
 			return;
 		}
 		hasInitialized.current = true;
-		initializeChallenge();
+		if (initialSession.kind === "new" && state) {
+			const questionId = state.questionIds[state.currentIndex];
+			const acquiredLock = acquireLock(state.challengeId);
+			if (acquiredLock) {
+				if (questionId) {
+					runtimeRef.current.currentQuestionId = questionId;
+				}
+				runtimeRef.current.running = document.visibilityState === "visible";
+				runtimeRef.current.lastSample ??= performance.now();
+				saveActiveChallenge(state);
+				lastPersistAt.current = performance.now();
+				setTimerRunning(runtimeRef.current.running);
+			} else {
+				runtimeRef.current.running = false;
+				setTimerRunning(false);
+				setPhase("locked");
+			}
+		}
+		if (typeof performance !== "undefined") {
+			performance.mark("fit-redesign:quiz-player-initialize-end");
+			performance.measure("fit-redesign:quiz-player-initialize", {
+				start: "fit-redesign:quiz-player-initialize-start",
+				end: "fit-redesign:quiz-player-initialize-end",
+			});
+		}
 	}, []);
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		if (phase !== "player" || !state) {
 			return;
 		}
@@ -380,19 +392,34 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		setSolutionOpen(false);
 	}, [phase, questionListOpen, state?.currentIndex]);
 
+	useLayoutEffect(() => {
+		if (startupMeasured.current || phase !== "player" || !state) {
+			return;
+		}
+		startupMeasured.current = true;
+		if (typeof performance !== "undefined") {
+			performance.mark("fit-redesign:quiz-player-ready");
+			performance.measure("fit-redesign:quiz-player-mount-to-ready", {
+				start: "fit-redesign:quiz-player-initialize-start",
+				end: "fit-redesign:quiz-player-ready",
+			});
+		}
+	}, [phase, state]);
+
 	useEffect(() => {
 		const interval = window.setInterval(() => {
 			if (phaseRef.current !== "player" || document.visibilityState !== "visible") {
 				return;
 			}
 			flushTimer();
-		}, 1000);
+		}, 5000);
 		const onVisibilityChange = (): void => {
 			if (document.visibilityState === "hidden") {
 				const flushed = flushTimer(true);
 				runtimeRef.current.running = false;
 				setTimerRunning(false);
 				if (flushed) {
+					commitState(flushed);
 					saveActiveChallenge(flushed);
 				}
 			} else if (phaseRef.current === "player") {
@@ -404,6 +431,7 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		const onPageHide = (): void => {
 			const flushed = flushTimer(true);
 			if (flushed) {
+				commitState(flushed);
 				saveActiveChallenge(flushed);
 			}
 			runtimeRef.current.running = false;
@@ -433,7 +461,7 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		}
 		const challengeId = state.challengeId;
 		const ownerId = getOwnerId();
-		if (!tryAcquireChallengeLock(challengeId, ownerId)) {
+		if (!(ownedLocksRef.current.has(challengeId) || acquireLock(challengeId))) {
 			setPhase("locked");
 			return;
 		}
@@ -449,13 +477,15 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		};
 		const onPageHide = (): void => {
 			releaseChallengeLock(challengeId, ownerId);
+			ownedLocksRef.current.delete(challengeId);
 		};
 		const onPageShow = (): void => {
-			if (tryAcquireChallengeLock(challengeId, ownerId)) {
+			if (acquireLock(challengeId)) {
 				if (phaseRef.current === "locked") {
 					setPhase("player");
 				}
 			} else {
+				ownedLocksRef.current.delete(challengeId);
 				setPhase("locked");
 			}
 		};
@@ -467,20 +497,29 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 			window.removeEventListener("storage", onStorage);
 			window.removeEventListener("pagehide", onPageHide);
 			window.removeEventListener("pageshow", onPageShow);
-			releaseChallengeLock(challengeId, ownerId);
+			if (ownedLocksRef.current.delete(challengeId)) {
+				releaseChallengeLock(challengeId, ownerId);
+			}
 		};
 	}, [phase, state?.challengeId]);
 
-	const currentQuestionId = state?.questionIds[state.currentIndex];
+	const renderState = stateRef.current ?? state;
+	const currentQuestionId = renderState?.questionIds[renderState.currentIndex];
 	const currentQuestion = currentQuestionId ? questionById.get(currentQuestionId) : undefined;
 	const { currentQuestionIndex, navigationLength } =
-		state && currentQuestionId
-			? getNavigationPosition(props.mode, currentQuestionId, state, questions, getQuestionIndex)
+		renderState && currentQuestionId
+			? getNavigationPosition(
+					props.mode,
+					currentQuestionId,
+					renderState,
+					questions,
+					getQuestionIndex,
+				)
 			: { currentQuestionIndex: 0, navigationLength: questions.length };
-	const currentQuestionIndexInState = state?.currentIndex ?? 0;
+	const currentQuestionIndexInState = renderState?.currentIndex ?? 0;
 	const isFirst = currentQuestionIndex === 0;
 	const isLast = currentQuestionIndex === navigationLength - 1;
-	const totalElapsedMs = Object.values(state?.questionElapsedMs ?? {}).reduce<number>(
+	const totalElapsedMs = Object.values(renderState?.questionElapsedMs ?? {}).reduce<number>(
 		(sum, value) => sum + (value ?? 0),
 		0,
 	);
@@ -495,7 +534,7 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		setTimerRunning(false);
 		startViewTransition(() =>
 			measureUserInteraction("fit-redesign:quiz-question-update", () =>
-				dispatch({ type: "MOVE_TO", index }),
+				applyChallengeAction({ type: "MOVE_TO", index }),
 			),
 		);
 		persistState({ ...current, currentIndex: index }, true);
@@ -503,6 +542,7 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 	const openQuestionList = (): void => {
 		const current = flushTimer(true);
 		if (current) {
+			commitState(current);
 			saveActiveChallenge(current);
 		}
 		runtimeRef.current.running = false;
@@ -510,7 +550,7 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		setQuestionListOpen(true);
 	};
 	const closeQuestionList = (): void => {
-		const selectedQuestionId = state?.questionIds[currentQuestionIndexInState];
+		const selectedQuestionId = renderState?.questionIds[currentQuestionIndexInState];
 		if (selectedQuestionId) {
 			runtimeRef.current.currentQuestionId = selectedQuestionId;
 			runtimeRef.current.lastSample = performance.now();
@@ -534,6 +574,7 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		}
 		saveActiveChallenge(current);
 		releaseChallengeLock(current.challengeId, getOwnerId());
+		ownedLocksRef.current.delete(current.challengeId);
 		runtimeRef.current.running = false;
 		setTimerRunning(false);
 		setNavigationDirection(index > currentQuestionIndex ? "forward" : "backward");
@@ -550,7 +591,10 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 	const toggleTimer = (): void => {
 		const nextRunning = !timerRunning;
 		if (!nextRunning) {
-			flushTimer(true);
+			const current = flushTimer(true);
+			if (current) {
+				commitState(current);
+			}
 		}
 		runtimeRef.current.lastSample = performance.now();
 		runtimeRef.current.running = nextRunning;
@@ -568,8 +612,10 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 			return;
 		}
 		const revealAction = { type: "REVEAL_QUESTION" as const, questionId: currentQuestionId };
-		dispatch(revealAction);
-		saveActiveChallenge(challengeReducer(current, revealAction));
+		const revealed = applyChallengeAction(revealAction);
+		if (revealed) {
+			saveActiveChallenge(revealed);
+		}
 		const timestamp = EpochMillisecondsSchema.safeParse(systemClock.nowEpochMilliseconds());
 		if (!timestamp.success) {
 			return;
@@ -582,7 +628,7 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		});
 	};
 	const judgeCurrentQuestion = (judgment: Judgment): void => {
-		if (!(state && currentQuestionId) || state.judgments[currentQuestionId]) {
+		if (!(renderState && currentQuestionId) || renderState.judgments[currentQuestionId]) {
 			return;
 		}
 		const current = flushTimer(true);
@@ -595,20 +641,22 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 			judgment,
 			answerCreatedAt: systemClock.nowEpochMilliseconds(),
 		};
-		dispatch(judgmentAction);
-		saveActiveChallenge(challengeReducer(current, judgmentAction));
+		const judged = applyChallengeAction(judgmentAction);
+		if (judged) {
+			saveActiveChallenge(judged);
+		}
 	};
 	const selectHeaderQuestion = (index: number): void => {
 		if (props.mode === "question") {
 			moveFocusTo(index);
-		} else if (state && index !== state.currentIndex) {
+		} else if (renderState && index !== renderState.currentIndex) {
 			moveTo(index);
 		}
 	};
 	const selectListedQuestion = (index: number): void => {
 		if (props.mode === "question") {
 			moveFocusTo(index);
-		} else if (state && index === state.currentIndex) {
+		} else if (renderState && index === renderState.currentIndex) {
 			closeQuestionList();
 		} else {
 			setQuestionListOpen(false);
@@ -630,36 +678,50 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		}
 	};
 	const resumeCurrentChallenge = (): void => {
-		if (state) {
-			resumeChallenge(createChallengeSnapshot(state));
+		if (renderState) {
+			resumeChallenge(createChallengeSnapshot(renderState));
 		}
 	};
 	const restartCurrentChallenge = (): void => {
-		if (state) {
-			if (countJudgments(state) > 0) {
-				markActiveChallengeIncomplete(state);
+		if (renderState) {
+			if (countJudgments(renderState) > 0) {
+				markActiveChallengeIncomplete(renderState);
 			} else {
-				discardActiveChallenge(state.challengeId);
+				discardActiveChallenge(renderState.challengeId);
 			}
 		}
 		startNewChallenge();
 	};
+	const stableStartNewChallenge = useStableCallback(startNewChallenge);
+	const stableFinishChallenge = useStableCallback(finishChallenge);
+	const stableOpenQuestionList = useStableCallback(openQuestionList);
+	const stableCloseQuestionList = useStableCallback(closeQuestionList);
+	const stableToggleTimer = useStableCallback(toggleTimer);
+	const stableToggleAnswer = useStableCallback(toggleAnswer);
+	const stableJudgeCurrentQuestion = useStableCallback(judgeCurrentQuestion);
+	const stableSelectHeaderQuestion = useStableCallback(selectHeaderQuestion);
+	const stableSelectListedQuestion = useStableCallback(selectListedQuestion);
+	const stableMovePrevious = useStableCallback(movePrevious);
+	const stableMoveNext = useStableCallback(moveNext);
+	const stableResumeCurrentChallenge = useStableCallback(resumeCurrentChallenge);
+	const stableRestartCurrentChallenge = useStableCallback(restartCurrentChallenge);
 
 	return {
-		state,
+		state: renderState,
 		phase,
 		solutionOpen,
 		questionListOpen,
 		timerRunning,
+		timerStartedAt: runtimeRef.current.lastSample,
 		resultPayload,
 		resultHistory,
 		syncMessage,
 		navigationDirection,
 		currentQuestionId,
 		currentQuestion,
-		currentJudgment: currentQuestionId ? state?.judgments[currentQuestionId] : undefined,
+		currentJudgment: currentQuestionId ? renderState?.judgments[currentQuestionId] : undefined,
 		currentQuestionElapsedMs: currentQuestionId
-			? (state?.questionElapsedMs[currentQuestionId] ?? 0)
+			? (renderState?.questionElapsedMs[currentQuestionId] ?? 0)
 			: 0,
 		currentQuestionIndex,
 		navigationLength,
@@ -667,27 +729,27 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		isLast,
 		totalElapsedMs,
 		modeEntryTarget:
-			currentQuestionId && state
+			currentQuestionId && renderState
 				? isModeEntryTarget(
 						props.mode,
 						currentQuestionId,
 						props.requestedQuestionId,
-						state.currentIndex,
+						renderState.currentIndex,
 					)
 				: false,
-		canFinish: state ? isChallengeComplete(state) : false,
-		startNewChallenge,
-		finishChallenge,
-		openQuestionList,
-		closeQuestionList,
-		toggleTimer,
-		toggleAnswer,
-		judgeCurrentQuestion,
-		selectHeaderQuestion,
-		selectListedQuestion,
-		movePrevious,
-		moveNext,
-		resumeCurrentChallenge,
-		restartCurrentChallenge,
+		canFinish: renderState ? isChallengeComplete(renderState) : false,
+		startNewChallenge: stableStartNewChallenge,
+		finishChallenge: stableFinishChallenge,
+		openQuestionList: stableOpenQuestionList,
+		closeQuestionList: stableCloseQuestionList,
+		toggleTimer: stableToggleTimer,
+		toggleAnswer: stableToggleAnswer,
+		judgeCurrentQuestion: stableJudgeCurrentQuestion,
+		selectHeaderQuestion: stableSelectHeaderQuestion,
+		selectListedQuestion: stableSelectListedQuestion,
+		movePrevious: stableMovePrevious,
+		moveNext: stableMoveNext,
+		resumeCurrentChallenge: stableResumeCurrentChallenge,
+		restartCurrentChallenge: stableRestartCurrentChallenge,
 	};
 }
