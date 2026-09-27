@@ -115,8 +115,8 @@ flowchart TD
 - 入口のリンクは、静的JSONの `examId` と、単問の場合だけ `questionId` を持つ。
 - `unitId`、`year`、`examNumber` は現在のページを構成するためのURL情報であり、試行の識別情報として保存しない。
 - 推奨 URL は次のとおりとする。
-  - 小テスト: /{unit}/{year}/exam?exam={examNumber}
-  - 単問: /{unit}/{year}/exam?exam={examNumber}&question={questionId}
+  - 小テスト: /{unit}/{year}/exam/{examNumber}（SSG）
+  - 単問: /{unit}/{year}/exam/{examNumber}/question/{questionId}（SSG）
   - 結果: 同じURLに `view=result&challenge={challengeId}` を付与
 - Exam route は query を検証し、存在しない単元・年度・試験・問題なら 404 を返す。
 - 小テストの問題順はサーバーが exam.questions の順序から決める。クライアントから送られた問題順を正本にしない。

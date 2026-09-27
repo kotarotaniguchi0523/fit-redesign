@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useReducer, useRef, useState, useViewTransition } from "hono/jsx/dom";
 import { systemClock } from "../../../lib/dateTime";
-import type { Judgment, QuestionId } from "../../../types";
+import type { ChallengeId, Judgment, QuestionId } from "../../../types";
 import { EpochMillisecondsSchema, QuestionIdSchema } from "../../../types/browser";
 import { measureUserInteraction } from "../../performance/userTiming";
 import { recordProgressEntry } from "../../progress/progressPersistence";
@@ -33,6 +33,7 @@ import {
 } from "../challengeStorage";
 import type { ChallengeSnapshot, ChallengeState, CompletedChallengePayload } from "../types";
 import { generateChallengeId } from "./id";
+import { readInitialChallengeView } from "./initialView";
 import {
 	countJudgments,
 	createPlayerChallenge,
@@ -97,14 +98,17 @@ type InitialResultView =
 	| Readonly<{ kind: "missing" }>
 	| Readonly<{ kind: "ready"; payload: CompletedChallengePayload }>;
 
-function resolveInitialResultView(props: ExamPlayerProps): InitialResultView {
-	if (props.initialView !== "result") {
+function resolveInitialResultView(
+	initialView: "player" | "result",
+	initialChallengeId: ChallengeId | undefined,
+): InitialResultView {
+	if (initialView !== "result") {
 		return { kind: "not-result" };
 	}
-	if (!props.initialChallengeId) {
+	if (!initialChallengeId) {
 		return { kind: "missing" };
 	}
-	const snapshot = findChallenge(props.initialChallengeId);
+	const snapshot = findChallenge(initialChallengeId);
 	if (snapshot?.status !== "completed") {
 		return { kind: "missing" };
 	}
@@ -116,9 +120,7 @@ function resolveInitialResultView(props: ExamPlayerProps): InitialResultView {
 export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerController {
 	const { questions } = props;
 	const [state, dispatch] = useReducer(playerReducer, null);
-	const [phase, setPhase] = useState<PlayerPhase>(
-		props.initialView === "result" ? "result" : "player",
-	);
+	const [phase, setPhase] = useState<PlayerPhase>("player");
 	const [solutionOpen, setSolutionOpen] = useState(false);
 	const [questionListOpen, setQuestionListOpen] = useState(false);
 	const [timerRunning, setTimerRunning] = useState(false);
@@ -322,7 +324,8 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 	};
 
 	const initializeResultView = (): boolean => {
-		const resultView = resolveInitialResultView(props);
+		const { view, challengeId } = readInitialChallengeView(window.location.search);
+		const resultView = resolveInitialResultView(view, challengeId);
 		if (resultView.kind === "not-result") {
 			return false;
 		}

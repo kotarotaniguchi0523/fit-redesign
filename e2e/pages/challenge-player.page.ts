@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
 const PLAYER_REGION_NAME = /^(小テストプレイヤー|タイムアタックプレイヤー)$/;
+const MODE_ENTRY_ANIMATION = /^mode-player-enter(?:-reduced)?$/;
 
 export class ChallengePlayerPage {
 	readonly player: Locator;
@@ -58,7 +59,7 @@ export class ChallengePlayerPage {
 	}
 
 	async openForFreshAttempt(examNumber = 1): Promise<void> {
-		await this.page.goto(`/unit-base-conversion/2013/exam?exam=${examNumber}`);
+		await this.page.goto(`/unit-base-conversion/2013/exam/${examNumber}`);
 		await expect(this.player.or(this.resumeHeading)).toBeVisible();
 
 		if (await this.resumeHeading.isVisible()) {
@@ -67,6 +68,29 @@ export class ChallengePlayerPage {
 
 		await expect(this.player).toBeVisible();
 		await expect(this.previousButton).toBeVisible();
+	}
+
+	async observeModeEntryAnimation(): Promise<void> {
+		await this.page.addInitScript(() => {
+			document.addEventListener("animationstart", (event) => {
+				const target = event.target;
+				if (
+					target instanceof Element &&
+					target.matches(".exam-player__question[data-mode-transition-target]")
+				) {
+					document.documentElement.setAttribute(
+						"data-test-mode-entry-animation",
+						(event as AnimationEvent).animationName,
+					);
+				}
+			});
+		});
+	}
+
+	async expectModeEntryAnimation(): Promise<void> {
+		await expect
+			.poll(() => this.page.locator("html").getAttribute("data-test-mode-entry-animation"))
+			.toMatch(MODE_ENTRY_ANIMATION);
 	}
 
 	async revealAnswer(): Promise<void> {

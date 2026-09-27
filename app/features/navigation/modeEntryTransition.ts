@@ -29,16 +29,20 @@ function parsePendingModeEntry(value: string | null): PendingModeEntry | null {
 function targetForModeLink(link: HTMLAnchorElement): PendingModeEntry | null {
 	const sourcePath = UNIT_YEAR_ROUTE.exec(window.location.pathname);
 	const destination = new URL(link.href, window.location.href);
-	if (
-		!sourcePath ||
-		destination.origin !== window.location.origin ||
-		destination.pathname !== `/${sourcePath[1]}/${sourcePath[2]}/exam`
-	) {
+	if (!sourcePath || destination.origin !== window.location.origin) {
 		return null;
 	}
 
-	const examNumber = destination.searchParams.get("exam");
-	if (!(examNumber && EXAM_NUMBER.test(examNumber))) {
+	const segments = destination.pathname.split("/").filter(Boolean);
+	const [unitId, year, route, examNumber, mode, questionId] = segments;
+	if (
+		unitId !== sourcePath[1] ||
+		year !== sourcePath[2] ||
+		route !== "exam" ||
+		!examNumber ||
+		!EXAM_NUMBER.test(examNumber) ||
+		!(segments.length === 4 || (segments.length === 6 && mode === "question" && questionId))
+	) {
 		return null;
 	}
 
@@ -128,7 +132,7 @@ if (typeof document !== "undefined") {
 		modeEntryFallbackTimer = window.setTimeout(clearModeEntryAttribute, MODE_ENTRY_FALLBACK_MS);
 	}
 
-	document.addEventListener("click", onModeLinkClick);
+	document.addEventListener("click", onModeLinkClick, true);
 	document.addEventListener("animationend", onModeEntryAnimationEnd);
 	document.addEventListener("animationcancel", onModeEntryAnimationEnd);
 }

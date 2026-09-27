@@ -4,7 +4,8 @@ import { Hono } from "hono";
 import { jsxRenderer } from "hono/jsx-renderer";
 import { describe, expect, it } from "vitest";
 import examRoute from "./routes/[unit]/[year]";
-import examPlayerRoute from "./routes/[unit]/[year]/exam";
+import examPlayerRoute from "./routes/[unit]/[year]/exam/[exam]";
+import questionPlayerRoute from "./routes/[unit]/[year]/exam/[exam]/question/[question]";
 
 /**
  * HonoX 版 単元ページ（app/routes/[unit]/[year].tsx）の古典派テスト（AAA）。
@@ -30,7 +31,8 @@ function mounted() {
 	const app = new Hono();
 	app.use("*", testRenderer);
 	app.get("/:unit/:year", ...examRoute);
-	app.get("/:unit/:year/exam", ...examPlayerRoute);
+	app.get("/:unit/:year/exam/:exam", ...examPlayerRoute);
+	app.get("/:unit/:year/exam/:exam/question/:question", ...questionPlayerRoute);
 	return app;
 }
 
@@ -113,17 +115,18 @@ describe("小テスト・タイムアタック経路", () => {
 	it("通常ページのタイムアタック対象を同じ問題のプレイヤーに渡す", async () => {
 		const questionPage = await mounted().request("/unit-sort/2014");
 		expect(questionPage.status).toBe(200);
-		expect(await questionPage.text()).toContain("question=exam9-2014-q1");
-		const response = await mounted().request("/unit-sort/2014/exam?exam=9&question=exam9-2014-q1");
+		expect(await questionPage.text()).toContain("/unit-sort/2014/exam/9/question/exam9-2014-q1");
+		const response = await mounted().request("/unit-sort/2014/exam/9/question/exam9-2014-q1");
 		expect(response.status).toBe(200);
 		const body = await response.text();
 		expect(body).toContain("タイムアタック — ソート・探索 (2014)");
 	});
 
 	it.each([
-		"/unit-sort/2014/exam?exam=9&question=exam9-2014-q999",
-		"/unit-sort/2014/exam?exam=7",
-		"/unit-sort/2017/exam?exam=9",
+		"/unit-sort/2014/exam/9/question/exam9-2014-q999",
+		"/unit-sort/2014/exam/7",
+		"/unit-sort/2017/exam/9",
+		"/unit-sort/2014/exam?exam=9",
 	])("無効な小テスト URL %s は 404 を返す", async (path) => {
 		const response = await mounted().request(path);
 		expect(response.status).toBe(404);

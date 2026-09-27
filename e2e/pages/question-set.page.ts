@@ -34,6 +34,14 @@ export class QuestionSetPage {
 		await expect(this.copyButton).toBeVisible();
 	}
 
+	async startTimeAttack(): Promise<void> {
+		await this.timerLink.click();
+	}
+
+	async startExam(): Promise<void> {
+		await this.startLink.click();
+	}
+
 	question(id: string): Locator {
 		return this.main.locator(`#question-${id}`);
 	}

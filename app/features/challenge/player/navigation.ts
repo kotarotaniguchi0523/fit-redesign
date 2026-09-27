@@ -14,7 +14,12 @@ export function replaceChallengeView(view: "player" | "result", challengeId?: st
 
 export function replaceQuestionInUrl(questionId: QuestionId): void {
 	const url = new URL(window.location.href);
-	url.searchParams.set("question", questionId);
+	const path = url.pathname.split("/");
+	if (path.at(-2) === "question") {
+		path[path.length - 1] = questionId;
+		url.pathname = path.join("/");
+	}
+	url.searchParams.delete("question");
 	window.history.replaceState(null, "", url);
 }
 

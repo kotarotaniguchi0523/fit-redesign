@@ -7,13 +7,13 @@ This repository separates browser experience, HonoX/SSR, Worker execution, exter
 | Layer | Signals | Where to inspect | Use |
 | --- | --- | --- | --- |
 | Browser UX | LCP, INP, CLS, page load, navigation type | Cloudflare Dashboard → Web Analytics → Core Web Vitals / Page load time | Production, evaluate p75 and use URL/browser/element filters. |
-| Browser rendering | Interaction, Event Timing, Long Animation Frames, scripting, style/layout, paint/composite, GC, heap, DOM nodes, listeners, detached DOM | Chrome DevTools → Performance / Memory / Performance monitor | Local diagnosis of `/`, `/unit-base-conversion/2013`, `/unit-base-conversion/2013/exam?exam=1`, and `/records`. |
+| Browser rendering | Interaction, Event Timing, Long Animation Frames, scripting, style/layout, paint/composite, GC, heap, DOM nodes, listeners, detached DOM | Chrome DevTools → Performance / Memory / Performance monitor | Local diagnosis of `/`, `/unit-base-conversion/2013`, `/unit-base-conversion/2013/exam/1`, and `/records`. |
 | Browser app operation | `fit-redesign:quiz-question-update` User Timing measure | Chrome DevTools Performance → User Timing | Local or production debugging when recording the small-test question transition. It ends after synchronous JSX/DOM work and excludes paint. |
 | Worker execution | Invocation count, errors/outcomes, CPU time, wall time, execution duration, subrequests and cached/uncached subrequests; quantile charts | Workers & Pages → `fit-redesign` → Metrics / Observability | Production. Compare p50/p75/p95/p99 where exposed, and use deployment markers/version to find regressions. |
 | Worker trace | Invocation, version, Ray ID, colo/region, CPU/wall time, outcome/exception, outbound fetch and D1 operations | Workers & Pages → `fit-redesign` → Observability → Traces | Production request diagnosis. D1 and `fetch()` are automatically instrumented by Cloudflare. |
 | HonoX route | Normalized route template, method, final status | Workers Observability → Query Builder; filter `event = app.route.response` or `app.route.error` | Production route grouping. The app log deliberately adds no duration or request ID already available in Cloudflare's records. |
 | Network/edge | Document TTFB, request waterfall/initiator, transfer/resource size, cache status and request chain | Chrome DevTools → Network; inspect response `Server-Timing` | Browser and production diagnosis. Use Cloudflare `edge`, `origin`, `cfWorker`, and cache metrics when present to divide the path. |
-| SSR and assets | SSR response generation p50/p95, HTML bytes, route island asset closure, all client JS/CSS raw/gzip/Brotli sizes, Worker bundle bytes | `pnpm perf:report` JSON output | Local relative comparison on the same runtime and machine. |
+| SSR and assets | SSR response generation p50/p95, HTML bytes, route island asset closure, all client JS/CSS raw/gzip/Brotli sizes, Worker bundle bytes | `pnpm perf:report` JSON output; static HTML files in `dist/` | Local relative comparison on the same runtime and machine. |
 | Local Worker | CPU profile, heap, bindings, traces, correlated logs | `pnpm preview`, then Wrangler DevTools (`D`) or Local Explorer (`E`) | Local Worker diagnosis with workerd and local D1. |
 
 ## Cloudflare setup and query guidance
@@ -45,6 +45,8 @@ Use Core Web Vitals p75 first (Cloudflare also exposes other percentiles in elem
 Playwright is not required for this workflow. The repository's correctness tests remain separate and must not assert environment-dependent durations.
 
 ## SSR and bundle report
+
+`pnpm build` also uses Hono `toSSG()` and `ssgParams()` to write the 43 known content pages as HTML assets plus 41 Markdown assets (overview and 40 unit/year endpoints). Those requests are served by Cloudflare Assets and skip the Worker; `/records`, quiz-player query routes, progress APIs, `/health`, and unmatched Markdown paths remain Worker routes. Thus the `app.request()` report below measures SSR capability and route output, but is not a measure of the production request path for these generated assets. Inspect `dist/` and use Wrangler preview to verify which requests are served as assets.
 
 After `pnpm build`, run:
 

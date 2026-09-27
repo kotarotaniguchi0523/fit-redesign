@@ -1,23 +1,10 @@
-import type { Locator, Page } from "@playwright/test";
+import type { Locator } from "@playwright/test";
 import { expect, test } from "./fixtures";
+import { expectAnswerPanelMotion, observeAnswerPanelMotion } from "./helpers/answer-panel-motion";
 
-const FOCUS_ROUTE = /^\/unit-base-conversion\/2013\/exam\?exam=1&question=exam1-2013-q1$/;
+const FOCUS_ROUTE = /^\/unit-base-conversion\/2013\/exam\/1\/question\/exam1-2013-q1$/;
 const CHATGPT_HREF = /https:\/\/chatgpt\.com\/\?q=/;
 const GEMINI_HREF = /^https:\/\/gemini\.google\.com\/app\?q=/;
-
-async function observeAnswerPanelMotion(page: Page): Promise<void> {
-	await page.evaluate(() => {
-		document.addEventListener("transitionrun", recordMotionStart);
-		document.addEventListener("animationstart", recordMotionStart);
-
-		function recordMotionStart(event: Event): void {
-			const target = event.target;
-			if (target instanceof Element && target.matches(".q-answer-panel, .exam-answer")) {
-				document.documentElement.setAttribute("data-test-answer-panel-motion", "started");
-			}
-		}
-	});
-}
 
 function isTopmostAtCenter(locator: Locator): Promise<boolean> {
 	return locator.evaluate((element) => {
@@ -95,7 +82,7 @@ test("解答の開閉がボタンの見た目と内容に反映される", async
 	// Assert
 	await expect(questionSet.answerPanel).toBeVisible();
 	await expect(questionSet.answerToggle).toHaveAttribute("aria-expanded", "true");
-	await expect(page.locator("html")).toHaveAttribute("data-test-answer-panel-motion", "started");
+	await expectAnswerPanelMotion(page);
 	const openColor = await questionSet.answerToggle.evaluate(
 		(button) => getComputedStyle(button).backgroundColor,
 	);

@@ -114,8 +114,8 @@ pnpm knip
 | --- | --- |
 | `/` | 単元・年度の選択 |
 | `/unit-{slug}/{year}` | 単元・年度ごとの問題ページ |
-| `/{unit}/{year}/exam?exam={number}` | 小テストモード |
-| `/{unit}/{year}/exam?exam={number}&question={questionId}` | 単問計測モード |
+| `/{unit}/{year}/exam/{number}` | 小テストモード（SSG） |
+| `/{unit}/{year}/exam/{number}/question/{questionId}` | 単問計測モード（SSG） |
 | `/records` | 端末内の学習記録と同期設定 |
 | `/guide` | 利用ガイド |
 | `/slide-only` | 講義スライド |
@@ -143,7 +143,7 @@ fit-redesign/
 │   ├── client.ts          # クライアントエントリポイント
 │   └── server.ts          # Workerのcomposition root
 ├── migrations/            # Cloudflare D1 migrations
-├── public/                # robots.txt、sitemap関連、静的画像など
+├── public/                # 静的画像など。robots.txt / sitemap.xml は Hono SSG plugin が生成
 ├── vite.config.ts         # HonoX、MDX、Tailwind、Workerビルド設定
 ├── vitest.config.ts       # HonoX/MDXを含むテスト設定
 ├── wrangler.jsonc         # Worker、Assets、D1、Rate Limiting設定

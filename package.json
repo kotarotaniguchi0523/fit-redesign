@@ -6,7 +6,7 @@
 	"packageManager": "pnpm@11.5.0",
 	"scripts": {
 		"dev": "vite",
-		"build": "vite build --mode client && vite build",
+		"build": "vite build --mode client && vite build && node scripts/generate-static-pages.mjs",
 		"preview": "wrangler dev",
 		"format": "biome format --write .",
 		"check": "biome ci .",
@@ -32,6 +32,7 @@
 		"@biomejs/biome": "^2.5.14",
 		"@cloudflare/workers-types": "^5.20260922.1",
 		"@hono/cli": "^0.1.11",
+		"@hono/ssg-plugins-essential": "0.1.0",
 		"@hono/vite-build": "^1.11.1",
 		"@hono/vite-dev-server": "^0.26.1",
 		"@mdx-js/rollup": "^3.1.1",

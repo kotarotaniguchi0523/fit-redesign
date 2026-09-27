@@ -12,7 +12,7 @@ const routes = [
 	{ name: "home", path: "/" },
 	{ name: "guide", path: "/guide" },
 	{ name: "unit-year", path: "/unit-base-conversion/2013" },
-	{ name: "exam-player", path: "/unit-base-conversion/2013/exam?exam=1" },
+	{ name: "exam-player", path: "/unit-base-conversion/2013/exam/1" },
 	{ name: "records", path: "/records" },
 ];
 

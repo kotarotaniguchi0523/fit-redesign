@@ -69,7 +69,7 @@ export function QuestionCard({ question, unitId, year, examNumber }: Props): JSX
 						explanationHtml={view.explanationHtml}
 					/>
 					<a
-						href={`/${unitId}/${year}/exam?exam=${examNumber}&question=${question.id}`}
+						href={`/${unitId}/${year}/exam/${examNumber}/question/${question.id}`}
 						class="question-timer-link"
 						aria-label="タイムアタック"
 						title="タイムアタック"
