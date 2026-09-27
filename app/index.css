@@ -1593,6 +1593,7 @@
 
 			.copy-control__copy {
 				display: grid;
+				box-sizing: border-box;
 				width: 100%;
 				height: 100%;
 				place-items: center;
@@ -1613,6 +1614,7 @@
 			.question-timer-link,
 			.q-btn-primary {
 				display: inline-grid;
+				box-sizing: border-box;
 				width: var(--question-action-size);
 				height: var(--question-action-size);
 				min-width: var(--question-action-size);
