@@ -100,42 +100,14 @@ for (const width of [320, 390]) {
 		// Arrange
 		await page.setViewportSize({ width, height: 844 });
 		await challengePlayer.openForFreshAttempt();
-		const edgeNavigationPositions = await challengePlayer.player.evaluate((player) => {
-			const previous = player.querySelector<HTMLElement>(".exam-player__edge-nav-button--previous");
-			const next = player.querySelector<HTMLElement>(".exam-player__edge-nav-button--next");
-			if (!(previous && next)) {
-				throw new Error("Both edge navigation buttons must be present");
-			}
-			const previousBounds = previous.getBoundingClientRect();
-			const nextBounds = next.getBoundingClientRect();
-			return {
-				previousCenter: previousBounds.top + previousBounds.height / 2,
-				nextCenter: nextBounds.top + nextBounds.height / 2,
-				expectedCenter: window.innerHeight * 0.6,
-			};
-		});
+		const edgeNavigationPositions = await challengePlayer.getEdgeNavigationCenters();
 		expect(
 			Math.abs(edgeNavigationPositions.previousCenter - edgeNavigationPositions.nextCenter),
 		).toBeLessThan(1);
 		expect(
 			Math.abs(edgeNavigationPositions.previousCenter - edgeNavigationPositions.expectedCenter),
 		).toBeLessThan(1);
-		const timerCards = await challengePlayer.player.evaluate((player) =>
-			Array.from(player.querySelectorAll<HTMLElement>(".exam-player__timers > div")).map((card) => {
-				const label = card.querySelector("span");
-				const value = card.querySelector("strong");
-				if (!(label && value)) {
-					throw new Error("Timer label or value is missing");
-				}
-				const bounds = card.getBoundingClientRect();
-				return {
-					width: bounds.width,
-					height: bounds.height,
-					labelSize: getComputedStyle(label).fontSize,
-					valueSize: getComputedStyle(value).fontSize,
-				};
-			}),
-		);
+		const timerCards = await challengePlayer.getTimerCardStyles();
 		expect(timerCards).toHaveLength(2);
 		expect(Math.abs(timerCards[0].width - timerCards[1].width)).toBeLessThan(1);
 		expect(Math.abs(timerCards[0].height - timerCards[1].height)).toBeLessThan(1);
@@ -149,21 +121,13 @@ for (const width of [320, 390]) {
 		await expect(
 			challengePlayer.questionList.getByRole("heading", { name: "問題一覧" }),
 		).toBeVisible();
-		const questionListBounds = await challengePlayer.questionList.evaluate((list) => {
-			const { left, width: panelWidth } = list.getBoundingClientRect();
-			return { left, panelWidth, viewportWidth: window.innerWidth };
-		});
-		expect(questionListBounds.left).toBe(0);
-		expect(questionListBounds.panelWidth).toBeLessThan(questionListBounds.viewportWidth * 0.85);
+		const questionListLayout = await challengePlayer.getQuestionListLayout();
+		expect(Math.abs(questionListLayout.left)).toBeLessThan(1);
+		expect(questionListLayout.width).toBeLessThan(questionListLayout.viewportWidth * 0.85);
 		await expect(
 			challengePlayer.questionList.getByRole("button", { name: QUESTION_ROW }),
 		).toHaveCount(5);
-		expect(
-			await page.evaluate(
-				() =>
-					Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth,
-			),
-		).toBeLessThanOrEqual(1);
+		expect(await challengePlayer.getHorizontalOverflow()).toBeLessThanOrEqual(1);
 
 		// Act
 		await challengePlayer.closeQuestionList();
@@ -193,59 +157,25 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 	await expect(challengePlayer.questionElapsedTime).toHaveText(DURATION);
 	await expect(challengePlayer.totalElapsedTime).toHaveCount(0);
 	await expect(challengePlayer.player.getByText("1 / 5", { exact: true })).toHaveCount(0);
-	const actionButtonSizes = await Promise.all([
-		challengePlayer.answerToggle.evaluate((button) => {
-			const { width, height } = button.getBoundingClientRect();
-			return { width, height };
-		}),
-		challengePlayer.pauseButton.evaluate((button) => {
-			const { width, height } = button.getBoundingClientRect();
-			return { width, height };
-		}),
-	]);
+	const actionButtonSizes = await challengePlayer.getActionControlSizes();
 	expect(Math.abs(actionButtonSizes[0].width - actionButtonSizes[1].width)).toBeLessThan(1);
 	expect(Math.abs(actionButtonSizes[0].height - actionButtonSizes[1].height)).toBeLessThan(1);
-	const progressLayout = await challengePlayer.player.evaluate((player) => {
-		const buttons = Array.from(
-			player.querySelectorAll<HTMLElement>(".exam-player__progress ol button"),
-		);
-		const track = player.querySelector<HTMLElement>(".exam-player__progress-track");
-		if (!track) {
-			throw new Error("Question progress track is missing");
-		}
-		const trackBounds = track.getBoundingClientRect();
-		return {
-			centers: buttons.map((button) => {
-				const bounds = button.getBoundingClientRect();
-				return bounds.left + bounds.width / 2;
-			}),
-			trackStart: trackBounds.left,
-			trackEnd: trackBounds.right,
-			trackBottom: trackBounds.bottom,
-			promptTop: (() => {
-				const prompt = player.querySelector<HTMLElement>(".exam-question__text");
-				if (!prompt) {
-					throw new Error("Question prompt is missing");
-				}
-				return prompt.getBoundingClientRect().top;
-			})(),
-		};
-	});
+	const progressLayout = await challengePlayer.getProgressLayout();
 	expect(progressLayout.centers).toHaveLength(5);
 	expect(Math.abs(progressLayout.centers[0] - progressLayout.trackStart)).toBeLessThan(1);
-	const lastCenter = progressLayout.centers.at(-1);
-	if (lastCenter === undefined) {
-		throw new Error("Question progress steps are missing");
-	}
-	expect(Math.abs(lastCenter - progressLayout.trackEnd)).toBeLessThan(1);
-	const stepDistances = progressLayout.centers
-		.slice(1)
-		.map((center, index) => center - progressLayout.centers[index]);
-	for (const distance of stepDistances.slice(1)) {
-		expect(Math.abs(distance - stepDistances[0])).toBeLessThan(1);
-	}
-	expect(progressLayout.promptTop).toBeGreaterThan(progressLayout.trackBottom);
-	expect(progressLayout.promptTop - progressLayout.trackBottom).toBeLessThan(100);
+const lastCenter = progressLayout.centers.at(-1);
+if (lastCenter === undefined) {
+	throw new Error("Question progress steps are missing");
+}
+expect(Math.abs(lastCenter - progressLayout.trackEnd)).toBeLessThan(1);
+const stepDistances = progressLayout.centers
+	.slice(1)
+	.map((center, index) => center - progressLayout.centers[index]);
+for (const distance of stepDistances.slice(1)) {
+	expect(Math.abs(distance - stepDistances[0])).toBeLessThan(1);
+}
+expect(progressLayout.promptTop).toBeGreaterThan(progressLayout.trackBottom);
+expect(progressLayout.promptTop - progressLayout.trackBottom).toBeLessThan(100);
 	await expect(challengePlayer.previousButton).toBeDisabled();
 	await expect(challengePlayer.pauseButton).toHaveAttribute("aria-pressed", "true");
 	await expect(challengePlayer.answerPanel).toHaveCount(0);
