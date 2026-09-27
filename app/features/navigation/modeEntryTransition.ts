@@ -126,7 +126,7 @@ if (typeof document !== "undefined") {
 		modeEntryFallbackTimer = window.setTimeout(clearModeEntryAttribute, MODE_ENTRY_FALLBACK_MS);
 	}
 
-	document.addEventListener("click", onModeLinkClick);
+	document.addEventListener("click", onModeLinkClick, true);
 	document.addEventListener("animationend", onModeEntryAnimationEnd);
 	document.addEventListener("animationcancel", onModeEntryAnimationEnd);
 }
