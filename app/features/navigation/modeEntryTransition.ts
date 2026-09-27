@@ -33,10 +33,16 @@ function targetForModeLink(link: HTMLAnchorElement): PendingModeEntry | null {
 		return null;
 	}
 
-	const examRoute = new RegExp(
-		`^/${sourcePath[1]}/${sourcePath[2]}/exam/(${EXAM_NUMBER.source})(?:/question/[^/]+)?/?$`,
-	);
-	if (!examRoute.test(destination.pathname)) {
+	const segments = destination.pathname.split("/").filter(Boolean);
+	const [unitId, year, route, examNumber, mode, questionId] = segments;
+	if (
+		unitId !== sourcePath[1] ||
+		year !== sourcePath[2] ||
+		route !== "exam" ||
+		!examNumber ||
+		!EXAM_NUMBER.test(examNumber) ||
+		!(segments.length === 4 || (segments.length === 6 && mode === "question" && questionId))
+	) {
 		return null;
 	}
 
