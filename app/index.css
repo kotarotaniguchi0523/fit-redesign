@@ -1586,7 +1586,7 @@
 			}
 
 			.copy-control.q-tool {
-				border-color: transparent;
+				border: 0;
 				background: transparent;
 				box-shadow: none;
 			}
@@ -1911,7 +1911,7 @@
 		cursor: pointer;
 	}
 	.exam-player__actions .copy-control {
-		border-color: transparent;
+		border: 0;
 		background: transparent;
 		box-shadow: none;
 	}
