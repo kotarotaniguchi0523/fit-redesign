@@ -1,7 +1,6 @@
 import { memo, useMemo } from "hono/jsx/dom";
 import type { JSX } from "hono/jsx/jsx-runtime";
 import { QuestionContent } from "../../components/QuestionContent";
-const StableQuestionContent = memo(QuestionContent);
 import { questionToMarkdown } from "../markdown/questionToMarkdown";
 import { ChallengeResult } from "./ChallengeResult";
 import { AnswerPanel } from "./player/AnswerPanel";
@@ -15,6 +14,8 @@ import { PlayerHeader } from "./player/PlayerHeader";
 import { PlayerList } from "./player/PlayerList";
 import type { ExamPlayerProps } from "./player/types";
 import { useExamPlayerController } from "./player/useExamPlayerController";
+
+const StableQuestionContent = memo(QuestionContent);
 
 export default function ExamPlayer(props: ExamPlayerProps): JSX.Element {
 	const player = useExamPlayerController(props);

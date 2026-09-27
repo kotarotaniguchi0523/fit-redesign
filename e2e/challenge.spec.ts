@@ -3,6 +3,9 @@ import { ChallengePlayerPage } from "./pages/challenge-player.page";
 import { expectAnswerPanelMotion, observeAnswerPanelMotion } from "./helpers/answer-panel-motion";
 
 const DURATION = /^\d{2,}:\d{2}(?::\d{2})?$/;
+const QUESTION_ROW = /^問\d+ /;
+const FIFTH_QUESTION = /^問5 /;
+
 // @lat: [[testing#Challenge client and player#Initial HTML shows the first question before island hydration]]
 
 test("JavaScriptなしでも小テストの最初の問題を表示する", async ({ browser }, testInfo) => {
@@ -26,8 +29,6 @@ test("JavaScriptなしでも小テストの最初の問題を表示する", asyn
 		await context.close();
 	}
 });
-const QUESTION_ROW = /^問\d+ /;
-const FIFTH_QUESTION = /^問5 /;
 test("小テストの判定・経過時間・進捗を再読み込み後も維持する", async ({
 	challengePlayer,
 	page,
