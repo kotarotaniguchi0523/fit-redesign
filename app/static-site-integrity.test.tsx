@@ -31,12 +31,16 @@ async function createOutputFixture({
 	brokenFragment = false,
 	brokenRedirect = false,
 	missingAsset = false,
+	missingSrcsetAsset = false,
+	missingCssImport = false,
 	incorrectGuideCanonical = false,
 }: {
 	brokenLink?: boolean;
 	brokenFragment?: boolean;
 	brokenRedirect?: boolean;
 	missingAsset?: boolean;
+	missingSrcsetAsset?: boolean;
+	missingCssImport?: boolean;
 	incorrectGuideCanonical?: boolean;
 } = {}): Promise<string[]> {
 	await mkdir(path.join(outputDir, "assets"), { recursive: true });
@@ -47,10 +51,11 @@ async function createOutputFixture({
 		homeHref = "/guide#missing";
 	}
 	const imageSrc = missingAsset ? "/assets/missing.svg" : "/assets/logo.svg";
+	const srcsetImageSrc = missingSrcsetAsset ? "/assets/missing-srcset.svg" : "/assets/logo.svg";
 	const pages = new Map([
 		[
 			"index.html",
-			`<!doctype html><html><head><link rel="canonical" href="${SITE_URL}/"><link rel="stylesheet" href="/assets/site.css"></head><body><main id="main-content"><a href="${homeHref}">Guide</a><img src="${imageSrc}"></main></body></html>`,
+			`<!doctype html><html><head><link rel="canonical" href="${SITE_URL}/"><link rel="stylesheet" href="/assets/site.css"></head><body><main id="main-content"><a href="${homeHref}">Guide</a><img src="${imageSrc}" srcset="data:image/svg+xml,%3Csvg%3E 1x, ${srcsetImageSrc} 2x"><div style="background-image: url('/assets/logo.svg')"></div></main></body></html>`,
 		],
 		[
 			"guide.html",
@@ -74,8 +79,9 @@ async function createOutputFixture({
 	}
 	await writeFile(
 		path.join(outputDir, "assets/site.css"),
-		'main { background: url("/assets/logo.svg"); }',
+		`@import "${missingCssImport ? "/assets/missing.css" : "/assets/site-import.css"}";\n/* url("/assets/comment-only-missing.svg") */\nmain { background: url("/assets/logo.svg"); }`,
 	);
+	await writeFile(path.join(outputDir, "assets/site-import.css"), "/* loaded stylesheet */");
 	await writeFile(
 		path.join(outputDir, "assets/logo.svg"),
 		'<svg xmlns="http://www.w3.org/2000/svg"></svg>',
@@ -87,13 +93,23 @@ async function createOutputFixture({
 	return [...pages.keys()].map((relativePath) => path.join(outputDir, relativePath));
 }
 
-async function runIntegrity(files: string[], routes: Hono["routes"] = []): Promise<void> {
+async function runIntegrity(
+	files: string[],
+	routes: Hono["routes"] = [],
+	allMethodRoutePaths: string[] = [],
+): Promise<void> {
 	const result = { success: true, files };
 	const fsModule = { writeFile, mkdir };
 	const options = { dir: outputDir };
-	const sitemap = createIndexableSitemapPlugin(SITE_URL);
+	const pageDocumentCache = new Map();
+	const sitemap = createIndexableSitemapPlugin(SITE_URL, pageDocumentCache);
 	await sitemap.afterGenerateHook?.(result, fsModule, options);
-	const integrity = createStaticSiteIntegrityPlugin({ baseUrl: SITE_URL, routes });
+	const integrity = createStaticSiteIntegrityPlugin({
+		baseUrl: SITE_URL,
+		routes,
+		allMethodRoutePaths,
+		pageDocumentCache,
+	});
 	await integrity.afterGenerateHook?.(result, fsModule, options);
 }
 
@@ -140,6 +156,96 @@ describe("Static site integrity", () => {
 	// @lat: [[testing#Static site integrity#Valid internal links and assets pass]]
 	it("accepts working internal links, fragments, assets, and redirect targets", async () => {
 		const files = await createOutputFixture();
+
+		await expect(runIntegrity(files)).resolves.toBeUndefined();
+	});
+
+	// @lat: [[testing#Static site integrity#HonoX fallback routes do not mask broken links]]
+	it("does not treat global middleware or the HonoX not-found route as valid links", async () => {
+		const files = await createOutputFixture({ brokenLink: true });
+		const app = new Hono();
+		app.use("*", async (_context, next) => next());
+		app.get("*", (context) => context.notFound());
+
+		await expect(runIntegrity(files, app.routes)).rejects.toThrow(
+			/index\.html has broken internal link "\/does-not-exist"/,
+		);
+	});
+
+	// @lat: [[testing#Static site integrity#Hono route patterns follow Hono routing semantics]]
+	it("uses Hono's parameter-pattern matcher and validates form methods", async () => {
+		const files = await createOutputFixture();
+		const app = new Hono();
+		app.get("/records/:entryId{[0-9]+}", (context) => context.text(context.req.param("entryId")));
+		app.post("/progress/sync", (context) => context.text("saved"));
+		app.all("/shared", (context) => context.text("shared"));
+		const homePath = path.join(outputDir, "index.html");
+		const html = await readFile(homePath, "utf8");
+		await writeFile(
+			homePath,
+			html.replace(
+				"</main>",
+				'<a href="/records/123">Record</a><a href="/shared">Shared</a><form method="post" action="/progress/sync"></form></main>',
+			),
+		);
+
+		await expect(runIntegrity(files, app.routes, ["/shared"])).resolves.toBeUndefined();
+
+		const updatedHtml = await readFile(homePath, "utf8");
+		await writeFile(
+			homePath,
+			updatedHtml.replace("</main>", '<a href="/records/not-a-number">Invalid</a></main>'),
+		);
+		await expect(runIntegrity(files, app.routes)).rejects.toThrow(
+			/index\.html has broken internal link "\/records\/not-a-number"/,
+		);
+	});
+
+	// @lat: [[testing#Static site integrity#Cloudflare redirect placeholders resolve to generated pages]]
+	it("resolves Cloudflare named placeholders and splats", async () => {
+		const files = await createOutputFixture();
+		const nestedPage = path.join(outputDir, "guide", "entry.html");
+		await mkdir(path.dirname(nestedPage), { recursive: true });
+		await writeFile(
+			nestedPage,
+			`<!doctype html><html><head><link rel="canonical" href="${SITE_URL}/guide/entry"></head><body><main id="details">Entry</main></body></html>`,
+		);
+		files.push(nestedPage);
+		const homePath = path.join(outputDir, "index.html");
+		const html = await readFile(homePath, "utf8");
+		await writeFile(
+			homePath,
+			html.replace(
+				"</main>",
+				'<a href="/legacy/entry">Legacy</a><a href="/old/entry">Old</a></main>',
+			),
+		);
+		await writeFile(
+			path.join(outputDir, "_redirects"),
+			"/legacy/:slug /guide/:slug 301\n/old/* /guide/:splat 301\n",
+		);
+
+		await expect(runIntegrity(files)).resolves.toBeUndefined();
+	});
+
+	// @lat: [[testing#Static site integrity#HTML base URLs resolve internal references]]
+	it("resolves relative references against the document base URL", async () => {
+		const files = await createOutputFixture();
+		const nestedPage = path.join(outputDir, "guide", "entry.html");
+		await mkdir(path.dirname(nestedPage), { recursive: true });
+		await writeFile(
+			nestedPage,
+			`<!doctype html><html><head><link rel="canonical" href="${SITE_URL}/guide/entry"></head><body>Entry</body></html>`,
+		);
+		files.push(nestedPage);
+		const homePath = path.join(outputDir, "index.html");
+		const html = await readFile(homePath, "utf8");
+		await writeFile(
+			homePath,
+			html
+				.replace("<head>", '<head><base href="/guide/">')
+				.replace("</main>", '<a href="entry">Entry</a></main>'),
+		);
 
 		await expect(runIntegrity(files)).resolves.toBeUndefined();
 	});
@@ -195,6 +301,21 @@ describe("Static site integrity", () => {
 
 		await expect(runIntegrity(files)).rejects.toThrow(
 			/index\.html has broken internal asset reference "\/assets\/missing\.svg"/,
+		);
+	});
+
+	// @lat: [[testing#Static site integrity#Missing srcset and imported CSS assets fail the build]]
+	it("reports missing srcset and imported CSS assets", async () => {
+		const srcsetFiles = await createOutputFixture({ missingSrcsetAsset: true });
+		await expect(runIntegrity(srcsetFiles)).rejects.toThrow(
+			/index\.html has broken internal asset reference "\/assets\/missing-srcset\.svg"/,
+		);
+
+		await rm(outputDir, { recursive: true, force: true });
+		await mkdir(outputDir, { recursive: true });
+		const cssFiles = await createOutputFixture({ missingCssImport: true });
+		await expect(runIntegrity(cssFiles)).rejects.toThrow(
+			/assets\/site\.css has missing CSS asset "\/assets\/missing\.css"/,
 		);
 	});
 
