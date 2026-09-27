@@ -23,3 +23,10 @@ Quiz question updates emit a User Timing measure around synchronous UI work. It 
 
 - Report implementation: `scripts/perf-report.mjs`.
 - Measurement walkthrough: `docs/performance-observability.md`, section “SSR and bundle report”.
+
+## Quiz player first render
+
+The SSG document includes the first question before the Hono JSX island initializes; interactive controls wait for hydration. Rendering reuses stable question markup and copy Markdown across timer updates.
+
+- Page Object readiness and no-JavaScript coverage: [[testing#Challenge client and player#Initial HTML shows the first question before island hydration]].
+- Browser measurement: `docs/performance-observability.md`, section “Quiz player first render”.

@@ -6,6 +6,7 @@ const MODE_ENTRY_ANIMATION = /^mode-player-enter(?:-reduced)?$/;
 export class ChallengePlayerPage {
 	readonly player: Locator;
 	readonly resumeHeading: Locator;
+	readonly initialQuestionHeading: Locator;
 	readonly continueButton: Locator;
 	readonly startOverButton: Locator;
 	readonly answerToggle: Locator;
@@ -27,7 +28,7 @@ export class ChallengePlayerPage {
 	private readonly timerCards: Locator;
 	private readonly progressSteps: Locator;
 	private readonly progressTrack: Locator;
-	private readonly questionPrompt: Locator;
+	readonly questionPrompt: Locator;
 	private readonly page: Page;
 
 	constructor(page: Page) {
@@ -36,6 +37,7 @@ export class ChallengePlayerPage {
 			name: PLAYER_REGION_NAME,
 		});
 		this.resumeHeading = page.getByRole("heading", { name: "前回の試行をどうしますか？" });
+		this.initialQuestionHeading = this.player.getByRole("heading", { name: "問1", exact: true });
 		this.continueButton = page.getByRole("button", { name: "続きから", exact: true });
 		this.startOverButton = page.getByRole("button", { name: "最初から", exact: true });
 		this.answerToggle = this.player.getByRole("button", { name: "解答を表示", exact: true });
@@ -66,15 +68,26 @@ export class ChallengePlayerPage {
 		this.questionPrompt = this.player.locator(".exam-question__text");
 	}
 
+	async openInitialDocument(examNumber = 1): Promise<void> {
+		await this.page.goto(`/unit-base-conversion/2013/exam/${examNumber}`);
+		await expect(this.player).toBeVisible();
+		await expect(this.initialQuestionHeading).toBeVisible();
+	}
+
+	async waitUntilReady(): Promise<void> {
+		await expect
+			.poll(async () => (await this.resumeHeading.isVisible()) || (await this.answerToggle.isVisible()))
+			.toBe(true);
+	}
+
 	async openForFreshAttempt(examNumber = 1): Promise<void> {
 		await this.page.goto(`/unit-base-conversion/2013/exam/${examNumber}`);
-		await expect(this.player.or(this.resumeHeading)).toBeVisible();
+		await this.waitUntilReady();
 
 		if (await this.resumeHeading.isVisible()) {
 			await this.startOverButton.click();
 		}
 
-		await expect(this.player).toBeVisible();
 		await expect(this.previousButton).toBeVisible();
 	}
 

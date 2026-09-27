@@ -31,6 +31,10 @@ lat:
 
 問題切り替え時にタイマーの計測状態を止め、次の問題のサンプル開始へ移る。
 
+### Initial HTML shows the first question before island hydration
+
+小テストの最初の問題がJavaScript初期化前のHTMLに含まれ、Page Objectが操作可能な状態まで待ってから操作する。
+
 ### Result views show mode-specific summaries and actions
 
 小テストとタイムアタックで正しい集計、空履歴表示、再挑戦・一覧復帰の操作を示す。

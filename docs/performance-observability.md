@@ -34,6 +34,10 @@ Cloudflare Web Analytics is available on all plans at no cost. Open Dashboard â†
 
 Use Core Web Vitals p75 first (Cloudflare also exposes other percentiles in element drilldowns) and filter by URL, browser, country, and element. Page load and navigation type are reported by Web Analytics. Page links in this app use regular document navigations; question/result state changes use `history.replaceState` and Hono JSX islands, not HonoX soft route navigation. Therefore those state changes are not independent page views; use the User Timing mark plus Chrome's Interaction track when profiling question changes. No general-purpose RUM beacon or custom event transport is added.
 
+## Quiz player first render
+
+The generated quiz route previously contained an empty player shell until the Hono JSX island initialized. The initial document now renders the first question, progress header, and zeroed timer; the header controls remain disabled until hydration. Starting a quiz uses local browser storage and does not fetch question data from an API or D1. The live view reuses question markup and Markdown while the current question is unchanged, avoiding that work on each timer tick. A no-JavaScript Playwright check guards the server-rendered first question, while Page Objects wait for the interactive player before performing actions. No fixed duration threshold is used; use Chrome Performance and Network for browser timing.
+
 ## Browser profiling
 
 1. Run `pnpm dev` for browser-only JSX/island iteration. For Worker bindings and SSR parity, run `pnpm db:migrate:local`, `pnpm build`, then `pnpm preview` (`wrangler dev`).

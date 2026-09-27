@@ -1,5 +1,7 @@
+import { memo, useMemo } from "hono/jsx/dom";
 import type { JSX } from "hono/jsx/jsx-runtime";
 import { QuestionContent } from "../../components/QuestionContent";
+const StableQuestionContent = memo(QuestionContent);
 import { questionToMarkdown } from "../markdown/questionToMarkdown";
 import { ChallengeResult } from "./ChallengeResult";
 import { AnswerPanel } from "./player/AnswerPanel";
@@ -17,6 +19,16 @@ import { useExamPlayerController } from "./player/useExamPlayerController";
 export default function ExamPlayer(props: ExamPlayerProps): JSX.Element {
 	const player = useExamPlayerController(props);
 	const { state, phase, currentQuestionId, currentQuestion } = player;
+	const markdown = useMemo(
+		() =>
+			currentQuestion
+				? {
+						copyText: questionToMarkdown(currentQuestion),
+						askText: questionToMarkdown(currentQuestion, { includeSolution: false }),
+					}
+				: null,
+		[currentQuestion],
+	);
 
 	if (phase === "result" && player.resultPayload) {
 		return (
@@ -69,7 +81,7 @@ export default function ExamPlayer(props: ExamPlayerProps): JSX.Element {
 		);
 	}
 	if (!state) {
-		return <div class="exam-player-shell" aria-hidden="true" />;
+		return <ExamPlayerPreview {...props} />;
 	}
 	if (phase === "resume") {
 		return (
@@ -103,6 +115,7 @@ export default function ExamPlayer(props: ExamPlayerProps): JSX.Element {
 		<section
 			class="exam-player-shell"
 			aria-label={props.mode === "exam" ? "小テストプレイヤー" : "タイムアタックプレイヤー"}
+			aria-busy="false"
 		>
 			<PlayerHeader
 				playerTitle={props.playerTitle}
@@ -125,15 +138,15 @@ export default function ExamPlayer(props: ExamPlayerProps): JSX.Element {
 					data-mode-transition-target={player.modeEntryTarget ? "" : undefined}
 					key={currentQuestionId}
 				>
-					<QuestionContent question={currentQuestion} variant="exam-player" />
+					<StableQuestionContent question={currentQuestion} variant="exam-player" />
 					<ChallengeTimerDisplay
 						mode={props.mode}
 						totalElapsedMs={player.totalElapsedMs}
 						questionElapsedMs={player.currentQuestionElapsedMs}
 					/>
 					<QuestionActions
-						copyText={questionToMarkdown(currentQuestion)}
-						askText={questionToMarkdown(currentQuestion, { includeSolution: false })}
+						copyText={markdown?.copyText ?? ""}
+						askText={markdown?.askText ?? ""}
 						answerOpen={player.solutionOpen}
 						onToggleAnswer={player.toggleAnswer}
 						timerRunning={player.timerRunning}
@@ -155,6 +168,40 @@ export default function ExamPlayer(props: ExamPlayerProps): JSX.Element {
 					onNext={player.moveNext}
 					onFinish={player.finishChallenge}
 				/>
+			</div>
+		</section>
+	);
+}
+
+function ExamPlayerPreview(props: ExamPlayerProps): JSX.Element {
+	const question = props.questions[0];
+	if (!question) {
+		return <div class="exam-player-shell" aria-hidden="true" />;
+	}
+
+	return (
+		<section
+			class="exam-player-shell"
+			aria-label={props.mode === "exam" ? "小テストプレイヤー" : "タイムアタックプレイヤー"}
+			aria-busy="true"
+		>
+			<PlayerHeader
+				playerTitle={props.playerTitle}
+				questions={props.questions}
+				currentQuestionIndex={0}
+				disabled
+				onOpenQuestionList={(): void => {}}
+				onSelectQuestion={(): void => {}}
+			/>
+			<div class="exam-player__workspace">
+				<div class="exam-player__question">
+					<StableQuestionContent question={question} variant="exam-player" />
+					<ChallengeTimerDisplay
+						mode={props.mode}
+						totalElapsedMs={0}
+						questionElapsedMs={0}
+					/>
+				</div>
 			</div>
 		</section>
 	);

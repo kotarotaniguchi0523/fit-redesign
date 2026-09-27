@@ -1,7 +1,31 @@
 import { expect, test } from "./fixtures";
+import { ChallengePlayerPage } from "./pages/challenge-player.page";
 import { expectAnswerPanelMotion, observeAnswerPanelMotion } from "./helpers/answer-panel-motion";
 
 const DURATION = /^\d{2,}:\d{2}(?::\d{2})?$/;
+// @lat: [[testing#Challenge client and player#Initial HTML shows the first question before island hydration]]
+
+test("JavaScriptなしでも小テストの最初の問題を表示する", async ({ browser }, testInfo) => {
+	// Arrange
+	const context = await browser.newContext({
+		baseURL: testInfo.project.use.baseURL as string,
+		javaScriptEnabled: false,
+	});
+	const page = await context.newPage();
+	const challengePlayer = new ChallengePlayerPage(page);
+
+	try {
+		// Act
+		await challengePlayer.openInitialDocument();
+
+		// Assert
+		await expect(challengePlayer.player).toHaveAttribute("aria-busy", "true");
+		await expect(challengePlayer.initialQuestionHeading).toBeVisible();
+		await expect(challengePlayer.questionPrompt).toContainText("数表現のけた数に限度があるので");
+	} finally {
+		await context.close();
+	}
+});
 const QUESTION_ROW = /^問\d+ /;
 const FIFTH_QUESTION = /^問5 /;
 test("小テストの判定・経過時間・進捗を再読み込み後も維持する", async ({
@@ -150,6 +174,7 @@ test("タイムアタックは選択した一問を計測し、一覧から移�
 
 	// Act
 	await questionSet.startTimeAttack();
+	await challengePlayer.waitUntilReady();
 
 	// Assert
 	await expect(challengePlayer.player).toBeVisible();
@@ -229,6 +254,7 @@ test("小テストを一覧から開始すると、プレイヤー表示中も�
 
 	// Act
 	await questionSet.startExam();
+	await challengePlayer.waitUntilReady();
 
 	// Assert
 	await expect(challengePlayer.player).toBeVisible();
