@@ -24,6 +24,10 @@ export class ChallengePlayerPage {
 	readonly resumeTimerButton: Locator;
 	readonly answerPanel: Locator;
 	readonly progress: Locator;
+	private readonly timerCards: Locator;
+	private readonly progressSteps: Locator;
+	private readonly progressTrack: Locator;
+	private readonly questionPrompt: Locator;
 	private readonly page: Page;
 
 	constructor(page: Page) {
@@ -56,6 +60,10 @@ export class ChallengePlayerPage {
 		this.resumeTimerButton = this.player.getByRole("button", { name: "計測を再開", exact: true });
 		this.answerPanel = this.player.getByRole("region", { name: "解答", exact: true });
 		this.progress = this.player.getByRole("progressbar", { name: "問題の進捗" });
+		this.timerCards = this.player.locator(".exam-player__timers > div");
+		this.progressSteps = this.player.locator(".exam-player__progress ol button");
+		this.progressTrack = this.player.locator(".exam-player__progress-track");
+		this.questionPrompt = this.player.locator(".exam-question__text");
 	}
 
 	async openForFreshAttempt(examNumber = 1): Promise<void> {
@@ -93,6 +101,118 @@ export class ChallengePlayerPage {
 			.toMatch(MODE_ENTRY_ANIMATION);
 	}
 
+	private async waitForAnimationToFinish(locator: Locator): Promise<void> {
+		await expect
+			.poll(() =>
+				locator.evaluate((element) =>
+					element.getAnimations().every((animation) => animation.playState === "finished"),
+				),
+			)
+			.toBe(true);
+	}
+
+	async getEdgeNavigationCenters(): Promise<{
+		previousCenter: number;
+		nextCenter: number;
+		expectedCenter: number;
+	}> {
+		await expect(this.previousButton).toBeVisible();
+		await expect(this.nextButton).toBeVisible();
+		const [previous, next, expectedCenter] = await Promise.all([
+			this.previousButton.boundingBox(),
+			this.nextButton.boundingBox(),
+			this.page.evaluate(() => window.innerHeight * 0.6),
+		]);
+		if (!(previous && next)) {
+			throw new Error("Both question navigation buttons must have layout boxes");
+		}
+		return {
+			previousCenter: previous.y + previous.height / 2,
+			nextCenter: next.y + next.height / 2,
+			expectedCenter,
+		};
+	}
+
+	async getTimerCardStyles(): Promise<
+		Array<{ width: number; height: number; labelSize: string; valueSize: string }>
+	> {
+		return this.timerCards.evaluateAll((cards) =>
+			cards.map((card) => {
+				const label = card.querySelector("span");
+				const value = card.querySelector("strong");
+				if (!(label && value)) {
+					throw new Error("Timer label or value is missing");
+				}
+				const bounds = card.getBoundingClientRect();
+				return {
+					width: bounds.width,
+					height: bounds.height,
+					labelSize: getComputedStyle(label).fontSize,
+					valueSize: getComputedStyle(value).fontSize,
+				};
+			}),
+		);
+	}
+
+	async getActionControlSizes(): Promise<Array<{ width: number; height: number }>> {
+		const [answer, pause] = await Promise.all([
+			this.answerToggle.boundingBox(),
+			this.pauseButton.boundingBox(),
+		]);
+		if (!(answer && pause)) {
+			throw new Error("Answer and timer controls must have layout boxes");
+		}
+		return [answer, pause].map(({ width, height }) => ({ width, height }));
+	}
+
+	async getProgressLayout(): Promise<{
+		centers: number[];
+		trackStart: number;
+		trackEnd: number;
+		trackBottom: number;
+		promptTop: number;
+	}> {
+		const [centers, track, prompt] = await Promise.all([
+			this.progressSteps.evaluateAll((buttons) =>
+				buttons.map((button) => {
+					const bounds = button.getBoundingClientRect();
+					return bounds.left + bounds.width / 2;
+				}),
+			),
+			this.progressTrack.boundingBox(),
+			this.questionPrompt.boundingBox(),
+		]);
+		if (!(track && prompt)) {
+			throw new Error("Progress track and question prompt must have layout boxes");
+		}
+		return {
+			centers,
+			trackStart: track.x,
+			trackEnd: track.x + track.width,
+			trackBottom: track.y + track.height,
+			promptTop: prompt.y,
+		};
+	}
+
+	async getQuestionListLayout(): Promise<{ left: number; width: number; viewportWidth: number }> {
+		await expect(this.questionList).toBeVisible();
+		await this.waitForAnimationToFinish(this.questionList);
+		const [panel, viewportWidth] = await Promise.all([
+			this.questionList.boundingBox(),
+			this.page.evaluate(() => window.innerWidth),
+		]);
+		if (!panel) {
+			throw new Error("Question list must have a layout box");
+		}
+		return { left: panel.x, width: panel.width, viewportWidth };
+	}
+
+	async getHorizontalOverflow(): Promise<number> {
+		return this.page.evaluate(
+			() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth,
+		);
+	}
+
 	async revealAnswer(): Promise<void> {
 		await expect(this.answerPanel).toHaveCount(0);
 		await expect(this.answerToggle).toBeVisible();
@@ -124,6 +244,7 @@ export class ChallengePlayerPage {
 	async openQuestionList(): Promise<void> {
 		await this.questionListButton.click();
 		await expect(this.questionList).toBeVisible();
+		await this.waitForAnimationToFinish(this.questionList);
 	}
 
 	async closeQuestionList(): Promise<void> {
