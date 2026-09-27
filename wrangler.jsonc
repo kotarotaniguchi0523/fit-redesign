@@ -4,7 +4,13 @@
 	"main": "./dist/index.js",
 	"compatibility_date": "2025-08-03",
 	"compatibility_flags": ["nodejs_compat"],
-	"assets": { "directory": "./dist", "binding": "ASSETS" },
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS",
+		"not_found_handling": "404-page",
+		"html_handling": "auto-trailing-slash",
+		"run_worker_first": ["/records", "/progress", "/progress/*", "/health"]
+	},
 	"observability": {
 		"enabled": true,
 		"redact_query_string": true,

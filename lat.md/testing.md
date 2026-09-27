@@ -46,3 +46,39 @@ lat:
 ### Timer locks remain owner-scoped until their heartbeat expires
 
 同時実行ロックは所有者だけが更新でき、heartbeat期限後は別端末が取得できる。
+
+# Static site integrity
+
+Hono SSG の生成物をデプロイ前に検証する。出力パスの重複、404・robots・canonical・サイトマップ、ページリンク、fragment、静的アセット、内部rewrite先を実際のHTML成果物で確認する。
+
+## SSG generates a noindex 404 document
+
+共有Not Found UIから404.htmlをSSG生成し、noindexを付ける。
+
+## Indexable canonical pages are listed in sitemap
+
+サイトマップにはcanonicalと一致する生成済みindexableページだけを含める。
+
+## Valid internal links and assets pass
+
+生成HTMLとCSSから参照する内部ページ・fragment・アセット、および内部rewrite先が実在するときにビルドを通す。
+
+## Internal links can target parameterized Worker routes
+
+内部リンクが生成済みファイルでなく、実在するパラメーター付きGET Worker routeに一致するときも有効として扱う。
+
+## Broken internal links fail the build
+
+生成HTMLから存在しない内部ページまたはfragmentを参照した場合、参照元と先を示して失敗する。
+
+## Missing static assets fail the build
+
+生成HTML/CSSがWorker routeしかない場所をアセットとして参照した場合や、出力にない静的ファイルを参照した場合に失敗する。
+
+## Canonical URLs match generated pages
+
+indexableページのcanonicalが生成されたHTMLパスと一致し、重複canonicalがないことを確認する。
+
+## Duplicate output paths fail the build
+
+異なるSSGルートが同じ出力パスを生成しないことを確認する。
