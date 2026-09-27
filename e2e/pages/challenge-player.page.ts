@@ -76,7 +76,9 @@ export class ChallengePlayerPage {
 
 	async waitUntilReady(): Promise<void> {
 		await expect
-			.poll(async () => (await this.resumeHeading.isVisible()) || (await this.answerToggle.isVisible()),)
+			.poll(
+				async () => (await this.resumeHeading.isVisible()) || (await this.answerToggle.isVisible()),
+			)
 			.toBe(true);
 	}
 
