@@ -1,3 +1,4 @@
+import { useLayoutEffect, useState } from "hono/jsx/dom";
 import type { JSX } from "hono/jsx/jsx-runtime";
 import CopyButton from "../../../components/$CopyButton";
 import {
@@ -10,6 +11,7 @@ import {
 	TimerIcon,
 } from "../../../components/icons";
 import { formatDuration } from "../challenge";
+import { projectElapsedTime } from "./timerRuntime";
 import type { PlayerMode } from "./types";
 
 export function QuestionActions({
@@ -67,11 +69,35 @@ export function ChallengeTimerDisplay({
 	mode,
 	totalElapsedMs,
 	questionElapsedMs,
+	timerRunning,
+	timerStartedAt,
 }: Readonly<{
 	mode: PlayerMode;
 	totalElapsedMs: number;
 	questionElapsedMs: number;
+	timerRunning: boolean;
+	timerStartedAt: number | null;
 }>): JSX.Element {
+	const [now, setNow] = useState(() =>
+		typeof performance === "undefined" ? 0 : performance.now(),
+	);
+	useLayoutEffect(() => {
+		if (!timerRunning) {
+			return;
+		}
+		const update = (): void => setNow(performance.now());
+		update();
+		const interval = window.setInterval(update, 1000);
+		return (): void => window.clearInterval(interval);
+	}, [timerRunning, timerStartedAt]);
+	const displayedTotalMs = projectElapsedTime(totalElapsedMs, timerRunning, timerStartedAt, now);
+	const displayedQuestionMs = projectElapsedTime(
+		questionElapsedMs,
+		timerRunning,
+		timerStartedAt,
+		now,
+	);
+
 	return (
 		<fieldset class={`exam-player__timers ${mode === "question" ? "is-single" : ""}`}>
 			<legend class="sr-only">経過時間</legend>
@@ -79,14 +105,14 @@ export function ChallengeTimerDisplay({
 				<div>
 					<span>全体</span>
 					<strong data-testid="challenge-total-time" aria-live="off">
-						{formatDuration(totalElapsedMs)}
+						{formatDuration(displayedTotalMs)}
 					</strong>
 				</div>
 			) : null}
 			<div>
 				<span>{mode === "question" ? "計測時間" : "この問題"}</span>
 				<strong data-testid="challenge-question-time" aria-live="off">
-					{formatDuration(questionElapsedMs)}
+					{formatDuration(displayedQuestionMs)}
 				</strong>
 			</div>
 		</fieldset>

@@ -26,7 +26,13 @@ Quiz question updates emit a User Timing measure around synchronous UI work. It 
 
 ## Quiz player first render
 
-The SSG document includes the first question before the Hono JSX island initializes; interactive controls wait for hydration. Rendering reuses stable question markup and copy Markdown across timer updates.
+The first question is SSG content; player controls initialize in a separate client module. Measure module delivery, session setup, and timer updates as separate browser costs.
+
+Hono JSX DOM replaces the island root on its first client render, so the static question remains visible while the module loads. The client resolves browser state before that render and shows the usable player immediately.
+
+Vite builds the player island as a separate module once per build. Direct quiz routes emit a manifest-resolved `modulepreload` for that chunk. Listing pages avoid downloading the player for every visit and dynamically import it only when a start or question-timer link receives pointer or keyboard focus. This intent prefetch executes the module but does not mount the player or access local storage. The client resolves the initial attempt/result from local storage during its first render without writing; the layout-effect commit then acquires the tab lock and persists a new attempt. The timer display owns its one-second clock. The controller accumulates and persists the canonical challenge snapshot every five seconds without scheduling a player render; user actions and lifecycle boundaries sync the latest state into the UI. Stable callbacks and memoized controls keep unchanged header, answer, and navigation components out of timer updates.
+
+The player emits `fit-redesign:quiz-player-initialize` across client session resolution and the lock/save commit, and `fit-redesign:quiz-player-mount-to-ready` through the first committed interactive state. These marks start after the island module has loaded. Use Chrome Performance Interaction and Network tracks to include click, navigation, transfer, parse, and module loading; inspect rendering tracks separately because the measures end before paint. Compare cold navigation, link intent prefetch, and direct quiz route loading. The existing first-question and Markdown reuse remains useful but did not address initial activation on its own.
 
 - Page Object readiness and no-JavaScript coverage: [[testing#Challenge client and player#Initial HTML shows the first question before island hydration]].
 - Browser measurement: `docs/performance-observability.md`, section “Quiz player first render”.
