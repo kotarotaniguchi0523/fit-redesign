@@ -59,6 +59,28 @@ function useStableCallback<Args extends unknown[], Result>(
 	return useCallback((...args: Args): Result => callbackRef.current(...args), []);
 }
 
+function shouldStartVisibleTimer(shouldRun: boolean): boolean {
+	return shouldRun && document.visibilityState === "visible";
+}
+
+function commitWithTransition(
+	commit: () => void,
+	animate: boolean,
+	startViewTransition: ReturnType<typeof useViewTransition>[1],
+): void {
+	if (animate) {
+		startViewTransition(commit);
+	} else {
+		commit();
+	}
+}
+
+function replaceQuestionUrlForMode(mode: ExamPlayerProps["mode"], questionId: QuestionId): void {
+	if (mode === "question") {
+		replaceQuestionInUrl(questionId);
+	}
+}
+
 export type ExamPlayerController = Readonly<{
 	state: ChallengeState | null;
 	phase: PlayerPhase;
@@ -228,17 +250,16 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		}
 		const { state: next, question: initialQuestion } = challenge;
 		const acquiredLock = acquireLock(next.challengeId);
+		const shouldRunTimer = shouldStartVisibleTimer(shouldRun);
 		if (acquiredLock) {
 			resetTimerRuntimeInPlace(runtimeRef.current, next.questionIds[next.currentIndex]);
+			runtimeRef.current.running = shouldRunTimer;
+			runtimeRef.current.lastSample = shouldRunTimer ? performance.now() : null;
 			saveActiveChallenge(next);
 			lastPersistAt.current = typeof performance === "undefined" ? 0 : performance.now();
 		}
 		const initializeState = (): void => commitState(next);
-		if (animate) {
-			startViewTransition(initializeState);
-		} else {
-			initializeState();
-		}
+		commitWithTransition(initializeState, animate, startViewTransition);
 		if (!acquiredLock) {
 			setTimerRunning(false);
 			setPhase("locked");
@@ -247,11 +268,9 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		setResultPayload(null);
 		setQuestionListOpen(false);
 		userPausedRef.current = !shouldRun;
-		setTimerRunning(shouldRun && document.visibilityState === "visible");
+		setTimerRunning(shouldRunTimer);
 		setPhase("player");
-		if (props.mode === "question") {
-			replaceQuestionInUrl(initialQuestion.id);
-		}
+		replaceQuestionUrlForMode(props.mode, initialQuestion.id);
 		replaceChallengeView("player");
 	};
 
@@ -263,22 +282,19 @@ export function useExamPlayerController(props: ExamPlayerProps): ExamPlayerContr
 		const next = createChallengeStateFromSnapshot(snapshot);
 		resetTimerRuntimeInPlace(runtimeRef.current, next.questionIds[next.currentIndex]);
 		const initializeState = (): void => commitState(next);
-		if (animate) {
-			startViewTransition(initializeState);
-		} else {
-			initializeState();
-		}
+		commitWithTransition(initializeState, animate, startViewTransition);
 		setResultPayload(null);
 		const canResume = acquireLock(next.challengeId);
+		const shouldRunTimer = canResume && shouldStartVisibleTimer(shouldRun);
+		runtimeRef.current.running = shouldRunTimer;
+		runtimeRef.current.lastSample = shouldRunTimer ? performance.now() : null;
 		userPausedRef.current = !shouldRun;
-		setTimerRunning(canResume && shouldRun && document.visibilityState === "visible");
+		setTimerRunning(shouldRunTimer);
 		setQuestionListOpen(false);
 		setPhase(canResume ? "player" : "locked");
-		if (props.mode === "question") {
-			const questionId = next.questionIds[next.currentIndex];
-			if (questionId) {
-				replaceQuestionInUrl(questionId);
-			}
+		const questionId = next.questionIds[next.currentIndex];
+		if (questionId) {
+			replaceQuestionUrlForMode(props.mode, questionId);
 		}
 	};
 

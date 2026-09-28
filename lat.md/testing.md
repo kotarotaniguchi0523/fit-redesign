@@ -35,6 +35,10 @@ lat:
 
 ブラウザー初回描画前に既存試行・結果を解決し、新規試行の保存とタブロック取得はマウント時に一度だけ行う。
 
+### Mounted player effects commit storage and resume the timer
+
+`ExamPlayer`をDOMに描画して新規試行の保存・ロック取得・pagehide時の解放を検証し、復元した試行を再開した後も時計表示が進むことを確認する。
+
 ### Timer display projects elapsed time independently of player state
 
 表示時計の1秒更新をプレイヤー状態・保存スナップショットの更新から分離し、無効な時計差分を加算しない。
