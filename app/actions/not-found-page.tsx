@@ -23,9 +23,9 @@ const linkStyle = css({
 	color: '#2563eb',
 })
 
-export function NotFoundPage(handle: Handle<{ path?: string }>) {
+export function NotFoundPage(handle: Handle<{ path?: string; currentPath?: string }>) {
 	return () => (
-		<Document title="ページが見つかりません — FIT Redesign">
+		<Document title="ページが見つかりません — 基本情報技術 I" currentPath={handle.props.currentPath ?? handle.props.path}>
 			<main mix={mainStyle}>
 				<p mix={codeStyle}>404</p>
 				<h1>ページが見つかりません</h1>

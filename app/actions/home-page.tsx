@@ -3,114 +3,142 @@ import type { Handle } from 'remix/component'
 
 import { unitBasedTabs } from '../data/units.ts'
 import { routes } from '../routes.ts'
+import { YEARS } from '../types/index.ts'
 import { Document } from './document.tsx'
 
-const latestYear = '2017'
-
 const mainStyle = css({
-	width: '100%',
-	maxWidth: '960px',
+	maxWidth: '72rem',
 	margin: '0 auto',
-	padding: '24px 16px 64px',
-})
-
-const headerStyle = css({
-	display: 'flex',
-	alignItems: 'baseline',
-	justifyContent: 'space-between',
-	gap: '16px',
-	flexWrap: 'wrap',
-	marginBottom: '8px',
+	padding: '1rem 1rem 4rem',
 })
 
 const titleStyle = css({
-	fontSize: '28px',
-	fontWeight: 800,
-	letterSpacing: '-0.02em',
-	margin: 0,
-})
-
-const leadStyle = css({
-	color: '#475569',
-	margin: '0 0 24px',
-})
-
-const listStyle = css({
-	display: 'grid',
-	gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-	gap: '12px',
-	listStyle: 'none',
-	margin: 0,
-	padding: 0,
-})
-
-const cardStyle = css({
-	display: 'block',
-	padding: '16px',
-	border: '1px solid #e2e8f0',
-	borderRadius: '12px',
-	background: '#ffffff',
-	color: 'inherit',
-	textDecoration: 'none',
-	transition: 'border-color 120ms ease, box-shadow 120ms ease',
-	'&:hover': {
-		borderColor: '#2563eb',
-		boxShadow: '0 8px 24px rgba(37, 99, 235, 0.12)',
-	},
-})
-
-const cardTitleStyle = css({
-	display: 'flex',
-	alignItems: 'center',
-	gap: '8px',
-	fontSize: '16px',
+	fontFamily: 'var(--font-serif)',
+	fontSize: '1.75rem',
 	fontWeight: 700,
-	margin: '0 0 4px',
+	color: 'var(--color-primary)',
+	margin: '0 0 0.5rem',
 })
 
-const cardDescStyle = css({
-	margin: 0,
-	fontSize: '13px',
-	color: '#64748b',
+const ledeStyle = css({
+	color: 'var(--color-text-muted)',
+	margin: '0 0 1.5rem',
 })
 
-export function HomePage(handle: Handle) {
+const tableWrapStyle = css({
+	overflowX: 'auto',
+	marginTop: '1.5rem',
+})
+
+const tableStyle = css({
+	width: '100%',
+	borderCollapse: 'collapse',
+	background: 'var(--color-bg-card)',
+	border: '1px solid var(--color-border)',
+	borderRadius: '0.75rem',
+	overflow: 'hidden',
+})
+
+const cellStyle = css({
+	borderTop: '1px solid var(--color-border)',
+	padding: '0.625rem 0.75rem',
+	textAlign: 'left',
+	fontSize: '0.875rem',
+})
+
+const linkStyle = css({
+	color: 'var(--color-primary)',
+	textDecoration: 'none',
+	'&:hover': { textDecoration: 'underline' },
+})
+
+export function HomePage(
+	handle: Handle<{ examCounts: ReadonlyMap<string, number>; currentPath?: string }>,
+) {
 	return () => {
-		void handle
+		const { examCounts, currentPath = '/' } = handle.props
+
+		const jsonLd = {
+			'@context': 'https://schema.org',
+			'@graph': [
+				{
+					'@type': 'WebSite',
+					name: '基本情報技術 I - 明治大学',
+					url: 'https://fit-redesign.r02takako.workers.dev/',
+					description:
+						'単元と年度を選び、過去の小テストと解答・解説をすぐ確認できるサイト。',
+					inLanguage: 'ja',
+				},
+				{
+					'@type': 'Course',
+					name: '基本情報技術 I',
+					provider: { '@type': 'EducationalOrganization', name: '明治大学' },
+					inLanguage: 'ja',
+				},
+			],
+		}
 
 		return (
 			<Document
-				title="FIT Redesign — 情報処理技術者試験の過去問"
-				description="明治大学「基本情報技術 I」の過去の小テストを単元と年度から探して、問題・解答・解説を確認できるサイトです。"
+				title="問題を選ぶ - 基本情報技術 I"
+				description="明治大学 基本情報技術 I の単元と年度を選び、小テストと解答・解説を確認できます。"
+				jsonLd={jsonLd}
+				currentPath={currentPath}
+				canonicalPath="/"
 			>
-				<main mix={mainStyle}>
-					<header mix={headerStyle}>
-						<h1 mix={titleStyle}>FIT Redesign</h1>
-					</header>
-					<p mix={leadStyle}>
-						単元を選んで、年度ごとの小テストを確認できます。
-					</p>
-					<ul mix={listStyle}>
-						{unitBasedTabs.map((unit) => {
-							const latest = unit.examMapping.at(-1)
-							const year = latest?.year ?? latestYear
+				<main id="main-content" mix={mainStyle}>
+					<section>
+						<h1 mix={titleStyle}>問題を選ぶ</h1>
+						<p mix={ledeStyle}>単元を選び、確認したい年度を開いてください。</p>
+					</section>
 
-							return (
-								<li key={unit.id}>
-									<a
-										mix={cardStyle}
-										href={routes.unitYear.href({ unit: unit.id, year })}
-									>
-										<h2 mix={cardTitleStyle}>
-											<span aria-hidden="true">{unit.icon}</span>
-											{unit.name}
-										</h2>
-										<p mix={cardDescStyle}>{unit.description}</p>
-									</a>
-								</li>
-							)
-						})}
-					</ul>
+					<div mix={tableWrapStyle}>
+						<table mix={tableStyle}>
+							<thead>
+								<tr>
+									<th scope="col" mix={cellStyle}>
+										単元
+									</th>
+									{YEARS.map((year) => (
+										<th key={year} scope="col" mix={cellStyle}>
+											{year}
+										</th>
+									))}
+								</tr>
+							</thead>
+							<tbody>
+								{unitBasedTabs.map((unit, index) => (
+									<tr key={unit.id}>
+										<th scope="row" mix={cellStyle}>
+											{index + 1}. {unit.name}
+										</th>
+										{YEARS.map((year) => {
+											const mapping = unit.examMapping.find((item) => item.year === year)
+											if (!mapping) {
+												return (
+													<td key={year} mix={cellStyle}>
+														—
+													</td>
+												)
+											}
+											const count = examCounts.get(`${unit.id}|${year}`) ?? 1
+											return (
+												<td key={year} mix={cellStyle}>
+													<a
+														mix={linkStyle}
+														href={routes.unitYear.href({ unit: unit.id, year })}
+													>
+														{year}
+														{count > 1 ? <small>（{count}テスト）</small> : null}
+													</a>
+												</td>
+											)
+										})}
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
 				</main>
 			</Document>
 		)

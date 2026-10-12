@@ -15,9 +15,9 @@ const linkStyle = css({
 	color: '#2563eb',
 })
 
-export function PlaceholderPage(handle: Handle<{ title: string }>) {
+export function PlaceholderPage(handle: Handle<{ title: string; currentPath?: string }>) {
 	return () => (
-		<Document title={`${handle.props.title} — FIT Redesign`}>
+		<Document title={`${handle.props.title} — 基本情報技術 I`} currentPath={handle.props.currentPath}>
 			<main mix={mainStyle}>
 				<h1>{handle.props.title}</h1>
 				<p>このページは Remix 3 移行の途中です。</p>
