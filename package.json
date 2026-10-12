@@ -26,7 +26,7 @@
 		"routes": "remix routes",
 		"test": "NODE_ENV=test remix test",
 		"test:browser": "remix test -t browser",
-		"test:e2e": "remix test -t e2e --browser.echo",
+		"test:e2e": "remix test -t e2e",
 		"test:run": "NODE_ENV=test remix test",
 		"typecheck": "cf workers types && tsc --noEmit",
 		"typecheck:full": "cf workers types && tsc --noEmit",

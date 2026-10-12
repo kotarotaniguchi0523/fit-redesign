@@ -5,47 +5,46 @@ import { createAppServer } from "./server.ts";
 
 /**
  * 主要導線の E2E。`remix test` はテストごとにテストサーバーとブラウザーページを
- * 起動・終了する。実際の Chromium 上で SSR と島（clientEntry）の協調を確認する。
+ * 起動・終了する。`createAppServer()` が `public/` を配信するため島も hydrate する。
+ *
+ * ホームの単元名はリンクではなく、リンクは年度（`/unit-.../<year>`）である点に注意。
  */
 describe("サイト導線", () => {
-	it("トップページに単元・ヘッダー・スタイルが読み込まれる", async (t) => {
+	it("トップページに単元・年度リンク・ヘッダーが描画される", async (t) => {
 		const page = await t.serve(await createAppServer());
 
 		await page.goto("/");
 		await page.getByRole("heading", { name: "問題を選ぶ" }).waitFor();
 		await page.getByRole("navigation", { name: "メインナビゲーション" }).waitFor();
-		await page
-			.getByRole("link", { name: /基数変換/ })
-			.first()
-			.waitFor();
+		await page.getByText("基数変換").first().waitFor();
+		await page.getByRole("link", { name: "2013" }).first().waitFor();
 	});
 
 	it("トップ → 単元 → 単問へリンクで移動できる（SSR 導線）", async (t) => {
 		const page = await t.serve(await createAppServer());
 
 		await page.goto("/");
-		await page
-			.getByRole("link", { name: /基数変換/ })
-			.first()
-			.click();
+		await page.getByRole("link", { name: "2017" }).first().click();
 		await page.getByRole("heading", { name: "基数変換" }).waitFor();
 
 		await page.getByRole("link", { name: "問1" }).first().click();
-		await page.locator(".exam-player-shell").waitFor();
+		await page.locator("[data-player]").waitFor();
 	});
 
-	it("小テストプレイヤーで解答を開き、自己判定できる", async (t) => {
+	it("小テストプレイヤーで解答を開き、自己判定できる（島が hydrate する）", async (t) => {
 		const page = await t.serve(await createAppServer());
 
 		await page.goto("/unit-base-conversion/2017/exam/1");
-		await page.getByRole("button", { name: "解答を表示" }).click();
+		const reveal = page.getByRole("button", { name: "解答を表示" });
+		await reveal.waitFor();
+		await reveal.click();
 		await page.getByText("解答", { exact: true }).waitFor();
 
 		await page.getByRole("button", { name: "正解として記録" }).click();
 		assert.ok(true);
 	});
 
-	it("問題一覧ドロワ（popover）が開く", async (t) => {
+	it("問題一覧ドロワが開く", async (t) => {
 		const page = await t.serve(await createAppServer());
 
 		await page.goto("/unit-base-conversion/2017/exam/1");
@@ -53,7 +52,7 @@ describe("サイト導線", () => {
 		await page.getByRole("complementary", { name: "問題一覧" }).waitFor();
 	});
 
-	it("アコーディオン（狭い画面の単元リスト）が開く", async (t) => {
+	it("狭い画面ではアコーディオンで年度を選べる", async (t) => {
 		const page = await t.serve(await createAppServer());
 		await page.setViewportSize({ width: 390, height: 800 });
 
