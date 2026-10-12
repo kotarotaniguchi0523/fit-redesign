@@ -1,4 +1,3 @@
-import * as tabs from "@remix-run/ui/tabs";
 import type { Handle } from "remix/component";
 import { css, on } from "remix/component";
 
@@ -56,7 +55,7 @@ const stepButtonStyle = css({
 	font: "inherit",
 	fontSize: "0.8rem",
 	cursor: "pointer",
-	'&[aria-selected="true"]': {
+	'&[aria-current="step"]': {
 		background: "var(--color-primary)",
 		borderColor: "var(--color-primary)",
 		color: "#fff",
@@ -80,8 +79,8 @@ const trackStyle = css({
 });
 
 /**
- * プレイヤーのヘッダー。問題の進捗を `@remix-run/ui/tabs` の
- * 選択・キーボード操作で扱い、見た目は `css()` で当てる。
+ * プレイヤーのヘッダー。現在の問題は `aria-current="step"` で示す
+ * ステップ表示（tabs ではない: 各タブに対応する panel を持たないため）。
  */
 export function PlayerHeader(
 	handle: Handle<{
@@ -103,7 +102,6 @@ export function PlayerHeader(
 			disabled = false,
 		} = handle.props;
 		const ratio = questions.length > 0 ? (currentQuestionIndex + 1) / questions.length : 0;
-		const activeId = questions[currentQuestionIndex]?.id;
 
 		return (
 			<header mix={headerStyle}>
@@ -122,42 +120,34 @@ export function PlayerHeader(
 					<h2>{playerTitle}</h2>
 				</div>
 				<nav aria-label="問題番号" mix={progressStyle}>
-					<tabs.Context
-						activeTab={activeId}
-						onActiveTabChange={(nextId) => {
-							const index = questions.findIndex((question) => question.id === nextId);
-							if (index >= 0) {
-								onSelectQuestion(index);
-							}
-						}}
-					>
-						<div mix={stepsStyle}>
-							<ol mix={tabs.list()}>
-								{questions.map((question, index) => (
-									<li key={question.id}>
-										<button
-											type="button"
-											mix={[stepButtonStyle, tabs.tab({ name: question.id })]}
-											disabled={disabled}
-										>
-											{index + 1}
-										</button>
-									</li>
-								))}
-							</ol>
-							<div
-								mix={trackStyle}
-								role="progressbar"
-								aria-label="問題の進捗"
-								aria-valuemin={0}
-								aria-valuemax={questions.length}
-								aria-valuenow={currentQuestionIndex + 1}
-								aria-valuetext={`問${currentQuestionIndex + 1} / ${questions.length}`}
-							>
-								<span style={{ width: `${ratio * 100}%` }} />
-							</div>
+					<div mix={stepsStyle}>
+						<ol>
+							{questions.map((question, index) => (
+								<li key={question.id}>
+									<button
+										type="button"
+										aria-label={`問${index + 1}`}
+										aria-current={index === currentQuestionIndex ? "step" : undefined}
+										mix={[stepButtonStyle, on("click", () => onSelectQuestion(index))]}
+										disabled={disabled}
+									>
+										{index + 1}
+									</button>
+								</li>
+							))}
+						</ol>
+						<div
+							mix={trackStyle}
+							role="progressbar"
+							aria-label="問題の進捗"
+							aria-valuemin={0}
+							aria-valuemax={questions.length}
+							aria-valuenow={currentQuestionIndex + 1}
+							aria-valuetext={`問${currentQuestionIndex + 1} / ${questions.length}`}
+						>
+							<span style={{ width: `${ratio * 100}%` }} />
 						</div>
-					</tabs.Context>
+					</div>
 				</nav>
 			</header>
 		);

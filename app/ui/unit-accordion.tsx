@@ -24,6 +24,10 @@ const rootStyle = css({
 	},
 });
 
+const contentStyle = css({
+	'&[data-state="closed"]': { display: "none" },
+});
+
 const panelStyle = css({
 	display: "grid",
 	gap: "0.25rem",
@@ -44,7 +48,7 @@ export const UnitAccordion = clientEntry(
 	"/assets/client.js#UnitAccordion",
 	function UnitAccordionEntry(handle: Handle<{ units: readonly AccordionUnit[] }>) {
 		return () => (
-			<accordion.Context type="multiple">
+			<accordion.Context type="multiple" defaultValue={[]}>
 				<div mix={rootStyle}>
 					{handle.props.units.map((unit) => (
 						<accordion.ItemContext key={unit.id} value={unit.id}>
@@ -52,7 +56,7 @@ export const UnitAccordion = clientEntry(
 								<button type="button" mix={accordion.trigger()}>
 									{unit.icon} {unit.name}
 								</button>
-								<div mix={accordion.content()}>
+								<div mix={[contentStyle, accordion.content()]}>
 									<div mix={panelStyle}>
 										{unit.years.map((year) => (
 											<a

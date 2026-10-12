@@ -1,6 +1,6 @@
 import * as menu from "@remix-run/ui/menu";
 import type { Handle } from "remix/component";
-import { clientEntry, css } from "remix/component";
+import { clientEntry, css, on } from "remix/component";
 
 import { routes } from "../routes.ts";
 
@@ -116,6 +116,8 @@ function activeFor(currentPath: string): NavId | null {
 export const Header = clientEntry(
 	"/assets/client.js#Header",
 	function HeaderEntry(handle: Handle<{ currentPath: string }>) {
+		let menuOpen = false;
+
 		return () => {
 			const { currentPath } = handle.props;
 			const active = activeFor(currentPath);
@@ -164,20 +166,37 @@ export const Header = clientEntry(
 						</div>
 
 						<menu.Context label="メニュー">
-							<button type="button" mix={[mobileTriggerStyle, menu.trigger()]}>
+							<button
+								type="button"
+								mix={[
+									mobileTriggerStyle,
+									menu.trigger(),
+									on("click", () => {
+										menuOpen = !menuOpen;
+										void handle.update();
+									}),
+								]}
+								aria-expanded={menuOpen ? "true" : "false"}
+							>
 								メニュー
 							</button>
-							<div mix={[menuSurfaceStyle, menu.popover()]}>
-								{links.map((link) => (
-									<a
-										key={link.id}
-										href={link.href}
-										aria-current={active === link.id ? "page" : undefined}
-									>
-										{link.label}
-									</a>
-								))}
-							</div>
+							{menuOpen ? (
+								<div mix={[menuSurfaceStyle, menu.popover()]}>
+									{links.map((link) => (
+										<a
+											key={link.id}
+											href={link.href}
+											aria-current={active === link.id ? "page" : undefined}
+											mix={on("click", () => {
+												menuOpen = false;
+												void handle.update();
+											})}
+										>
+											{link.label}
+										</a>
+									))}
+								</div>
+							) : null}
 						</menu.Context>
 					</div>
 				</nav>

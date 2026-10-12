@@ -1,5 +1,4 @@
 import { animateEntrance, animateExit, spring } from "@remix-run/ui/animation";
-import * as popover from "@remix-run/ui/popover";
 import type { Handle } from "remix/component";
 import { css, on } from "remix/component";
 import type { QuestionId } from "../../../types/index.ts";
@@ -74,8 +73,9 @@ const promptStyle = css({
 });
 
 /**
- * 問題一覧。`@remix-run/ui/popover` の anchor/surface と
- * `@remix-run/ui/animation` の進入・退出を `mix` で借りる。
+ * 問題一覧のドロワ。トリガー（ヘッダーのボタン）が別コンポーネントにあり
+ * popover のアンカー要件を満たせないため、headless な描画 + `animation` の
+ * 進入・退出を `mix` で借りる。
  */
 export function PlayerList(
 	handle: Handle<{
@@ -102,50 +102,57 @@ export function PlayerList(
 						.filter((question): question is PlayerQuestion => question !== undefined);
 
 		return (
-			<popover.Context>
-				<aside
-					aria-label="問題一覧"
-					mix={[
-						panelStyle,
-						animateEntrance({ opacity: 0, x: 24, ...spring("snappy") }),
-						animateExit({ opacity: 0, x: 24, ...spring("snappy") }),
-						popover.surface({ open, onHide: onClose }),
-					]}
-				>
-					<div mix={toolbarStyle}>
-						<h2>問題一覧</h2>
-						<button type="button" mix={on("click", onClose)} aria-label="問題一覧を閉じる">
-							<CloseIcon />
-						</button>
-					</div>
-					<ol mix={listStyle}>
-						{listedQuestions.map((question, index) => {
-							const judgment = state.judgments[question.id];
-							const isCurrent = question.id === currentQuestionId;
-							return (
-								<li key={question.id}>
-									<button
-										type="button"
-										mix={[
-											itemStyle,
-											isCurrent ? currentItemStyle : null,
-											on("click", () => onSelect(index)),
-										]}
-										aria-current={isCurrent ? "true" : undefined}
-									>
-										<span>問{question.number ?? index + 1}</span>
-										{mode === "exam" ? (
-											<span>{formatDuration(state.questionElapsedMs[question.id] ?? 0)}</span>
-										) : null}
-										{judgment ? <span>{judgment === "correct" ? "○" : "×"}</span> : <span />}
-										<span mix={promptStyle}>{question.text}</span>
-									</button>
-								</li>
-							);
-						})}
-					</ol>
-				</aside>
-			</popover.Context>
+			<aside
+				aria-label="問題一覧"
+				mix={[
+					panelStyle,
+					animateEntrance({
+						opacity: 0,
+						duration: 160,
+						easing: "ease-out",
+						transform: "translateX(16px)",
+					}),
+					animateExit({
+						opacity: 0,
+						duration: 160,
+						easing: "ease-in",
+						transform: "translateX(16px)",
+					}),
+				]}
+			>
+				<div mix={toolbarStyle}>
+					<h2>問題一覧</h2>
+					<button type="button" mix={on("click", onClose)} aria-label="問題一覧を閉じる">
+						<CloseIcon />
+					</button>
+				</div>
+				<ol mix={listStyle}>
+					{listedQuestions.map((question, index) => {
+						const judgment = state.judgments[question.id];
+						const isCurrent = question.id === currentQuestionId;
+						return (
+							<li key={question.id}>
+								<button
+									type="button"
+									mix={[
+										itemStyle,
+										isCurrent ? currentItemStyle : null,
+										on("click", () => onSelect(index)),
+									]}
+									aria-current={isCurrent ? "true" : undefined}
+								>
+									<span>問{question.number ?? index + 1}</span>
+									{mode === "exam" ? (
+										<span>{formatDuration(state.questionElapsedMs[question.id] ?? 0)}</span>
+									) : null}
+									{judgment ? <span>{judgment === "correct" ? "○" : "×"}</span> : <span />}
+									<span mix={promptStyle}>{question.text}</span>
+								</button>
+							</li>
+						);
+					})}
+				</ol>
+			</aside>
 		);
 	};
 }

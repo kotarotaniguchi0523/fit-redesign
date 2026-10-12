@@ -4,6 +4,7 @@ import { unitBasedTabs } from "../data/units.ts";
 import { ContinueLearning } from "../features/answer/ui/continue-learning.tsx";
 import { routes } from "../routes.ts";
 import { YEARS } from "../types/index.ts";
+import { UnitAccordion } from "../ui/unit-accordion.tsx";
 import { Document } from "./document.tsx";
 
 const mainStyle = css({
@@ -25,7 +26,24 @@ const ledeStyle = css({
 	margin: "0 0 1.5rem",
 });
 
-const _accordionWrapStyle = css({
+const countBadgeStyle = css({
+	display: "inline-flex",
+	alignItems: "center",
+	justifyContent: "center",
+	minWidth: "1.1rem",
+	height: "1.1rem",
+	marginLeft: "0.35rem",
+	padding: "0 0.3rem",
+	borderRadius: "999px",
+	background: "var(--color-accent-soft)",
+	color: "var(--color-primary)",
+	fontSize: "0.7rem",
+	fontWeight: 700,
+	lineHeight: 1,
+	verticalAlign: "middle",
+});
+
+const accordionWrapStyle = css({
 	display: "none",
 	marginTop: "1rem",
 	"@media (max-width: 40rem)": { display: "block" },
@@ -76,7 +94,7 @@ export function HomePage(
 ) {
 	return () => {
 		const { examCounts, locationGroups, currentPath = "/" } = handle.props;
-		const _accordionUnits = unitBasedTabs.map((unit) => ({
+		const accordionUnits = unitBasedTabs.map((unit) => ({
 			id: unit.id,
 			icon: unit.icon,
 			name: unit.name,
@@ -150,7 +168,11 @@ export function HomePage(
 												<td key={year} mix={cellStyle}>
 													<a mix={linkStyle} href={routes.unitYear.href({ unit: unit.id, year })}>
 														{year}
-														{count > 1 ? <small>（{count}テスト）</small> : null}
+														{count > 1 ? (
+															<span mix={countBadgeStyle} aria-label={`小テスト${count}件`}>
+																{count}
+															</span>
+														) : null}
 													</a>
 												</td>
 											);
@@ -161,6 +183,9 @@ export function HomePage(
 						</table>
 					</div>
 					<ContinueLearning groups={locationGroups} />
+					<div mix={accordionWrapStyle}>
+						<UnitAccordion units={accordionUnits} />
+					</div>
 				</main>
 			</Document>
 		);

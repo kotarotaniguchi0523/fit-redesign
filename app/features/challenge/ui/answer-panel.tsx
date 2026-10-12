@@ -1,4 +1,4 @@
-import { animateEntrance, spring } from "@remix-run/ui/animation";
+import { animateEntrance } from "@remix-run/ui/animation";
 import * as toggle from "@remix-run/ui/toggle";
 import type { Handle } from "remix/component";
 import { css, unsafeHTML } from "remix/component";
@@ -83,7 +83,7 @@ export function AnswerPanel(
 				id="exam-answer"
 				aria-labelledby="exam-answer-heading"
 				aria-live="polite"
-				mix={[panelStyle, animateEntrance({ opacity: 0, ...spring("snappy") })]}
+				mix={[panelStyle, animateEntrance({ opacity: 0, duration: 150, easing: "ease-out" })]}
 			>
 				<div mix={bodyStyle}>
 					<h3 mix={labelStyle} id="exam-answer-heading">

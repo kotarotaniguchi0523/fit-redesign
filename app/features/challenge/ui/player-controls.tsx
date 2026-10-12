@@ -214,7 +214,7 @@ export function PlayerEdgeNavigation(
 				{showPrevious ? (
 					isFirst ? (
 						<span />
-					) : (
+					) : previousHref ? (
 						<a
 							href={previousHref}
 							mix={[
@@ -234,6 +234,15 @@ export function PlayerEdgeNavigation(
 						>
 							<ChevronLeftIcon />
 						</a>
+					) : (
+						<button
+							type="button"
+							mix={[actionStyle, on("click", onPrevious)]}
+							aria-label="前の問題"
+							title="前の問題"
+						>
+							<ChevronLeftIcon />
+						</button>
 					)
 				) : (
 					<span />
@@ -248,7 +257,7 @@ export function PlayerEdgeNavigation(
 					>
 						<CheckIcon />
 					</button>
-				) : (
+				) : nextHref ? (
 					<a
 						href={nextHref}
 						mix={[
@@ -267,6 +276,15 @@ export function PlayerEdgeNavigation(
 					>
 						<ChevronRightIcon />
 					</a>
+				) : (
+					<button
+						type="button"
+						mix={[actionStyle, on("click", onNext)]}
+						aria-label="次の問題"
+						title="次の問題"
+					>
+						<ChevronRightIcon />
+					</button>
 				)}
 			</nav>
 		);

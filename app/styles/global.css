@@ -18,9 +18,13 @@
 	--color-border: #e2e0dc;
 
 	/* タイポグラフィ */
-	--font-serif: "Noto Serif JP", serif;
-	--font-sans: "Noto Sans JP", sans-serif;
-	--font-mono: "JetBrains Mono", monospace;
+	/* Web フォント（Google Fonts）→ システムの CJK/等幅へフォールバック。
+	   外部フォントが読めない環境でも和文が読めるようにする。 */
+	--font-serif: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif CJK JP", serif;
+	--font-sans:
+		"Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", Meiryo,
+		"Noto Sans CJK JP", system-ui, sans-serif;
+	--font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
 
 	/* 余白・角丸（コンポーネントで共有する最小セット） */
 	--radius-card: 0.75rem;
