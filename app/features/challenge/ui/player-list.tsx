@@ -1,4 +1,4 @@
-import { animateEntrance, animateExit, spring } from "@remix-run/ui/animation";
+import { animateEntrance, animateExit } from "@remix-run/ui/animation";
 import type { Handle } from "remix/component";
 import { css, on } from "remix/component";
 import type { QuestionId } from "../../../types/index.ts";

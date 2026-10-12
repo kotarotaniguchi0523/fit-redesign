@@ -169,9 +169,12 @@ export function HomePage(
 													<a mix={linkStyle} href={routes.unitYear.href({ unit: unit.id, year })}>
 														{year}
 														{count > 1 ? (
-															<span mix={countBadgeStyle} aria-label={`小テスト${count}件`}>
-																{count}
-															</span>
+															<>
+																<span mix={countBadgeStyle} aria-hidden="true">
+																	{count}
+																</span>
+																<span class="sr-only">{count}つの小テスト</span>
+															</>
 														) : null}
 													</a>
 												</td>
