@@ -26,10 +26,10 @@
 
 ### 後続で確定した追加要件
 
-- [ ] **Vite 依存の排除**: CF CLI の dev/build は `@cloudflare/vite-plugin` か `wrangler` を必須とする。
-      両方外す場合は Remix 本来の Node サーバー（`server.ts` + `remix/assets`）で開発し、
-      デプロイは `cf deploy --prebuilt`（ビルド済み成果物）に切り替える構造へ変更する。
-- [ ] **テスト環境を `remix test` へ完全移行**（Vitest 廃止）。旧テストは `legacy/` にある。
+- [x] **Vite 依存の排除**: `@cloudflare/vite-plugin` と `vite` を削除し、CF CLI が要求する
+      dev/build サーバとして **wrangler** を採用（`wrangler dev` / `wrangler deploy`）。
+      設定は `cloudflare.config.ts` から `wrangler.jsonc` に戻した。
+- [ ] **テスト環境を `remix test` へ完全移行**（Vitest 廃止）。データ層は完了。残りは `legacy/` にある。
 
 ### 完了項目
 
@@ -61,13 +61,16 @@
 
 ## Stage 3: データ・ドメイン層の移植
 
-- [ ] `app/data/slides.ts` / `site.ts` 移植
-- [ ] `app/data/units.ts` 移植
-- [ ] `app/data/exams/*`（schema, assemble, homeCatalog, loader）移植
-- [ ] `import.meta.glob` → 静的 import 索引へ置換
-- [ ] `app/lib/*`（純粋ヘルパー・図表計算）移植
-- [ ] ドメイン用の型（`app/types/*`）移植
-- [ ] データ整合性テストを `remix test` へ移植
+- [x] `app/data/slides.ts` / `site.ts` 移植
+- [x] `app/data/units.ts` 移植（Zod 検証・examMapping 込み）
+- [x] `app/lib/immutable.ts` / `app/lib/zod.ts`
+- [x] `app/types/*`（domain / content / figures / browser / index）
+- [x] `app/data/exams/*`（schema, assemble, index, loader）
+- [x] `import.meta.glob` → `modules.generated.ts`（明示 import 索引 + 生成スクリプト）
+- [x] データ整合性テストを `remix test` へ移植（20/20 pass）
+- [ ] `app/lib/*`（純粋ヘルパー・図表計算）の残り
+- [ ] `app/features/*` のドメインロジック移植
+- [ ] `app/data/exams/homeCatalog.ts`（`features/answer` の型に依存）
 
 ## Stage 4: DB（data-table + D1）
 

@@ -1,0 +1,158 @@
+import type { DeepReadonly } from "../../lib/immutable";
+import type { FigureData, Question } from "../../types";
+
+/**
+ * テーブルデータを Markdown 文字列に変換するヘルパー関数
+ */
+function tableToMarkdown(
+	columns: readonly DeepReadonly<{ key: string; label: string }>[],
+	rows: readonly DeepReadonly<Record<string, unknown>>[],
+): string {
+	const header = `| ${columns.map((c) => c.label).join(" | ")} |`;
+	const separator = `| ${columns.map(() => "---").join(" | ")} |`;
+	const dataRows = rows.map((row) => {
+		const cells = columns.map((c) => String(row[c.key] ?? ""));
+		return `| ${cells.join(" | ")} |`;
+	});
+	return [header, separator].concat(dataRows).join("\n");
+}
+
+/**
+ * FigureData を Markdown 文字列に変換する
+ */
+function figureDataToMarkdown(figureData: DeepReadonly<FigureData>): string {
+	switch (figureData.type) {
+		case "truthTable":
+		case "dataTable":
+			return tableToMarkdown(figureData.columns, figureData.rows);
+
+		case "huffmanTable": {
+			const { characters, probabilities } = figureData.data;
+			return ["| 文字 | 確率 |", "| --- | --- |"]
+				.concat(characters.map((c, i) => `| ${c} | ${probabilities[i]} |`))
+				.join("\n");
+		}
+
+		case "linkedListTable":
+			return ["| アドレス | データ | ポインタ |", "| --- | --- | --- |"]
+				.concat(figureData.entries.map((e) => `| ${e.address} | ${e.data} | ${e.pointer} |`))
+				.join("\n");
+
+		case "normalDistributionTable":
+			return ["| u | 確率 |", "| --- | --- |"]
+				.concat(figureData.entries.map((e) => `| ${e.u} | ${e.probability} |`))
+				.join("\n");
+
+		case "parityCheck":
+			return figureData.data.map((row) => `| ${row.join(" | ")} |`).join("\n");
+
+		case "stateDiagram": {
+			const { nodes, transitions } = figureData;
+			const nodeLines = nodes.map((node) => {
+				const markers = [
+					...(node.isInitial ? ["初期状態"] : []),
+					...(node.isAccepting ? ["受理状態"] : []),
+				];
+				const markerStr = markers.length > 0 ? ` (${markers.join(", ")})` : "";
+				return `- ${node.label}${markerStr}`;
+			});
+			const nodeById = new Map(nodes.map((n) => [n.id, n]));
+			const transLines = transitions.map((t) => {
+				const fromNode = nodeById.get(t.from);
+				const toNode = nodeById.get(t.to);
+				return `- ${fromNode?.label ?? t.from} --[${t.label}]--> ${toNode?.label ?? t.to}`;
+			});
+			return ["**状態遷移図**", "", "状態:"]
+				.concat(nodeLines, ["", "遷移:"], transLines)
+				.join("\n");
+		}
+
+		case "binaryTree": {
+			const collectNodes = (node: typeof figureData.root | undefined, depth: number): string[] => {
+				if (!node) {
+					return [];
+				}
+				const indent = "  ".repeat(depth);
+				return [indent.concat(`- ${node.value}`)].concat(
+					collectNodes(node.left, depth + 1),
+					collectNodes(node.right, depth + 1),
+				);
+			};
+			return ["**二分木**", ""].concat(collectNodes(figureData.root, 0)).join("\n");
+		}
+
+		case "logicCircuit": {
+			const { inputs, outputs, gates } = figureData;
+			return [
+				"**論理回路**",
+				"",
+				`入力: ${inputs.map((i) => i.label).join(", ")}`,
+				`出力: ${outputs.map((o) => o.label).join(", ")}`,
+				`ゲート: ${gates.map((g) => `${g.id}(${g.type})`).join(", ")}`,
+			].join("\n");
+		}
+
+		case "flowchart": {
+			const { nodes, edges } = figureData;
+			const nodeLines = nodes.map((node) => `- [${node.type}] ${node.label}`);
+			const nodeById = new Map(nodes.map((n) => [n.id, n]));
+			const edgeLines = edges.map((edge) => {
+				const fromNode = nodeById.get(edge.from);
+				const toNode = nodeById.get(edge.to);
+				const label = edge.label ? ` (${edge.label})` : "";
+				return `- ${fromNode?.label ?? edge.from} --> ${toNode?.label ?? edge.to}${label}`;
+			});
+			return ["**フローチャート**", "", "ノード:"]
+				.concat(nodeLines, ["", "フロー:"], edgeLines)
+				.join("\n");
+		}
+
+		default:
+			return "";
+	}
+}
+
+function buildFigureSection(question: DeepReadonly<Question>, sectionHeading: string): string[] {
+	if (question.figureData) {
+		return [`${sectionHeading} 図`, "", figureDataToMarkdown(question.figureData), ""];
+	}
+	if (question.figureDescription) {
+		return [`> **図**: ${question.figureDescription}`, ""];
+	}
+	return [];
+}
+
+/**
+ * Question オブジェクトを Markdown 文字列に変換する
+ */
+export function questionToMarkdown(
+	question: DeepReadonly<Question>,
+	{
+		includeSolution = true,
+		headingLevel = 2,
+	}: Readonly<{ includeSolution?: boolean; headingLevel?: 2 | 3 }> = {},
+): string {
+	const heading = "#".repeat(headingLevel);
+	const sectionHeading = `${heading}#`;
+	const base = [`${heading} 問題 ${question.number}`, "", question.text, ""];
+
+	const figure = buildFigureSection(question, sectionHeading);
+
+	const options =
+		question.options && question.options.length > 0
+			? [`${sectionHeading} 選択肢`]
+					.concat(
+						question.options.map(
+							(option) => `- **${option.label}**: ${option.value || "(未入力)"}`,
+						),
+					)
+					.concat("")
+			: [];
+
+	const answer = includeSolution ? [`${sectionHeading} 解答`, question.answer, ""] : [];
+
+	const explanation =
+		includeSolution && question.explanation ? [`${sectionHeading} 解説`, question.explanation] : [];
+
+	return base.concat(figure, options, answer, explanation).join("\n").trim();
+}

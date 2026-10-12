@@ -16,6 +16,6 @@
 		"jsxImportSource": "remix/component",
 		"noEmit": true
 	},
-	"include": ["app", "cloudflare.config.ts", "vite.config.ts", ".cloudflare/types"],
+	"include": ["app", "scripts", "worker-configuration.d.ts"],
 	"exclude": ["dist", "node_modules", "legacy"]
 }

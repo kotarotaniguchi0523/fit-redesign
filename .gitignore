@@ -50,3 +50,5 @@ playwright-report/
 
 # APM dependencies
 apm_modules/
+
+.pnpm-store/

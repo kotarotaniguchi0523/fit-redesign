@@ -1,15 +1,15 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "fit-redesign",
-	"main": "./dist/index.js",
-	"compatibility_date": "2025-08-03",
+	"main": "./app/worker.ts",
+	"compatibility_date": "2026-10-06",
 	"compatibility_flags": ["nodejs_compat"],
 	"assets": {
-		"directory": "./dist",
+		"directory": "./public",
 		"binding": "ASSETS",
-		"not_found_handling": "404-page",
-		"html_handling": "auto-trailing-slash",
-		"run_worker_first": ["/records", "/progress", "/progress/*", "/health"]
+		"not_found_handling": "none",
+		"html_handling": "none",
+		"run_worker_first": true
 	},
 	"observability": {
 		"enabled": true,
@@ -29,7 +29,7 @@
 			"binding": "DB",
 			"database_name": "fit-timer-db",
 			"database_id": "57532062-e9cf-4a86-a89f-fc6fdb1e3ba5",
-			"migrations_dir": "migrations"
+			"migrations_dir": "db/migrations"
 		}
 	],
 	"ratelimits": [

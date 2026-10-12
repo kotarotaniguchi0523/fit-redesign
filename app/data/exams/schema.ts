@@ -1,0 +1,251 @@
+import { z } from "zod";
+import {
+	ExamIdSchema,
+	ExamNumberSchema,
+	PdfPathSchema,
+	QuestionIdSchema,
+	YearSchema,
+} from "../../types/domain.ts";
+
+const EXAM_FILE_RE = /exam(\d+)-(\d{4})\.json$/;
+
+export const JsonModuleSchema = z.object({ default: z.unknown() }).passthrough();
+
+export const JsonExamFilePathSchema = z.string().regex(/^..\/exams-json\/exam\d+-\d{4}\.json$/, {
+	error: "exam json path must match ../exams-json/exam{n}-{year}.json",
+});
+
+export const ParsedJsonExamFilePathSchema = JsonExamFilePathSchema.transform((filePath) => {
+	const match = filePath.match(EXAM_FILE_RE);
+	if (!match) {
+		// Defensive fallback. Regex above should guarantee this path.
+		throw new Error(`invalid exam json path: ${filePath}`);
+	}
+	return {
+		examNumber: Number(match[1]),
+		year: match[2],
+	};
+}).pipe(
+	z.object({
+		examNumber: ExamNumberSchema,
+		year: YearSchema,
+	}),
+);
+
+export const QuestionOptionSchema = z
+	.object({
+		label: z.string().min(1).max(16),
+		value: z.string().min(1),
+		isCorrect: z.boolean().optional(),
+	})
+	.strict();
+
+export const PointSchema = z
+	.object({
+		x: z.number(),
+		y: z.number(),
+	})
+	.strict();
+
+export const StateNodeSchema = z
+	.object({
+		id: z.string().min(1),
+		label: z.string().min(1),
+		x: z.number(),
+		y: z.number(),
+		isInitial: z.boolean().optional(),
+		isAccepting: z.boolean().optional(),
+	})
+	.strict();
+
+export const TransitionSchema = z
+	.object({
+		from: z.string().min(1),
+		to: z.string().min(1),
+		label: z.string().min(1),
+		curveOffset: z.number().optional(),
+	})
+	.strict();
+
+export const TreeNodeSchema = z.object({
+	value: z.union([z.string(), z.number()]),
+	get left() {
+		return TreeNodeSchema.optional();
+	},
+	get right() {
+		return TreeNodeSchema.optional();
+	},
+	x: z.number().optional(),
+	y: z.number().optional(),
+});
+
+export const TruthTableSchema = z.object({
+	type: z.literal("truthTable"),
+	columns: z.array(z.object({ key: z.string().min(1), label: z.string().min(1) })),
+	rows: z.array(z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]))),
+});
+
+export const DataTableSchema = z.object({
+	type: z.literal("dataTable"),
+	columns: z.array(z.object({ key: z.string().min(1), label: z.string().min(1) })),
+	rows: z.array(z.record(z.string(), z.union([z.string(), z.number()]))),
+});
+
+export const FigureDataSchema = z.discriminatedUnion("type", [
+	z.object({
+		type: z.literal("stateDiagram"),
+		nodes: z.array(StateNodeSchema),
+		transitions: z.array(TransitionSchema),
+	}),
+	z.object({
+		type: z.literal("binaryTree"),
+		root: TreeNodeSchema,
+		width: z.number().optional(),
+		height: z.number().optional(),
+	}),
+	TruthTableSchema,
+	z.object({
+		type: z.literal("parityCheck"),
+		data: z.array(z.array(z.number())),
+	}),
+	DataTableSchema,
+	z.object({
+		type: z.literal("huffmanTable"),
+		data: z.object({
+			characters: z.array(z.string()),
+			probabilities: z.array(z.number()),
+		}),
+	}),
+	z.object({
+		type: z.literal("linkedListTable"),
+		entries: z.array(
+			z.object({
+				address: z.union([z.string(), z.number()]),
+				data: z.string(),
+				pointer: z.union([z.string(), z.number()]),
+			}),
+		),
+	}),
+	z.object({
+		type: z.literal("normalDistributionTable"),
+		entries: z.array(
+			z.object({
+				u: z.number(),
+				probability: z.number(),
+			}),
+		),
+	}),
+	z.object({
+		type: z.literal("logicCircuit"),
+		inputs: z.array(z.object({ id: z.string(), label: z.string(), x: z.number(), y: z.number() })),
+		outputs: z.array(
+			z.object({
+				id: z.string(),
+				label: z.string(),
+				x: z.number(),
+				y: z.number(),
+				input: z.string(),
+			}),
+		),
+		gates: z.array(
+			z.object({
+				id: z.string(),
+				type: z.enum(["AND", "OR", "NOT", "NAND", "NOR", "XOR", "XNOR"]),
+				x: z.number(),
+				y: z.number(),
+			}),
+		),
+		wires: z.array(
+			z.object({
+				from: z.string(),
+				to: z.string(),
+				points: z.array(PointSchema).optional(),
+			}),
+		),
+		width: z.number().positive().optional(),
+		height: z.number().positive().optional(),
+	}),
+	z.object({
+		type: z.literal("flowchart"),
+		nodes: z.array(
+			z.object({
+				id: z.string(),
+				type: z.enum(["start", "end", "process", "decision", "connector"]),
+				label: z.string(),
+				x: z.number(),
+				y: z.number(),
+				width: z.number().optional(),
+				height: z.number().optional(),
+			}),
+		),
+		edges: z.array(
+			z.object({
+				from: z.string(),
+				to: z.string(),
+				label: z.string().optional(),
+				fromSide: z.enum(["bottom", "right", "left", "top"]).optional(),
+				toSide: z.enum(["top", "right", "left", "bottom"]).optional(),
+				points: z.array(PointSchema).optional(),
+			}),
+		),
+		width: z.number().optional(),
+		height: z.number().optional(),
+	}),
+]);
+
+export const QuestionSchema = z
+	.object({
+		id: QuestionIdSchema,
+		number: z.number().int().positive(),
+		text: z.string().min(1),
+		options: z.array(QuestionOptionSchema).optional(),
+		answer: z.string().min(1),
+		explanation: z.string().optional(),
+		figureDescription: z.string().optional(),
+		figureData: FigureDataSchema.optional(),
+	})
+	.strict();
+
+export const ExamJsonSchema = z
+	.object({
+		id: ExamIdSchema,
+		number: ExamNumberSchema,
+		title: z.string().min(1),
+		pdfPath: PdfPathSchema,
+		answerPdfPath: PdfPathSchema,
+		questions: z.array(QuestionSchema).min(1),
+	})
+	.strict()
+	.superRefine((exam, ctx) => {
+		const questionIds = exam.questions.map((question) => question.id);
+		const uniqueQuestionIds = new Set(questionIds);
+		if (uniqueQuestionIds.size !== questionIds.length) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["questions"],
+				message: "question ids must be unique within an exam",
+			});
+		}
+	});
+
+export const ExamsMetaSchema = z
+	.object({
+		version: z.literal(1),
+		exams: z.array(
+			z
+				.object({
+					examNumber: ExamNumberSchema,
+					title: z.string().min(1),
+					availableYears: z.array(YearSchema),
+				})
+				.strict(),
+		),
+	})
+	.strict();
+
+export { YearSchema };
+
+export type FigureData = z.infer<typeof FigureDataSchema>;
+export type Question = z.infer<typeof QuestionSchema>;
+export type Exam = z.infer<typeof ExamJsonSchema>;
+export type ExamMeta = z.infer<typeof ExamsMetaSchema>;

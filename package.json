@@ -7,11 +7,11 @@
 		"node": ">=24.3.0"
 	},
 	"scripts": {
-		"dev": "cf dev",
-		"build": "cf build",
-		"preview": "cf dev --local",
-		"deploy": "cf deploy",
-		"types": "cf workers types",
+		"dev": "wrangler dev",
+		"build": "wrangler deploy --dry-run --outdir dist",
+		"preview": "wrangler dev",
+		"deploy": "wrangler deploy",
+		"types": "wrangler types",
 		"typecheck": "tsc --noEmit",
 		"doctor": "remix doctor",
 		"routes": "remix routes",
@@ -20,23 +20,21 @@
 		"check": "biome ci .",
 		"lat:lint": "lat check",
 		"lint": "pnpm check && pnpm lat:lint",
-		"db:migrate:local": "cf d1 migrations apply --local --dir db/migrations",
-		"db:query:local": "cf d1 query --local",
+		"db:migrate:local": "wrangler d1 migrations apply fit-timer-db --local",
+		"db:query:local": "wrangler d1 execute fit-timer-db --local --command",
 		"e2e": "pnpm build && playwright test"
 	},
 	"dependencies": {
 		"@remix-run/ui": "^0.12.1",
-		"remix": "^3.0.0"
+		"remix": "^3.0.0",
+		"zod": "^4.6.5"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.14",
-		"@cloudflare/vite-plugin": "beta",
-		"@cloudflare/workers-types": "^5.20261012.1",
 		"@playwright/test": "^1.63.0",
 		"@types/node": "^24.0.0",
-		"cf": "^1.0.0-beta.14",
 		"lat.md": "^0.12.2",
 		"typescript": "^7.0.2",
-		"vite": "^8.3.0"
+		"wrangler": "^4.149.0"
 	}
 }

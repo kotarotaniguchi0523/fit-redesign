@@ -10,7 +10,7 @@ minimumReleaseAgeExclude:
   - '@cloudflare/workerd-linux-arm64@1.20260601.1 || 1.20260922.1'
   - '@cloudflare/workerd-windows-64@1.20260601.1 || 1.20260922.1'
   - workerd@1.20260601.1 || 1.20260922.1
-  - '@cloudflare/workers-types@4.20260601.1 || 5.20260922.1'
+  - '@cloudflare/workers-types@4.20260601.1 || 5.20260922.1 || 5.20261012.1'
   - '@vitest/coverage-v8@4.1.8'
   - '@vitest/expect@4.1.8'
   - '@vitest/mocker@4.1.8'
