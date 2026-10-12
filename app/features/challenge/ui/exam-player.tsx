@@ -372,6 +372,7 @@ export const ExamPlayer = clientEntry(
 			return (
 				<section
 					mix={shellStyle}
+					data-player="interactive"
 					aria-label={props.mode === "exam" ? "小テストプレイヤー" : "タイムアタックプレイヤー"}
 				>
 					<PlayerHeader
@@ -460,6 +461,7 @@ function ExamPlayerPreview(handle: Handle<{ props: ExamPlayerProps }>) {
 		return (
 			<section
 				mix={shellStyle}
+				data-player="preview"
 				aria-label={props.mode === "exam" ? "小テストプレイヤー" : "タイムアタックプレイヤー"}
 			>
 				<PlayerHeader
@@ -472,7 +474,16 @@ function ExamPlayerPreview(handle: Handle<{ props: ExamPlayerProps }>) {
 				/>
 				<div mix={workspaceStyle}>
 					<div mix={questionStyle}>
-						<QuestionContent question={question} />
+						<Frame
+							name="question"
+							src={routes.questionRegion.href({
+								unit: props.unitId,
+								year: props.year,
+								exam: String(props.examNumber),
+								question: question.id,
+							})}
+							fallback={<QuestionContent question={question} />}
+						/>
 						<ChallengeTimerDisplay
 							mode={props.mode}
 							totalElapsedMs={0}

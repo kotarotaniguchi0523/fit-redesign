@@ -10210,6 +10210,7 @@ var routes = createRoutes({
     destroy: createDeleteRoute("/progress")
   },
   unitYear: createGetRoute("/:unit/:year"),
+  unitYearRegion: createGetRoute("/:unit/:year/region"),
   exam: createGetRoute("/:unit/:year/exam/:exam"),
   question: createGetRoute("/:unit/:year/exam/:exam/question/:question"),
   questionRegion: createGetRoute("/:unit/:year/exam/:exam/question/:question/region")
@@ -16027,6 +16028,7 @@ var ExamPlayer = clientEntry(
         "section",
         {
           mix: shellStyle,
+          "data-player": "interactive",
           "aria-label": props.mode === "exam" ? "\u5C0F\u30C6\u30B9\u30C8\u30D7\u30EC\u30A4\u30E4\u30FC" : "\u30BF\u30A4\u30E0\u30A2\u30BF\u30C3\u30AF\u30D7\u30EC\u30A4\u30E4\u30FC",
           children: [
             /* @__PURE__ */ jsx(
@@ -16136,6 +16138,7 @@ function ExamPlayerPreview(handle) {
       "section",
       {
         mix: shellStyle,
+        "data-player": "preview",
         "aria-label": props.mode === "exam" ? "\u5C0F\u30C6\u30B9\u30C8\u30D7\u30EC\u30A4\u30E4\u30FC" : "\u30BF\u30A4\u30E0\u30A2\u30BF\u30C3\u30AF\u30D7\u30EC\u30A4\u30E4\u30FC",
         children: [
           /* @__PURE__ */ jsx(
@@ -16152,7 +16155,19 @@ function ExamPlayerPreview(handle) {
             }
           ),
           /* @__PURE__ */ jsx("div", { mix: workspaceStyle, children: /* @__PURE__ */ jsx("div", { mix: questionStyle, children: [
-            /* @__PURE__ */ jsx(QuestionContent, { question }),
+            /* @__PURE__ */ jsx(
+              Frame,
+              {
+                name: "question",
+                src: routes.questionRegion.href({
+                  unit: props.unitId,
+                  year: props.year,
+                  exam: String(props.examNumber),
+                  question: question.id
+                }),
+                fallback: /* @__PURE__ */ jsx(QuestionContent, { question })
+              }
+            ),
             /* @__PURE__ */ jsx(
               ChallengeTimerDisplay,
               {
