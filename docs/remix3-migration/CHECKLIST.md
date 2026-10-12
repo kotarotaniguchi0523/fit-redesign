@@ -47,7 +47,7 @@
 - [x] `cf workers types` / `remix routes` / `tsc --noEmit` が通る
 - [x] `cf build` が成功（Worker バンドル生成）
 - [x] SSR スモーク（`scripts/smoke.ts`）でトップ・health・単元・404 を検証
-- [ ] `cf dev` / `cf build` の起動（サンドボックスの symlink 制約で未検証。スクリプトは cf 統一済み）
+- [x] `cf dev` / `cf build` の起動（workerd で全ルート200、D1同期フロー通過、build complete）
 - [ ] `context.render` の既定 404 を `NotFoundPage` に差し替え
 
 ## Stage 2: アセットパイプライン（Workers 用ビルド時生成）
@@ -82,7 +82,7 @@
 - [x] `app/server/*Repository` → data-table の query/CRUD へ移植（app/db/progress.ts）
 - [x] 同期キー（syncKey/syncLinkId）を Web Crypto ベースで移植
 - [x] リポジトリテストを `remix test` へ移植（33/33 pass）
-- [ ] ローカル D1（`wrangler d1 migrations apply --local`）でエンドツーエンド確認
+- [x] ローカル D1（`cf d1 migrations apply --local --persist-to .wrangler/state`）でエンドツーエンド確認
 
 ## Stage 5: ページ移植（SSR + Remix component）
 

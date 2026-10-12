@@ -1,46 +1,47 @@
 {
-  "name": "fit-redesign",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "engines": {
-    "node": ">=24.3.0"
-  },
-  "scripts": {
-    "dev": "node scripts/build-css.mjs && node scripts/build-client.mjs && cf dev",
-    "build": "node scripts/build-css.mjs && node scripts/build-guide.mjs && node scripts/build-client.mjs && cf build",
-    "preview": "cf dev --local",
-    "deploy": "cf deploy",
-    "typecheck": "tsc --noEmit",
-    "doctor": "remix doctor",
-    "routes": "remix routes",
-    "test": "NODE_ENV=test remix test",
-    "format": "biome format --write .",
-    "check": "biome ci .",
-    "lat:lint": "lat check",
-    "lint": "pnpm check && pnpm lat:lint",
-    "db:migrate:local": "cf d1 migrations apply --local --dir migrations",
-    "db:query:local": "cf d1 query --local",
-    "e2e": "pnpm build && playwright test",
-    "build:css": "node scripts/build-css.mjs",
-    "build:client": "node scripts/build-client.mjs",
-    "test:e2e": "remix test \"**/*.test.e2e.ts\"",
-    "test:browser": "remix test \"**/*.test.browser.ts\""
-  },
-  "dependencies": {
-    "@remix-run/ui": "^0.12.1",
-    "neverthrow": "^8.2.0",
-    "remix": "^3.0.0",
-    "zod": "^4.6.5"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.5.14",
-    "@playwright/test": "^1.63.0",
-    "@types/node": "^24.0.0",
-    "cf": "^1.0.0-beta.14",
-    "lat.md": "^0.12.2",
-    "playwright": "^1.63.0",
-    "typescript": "^7.0.2",
-    "wrangler": "^4.149.0"
-  }
+	"name": "fit-redesign",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"engines": {
+		"node": ">=24.3.0"
+	},
+	"scripts": {
+		"dev": "node scripts/build-css.mjs && node scripts/build-client.mjs && cf dev",
+		"build": "node scripts/build-css.mjs && node scripts/build-guide.mjs && node scripts/build-client.mjs && cf build",
+		"preview": "cf dev --local",
+		"deploy": "cf deploy",
+		"typecheck": "cf workers types && tsc --noEmit",
+		"doctor": "remix doctor",
+		"routes": "remix routes",
+		"test": "NODE_ENV=test remix test",
+		"format": "biome format --write .",
+		"check": "biome ci .",
+		"lat:lint": "lat check",
+		"lint": "pnpm check && pnpm lat:lint",
+		"db:migrate:local": "cf d1 migrations apply 57532062-e9cf-4a86-a89f-fc6fdb1e3ba5 --local --persist-to .wrangler/state --dir migrations",
+		"db:query:local": "cf d1 query 57532062-e9cf-4a86-a89f-fc6fdb1e3ba5 --local --persist-to .wrangler/state",
+		"e2e": "pnpm build && playwright test",
+		"build:css": "node scripts/build-css.mjs",
+		"build:client": "node scripts/build-client.mjs",
+		"test:e2e": "remix test \"**/*.test.e2e.ts\"",
+		"test:browser": "remix test \"**/*.test.browser.ts\"",
+		"types": "cf workers types"
+	},
+	"dependencies": {
+		"@remix-run/ui": "^0.12.1",
+		"neverthrow": "^8.2.0",
+		"remix": "^3.0.0",
+		"zod": "^4.6.5"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.14",
+		"@playwright/test": "^1.63.0",
+		"@types/node": "^24.0.0",
+		"cf": "^1.0.0-beta.14",
+		"lat.md": "^0.12.2",
+		"playwright": "^1.63.0",
+		"typescript": "^7.0.2",
+		"wrangler": "^4.149.0"
+	}
 }

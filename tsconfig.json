@@ -16,6 +16,6 @@
 		"jsxImportSource": "remix/component",
 		"noEmit": true
 	},
-	"include": ["app", "scripts", "worker-configuration.d.ts"],
+	"include": [".cloudflare/types", "app", "scripts"],
 	"exclude": ["dist", "node_modules", "legacy"]
 }
