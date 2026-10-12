@@ -32,8 +32,8 @@
 
 ## P4: Frame 導入
 
-- [ ] 問題領域ルート（`.../question/:question/region`）を追加し、領域描画を `Document` なしで返す
-- [ ] exam ページのプレイヤー chrome を島、問題本体を `<Frame>` に分離
+- [x] 問題領域ルート（`.../question/:question/region`）を追加し、領域描画を `Document` なしで返す
+- [x] 問題本体を `<Frame name="question">` に分離（プレイヤー chrome は島が所有）
 - [ ] `/:unit/:year` の小テスト一覧を年度タブの `<Frame>` 化
 - [ ] JS 無効で前後移動・問題閲覧が成立することを確認
 

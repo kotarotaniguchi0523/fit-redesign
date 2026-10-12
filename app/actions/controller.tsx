@@ -7,6 +7,7 @@ import { ExamPlayerPage } from "../pages/exam-player-page.tsx";
 import { GuidePage } from "../pages/guide-page.tsx";
 import { HomePage } from "../pages/home-page.tsx";
 import { NotFoundPage } from "../pages/not-found-page.tsx";
+import { QuestionRegion } from "../pages/question-region.tsx";
 import { RecordsPage } from "../pages/records-page.tsx";
 import { SlideOnlyPage } from "../pages/slide-only-page.tsx";
 import {
@@ -128,6 +129,21 @@ export default createController(routes, {
 					}}
 				/>,
 			);
+		},
+		async questionRegion(context) {
+			const unit = unitBasedTabs.find((candidate) => candidate.id === context.params.unit);
+			const examNumber = Number(context.params.exam);
+			const year = context.params.year;
+			const exam = unit
+				? (await getExamByNumber(examNumber as never))?.exams[year as Year]
+				: undefined;
+			const question = exam?.questions.find(
+				(candidate) => candidate.id === context.params.question,
+			);
+			if (!(exam && question)) {
+				return new Response("Not Found", { status: 404 });
+			}
+			return context.render(<QuestionRegion question={question} />);
 		},
 
 		health() {

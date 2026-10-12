@@ -7356,6 +7356,877 @@ var systemClock = {
   nowEpochMilliseconds: () => Date.now()
 };
 
+// node_modules/@remix-run/route-pattern/dist/lib/route-pattern/split.js
+function split(source) {
+  let result = {
+    protocol: null,
+    hostname: null,
+    port: null,
+    pathname: null,
+    search: null
+  };
+  let questionMarkIndex = source.indexOf("?");
+  if (questionMarkIndex !== -1) {
+    result.search = span(questionMarkIndex + 1, source.length);
+    source = source.slice(0, questionMarkIndex);
+  }
+  let solidusIndex = source.indexOf("://");
+  if (solidusIndex === -1) {
+    result.pathname = pathnameSpan(source, 0, source.length);
+    return result;
+  }
+  let slashIndex = source.indexOf("/");
+  if (slashIndex === solidusIndex + 1) {
+    slashIndex = source.indexOf("/", solidusIndex + 3);
+  }
+  if (slashIndex === -1) {
+    result.protocol = span(0, solidusIndex);
+    let host2 = span(solidusIndex + 3, source.length);
+    if (host2) {
+      let { hostname, port } = hostSpans(source, host2);
+      result.hostname = hostname;
+      result.port = port;
+    }
+    return result;
+  }
+  if (slashIndex < solidusIndex) {
+    result.pathname = pathnameSpan(source, 0, source.length);
+    return result;
+  }
+  result.protocol = span(0, solidusIndex);
+  let host = span(solidusIndex + 3, slashIndex);
+  if (host) {
+    let { hostname, port } = hostSpans(source, host);
+    result.hostname = hostname;
+    result.port = port;
+  }
+  result.pathname = pathnameSpan(source, slashIndex, source.length);
+  return result;
+}
+function span(start, end) {
+  if (start === end)
+    return null;
+  return [start, end];
+}
+function hostSpans(source, host) {
+  let lastColonIndex = source.slice(0, host[1]).lastIndexOf(":");
+  if (lastColonIndex === -1 || lastColonIndex < host[0])
+    return { hostname: host, port: null };
+  if (source.slice(lastColonIndex + 1, host[1]).match(/^\d+$/)) {
+    return { hostname: span(host[0], lastColonIndex), port: span(lastColonIndex + 1, host[1]) };
+  }
+  return { hostname: host, port: null };
+}
+function pathnameSpan(source, begin, end) {
+  if (source[begin] === "/")
+    begin += 1;
+  return span(begin, end);
+}
+
+// node_modules/@remix-run/route-pattern/dist/lib/route-pattern/parse.js
+var IDENTIFIER_RE = /^[a-zA-Z_$][a-zA-Z_$0-9]*/;
+function parsePattern(source) {
+  let spans = split(source);
+  if (spans.port && !spans.hostname) {
+    throw new ParseError("missing hostname", source, spans.port[0] - 1);
+  }
+  return createRoutePattern({
+    protocol: parseProtocol(source, spans.protocol),
+    hostname: parseHostname(source, spans.hostname),
+    port: spans.port ? source.slice(...spans.port) : null,
+    pathname: spans.pathname ? parsePart(source, { span: spans.pathname, type: "pathname" }) : parsePart("", { span: [0, 0], type: "pathname" }),
+    search: spans.search ? parseSearch(source.slice(...spans.search)) : /* @__PURE__ */ new Map()
+  });
+}
+function parsePart(source, options) {
+  let span2 = options.span ?? [0, source.length];
+  let separator = options.type === "hostname" ? "." : "/";
+  let tokens = [];
+  let tokenIndices = [];
+  let optionals = /* @__PURE__ */ new Map();
+  let appendText = (text) => {
+    let currentToken = tokens.at(-1);
+    if (currentToken?.type === "text") {
+      currentToken.text += text;
+    } else {
+      tokens.push({ type: "text", text });
+      tokenIndices.push(i);
+    }
+  };
+  let i = span2[0];
+  let optionalStack = [];
+  let emptyOptionals = [];
+  while (i < span2[1]) {
+    let char = source[i];
+    if (char === "(") {
+      optionalStack.push({ tokenIndex: tokens.length, sourceIndex: i });
+      tokens.push({ type: char });
+      tokenIndices.push(i);
+      i += 1;
+      continue;
+    }
+    if (char === ")") {
+      let optional = optionalStack.pop();
+      if (optional === void 0) {
+        throw new ParseError("unmatched )", source, i);
+      }
+      if (optional.tokenIndex === tokens.length - 1) {
+        emptyOptionals.push(optional.sourceIndex);
+      }
+      optionals.set(optional.tokenIndex, tokens.length);
+      tokens.push({ type: char });
+      tokenIndices.push(i);
+      i += 1;
+      continue;
+    }
+    if (char === ":") {
+      i += 1;
+      let name = IDENTIFIER_RE.exec(source.slice(i, span2[1]))?.[0];
+      if (!name) {
+        throw new ParseError("missing variable name", source, i - 1);
+      }
+      tokens.push({ type: ":", name });
+      tokenIndices.push(i - 1);
+      i += name.length;
+      continue;
+    }
+    if (char === "*") {
+      i += 1;
+      let name = IDENTIFIER_RE.exec(source.slice(i, span2[1]))?.[0];
+      tokens.push({ type: "*", name: name ?? "*" });
+      tokenIndices.push(i - 1);
+      i += name?.length ?? 0;
+      continue;
+    }
+    if (char === separator) {
+      tokens.push({ type: "separator" });
+      tokenIndices.push(i);
+      i += 1;
+      continue;
+    }
+    if (char === "\\") {
+      if (i + 1 === span2[1]) {
+        throw new ParseError("dangling escape", source, i);
+      }
+      let text = source.slice(i + 1, i + 2);
+      appendText(text);
+      i += 2;
+      continue;
+    }
+    appendText(char);
+    i += 1;
+  }
+  let unmatchedOptional = optionalStack.at(-1);
+  if (unmatchedOptional !== void 0) {
+    throw new ParseError("unmatched (", source, unmatchedOptional.sourceIndex);
+  }
+  if (emptyOptionals.length > 0) {
+    throw new ParseError("empty optional", source, emptyOptionals[0]);
+  }
+  validateTokenGrammar(source, tokens, optionals, tokenIndices);
+  validateOptionalCaptureSchemas(source, tokens, optionals, tokenIndices);
+  return { tokens, optionals, type: options.type };
+}
+function validateTokenGrammar(source, tokens, optionals, tokenIndices) {
+  for (let [index, token] of tokens.entries()) {
+    if (token.type !== ":" && token.type !== "*")
+      continue;
+    for (let next of nextConsumingTokenIndices(tokens, optionals, index + 1)) {
+      if (next === tokens.length)
+        continue;
+      let nextToken = tokens[next];
+      if (token.type === "*") {
+        if (nextToken.type === "*") {
+          throw new ParseError("adjacent wildcards", source, tokenIndices[next]);
+        }
+        continue;
+      }
+      if (nextToken.type === "separator" || nextToken.type === "*" || nextToken.type === "text" && nextToken.text.startsWith(".")) {
+        continue;
+      }
+      throw new ParseError("invalid param delimiter", source, tokenIndices[next]);
+    }
+  }
+}
+function nextConsumingTokenIndices(tokens, optionals, start) {
+  let result = /* @__PURE__ */ new Set();
+  let pending = [start];
+  let visited = /* @__PURE__ */ new Set();
+  while (pending.length > 0) {
+    let index = pending.pop();
+    if (index === void 0)
+      break;
+    if (visited.has(index))
+      continue;
+    visited.add(index);
+    let token = tokens[index];
+    if (token === void 0) {
+      result.add(tokens.length);
+    } else if (token.type === "(") {
+      let end = optionals.get(index);
+      if (end === void 0)
+        throw new Error("missing optional end");
+      pending.push(index + 1, end + 1);
+    } else if (token.type === ")") {
+      pending.push(index + 1);
+    } else {
+      result.add(index);
+    }
+  }
+  return result;
+}
+function validateOptionalCaptureSchemas(source, tokens, optionals, tokenIndices) {
+  for (let [begin, end] of optionals) {
+    let nextBegin = end + 1;
+    if (tokens[nextBegin]?.type !== "(")
+      continue;
+    let nextEnd = optionals.get(nextBegin);
+    if (nextEnd === void 0)
+      continue;
+    let first = optionalStructure(tokens, begin + 1, end);
+    let second = optionalStructure(tokens, nextBegin + 1, nextEnd);
+    if (first.structure === second.structure && first.captures !== second.captures) {
+      throw new ParseError("ambiguous optional captures", source, tokenIndices[nextBegin]);
+    }
+  }
+}
+function optionalStructure(tokens, begin, end) {
+  let structure = "";
+  let captures = "";
+  for (let i = begin; i < end; i++) {
+    let token = tokens[i];
+    if (token.type === ":" || token.type === "*") {
+      structure += token.type;
+      captures += `${token.type}:${token.name}|`;
+    } else if (token.type === "text") {
+      structure += `t:${token.text}|`;
+    } else {
+      structure += `${token.type}|`;
+    }
+  }
+  return { structure, captures };
+}
+function parseProtocol(source, span2) {
+  if (!span2)
+    return null;
+  let protocol = source.slice(...span2);
+  if (protocol === "" || protocol === "http" || protocol === "https" || protocol === "http(s)") {
+    return protocol === "" ? null : protocol;
+  }
+  throw new ParseError("invalid protocol", source, span2[0]);
+}
+function parseHostname(source, span2) {
+  if (!span2)
+    return null;
+  let part = parsePart(source, { span: span2, type: "hostname" });
+  if (isNamelessWildcard(part))
+    return null;
+  return part;
+}
+function isNamelessWildcard(part) {
+  if (part.tokens.length !== 1)
+    return false;
+  let token = part.tokens[0];
+  if (token.type !== "*")
+    return false;
+  return token.name === "*";
+}
+function parseSearch(source) {
+  let constraints = /* @__PURE__ */ new Map();
+  let searchParams = new URLSearchParams(source);
+  for (let [key, value] of searchParams) {
+    let requiredValues = constraints.get(key);
+    if (!requiredValues) {
+      requiredValues = /* @__PURE__ */ new Set();
+      constraints.set(key, requiredValues);
+    }
+    if (value === "")
+      continue;
+    requiredValues.add(value);
+  }
+  return constraints;
+}
+var ParseError = class extends Error {
+  /** The parse failure category. */
+  type;
+  /** Original pattern source being parsed. */
+  source;
+  /** Character index where parsing failed. */
+  index;
+  constructor(type, source, index) {
+    let underline = " ".repeat(index) + "^";
+    let message = `${type}
+
+${source}
+${underline}`;
+    super(message);
+    this.name = "ParseError";
+    this.type = type;
+    this.source = source;
+    this.index = index;
+  }
+};
+
+// node_modules/@remix-run/route-pattern/dist/lib/unreachable.js
+function unreachable(value) {
+  let message = value === void 0 ? "Unreachable" : `Unreachable: ${value}`;
+  throw new Error(message);
+}
+
+// node_modules/@remix-run/route-pattern/dist/lib/route-pattern/serialize.js
+function serializePattern(pattern) {
+  let protocol = serializeProtocol(pattern);
+  let hostname = serializeHostname(pattern);
+  let port = serializePort(pattern);
+  let pathname = serializePathname(pattern);
+  let search = serializeSearch(pattern);
+  let result = "";
+  if (protocol || hostname || port) {
+    result += `${protocol}://${hostname}${port === "" ? "" : `:${port}`}`;
+  }
+  result += "/" + pathname;
+  if (search)
+    result += `?${search}`;
+  return result;
+}
+function serializePatternParts(pattern) {
+  return {
+    protocol: serializeProtocol(pattern),
+    hostname: serializeHostname(pattern),
+    port: serializePort(pattern),
+    pathname: serializePathname(pattern),
+    search: serializeSearch(pattern)
+  };
+}
+function serializeProtocol(pattern) {
+  return pattern.protocol ?? "";
+}
+function serializeHostname(pattern) {
+  return pattern.hostname ? serializePart(pattern.hostname) : "";
+}
+function serializePort(pattern) {
+  return pattern.port ?? "";
+}
+function serializePathname(pattern) {
+  return serializePart(pattern.pathname);
+}
+function serializeSearch(pattern) {
+  if (pattern.search.size === 0)
+    return "";
+  let searchParams = new URLSearchParams();
+  for (let [key, constraint] of pattern.search) {
+    if (constraint.size === 0) {
+      searchParams.append(key, "");
+    } else {
+      for (let value of constraint) {
+        searchParams.append(key, value);
+      }
+    }
+  }
+  return searchParams.toString();
+}
+function escapeText(text) {
+  return text.replaceAll(/[:*()\\]/g, "\\$&");
+}
+function serializePart(part) {
+  let separator = part.type === "hostname" ? "." : "/";
+  let result = "";
+  for (let token of part.tokens) {
+    if (token.type === "(" || token.type === ")") {
+      result += token.type;
+      continue;
+    }
+    if (token.type === "text") {
+      result += escapeText(token.text);
+      continue;
+    }
+    if (token.type === ":" || token.type === "*") {
+      let name = token.name === "*" ? "" : token.name;
+      result += `${token.type}${name}`;
+      continue;
+    }
+    if (token.type === "separator") {
+      result += separator;
+      continue;
+    }
+    unreachable(token.type);
+  }
+  return result;
+}
+
+// node_modules/@remix-run/route-pattern/dist/lib/route-pattern.js
+var RoutePattern = class {
+  /** Parsed parts of this pattern. Internal; not part of the public API. */
+  _parts;
+  /**
+   * Create a new `RoutePattern` from its parsed parts.
+   *
+   * The parts are not part of the public API. Use the {@link RoutePattern} `parse` method to create a pattern
+   * from a source string.
+   *
+   * @param parts The parsed parts of the pattern.
+   */
+  constructor(parts) {
+    this._parts = parts;
+  }
+  /**
+   * Create a new `RoutePattern` by parsing a source string.
+   *
+   * @param source The route pattern source string.
+   * @returns The parsed route pattern.
+   */
+  static parse(source) {
+    return parsePattern(source);
+  }
+  /** Normalized string representation of this pattern. */
+  get source() {
+    return serializePattern(this._parts);
+  }
+  /**
+   * Returns a string representing this route pattern.
+   *
+   * @returns The same normalized pattern string as `RoutePattern.source`.
+   */
+  toString() {
+    return this.source;
+  }
+  /**
+   * Returns a JSON-serializable object containing each serialized part of this route pattern.
+   *
+   * @returns The serialized protocol, hostname, port, pathname, and search.
+   */
+  toJSON() {
+    return serializePatternParts(this._parts);
+  }
+};
+function createRoutePattern(parts) {
+  return new RoutePattern(parts);
+}
+
+// node_modules/@remix-run/route-pattern/dist/lib/href.js
+function createHref(pattern, ...args) {
+  pattern = typeof pattern === "string" ? RoutePattern.parse(pattern) : pattern;
+  let patternParts = pattern._parts;
+  let [params, options] = args;
+  let hasOrigin = patternParts.protocol !== null || patternParts.hostname !== null || patternParts.port !== null;
+  let result = "";
+  let targetOrigin;
+  if (hasOrigin) {
+    let protocol = patternParts.protocol === null || patternParts.protocol === "http(s)" ? "https" : patternParts.protocol;
+    if (patternParts.hostname === null) {
+      throw new CreateHrefError({ type: "missing-hostname", pattern });
+    }
+    let hostname = hrefPart(pattern, patternParts.hostname, params ?? {});
+    let port = patternParts.port === null ? "" : `:${patternParts.port}`;
+    targetOrigin = `${protocol}://${hostname}${port}`;
+    result += targetOrigin;
+  }
+  let pathname = hrefPart(pattern, patternParts.pathname, params ?? {});
+  pathname = "/" + pathname.replace(/^\/+/, "");
+  result += pathname;
+  let search = hrefSearch(patternParts.search, options?.searchParams);
+  let searchSuffix = search === void 0 ? "" : `?${search}`;
+  result += searchSuffix;
+  if (options?.baseURL !== void 0) {
+    let baseURL = new URL(options.baseURL);
+    let baseOrigin = baseURL.origin;
+    let targetURLOrigin = targetOrigin === void 0 ? baseOrigin : new URL(targetOrigin).origin;
+    if (targetURLOrigin === baseOrigin) {
+      new URL("/", baseURL);
+      return relativeHref(pathname, searchSuffix, baseURL);
+    }
+  }
+  return result;
+}
+function relativeHref(pathname, search, baseURL) {
+  let baseSegments = pathnameSegments(baseURL.pathname);
+  if (!baseURL.pathname.endsWith("/"))
+    baseSegments.pop();
+  let targetSegments = pathnameSegments(pathname);
+  let targetIsDirectory = pathname.endsWith("/");
+  let targetFile = targetIsDirectory ? void 0 : targetSegments.pop();
+  let common = 0;
+  while (common < baseSegments.length && common < targetSegments.length && baseSegments[common] === targetSegments[common]) {
+    common += 1;
+  }
+  let relativeSegments = [
+    ...Array.from({ length: baseSegments.length - common }, () => ".."),
+    ...targetSegments.slice(common)
+  ];
+  if (targetFile !== void 0)
+    relativeSegments.push(targetFile);
+  let result = relativeSegments.join("/");
+  if (targetIsDirectory)
+    result = result === "" ? "./" : `${result}/`;
+  if (result === "")
+    result = "./";
+  if (/^[\\/]/.test(result) || /^[^/]*:/.test(result))
+    result = `./${result}`;
+  return result + search;
+}
+function pathnameSegments(pathname) {
+  let segments = pathname.slice(1).split("/");
+  if (pathname.endsWith("/"))
+    segments.pop();
+  return segments;
+}
+function hrefPart(pattern, part, params) {
+  let separator = part.type === "hostname" ? "." : "/";
+  let missingParams = [];
+  let stack = [{ href: "" }];
+  let i = 0;
+  while (i < part.tokens.length) {
+    let token = part.tokens[i];
+    if (token.type === "text") {
+      stack[stack.length - 1].href += token.text;
+      i += 1;
+      continue;
+    }
+    if (token.type === "separator") {
+      stack[stack.length - 1].href += separator;
+      i += 1;
+      continue;
+    }
+    if (token.type === "(") {
+      stack.push({ begin: i, href: "" });
+      i += 1;
+      continue;
+    }
+    if (token.type === ")") {
+      let frame = stack.pop();
+      stack[stack.length - 1].href += frame.href;
+      i += 1;
+      continue;
+    }
+    if (token.type === ":" || token.type === "*") {
+      let value = params[token.name];
+      if (value == null) {
+        if (stack.length <= 1) {
+          if (token.name === "*") {
+            throw new CreateHrefError({ type: "nameless-wildcard", pattern });
+          }
+          if (!missingParams.includes(token.name))
+            missingParams.push(token.name);
+          i += 1;
+          continue;
+        }
+        let frame = stack.pop();
+        i = part.optionals.get(frame.begin) + 1;
+        if (stack[stack.length - 1].href.endsWith(separator) && part.tokens[i]?.type === "separator") {
+          i += 1;
+        }
+        continue;
+      }
+      stack[stack.length - 1].href += part.type === "pathname" && token.type === ":" ? encodePathnameVariableParam(pattern, token.name, value) : part.type === "pathname" && token.type === "*" ? encodePathnameWildcard(value) : part.type === "hostname" && token.type === ":" ? validateHostnameVariable(value) : part.type === "hostname" && token.type === "*" ? validateHostnameWildcard(value) : unreachable();
+      i += 1;
+      continue;
+    }
+    unreachable(token.type);
+  }
+  if (missingParams.length > 0) {
+    throw new CreateHrefError({
+      type: "missing-params",
+      pattern,
+      missingParams,
+      params
+    });
+  }
+  if (stack.length !== 1)
+    unreachable();
+  return stack[0].href;
+}
+function hrefSearch(constraints, searchParams) {
+  let urlSearchParams = searchParams instanceof URLSearchParams ? new URLSearchParams(searchParams) : new URLSearchParams();
+  if (searchParams !== void 0 && !(searchParams instanceof URLSearchParams)) {
+    for (let [key, value] of Object.entries(searchParams)) {
+      if (Array.isArray(value)) {
+        for (let v of value) {
+          if (v != null)
+            urlSearchParams.append(key, String(v));
+        }
+      } else if (value != null) {
+        urlSearchParams.append(key, String(value));
+      }
+    }
+  }
+  for (let [key, requiredValues] of constraints) {
+    if (requiredValues.size === 0) {
+      if (urlSearchParams.has(key))
+        continue;
+      urlSearchParams.append(key, "");
+    } else {
+      for (let value of requiredValues) {
+        if (urlSearchParams.getAll(key).includes(value))
+          continue;
+        urlSearchParams.append(key, value);
+      }
+    }
+  }
+  let result = urlSearchParams.toString();
+  return result || void 0;
+}
+var CreateHrefError = class _CreateHrefError extends Error {
+  details;
+  constructor(details) {
+    super(_CreateHrefError.message(details));
+    this.name = "CreateHrefError";
+    this.details = details;
+  }
+  static message(details) {
+    if (details.type === "missing-hostname") {
+      return `pattern requires hostname
+
+Pattern: ${details.pattern}`;
+    }
+    if (details.type === "nameless-wildcard") {
+      return `pattern contains nameless wildcard
+
+Pattern: ${details.pattern}`;
+    }
+    if (details.type === "missing-params") {
+      let params = details.missingParams.map((p) => `'${p}'`).join(", ");
+      return `missing param(s): ${params}
+
+Pattern: ${details.pattern}
+Params: ${JSON.stringify(details.params)}`;
+    }
+    if (details.type === "invalid-hostname-variable") {
+      return `invalid hostname variable param: ${JSON.stringify(details.value)} contains ${JSON.stringify(details.char)}`;
+    }
+    if (details.type === "invalid-hostname-wildcard") {
+      return `invalid hostname wildcard param: ${JSON.stringify(details.value)} contains ${JSON.stringify(details.char)}`;
+    }
+    if (details.type === "invalid-pathname-variable") {
+      return `invalid pathname variable param: '${details.paramName}' cannot be empty
+
+Pattern: ${details.pattern}
+Value: ${JSON.stringify(details.value)}`;
+    }
+    if (details.type === "invalid-pathname-wildcard") {
+      return `invalid pathname wildcard param: ${JSON.stringify(details.value)} contains dot segment ${JSON.stringify(details.segment)}`;
+    }
+    unreachable(details);
+  }
+};
+function encodePathnameVariableParam(pattern, paramName, value) {
+  let serialized = String(value);
+  if (serialized.length === 0) {
+    throw new CreateHrefError({
+      type: "invalid-pathname-variable",
+      pattern,
+      paramName,
+      value: serialized
+    });
+  }
+  return encodePathnameVariableSegment(serialized);
+}
+function encodePathnameWildcard(value) {
+  let serialized = String(value);
+  return serialized.split("/").map((segment) => {
+    if (segment === "." || segment === "..") {
+      throw new CreateHrefError({ type: "invalid-pathname-wildcard", value: serialized, segment });
+    }
+    return encodePathnameSegment(segment);
+  }).join("/");
+}
+function encodePathnameSegment(value) {
+  return encodeURIComponent(value);
+}
+function encodePathnameVariableSegment(value) {
+  return encodePathnameSegment(value).replaceAll(".", "%2E");
+}
+var HOSTNAME_PARAM_STRUCTURAL_CHARS = ["@", ":", "/", "\\", "?", "#", "%"];
+function validateHostnameVariable(value) {
+  let serialized = String(value);
+  for (let char of serialized) {
+    if (char === "." || isInvalidHostnameParamChar(char)) {
+      throw new CreateHrefError({
+        type: "invalid-hostname-variable",
+        value: serialized,
+        char
+      });
+    }
+  }
+  return serialized;
+}
+function validateHostnameWildcard(value) {
+  let serialized = String(value);
+  for (let char of serialized) {
+    if (isInvalidHostnameParamChar(char)) {
+      throw new CreateHrefError({
+        type: "invalid-hostname-wildcard",
+        value: serialized,
+        char
+      });
+    }
+  }
+  return serialized;
+}
+function isInvalidHostnameParamChar(char) {
+  let code = char.charCodeAt(0);
+  return code <= 31 || code === 127 || HOSTNAME_PARAM_STRUCTURAL_CHARS.includes(char);
+}
+
+// node_modules/@remix-run/route-pattern/dist/lib/join.js
+function joinPatterns(base, next) {
+  let basePattern = typeof base === "string" ? RoutePattern.parse(base) : base;
+  let nextPattern = typeof next === "string" ? RoutePattern.parse(next) : next;
+  let baseParts = basePattern._parts;
+  let nextParts = nextPattern._parts;
+  return createRoutePattern({
+    protocol: nextParts.protocol ?? baseParts.protocol,
+    hostname: nextParts.hostname ?? baseParts.hostname,
+    port: nextParts.port ?? baseParts.port,
+    pathname: joinPathname(baseParts.pathname, nextParts.pathname),
+    search: joinSearch(baseParts.search, nextParts.search)
+  });
+}
+function joinPathname(base, next) {
+  if (base.tokens.length === 0)
+    return next;
+  if (next.tokens.length === 0)
+    return base;
+  let tokens = [];
+  let baseLastNonOptionalIndex = base.tokens.findLastIndex((token) => token.type !== "(" && token.type !== ")");
+  let baseLastNonOptional = base.tokens[baseLastNonOptionalIndex];
+  let baseHasTrailingSeparator = baseLastNonOptional?.type === "separator";
+  base.tokens.forEach((token, index) => {
+    if (index === baseLastNonOptionalIndex && token.type === "separator")
+      return;
+    tokens.push(token);
+  });
+  let nextFirstNonOptional = next.tokens.find((token) => token.type !== "(" && token.type !== ")");
+  let needsSeparator = nextFirstNonOptional === void 0 || nextFirstNonOptional.type !== "separator";
+  if (needsSeparator)
+    tokens.push({ type: "separator" });
+  let tokenOffset = tokens.length;
+  next.tokens.forEach((token) => tokens.push(token));
+  let optionals = /* @__PURE__ */ new Map();
+  for (let [begin, end] of base.optionals) {
+    if (baseHasTrailingSeparator) {
+      if (begin > baseLastNonOptionalIndex)
+        begin -= 1;
+      if (end > baseLastNonOptionalIndex)
+        end -= 1;
+    }
+    optionals.set(begin, end);
+  }
+  for (let [begin, end] of next.optionals) {
+    optionals.set(tokenOffset + begin, tokenOffset + end);
+  }
+  return { tokens, optionals, type: "pathname" };
+}
+function joinSearch(base, next) {
+  let result = /* @__PURE__ */ new Map();
+  for (let [name, values] of base) {
+    result.set(name, new Set(values));
+  }
+  for (let [name, values] of next) {
+    let current = result.get(name);
+    if (current === void 0) {
+      result.set(name, new Set(values));
+      continue;
+    }
+    for (let value of values) {
+      current.add(value);
+    }
+  }
+  return result;
+}
+
+// node_modules/@remix-run/fetch-router/dist/lib/route-map.js
+var Route = class {
+  /**
+   * The HTTP method this route matches.
+   */
+  method;
+  /**
+   * The parsed route-pattern AST. Useful for advanced consumers (e.g. matchers) that want to skip
+   * re-parsing the source string.
+   */
+  pattern;
+  /**
+   * @param method The HTTP method this route matches
+   * @param pattern The route-pattern source string or pre-parsed AST
+   */
+  constructor(method, pattern) {
+    this.method = method;
+    this.pattern = typeof pattern === "string" ? RoutePattern.parse(pattern) : pattern;
+  }
+  /**
+   * Build a URL href for this route using the given route params and href options.
+   *
+   * @param args Route params and href options
+   * @returns The built URL href
+   */
+  href(...args) {
+    return createHref(this.pattern, ...args);
+  }
+};
+function createRoutes(baseOrDefs, defs) {
+  let baseIsPattern = typeof baseOrDefs === "string" || baseOrDefs instanceof RoutePattern;
+  if (baseIsPattern) {
+    let baseAst = typeof baseOrDefs === "string" ? RoutePattern.parse(baseOrDefs) : baseOrDefs;
+    return buildRouteMap(baseAst, defs);
+  }
+  return buildRouteMap(RoutePattern.parse("/"), baseOrDefs);
+}
+function buildRouteMap(base, defs) {
+  let routes2 = {};
+  for (let key in defs) {
+    let def = defs[key];
+    if (def instanceof Route) {
+      routes2[key] = new Route(def.method, joinPatterns(base, def.pattern));
+    } else if (typeof def === "string") {
+      routes2[key] = new Route("ANY", joinPatterns(base, RoutePattern.parse(def)));
+    } else if (def instanceof RoutePattern) {
+      routes2[key] = new Route("ANY", joinPatterns(base, def));
+    } else if (typeof def === "object" && def != null && "pattern" in def) {
+      let defPattern = typeof def.pattern === "string" ? RoutePattern.parse(def.pattern) : def.pattern;
+      routes2[key] = new Route(def.method ?? "ANY", joinPatterns(base, defPattern));
+    } else {
+      routes2[key] = buildRouteMap(base, def);
+    }
+  }
+  return routes2;
+}
+
+// node_modules/@remix-run/fetch-router/dist/lib/route-helpers/method.js
+function createDeleteRoute(pattern) {
+  return new Route("DELETE", pattern);
+}
+function createGetRoute(pattern) {
+  return new Route("GET", pattern);
+}
+function createPostRoute(pattern) {
+  return new Route("POST", pattern);
+}
+
+// app/routes.ts
+var routes = createRoutes({
+  home: createGetRoute("/"),
+  guide: createGetRoute("/guide"),
+  records: createGetRoute("/records"),
+  slideOnly: createGetRoute("/slide-only"),
+  health: createGetRoute("/health"),
+  llms: createGetRoute("/llms.txt"),
+  llmsFull: createGetRoute("/llms-full.txt"),
+  markdown: {
+    index: createGetRoute("/markdown"),
+    unitYear: createGetRoute("/markdown/:unit/:year")
+  },
+  progress: {
+    links: createPostRoute("/progress/links"),
+    sync: createPostRoute("/progress/sync"),
+    challenges: createPostRoute("/progress/challenges"),
+    destroy: createDeleteRoute("/progress")
+  },
+  unitYear: createGetRoute("/:unit/:year"),
+  exam: createGetRoute("/:unit/:year/exam/:exam"),
+  question: createGetRoute("/:unit/:year/exam/:exam/question/:question"),
+  questionRegion: createGetRoute("/:unit/:year/exam/:exam/question/:question/region")
+});
+
 // app/features/markdown/questionToMarkdown.ts
 function tableToMarkdown(columns, rows) {
   const header = `| ${columns.map((c) => c.label).join(" | ")} |`;
@@ -7751,6 +8622,74 @@ function isCompletedChallengePayload(value) {
     const candidate = answer;
     return typeof candidate.questionId === "string" && typeof candidate.elapsedMs === "number" && candidate.elapsedMs >= 0 && (candidate.judgment === "correct" || candidate.judgment === "incorrect") && typeof candidate.createdAt === "number" && typeof candidate.updatedAt === "number" && candidate.createdAt <= candidate.updatedAt && candidate.updatedAt === challenge.updatedAt;
   });
+}
+
+// app/features/challenge/player/model.ts
+function createPlayerChallenge(props, questions, scopeKey, requestedIndex, activeQuestionId, getQuestionIndex, challengeId, createdAt) {
+  const requestedQuestionIndex = requestedIndex ?? (props.mode === "question" ? getQuestionIndex(activeQuestionId ?? props.requestedQuestionId) : 0);
+  const initialIndex = Math.min(
+    Math.max(requestedQuestionIndex, 0),
+    Math.max(questions.length - 1, 0)
+  );
+  const question = questions[initialIndex] ?? questions[0];
+  if (!question) {
+    return null;
+  }
+  const questionIds = props.mode === "question" ? [question.id] : questions.map((item) => item.id);
+  const challengeScopeKey = props.mode === "question" ? questionScopeKey(props.examId, props.mode, question.id) : scopeKey;
+  const state = createInitialChallengeState({
+    challengeId,
+    scopeKey: challengeScopeKey,
+    examId: props.examId,
+    mode: props.mode,
+    questionIds,
+    createdAt,
+    initialIndex: props.mode === "question" ? 0 : initialIndex
+  });
+  return { state, question };
+}
+function questionScopeKey(examId, mode, questionId) {
+  return `${examId}/${mode === "question" ? `question/${questionId ?? ""}` : "exam"}`;
+}
+function filterChallengeHistory(history, examId, mode, requestedQuestionId) {
+  return history.filter((item) => {
+    if (item.examId !== examId) {
+      return false;
+    }
+    if (mode === "exam") {
+      return item.answers.length > 1;
+    }
+    return item.answers.length === 1 && item.answers[0]?.questionId === requestedQuestionId;
+  });
+}
+function getNavigationPosition(mode, currentQuestionId, state, questions, getQuestionIndex) {
+  return {
+    currentQuestionIndex: mode === "question" ? getQuestionIndex(currentQuestionId) : state.currentIndex,
+    navigationLength: mode === "question" ? questions.length : state.questionIds.length
+  };
+}
+
+// app/features/challenge/player/navigation.ts
+function replaceChallengeView(view, challengeId) {
+  const url = new URL(window.location.href);
+  if (view === "result" && challengeId) {
+    url.searchParams.set("view", "result");
+    url.searchParams.set("challenge", challengeId);
+  } else {
+    url.searchParams.delete("view");
+    url.searchParams.delete("challenge");
+  }
+  window.history.replaceState(null, "", url);
+}
+function replaceQuestionInUrl(questionId) {
+  const url = new URL(window.location.href);
+  const path = url.pathname.split("/");
+  if (path.at(-2) === "question") {
+    path[path.length - 1] = questionId;
+    url.pathname = path.join("/");
+  }
+  url.searchParams.delete("question");
+  window.history.replaceState(null, "", url);
 }
 
 // app/lib/guards.ts
@@ -9620,7 +10559,7 @@ function generateChallengeId() {
   );
 }
 
-// app/features/challenge/player/initialView.ts
+// app/features/challenge/player/view.ts
 function readInitialChallengeView(search) {
   const query = new URLSearchParams(search);
   const challenge = ChallengeIdSchema.safeParse(query.get("challenge"));
@@ -9630,52 +10569,7 @@ function readInitialChallengeView(search) {
   };
 }
 
-// app/features/challenge/player/model.ts
-function createPlayerChallenge(props, questions, scopeKey, requestedIndex, activeQuestionId, getQuestionIndex, challengeId, createdAt) {
-  const requestedQuestionIndex = requestedIndex ?? (props.mode === "question" ? getQuestionIndex(activeQuestionId ?? props.requestedQuestionId) : 0);
-  const initialIndex = Math.min(
-    Math.max(requestedQuestionIndex, 0),
-    Math.max(questions.length - 1, 0)
-  );
-  const question = questions[initialIndex] ?? questions[0];
-  if (!question) {
-    return null;
-  }
-  const questionIds = props.mode === "question" ? [question.id] : questions.map((item) => item.id);
-  const challengeScopeKey = props.mode === "question" ? questionScopeKey(props.examId, props.mode, question.id) : scopeKey;
-  const state = createInitialChallengeState({
-    challengeId,
-    scopeKey: challengeScopeKey,
-    examId: props.examId,
-    mode: props.mode,
-    questionIds,
-    createdAt,
-    initialIndex: props.mode === "question" ? 0 : initialIndex
-  });
-  return { state, question };
-}
-function questionScopeKey(examId, mode, questionId) {
-  return `${examId}/${mode === "question" ? `question/${questionId ?? ""}` : "exam"}`;
-}
-function filterChallengeHistory(history, examId, mode, requestedQuestionId) {
-  return history.filter((item) => {
-    if (item.examId !== examId) {
-      return false;
-    }
-    if (mode === "exam") {
-      return item.answers.length > 1;
-    }
-    return item.answers.length === 1 && item.answers[0]?.questionId === requestedQuestionId;
-  });
-}
-function getNavigationPosition(mode, currentQuestionId, state, questions, getQuestionIndex) {
-  return {
-    currentQuestionIndex: mode === "question" ? getQuestionIndex(currentQuestionId) : state.currentIndex,
-    navigationLength: mode === "question" ? questions.length : state.questionIds.length
-  };
-}
-
-// app/features/challenge/player/initialPlayerSession.ts
+// app/features/challenge/player/session.ts
 var emptySession = {
   kind: "server",
   state: null,
@@ -9752,30 +10646,7 @@ function resolveInitialPlayerSession(props) {
   };
 }
 
-// app/features/challenge/player/navigation.ts
-function replaceChallengeView(view, challengeId) {
-  const url = new URL(window.location.href);
-  if (view === "result" && challengeId) {
-    url.searchParams.set("view", "result");
-    url.searchParams.set("challenge", challengeId);
-  } else {
-    url.searchParams.delete("view");
-    url.searchParams.delete("challenge");
-  }
-  window.history.replaceState(null, "", url);
-}
-function replaceQuestionInUrl(questionId) {
-  const url = new URL(window.location.href);
-  const path = url.pathname.split("/");
-  if (path.at(-2) === "question") {
-    path[path.length - 1] = questionId;
-    url.pathname = path.join("/");
-  }
-  url.searchParams.delete("question");
-  window.history.replaceState(null, "", url);
-}
-
-// app/features/challenge/player/timerRuntime.ts
+// app/features/challenge/player/timer.ts
 function projectElapsedTime(baseElapsedMs, running, startedAt, now) {
   if (!running || startedAt === null) {
     return baseElapsedMs;
@@ -13087,7 +13958,19 @@ var ExamPlayer = clientEntry(
             ),
             /* @__PURE__ */ jsx("div", { mix: workspaceStyle, children: [
               /* @__PURE__ */ jsx("div", { mix: questionStyle, children: [
-                /* @__PURE__ */ jsx(QuestionContent, { question }),
+                /* @__PURE__ */ jsx(
+                  Frame,
+                  {
+                    name: "question",
+                    src: routes.questionRegion.href({
+                      unit: props.unitId,
+                      year: props.year,
+                      exam: String(props.examNumber),
+                      question: question.id
+                    }),
+                    fallback: /* @__PURE__ */ jsx(QuestionContent, { question })
+                  }
+                ),
                 /* @__PURE__ */ jsx(
                   ChallengeTimerDisplay,
                   {

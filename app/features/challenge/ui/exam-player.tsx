@@ -1,7 +1,7 @@
 import type { Handle } from "remix/component";
-import { clientEntry, css, on } from "remix/component";
-
+import { clientEntry, css, Frame, on } from "remix/component";
 import { systemClock } from "../../../lib/dateTime.ts";
+import { routes } from "../../../routes.ts";
 import { questionToMarkdown } from "../../markdown/questionToMarkdown.ts";
 import { challengeReducer, isChallengeComplete } from "../model.ts";
 import { filterChallengeHistory, getNavigationPosition } from "../player/model.ts";
@@ -381,7 +381,16 @@ export const ExamPlayer = clientEntry(
 					/>
 					<div mix={workspaceStyle}>
 						<div mix={questionStyle}>
-							<QuestionContent question={question} />
+							<Frame
+								name="question"
+								src={routes.questionRegion.href({
+									unit: props.unitId,
+									year: props.year,
+									exam: String(props.examNumber),
+									question: question.id,
+								})}
+								fallback={<QuestionContent question={question} />}
+							/>
 							<ChallengeTimerDisplay
 								mode={props.mode}
 								totalElapsedMs={Object.values(state.questionElapsedMs).reduce<number>(
