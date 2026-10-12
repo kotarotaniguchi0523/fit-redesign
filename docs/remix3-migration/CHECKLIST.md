@@ -24,6 +24,15 @@
 
 ## Stage 1: Remix3 土台（Workers）
 
+### 後続で確定した追加要件
+
+- [ ] **Vite 依存の排除**: CF CLI の dev/build は `@cloudflare/vite-plugin` か `wrangler` を必須とする。
+      両方外す場合は Remix 本来の Node サーバー（`server.ts` + `remix/assets`）で開発し、
+      デプロイは `cf deploy --prebuilt`（ビルド済み成果物）に切り替える構造へ変更する。
+- [ ] **テスト環境を `remix test` へ完全移行**（Vitest 廃止）。旧テストは `legacy/` にある。
+
+### 完了項目
+
 - [x] `app/routes.ts`（全ルートの契約）
 - [x] `app/router.ts`（createRouter + middleware 連結 + context 型拡張）
 - [x] `app/worker.ts`（Workers fetch アダプタ）

@@ -61,6 +61,26 @@ Wrangler は使わない。Cloudflare 公式の `cf` CLI（導入済み / devDep
   「A project must declare exactly one of ...」）。wrangler を外すため Vite + プラグインを dev ツールとして使う。
 - Node は **24.3.0 以上**が必須（Remix の `engines` と、CF CLI が `cloudflare.config.ts` を TS として読むため）。
 
+## 2.6 Node.js 互換（調査結果）
+
+Workers は Node ではない。`nodejs_compat` により一部の `node:*` は workerd がネイティブ実装する。
+どのモジュールがいつからネイティブかは `@cloudflare/unenv-preset` に定義されており、
+Skill `cloudflare-workers-node-compat` に機械導出したマトリクスを保存した
+（`.apm/skills/cloudflare-workers-node-compat/`）。
+
+要点（`compatibilityDate: 2026-10-06`, `nodejs_compat`）:
+
+- `node:fs` / `node:fs/promises` は **2025-09-15 以降ネイティブ**。それ未満は unenv の
+  ポリフィルで `readFileSync` 等は `notImplemented`、`existsSync()` は常に `false`。
+- `node:sqlite` は **2026-01-29 以降ネイティブ**。
+- `node:child_process` / `worker_threads` / `perf_hooks` / `readline` は 2026-03-17 以降ネイティブ。
+- 実行時ポリフィル（inject）は `Buffer`, `global`, `process`, `setImmediate`, `clearImmediate` のみ。
+
+**ただし「ネイティブ `node:fs` がある」= 「任意のファイルが読める」ではない。** Workers に
+永続ファイルシステムは無く、読めるのはバンドルに含めたファイル等に限られる。したがって
+`remix/assets`（ソース探索・watch）や `remix/middleware/static`（リポジトリのファイル配信）は
+**実行時には使えない**という結論は変わらない。この点は上の Skill に明記した。
+
 ## 3. Remix 3 が「提供しない」もの = 自作が必要な部分
 
 `自作は禁止` の原則は維持し、**Remix の公開拡張点として明示されている箇所のみ**最小実装する。
