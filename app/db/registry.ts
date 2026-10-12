@@ -19,3 +19,18 @@ export function setDatabase(next: AppDatabase | null): void {
 export function getDatabase(): AppDatabase | null {
 	return database
 }
+
+/** Workers の RateLimit バインディング（構造的互換のため最小形で型付け）。 */
+export interface RateLimiter {
+	limit(options: { key: string }): Promise<{ success: boolean }>
+}
+
+let rateLimiter: RateLimiter | null = null
+
+export function setRateLimiter(next: RateLimiter | null): void {
+	rateLimiter = next
+}
+
+export function getRateLimiter(): RateLimiter | null {
+	return rateLimiter
+}

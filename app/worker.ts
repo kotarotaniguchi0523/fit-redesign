@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:workers'
 
 import { createD1Database } from './db/d1.ts'
-import { setDatabase } from './db/registry.ts'
+import { setDatabase, setRateLimiter } from './db/registry.ts'
 import { looksLikeAsset } from './middleware/assets.ts'
 import { router } from './router.ts'
 
@@ -17,6 +17,7 @@ import { router } from './router.ts'
  * （`env.ASSETS`）へ委譲する。
  */
 setDatabase(createD1Database(env.DB))
+setRateLimiter(env.PROGRESS_RATE_LIMITER)
 
 export default {
 	async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {

@@ -44,3 +44,15 @@ export type {
 	Transition,
 	TreeNode,
 } from "./figures.ts";
+
+// 同期 API が直接使う検証スキーマ（browser 信頼境界）
+export {
+	ChallengeIdSchema,
+	EpochMillisecondsSchema,
+	ExamIdSchema,
+	JudgmentSchema,
+	ProgressEntryListSchema,
+	ProgressSyncRequestSchema,
+	QuestionIdSchema,
+} from './browser.ts'
+export type { ProgressEntry } from './browser.ts'
