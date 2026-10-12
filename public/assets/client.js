@@ -13379,6 +13379,75 @@ function snapshotToPayload(snapshot) {
   };
 }
 
+// app/features/answer/ui/continue-learning.tsx
+var sectionStyle = css({
+  marginTop: "2rem",
+  padding: "1rem 1.25rem",
+  background: "var(--color-bg-card)",
+  border: "1px solid var(--color-border)",
+  borderRadius: "0.75rem"
+});
+var linkStyle = css({
+  color: "var(--color-primary)",
+  textDecoration: "none",
+  "&:hover": { textDecoration: "underline" }
+});
+var ContinueLearning = clientEntry(
+  "/assets/client.js#ContinueLearning",
+  function ContinueLearning2(handle) {
+    let expanded = false;
+    const recent = () => {
+      const entries = Object.values(readProgress()).toSorted(
+        (left, right) => right.updatedAt - left.updatedAt
+      );
+      const byQuestion = new Map(entries.map((entry) => [entry.questionId, entry]));
+      const items = [];
+      for (const group of handle.props.groups) {
+        for (const questionId of group.questionIds) {
+          if (byQuestion.has(questionId)) {
+            items.push({
+              questionId,
+              href: `${group.hrefPrefix}${questionId}`,
+              unitName: group.unitName,
+              year: group.year
+            });
+          }
+        }
+      }
+      return items;
+    };
+    return () => {
+      const items = recent();
+      if (items.length === 0) {
+        return null;
+      }
+      const visible = expanded ? items : items.slice(0, 5);
+      return /* @__PURE__ */ jsx("section", { mix: sectionStyle, "aria-labelledby": "continue-learning-title", children: [
+        /* @__PURE__ */ jsx("h2", { id: "continue-learning-title", children: "\u524D\u56DE\u306E\u7D9A\u304D" }),
+        /* @__PURE__ */ jsx("ul", { class: "continue-learning__list", children: visible.map((item) => /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { mix: linkStyle, href: item.href, children: [
+          item.unitName,
+          " ",
+          item.year,
+          "\u5E74\u5EA6 \u2014 ",
+          item.questionId
+        ] }) }, item.questionId)) }),
+        items.length > visible.length || expanded ? /* @__PURE__ */ jsx(
+          "button",
+          {
+            type: "button",
+            class: "exam-footer-button exam-footer-button--quiet",
+            mix: on("click", () => {
+              expanded = !expanded;
+              void handle.update();
+            }),
+            children: expanded ? "\u9589\u3058\u308B" : "\u3082\u3063\u3068\u898B\u308B"
+          }
+        ) : null
+      ] });
+    };
+  }
+);
+
 // app/actions/public/entry.ts
 var app = run({
   async loadModule(moduleUrl, exportName) {

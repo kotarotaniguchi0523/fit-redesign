@@ -2,6 +2,7 @@
 import '../../ui/copy-button.tsx'
 import '../../features/challenge/player/exam-player.tsx'
 import '../../features/progress/ui/records-view.tsx'
+import '../../features/answer/ui/continue-learning.tsx'
 
 import { run } from 'remix/component'
 

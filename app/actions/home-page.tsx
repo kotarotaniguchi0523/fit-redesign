@@ -1,6 +1,7 @@
 import { css } from 'remix/component'
 import type { Handle } from 'remix/component'
 
+import { ContinueLearning } from '../features/answer/ui/continue-learning.tsx'
 import { unitBasedTabs } from '../data/units.ts'
 import { routes } from '../routes.ts'
 import { YEARS } from '../types/index.ts'
@@ -53,10 +54,19 @@ const linkStyle = css({
 })
 
 export function HomePage(
-	handle: Handle<{ examCounts: ReadonlyMap<string, number>; currentPath?: string }>,
+	handle: Handle<{
+		examCounts: ReadonlyMap<string, number>
+		locationGroups: ReadonlyArray<{
+			unitName: string
+			year: string
+			hrefPrefix: string
+			questionIds: readonly string[]
+		}>
+		currentPath?: string
+	}>,
 ) {
 	return () => {
-		const { examCounts, currentPath = '/' } = handle.props
+		const { examCounts, locationGroups, currentPath = '/' } = handle.props
 
 		const jsonLd = {
 			'@context': 'https://schema.org',
@@ -139,6 +149,7 @@ export function HomePage(
 							</tbody>
 						</table>
 					</div>
+					<ContinueLearning groups={locationGroups} />
 				</main>
 			</Document>
 		)

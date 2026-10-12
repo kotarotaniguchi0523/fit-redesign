@@ -27,9 +27,13 @@ import {
 export default createController(routes, {
 	actions: {
 		async home(context) {
-			const { examCounts } = await loadHomeExamCatalog()
+			const { examCounts, locationGroups } = await loadHomeExamCatalog()
 			return context.render(
-				<HomePage examCounts={examCounts} currentPath={context.url.pathname} />,
+				<HomePage
+					examCounts={examCounts}
+					locationGroups={locationGroups}
+					currentPath={context.url.pathname}
+				/>,
 				{ headers: { 'Cache-Control': 'public, s-maxage=31536000, max-age=3600' } },
 			)
 		},

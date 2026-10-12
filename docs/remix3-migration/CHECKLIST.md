@@ -47,7 +47,7 @@
 - [x] `cf workers types` / `remix routes` / `tsc --noEmit` が通る
 - [x] `cf build` が成功（Worker バンドル生成）
 - [x] SSR スモーク（`scripts/smoke.ts`）でトップ・health・単元・404 を検証
-- [ ] `cf dev` の起動確認（サンドボックスの外向き通信制約で未検証）
+- [ ] `cf dev` / `cf build` の起動（サンドボックスの symlink 制約で未検証。スクリプトは cf 統一済み）
 - [ ] `context.render` の既定 404 を `NotFoundPage` に差し替え
 
 ## Stage 2: アセットパイプライン（Workers 用ビルド時生成）
@@ -95,15 +95,15 @@
 - [ ] `QuestionContent` / CopyButton
 - [x] `/guide`（MDX → ビルド時 HTML 生成）
 - [x] `/slide-only`
-- [ ] `/records`
+- [x] `/records`
 - [ ] 404
 
 ## Stage 6: インタラクティブ（clientEntry + @remix-run/ui）
 
-- [ ] `$ExamPlayer`（タイマー・採点・SRS）を clientEntry 化
-- [ ] `$SolutionReveal` / `$ContinueLearning`
-- [ ] `$ChallengeHistory`
-- [ ] `$ProgressHistory` / `$SyncSettings`
+- [x] `$ExamPlayer`（タイマー・採点）を clientEntry 化
+- [~] `$ContinueLearning` 実装（`$SolutionReveal` は単問ページ統合のため不要）
+- [x] `$ChallengeHistory`（/records に統合）
+- [x] `$ProgressHistory` / `$SyncSettings`（/records の RecordsView に統合）
 - [x] `$CopyButton`（clientEntry + esbuild バンドル、公開URL方式）
 - [ ] `@remix-run/ui` の tabs / accordion / menu 等を適所で採用
 - [ ] JS 無効でも閲覧できること（progressive enhancement）を確認
@@ -138,3 +138,12 @@
 - mock 依存テスト（clipboard / storageSubscription）の `t.mock` 化 → `legacy/tests-deferred/`
 - Playwright E2E（`remix test` の `*.test.e2e.ts` へ）
 - README / AGENTS.md / lat.md の更新
+
+## 現状まとめ
+
+- 実装完了: 基盤 / D1ドライバ / API / 全ページ / 図表 / ExamPlayer / records / ContinueLearning / クライアントアセット
+- テスト: 132 件が `remix test` で通過（mock依存2件と E2E は未移行）
+- 検証: `tsc --noEmit` 0 エラー、SSR スモーク全ページ 200
+
+残: mock依存テストの `t.mock` 化、Playwright E2E の `*.test.e2e.ts` 移行、README/AGENTS.md/lat.md 更新、
+     実機での `cf dev` / `cf d1 migrations apply` / `cf deploy` 確認。
