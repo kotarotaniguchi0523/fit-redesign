@@ -7,11 +7,10 @@
 		"node": ">=24.3.0"
 	},
 	"scripts": {
-		"dev": "node scripts/build-css.mjs && node scripts/build-client.mjs && wrangler dev",
-		"build": "node scripts/build-css.mjs && node scripts/build-client.mjs && wrangler deploy --dry-run --outdir dist",
-		"preview": "wrangler dev",
-		"deploy": "wrangler deploy",
-		"types": "wrangler types",
+		"dev": "node scripts/build-css.mjs && node scripts/build-client.mjs && cf dev",
+		"build": "node scripts/build-css.mjs && node scripts/build-guide.mjs && node scripts/build-client.mjs && cf build",
+		"preview": "cf dev --local",
+		"deploy": "cf deploy",
 		"typecheck": "tsc --noEmit",
 		"doctor": "remix doctor",
 		"routes": "remix routes",
@@ -20,8 +19,8 @@
 		"check": "biome ci .",
 		"lat:lint": "lat check",
 		"lint": "pnpm check && pnpm lat:lint",
-		"db:migrate:local": "wrangler d1 migrations apply fit-timer-db --local",
-		"db:query:local": "wrangler d1 execute fit-timer-db --local --command",
+		"db:migrate:local": "cf d1 migrations apply --local --dir migrations",
+		"db:query:local": "cf d1 query --local",
 		"e2e": "pnpm build && playwright test",
 		"build:css": "node scripts/build-css.mjs",
 		"build:client": "node scripts/build-client.mjs"
@@ -35,6 +34,7 @@
 		"@biomejs/biome": "^2.5.14",
 		"@playwright/test": "^1.63.0",
 		"@types/node": "^24.0.0",
+		"cf": "^1.0.0-beta.14",
 		"lat.md": "^0.12.2",
 		"typescript": "^7.0.2",
 		"wrangler": "^4.149.0"

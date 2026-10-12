@@ -5,6 +5,7 @@ import type { DeepReadonly } from '../lib/immutable.ts'
 import type { Question } from '../types/index.ts'
 import type { FigureData } from '../types/index.ts'
 import { routes } from '../routes.ts'
+import { Figure } from '../ui/figures/Figure.tsx'
 import { CopyButton } from '../ui/copy-button.tsx'
 import { Document } from './document.tsx'
 
@@ -130,55 +131,10 @@ export function QuestionPage(
 	}
 }
 
-/**
- * 図表の描画。Stage 5 では真偽値表とデータ表を Remix コンポーネントで描く。
- * SVG 図（論理回路・状態遷移・フローチャート・二分木・パリティ・ハフマン）は
- * `app/lib/figures` の移植と合わせて順次追加する。
- */
-function Figure(handle: Handle<{ data: FigureData }>) {
-	return () => {
-		const { data } = handle.props
-		if (data.type === 'truthTable' || data.type === 'dataTable') {
-			return (
-				<table mix={tableStyle}>
-					<thead>
-						<tr>
-							{data.columns.map((column) => (
-								<th key={column.key}>{column.label}</th>
-							))}
-						</tr>
-					</thead>
-					<tbody>
-						{data.rows.map((row, index) => (
-							<tr key={index}>
-								{data.columns.map((column) => (
-									<td key={column.key}>{String(row[column.key] ?? '')}</td>
-								))}
-							</tr>
-						))}
-					</tbody>
-				</table>
-			)
-		}
-		return <p>(図: {data.type})</p>
-	}
-}
 
 const headerRowStyle = css({
 	display: 'flex',
 	alignItems: 'center',
 	justifyContent: 'space-between',
 	gap: '0.75rem',
-})
-
-const tableStyle = css({
-	width: '100%',
-	borderCollapse: 'collapse',
-	margin: '0 0 1rem',
-	fontSize: '0.9rem',
-	'& th, & td': {
-		border: '1px solid var(--color-border)',
-		padding: '0.375rem 0.5rem',
-		textAlign: 'center',
-	},
 })
