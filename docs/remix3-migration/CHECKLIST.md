@@ -68,8 +68,8 @@
 - [x] `app/data/exams/*`（schema, assemble, index, loader）
 - [x] `import.meta.glob` → `modules.generated.ts`（明示 import 索引 + 生成スクリプト）
 - [x] データ整合性テストを `remix test` へ移植（20/20 pass）
-- [ ] `app/lib/*`（純粋ヘルパー・図表計算）の残り
-- [ ] `app/features/*` のドメインロジック移植
+- [x] `app/lib/*`（純粋ヘルパー・図表計算）の残り
+- [~] `app/features/*` のドメインロジック移植（challenge/progress の純ロジックは移植済み。UI/island は未）
 - [ ] `app/data/exams/homeCatalog.ts`（`features/answer` の型に依存）
 
 ## Stage 4: DB（data-table + D1）
@@ -91,7 +91,7 @@
 - [x] `/:unit/:year`（小テスト一覧）
 - [x] `/:unit/:year/exam/:exam`（問題一覧）
 - [x] `/:unit/:year/exam/:exam/question/:question`（単問・真偽値表/データ表）
-- [ ] 図表コンポーネント（LogicCircuit, StateDiagram, Flowchart, BinaryTree, ParityCheck, TableRenderer）
+- [x] 図表コンポーネント（LogicCircuit, StateDiagram, Flowchart, BinaryTree, ParityCheck, TableRenderer）
 - [ ] `QuestionContent` / CopyButton
 - [x] `/guide`（MDX → ビルド時 HTML 生成）
 - [x] `/slide-only`
@@ -128,3 +128,13 @@
 - [ ] `wrangler deploy --dry-run` が通る
 - [ ] 旧スタック残置（Vite/HonoX/Drizzle）の完全除去
 - [ ] ドキュメント更新（README, AGENTS.md, lat.md）
+
+## 未完了（次に着手）
+
+- `$ExamPlayer`（`useExamPlayerController` 771行のフックを Remix の setup/render モデルへ移植）
+- `$SolutionReveal` / `$ContinueLearning` / `$ChallengeHistory` / `$ProgressHistory` / `$SyncSettings`
+- `/records` ページ
+- `components/icons.tsx` の移植（変換スクリプトの不備で保留）
+- mock 依存テスト（clipboard / storageSubscription）の `t.mock` 化 → `legacy/tests-deferred/`
+- Playwright E2E（`remix test` の `*.test.e2e.ts` へ）
+- README / AGENTS.md / lat.md の更新
