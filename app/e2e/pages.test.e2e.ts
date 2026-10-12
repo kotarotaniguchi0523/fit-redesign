@@ -1,8 +1,7 @@
 import * as assert from "remix/assert";
-import { createTestServer } from "remix/node-fetch-server/test";
 import { describe, it } from "remix/test";
 
-import { router } from "../router.ts";
+import { createAppServer } from "./server.ts";
 
 /**
  * 主要導線の E2E。`remix test` はテストごとにテストサーバーとブラウザーページを
@@ -10,7 +9,7 @@ import { router } from "../router.ts";
  */
 describe("サイト導線", () => {
 	it("トップページに単元・ヘッダー・スタイルが読み込まれる", async (t) => {
-		const page = await t.serve(await createTestServer(router.fetch));
+		const page = await t.serve(await createAppServer());
 
 		await page.goto("/");
 		await page.getByRole("heading", { name: "問題を選ぶ" }).waitFor();
@@ -22,7 +21,7 @@ describe("サイト導線", () => {
 	});
 
 	it("トップ → 単元 → 単問へリンクで移動できる（SSR 導線）", async (t) => {
-		const page = await t.serve(await createTestServer(router.fetch));
+		const page = await t.serve(await createAppServer());
 
 		await page.goto("/");
 		await page
@@ -36,7 +35,7 @@ describe("サイト導線", () => {
 	});
 
 	it("小テストプレイヤーで解答を開き、自己判定できる", async (t) => {
-		const page = await t.serve(await createTestServer(router.fetch));
+		const page = await t.serve(await createAppServer());
 
 		await page.goto("/unit-base-conversion/2017/exam/1");
 		await page.getByRole("button", { name: "解答を表示" }).click();
@@ -47,7 +46,7 @@ describe("サイト導線", () => {
 	});
 
 	it("問題一覧ドロワ（popover）が開く", async (t) => {
-		const page = await t.serve(await createTestServer(router.fetch));
+		const page = await t.serve(await createAppServer());
 
 		await page.goto("/unit-base-conversion/2017/exam/1");
 		await page.getByRole("button", { name: "問題一覧を開く" }).click();
@@ -55,7 +54,7 @@ describe("サイト導線", () => {
 	});
 
 	it("アコーディオン（狭い画面の単元リスト）が開く", async (t) => {
-		const page = await t.serve(await createTestServer(router.fetch));
+		const page = await t.serve(await createAppServer());
 		await page.setViewportSize({ width: 390, height: 800 });
 
 		await page.goto("/");

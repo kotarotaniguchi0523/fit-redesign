@@ -195,6 +195,16 @@
 					}
 				}
 			}
+		},
+		{
+			"includes": ["app/e2e/**"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noNodejsModules": "off"
+					}
+				}
+			}
 		}
 	],
 	"formatter": {
