@@ -2229,18 +2229,18 @@ function commitComponentNode(node, content) {
   committed._content = content;
   return committed;
 }
-function diffVNodes(curr, next, domParent, vParent, context, anchor2, cursor) {
+function diffVNodes(curr, next, domParent, vParent, context, anchor3, cursor) {
   if (curr === null) {
-    return insert(next, domParent, vParent, context, anchor2, cursor);
+    return insert(next, domParent, vParent, context, anchor3, cursor);
   }
   if (isCommittedClientEntryNode(curr) && next.kind === "component" && isEntry(next.type)) {
     return diffClientEntryBoundary(curr, next, vParent, context);
   }
   if (componentStalenessCheck !== null && curr.kind === "component" && next.kind === "component" && componentStalenessCheck(curr.type) === true) {
-    return replace(curr, next, domParent, vParent, context, anchor2);
+    return replace(curr, next, domParent, vParent, context, anchor3);
   }
   if (curr.kind !== next.kind || curr.type !== next.type) {
-    return replace(curr, next, domParent, vParent, context, anchor2);
+    return replace(curr, next, domParent, vParent, context, anchor3);
   }
   switch (next.kind) {
     case "host": {
@@ -2255,18 +2255,18 @@ function diffVNodes(curr, next, domParent, vParent, context, anchor2, cursor) {
     case "fragment": {
       let childInputs = next._children;
       let committed = beginFragmentNode(next, vParent, getSvgContext(vParent, next));
-      committed._children = diffChildren(curr._children, childInputs, domParent, committed, context, void 0, anchor2);
+      committed._children = diffChildren(curr._children, childInputs, domParent, committed, context, void 0, anchor3);
       return committed;
     }
     case "frame": {
-      return diffFrame(curr, next, domParent, vParent, context, getSvgContext(vParent, next), anchor2);
+      return diffFrame(curr, next, domParent, vParent, context, getSvgContext(vParent, next), anchor3);
     }
     case "component": {
-      return diffComponent(curr, next, domParent, vParent, context, getSvgContext(vParent, next), anchor2, cursor);
+      return diffComponent(curr, next, domParent, vParent, context, getSvgContext(vParent, next), anchor3, cursor);
     }
   }
 }
-function replace(curr, next, domParent, vParent, context, anchor2) {
+function replace(curr, next, domParent, vParent, context, anchor3) {
   let currAnchor = findFirstDomAnchor(curr);
   if (currAnchor && currAnchor.parentNode === domParent) {
     let replacementAnchor2 = document.createComment("rmx:replace");
@@ -2278,7 +2278,7 @@ function replace(curr, next, domParent, vParent, context, anchor2) {
       replacementAnchor2.parentNode?.removeChild(replacementAnchor2);
     }
   }
-  let replacementAnchor = findNextSiblingDomAnchor(curr) ?? anchor2;
+  let replacementAnchor = findNextSiblingDomAnchor(curr) ?? anchor3;
   remove(curr, domParent, context);
   return insert(next, domParent, vParent, context, replacementAnchor);
 }
@@ -2428,15 +2428,15 @@ function diffText(curr, next, vParent, svg) {
   }
   return commitTextNode(next, vParent, svg, curr._dom);
 }
-function insert(node, domParent, vParent, context, anchor2, cursor) {
+function insert(node, domParent, vParent, context, anchor3, cursor) {
   let { frame, scheduler, styles } = context;
   let svg = getSvgContext(vParent, node);
   let hydrationNode = cursor?.current;
-  if (hydrationNode && anchor2 && hydrationNode === anchor2) {
+  if (hydrationNode && anchor3 && hydrationNode === anchor3) {
     hydrationNode = null;
   }
   hydrationNode = skipCommentsExceptBoundaryStart(hydrationNode ?? null, node.kind === "component" || node.kind === "fragment" || node.kind === "empty");
-  if (hydrationNode && anchor2 && hydrationNode === anchor2) {
+  if (hydrationNode && anchor3 && hydrationNode === anchor3) {
     hydrationNode = null;
   }
   if (cursor)
@@ -2454,7 +2454,7 @@ function insert(node, domParent, vParent, context, anchor2, cursor) {
       return committed;
     }
   }
-  let doInsert = anchor2 ? (dom) => domParent.insertBefore(dom, anchor2) : (dom) => domParent.appendChild(dom);
+  let doInsert = anchor3 ? (dom) => domParent.insertBefore(dom, anchor3) : (dom) => domParent.appendChild(dom);
   if (node.kind === "empty") {
     return commitNonRenderNode(node, vParent, svg);
   }
@@ -2597,32 +2597,32 @@ function insert(node, domParent, vParent, context, anchor2, cursor) {
     let committed = beginFragmentNode(node, vParent, svg);
     let children = childInputs;
     for (let i = 0; i < childInputs.length; i++) {
-      children[i] = insert(childInputs[i], domParent, committed, context, anchor2, cursor);
+      children[i] = insert(childInputs[i], domParent, committed, context, anchor3, cursor);
     }
     committed._children = children;
     return committed;
   }
   if (node.kind === "component") {
-    return diffComponent(null, node, domParent, vParent, context, svg, anchor2, cursor);
+    return diffComponent(null, node, domParent, vParent, context, svg, anchor3, cursor);
   }
   if (node.kind === "frame") {
-    return insertFrame(node, domParent, vParent, context, svg, anchor2, cursor);
+    return insertFrame(node, domParent, vParent, context, svg, anchor3, cursor);
   }
   invariant(false, "Unexpected node type");
 }
-function diffFrame(curr, next, domParent, vParent, context, svg, anchor2) {
+function diffFrame(curr, next, domParent, vParent, context, svg, anchor3) {
   let { frame } = context;
   let currSrc = getFrameSrc(curr);
   let nextSrc = getFrameSrc(next);
   let currName = getFrameName(curr);
   let nextName = getFrameName(next);
   if (currName !== nextName) {
-    let replaceAnchor = curr._rangeEnd.nextSibling ?? anchor2;
+    let replaceAnchor = curr._rangeEnd.nextSibling ?? anchor3;
     remove(curr, domParent, context);
     return insertFrame(next, domParent, vParent, context, svg, replaceAnchor);
   }
   if (currSrc !== nextSrc && !curr._state.resolved) {
-    let replaceAnchor = curr._rangeEnd.nextSibling ?? anchor2;
+    let replaceAnchor = curr._rangeEnd.nextSibling ?? anchor3;
     remove(curr, domParent, context);
     return insertFrame(next, domParent, vParent, context, svg, replaceAnchor);
   }
@@ -2652,7 +2652,7 @@ function diffFrame(curr, next, domParent, vParent, context, svg, anchor2) {
   }
   return committed;
 }
-function insertFrame(node, domParent, vParent, context, svg, anchor2, cursor) {
+function insertFrame(node, domParent, vParent, context, svg, anchor3, cursor) {
   let { frame, styles } = context;
   let runtime = getFrameRuntime(frame);
   if (!runtime || runtime.canResolveFrames === false) {
@@ -2707,7 +2707,7 @@ function insertFrame(node, domParent, vParent, context, svg, anchor2, cursor) {
   }
   let start = document.createComment(` rmx:f:${randomFrameId()} `);
   let end = document.createComment(" /rmx:f ");
-  let doInsert = anchor2 ? (dom) => domParent.insertBefore(dom, anchor2) : (dom) => domParent.appendChild(dom);
+  let doInsert = anchor3 ? (dom) => domParent.insertBefore(dom, anchor3) : (dom) => domParent.appendChild(dom);
   doInsert(start);
   doInsert(end);
   let fallbackRoot = createRangeRoot([start, end], {
@@ -2924,7 +2924,7 @@ function findFrameEndComment(start) {
   }
   return null;
 }
-function renderComponent(currContent, next, domParent, context, anchor2, cursor) {
+function renderComponent(currContent, next, domParent, context, anchor3, cursor) {
   let { scheduler } = context;
   let handle = next._handle;
   if (handle.isRemoved()) {
@@ -2932,13 +2932,13 @@ function renderComponent(currContent, next, domParent, context, anchor2, cursor)
     return next;
   }
   let [element, tasks] = handle.render(next.props);
-  let content = diffVNodes(currContent, toVNode(element), domParent, next, context, anchor2, cursor);
+  let content = diffVNodes(currContent, toVNode(element), domParent, next, context, anchor3, cursor);
   let committed = commitComponentNode(next, content);
   handle.setScheduleUpdate(scheduler, committed, domParent);
   scheduler.enqueueTasks(tasks);
   return committed;
 }
-function diffComponent(curr, next, domParent, vParent, context, svg, anchor2, cursor) {
+function diffComponent(curr, next, domParent, vParent, context, svg, anchor3, cursor) {
   let { frame } = context;
   if (curr === null) {
     let componentId = vParent.kind === "root" ? vParent._pendingHydrationComponentId : void 0;
@@ -2963,10 +2963,10 @@ function diffComponent(curr, next, domParent, vParent, context, svg, anchor2, cu
       }
     });
     let mounting2 = beginComponentNode(next, vParent, svg, handle, context);
-    return renderComponent(null, mounting2, domParent, context, anchor2, cursor);
+    return renderComponent(null, mounting2, domParent, context, anchor3, cursor);
   }
   let mounting = beginComponentNode(next, vParent, svg, curr._handle, context);
-  return renderComponent(curr._content, mounting, domParent, context, anchor2, cursor);
+  return renderComponent(curr._content, mounting, domParent, context, anchor3, cursor);
 }
 function commitClientEntryBoundary(node, parent, svg, start, end) {
   return {
@@ -3114,7 +3114,7 @@ function performHostNodeRemoval(node, domParent, context) {
     node._dom.parentNode?.removeChild(node._dom);
   }
 }
-function diffChildren(curr, next, domParent, vParent, context, cursor, anchor2) {
+function diffChildren(curr, next, domParent, vParent, context, cursor, anchor3) {
   let hasKeys = hasKeyedChildren(next);
   let committed = next;
   if (curr === null) {
@@ -3122,11 +3122,11 @@ function diffChildren(curr, next, domParent, vParent, context, cursor, anchor2) 
       warnDuplicateKeys(next);
     }
     for (let i = 0; i < next.length; i++) {
-      committed[i] = insert(next[i], domParent, vParent, context, anchor2, cursor);
+      committed[i] = insert(next[i], domParent, vParent, context, anchor3, cursor);
     }
     return committed;
   }
-  if (curr.length > 0 && next.length === 0 && anchor2 === void 0 && !parentUsesInnerHTML(vParent) && canBulkClearChildren(curr)) {
+  if (curr.length > 0 && next.length === 0 && anchor3 === void 0 && !parentUsesInnerHTML(vParent) && canBulkClearChildren(curr)) {
     for (let i = 0; i < curr.length; i++) {
       cleanupDescendants(curr[i], context);
     }
@@ -3136,7 +3136,7 @@ function diffChildren(curr, next, domParent, vParent, context, cursor, anchor2) 
   if (!hasKeys) {
     for (let i = 0; i < next.length; i++) {
       let currentNode = i < curr.length ? curr[i] : null;
-      committed[i] = diffVNodes(currentNode, next[i], domParent, vParent, context, anchor2, cursor);
+      committed[i] = diffVNodes(currentNode, next[i], domParent, vParent, context, anchor3, cursor);
     }
     if (curr.length > next.length) {
       for (let i = next.length; i < curr.length; i++) {
@@ -3147,7 +3147,7 @@ function diffChildren(curr, next, domParent, vParent, context, cursor, anchor2) 
     }
     return committed;
   }
-  return patchKeyedChildren(curr, next, domParent, vParent, context, cursor, anchor2);
+  return patchKeyedChildren(curr, next, domParent, vParent, context, cursor, anchor3);
 }
 function parentUsesInnerHTML(parent) {
   return isHostNode(parent) && getHostProps(parent).innerHTML != null;
@@ -3204,7 +3204,7 @@ function warnDuplicateKeys(children) {
     console.warn(`Duplicate keys detected in siblings: ${quotedKeys.join(", ")}. Keys should be unique.`);
   }
 }
-function patchKeyedChildren(curr, next, domParent, vParent, context, cursor, anchor2) {
+function patchKeyedChildren(curr, next, domParent, vParent, context, cursor, anchor3) {
   let matches = matchKeyedChildrenInOrder(curr, next) ?? matchKeyedChildrenAfterSingleRemoval(curr, next) ?? matchKeyedChildrenAfterPairSwap(curr, next);
   if (!matches) {
     warnDuplicateKeys(next);
@@ -3229,7 +3229,7 @@ function patchKeyedChildren(curr, next, domParent, vParent, context, cursor, anc
   for (let index = 0; index < next.length; index++) {
     let oldIndex = matches[index];
     let oldNode = oldIndex >= 0 ? curr[oldIndex] : null;
-    committed[index] = diffVNodes(oldNode, next[index], domParent, vParent, context, anchor2, cursor);
+    committed[index] = diffVNodes(oldNode, next[index], domParent, vParent, context, anchor3, cursor);
   }
   let committedChildren = committed;
   if (matchAnalysis.canSkipPlacement) {
@@ -3237,7 +3237,7 @@ function patchKeyedChildren(curr, next, domParent, vParent, context, cursor, anc
   }
   let stableIndexes = lisMatches(matches);
   let stableCursor = stableIndexes.length - 1;
-  let placementAnchor = anchor2 ?? null;
+  let placementAnchor = anchor3 ?? null;
   for (let index = next.length - 1; index >= 0; index--) {
     let nextNode = committedChildren[index];
     let isStable = stableIndexes[stableCursor] === index;
@@ -3422,18 +3422,18 @@ function lisMatches(matches) {
   }
   return tails;
 }
-function placeVNode(node, domParent, anchor2) {
+function placeVNode(node, domParent, anchor3) {
   let firstDom = findFirstDomAnchor(node);
   if (!firstDom || firstDom.parentNode !== domParent)
     return;
   let lastDom = findLastDomAnchor(node);
   if (!lastDom)
     return;
-  if (anchor2 && domRangeContainsNode(firstDom, lastDom, anchor2))
+  if (anchor3 && domRangeContainsNode(firstDom, lastDom, anchor3))
     return;
-  if (firstDom === anchor2)
+  if (firstDom === anchor3)
     return;
-  moveDomRange(domParent, firstDom, lastDom, anchor2);
+  moveDomRange(domParent, firstDom, lastDom, anchor3);
 }
 function findFirstDomAnchor(node) {
   if (!node)
@@ -3842,9 +3842,9 @@ function createScheduler(doc, rootTarget, styles = defaultStyleManager) {
             if (!trackCascadingUpdate(vnode))
               return;
             let curr = vnode._content;
-            let anchor2 = findNextSiblingDomAnchor(vnode) || void 0;
+            let anchor3 = findNextSiblingDomAnchor(vnode) || void 0;
             try {
-              renderComponent(curr, vnode, domParent, vnode._context, anchor2);
+              renderComponent(curr, vnode, domParent, vnode._context, anchor3);
             } catch (error) {
               dispatchError(error);
             }
@@ -4419,18 +4419,18 @@ function diffSiblingUnits(currentNodes, nextNodes, parent, regionTailRef, contex
     }
     committed[i] = currentUnit;
   }
-  let anchor2 = regionTailRef;
+  let anchor3 = regionTailRef;
   for (let i = committed.length - 1; i >= 0; i--) {
     let unit = committed[i];
     let first = getSiblingUnitFirstNode(unit);
-    let ref2 = anchor2?.parentNode === parent ? anchor2 : null;
+    let ref2 = anchor3?.parentNode === parent ? anchor3 : null;
     if (unit.kind === "node" && isPreservedDomElement(unit.node) && unit.node.parentNode === parent) {
-      anchor2 = unit.node;
+      anchor3 = unit.node;
       continue;
     }
     placeSiblingUnitBefore(unit, parent, ref2);
     if (first.parentNode === parent)
-      anchor2 = first;
+      anchor3 = first;
   }
   for (let i = 0; i < currentUnits.length; i++) {
     if (!used[i])
@@ -7351,10 +7351,1998 @@ var CopyButton = clientEntry(
   }
 );
 
-// app/lib/dateTime.ts
-var systemClock = {
-  nowEpochMilliseconds: () => Date.now()
+// node_modules/@remix-run/ui/dist/anchor.js
+var viewportPaddingPx = 16;
+function isHorizontalPlacement(placement) {
+  return placement.startsWith("left") || placement.startsWith("right");
+}
+function isVerticalPlacement(placement) {
+  return placement.startsWith("top") || placement.startsWith("bottom");
+}
+function constrainToAxis(desiredPosition, elementSize, minBound, maxBound) {
+  let elementEnd = desiredPosition + elementSize;
+  if (elementEnd > maxBound) {
+    desiredPosition -= elementEnd - maxBound;
+  }
+  if (desiredPosition < minBound) {
+    desiredPosition = minBound;
+  }
+  return desiredPosition;
+}
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+function getConstrainedPositionRange(elementSize, minBound, maxBound) {
+  return {
+    min: minBound,
+    max: Math.max(minBound, maxBound - elementSize)
+  };
+}
+function getOffScreenStatus(anchorRect, axis) {
+  if (axis === "horizontal") {
+    if (anchorRect.right <= 0)
+      return "before";
+    if (anchorRect.left >= window.innerWidth)
+      return "after";
+    return "visible";
+  }
+  if (anchorRect.bottom <= 0)
+    return "before";
+  if (anchorRect.top >= window.innerHeight)
+    return "after";
+  return "visible";
+}
+function applyOffset(position, placement, offset, offsetX = 0, offsetY = 0) {
+  if (offset === 0 && offsetX === 0 && offsetY === 0) {
+    return position;
+  }
+  let { top, left } = position;
+  if (placement.startsWith("top")) {
+    top -= offset;
+  } else if (placement.startsWith("bottom")) {
+    top += offset;
+  } else if (placement.startsWith("left")) {
+    left -= offset;
+  } else if (placement.startsWith("right")) {
+    left += offset;
+  }
+  left += offsetX;
+  top += offsetY;
+  return { top, left };
+}
+function resolveOffsetValue(offset, floating) {
+  if (typeof offset === "function") {
+    return offset(floating);
+  }
+  return offset ?? 0;
+}
+function isAnchorPoint(value) {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  if (!("x" in value) || !("y" in value)) {
+    return false;
+  }
+  let width = "width" in value ? value.width : void 0;
+  let height = "height" in value ? value.height : void 0;
+  return typeof value.x === "number" && typeof value.y === "number" && (width === void 0 || typeof width === "number") && (height === void 0 || typeof height === "number");
+}
+function readAnchorRect(anchorTarget) {
+  if (anchorTarget instanceof HTMLElement) {
+    return anchorTarget.getBoundingClientRect();
+  }
+  return new DOMRect(anchorTarget.x, anchorTarget.y, anchorTarget.width ?? 0, anchorTarget.height ?? 0);
+}
+function calculatePosition(placement, anchorRect, floatingWidth, floatingHeight, inset = false) {
+  let top = anchorRect.bottom;
+  let left = anchorRect.left + (anchorRect.width - floatingWidth) / 2;
+  if (placement === "bottom-start") {
+    left = anchorRect.left;
+  } else if (placement === "bottom-end") {
+    left = anchorRect.right - floatingWidth;
+  } else if (placement === "top") {
+    top = anchorRect.top - floatingHeight;
+  } else if (placement === "top-start") {
+    top = anchorRect.top - floatingHeight;
+    left = anchorRect.left;
+  } else if (placement === "top-end") {
+    top = anchorRect.top - floatingHeight;
+    left = anchorRect.right - floatingWidth;
+  } else if (placement === "left") {
+    top = anchorRect.top + (anchorRect.height - floatingHeight) / 2;
+    left = anchorRect.left - floatingWidth;
+  } else if (placement === "left-start") {
+    top = anchorRect.top;
+    left = anchorRect.left - floatingWidth;
+  } else if (placement === "left-end") {
+    top = anchorRect.bottom - floatingHeight;
+    left = anchorRect.left - floatingWidth;
+  } else if (placement === "right") {
+    top = anchorRect.top + (anchorRect.height - floatingHeight) / 2;
+    left = anchorRect.right;
+  } else if (placement === "right-start") {
+    top = anchorRect.top;
+    left = anchorRect.right;
+  } else if (placement === "right-end") {
+    top = anchorRect.bottom - floatingHeight;
+    left = anchorRect.right;
+  }
+  if (inset) {
+    if (placement.startsWith("bottom")) {
+      top = anchorRect.bottom - floatingHeight;
+    } else if (placement.startsWith("top")) {
+      top = anchorRect.top;
+    } else if (placement.startsWith("left")) {
+      left = anchorRect.left;
+    } else if (placement.startsWith("right")) {
+      left = anchorRect.right - floatingWidth;
+    }
+  }
+  return { top, left };
+}
+function isScrollableOverflow(value) {
+  return value === "auto" || value === "scroll" || value === "overlay";
+}
+function getRelativeScrollContainer(floating, relativeElement) {
+  let current = relativeElement.parentElement;
+  while (current && current !== floating) {
+    let style = getComputedStyle(current);
+    if (isScrollableOverflow(style.overflowX) || isScrollableOverflow(style.overflowY)) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return floating;
+}
+function readFloatingDimensions(floating, relativeTo) {
+  let relativeElement = relativeTo ? floating.querySelector(relativeTo) : null;
+  if (relativeElement && !(relativeElement instanceof HTMLElement)) {
+    relativeElement = null;
+  }
+  let scrollContainer = relativeElement ? getRelativeScrollContainer(floating, relativeElement) : floating;
+  let relativeOffsetX = null;
+  let relativeOffsetY = null;
+  let scrollContainerOffsetX = 0;
+  let scrollContainerOffsetY = 0;
+  if (relativeElement instanceof HTMLElement) {
+    let floatingRect = floating.getBoundingClientRect();
+    let scrollContainerRect = scrollContainer.getBoundingClientRect();
+    let relativeRect = relativeElement.getBoundingClientRect();
+    scrollContainerOffsetX = scrollContainerRect.left - floatingRect.left;
+    scrollContainerOffsetY = scrollContainerRect.top - floatingRect.top;
+    relativeOffsetX = relativeRect.left - scrollContainerRect.left + scrollContainer.scrollLeft;
+    relativeOffsetY = relativeRect.top - scrollContainerRect.top + scrollContainer.scrollTop;
+  }
+  return {
+    width: floating.offsetWidth,
+    height: floating.offsetHeight,
+    scrollContainer,
+    scrollContainerOffsetX,
+    scrollContainerOffsetY,
+    scrollViewportWidth: scrollContainer.offsetWidth,
+    scrollViewportHeight: scrollContainer.offsetHeight,
+    scrollWidth: Math.max(scrollContainer.scrollWidth, scrollContainer.offsetWidth),
+    scrollHeight: Math.max(scrollContainer.scrollHeight, scrollContainer.offsetHeight),
+    relativeWidth: relativeElement instanceof HTMLElement ? relativeElement.offsetWidth : null,
+    relativeHeight: relativeElement instanceof HTMLElement ? relativeElement.offsetHeight : null,
+    relativeElement,
+    relativeOffsetX,
+    relativeOffsetY
+  };
+}
+function getFloatingDimensions(floating, relativeTo, { ignoreInlineMaxSize = false } = {}) {
+  let originalPosition = floating.style.position;
+  let originalLeft = floating.style.left;
+  let originalDisplay = floating.style.display;
+  let originalMaxWidth = floating.style.maxWidth;
+  let originalMaxHeight = floating.style.maxHeight;
+  if (ignoreInlineMaxSize) {
+    floating.style.maxWidth = "";
+    floating.style.maxHeight = "";
+  }
+  let needsTemporaryLayout = floating.offsetWidth === 0;
+  if (needsTemporaryLayout) {
+    floating.style.position = "absolute";
+    floating.style.left = "-9999px";
+    floating.style.display = "block";
+  }
+  let dimensions = readFloatingDimensions(floating, relativeTo);
+  if (needsTemporaryLayout) {
+    floating.style.position = originalPosition;
+    floating.style.left = originalLeft;
+    floating.style.display = originalDisplay;
+  }
+  if (ignoreInlineMaxSize) {
+    floating.style.maxWidth = originalMaxWidth;
+    floating.style.maxHeight = originalMaxHeight;
+  }
+  return dimensions;
+}
+function getClientViewportBounds(padding = 0) {
+  return {
+    left: padding,
+    top: padding,
+    right: window.innerWidth - padding,
+    bottom: window.innerHeight - padding
+  };
+}
+function getDocumentViewportBounds(isFixed, padding = 0) {
+  if (isFixed) {
+    return getClientViewportBounds(padding);
+  }
+  return {
+    left: window.scrollX + padding,
+    top: window.scrollY + padding,
+    right: window.scrollX + window.innerWidth - padding,
+    bottom: window.scrollY + window.innerHeight - padding
+  };
+}
+function getOverflowAmount(bounds, viewport) {
+  return Math.max(viewport.left - bounds.left, 0) + Math.max(bounds.right - viewport.right, 0) + Math.max(viewport.top - bounds.top, 0) + Math.max(bounds.bottom - viewport.bottom, 0);
+}
+function hasRectChanged(currentRect, previousRect) {
+  return Math.abs(currentRect.top - previousRect.top) >= 1 || Math.abs(currentRect.left - previousRect.left) >= 1 || Math.abs(currentRect.right - previousRect.right) >= 1 || Math.abs(currentRect.bottom - previousRect.bottom) >= 1;
+}
+function hasNullableNumberChanged(current, previous) {
+  if (current === null || previous === null) {
+    return current !== previous;
+  }
+  return Math.abs(current - previous) >= 1;
+}
+function hasFloatingDimensionsChanged(currentDimensions, previousDimensions) {
+  return Math.abs(currentDimensions.width - previousDimensions.width) >= 1 || Math.abs(currentDimensions.height - previousDimensions.height) >= 1 || Math.abs(currentDimensions.scrollViewportWidth - previousDimensions.scrollViewportWidth) >= 1 || Math.abs(currentDimensions.scrollViewportHeight - previousDimensions.scrollViewportHeight) >= 1 || Math.abs(currentDimensions.scrollWidth - previousDimensions.scrollWidth) >= 1 || Math.abs(currentDimensions.scrollHeight - previousDimensions.scrollHeight) >= 1 || Math.abs(currentDimensions.scrollContainerOffsetX - previousDimensions.scrollContainerOffsetX) >= 1 || Math.abs(currentDimensions.scrollContainerOffsetY - previousDimensions.scrollContainerOffsetY) >= 1 || hasNullableNumberChanged(currentDimensions.relativeWidth, previousDimensions.relativeWidth) || hasNullableNumberChanged(currentDimensions.relativeHeight, previousDimensions.relativeHeight) || hasNullableNumberChanged(currentDimensions.relativeOffsetX, previousDimensions.relativeOffsetX) || hasNullableNumberChanged(currentDimensions.relativeOffsetY, previousDimensions.relativeOffsetY);
+}
+function getOppositePlacement(placement) {
+  let opposites = {
+    top: "bottom",
+    "top-start": "bottom-start",
+    "top-end": "bottom-end",
+    bottom: "top",
+    "bottom-start": "top-start",
+    "bottom-end": "top-end",
+    left: "right",
+    "left-start": "right-start",
+    "left-end": "right-end",
+    right: "left",
+    "right-start": "left-start",
+    "right-end": "left-end"
+  };
+  return opposites[placement];
+}
+function calculateFloatingBounds(placement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY) {
+  let position = calculatePosition(placement, anchorRect, placementWidth, placementHeight, inset);
+  position = applyOffset(position, placement, offset, offsetX, offsetY);
+  if (relativeOffsetX !== null && relativeOffsetX !== void 0) {
+    position.left -= relativeOffsetX;
+  }
+  if (relativeOffsetY !== null && relativeOffsetY !== void 0) {
+    position.top -= relativeOffsetY;
+  }
+  return {
+    top: position.top,
+    left: position.left,
+    right: position.left + collisionWidth,
+    bottom: position.top + collisionHeight
+  };
+}
+function getPlacementScore(placement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY) {
+  let viewport = getClientViewportBounds(viewportPaddingPx);
+  let bounds = calculateFloatingBounds(placement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY);
+  let constraints = {
+    leftOk: bounds.left >= viewport.left,
+    rightOk: bounds.right <= viewport.right,
+    topOk: bounds.top >= viewport.top,
+    bottomOk: bounds.bottom <= viewport.bottom
+  };
+  let total = Object.values(constraints).filter(Boolean).length;
+  return {
+    overflow: getOverflowAmount(bounds, viewport),
+    total,
+    perfect: total === 4
+  };
+}
+function getFlippedPlacement(placement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, anchorIsAbsolutePositioned, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY) {
+  let hasScroll = window.scrollY > 0;
+  if (placement.startsWith("top") && anchorIsAbsolutePositioned && hasScroll) {
+    if (anchorRect.top - placementHeight < 0) {
+      return placement;
+    }
+  }
+  let original = getPlacementScore(placement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY);
+  if (original.perfect) {
+    return placement;
+  }
+  let flippedPlacement = getOppositePlacement(placement);
+  let flipped = getPlacementScore(flippedPlacement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY);
+  if (flipped.perfect || flipped.total > original.total || flipped.total === original.total && flipped.overflow < original.overflow) {
+    return flippedPlacement;
+  }
+  return placement;
+}
+function getAvailableWidthForPlacement(placement, left, width, viewport) {
+  if (placement.startsWith("left")) {
+    return left + width - viewport.left;
+  }
+  if (placement.startsWith("right")) {
+    return viewport.right - left;
+  }
+  return viewport.right - viewport.left;
+}
+function getAvailableHeightForPlacement(placement, top, height, viewport) {
+  if (placement.startsWith("top")) {
+    return top + height - viewport.top;
+  }
+  if (placement.startsWith("bottom")) {
+    return viewport.bottom - top;
+  }
+  return viewport.bottom - viewport.top;
+}
+function calculateDocumentPosition(placement, anchorRect, placementWidth, placementHeight, inset, offset, offsetX, offsetY, isFixed, scrollContainerOffsetX = 0, scrollContainerOffsetY = 0, relativeOffsetX, relativeOffsetY) {
+  let position = calculatePosition(placement, anchorRect, placementWidth, placementHeight, inset);
+  if (!isFixed) {
+    position.top += window.scrollY;
+    position.left += window.scrollX;
+  }
+  position = applyOffset(position, placement, offset, offsetX, offsetY);
+  position.left -= scrollContainerOffsetX;
+  position.top -= scrollContainerOffsetY;
+  if (relativeOffsetX !== null && relativeOffsetX !== void 0) {
+    position.left -= relativeOffsetX;
+  }
+  if (relativeOffsetY !== null && relativeOffsetY !== void 0) {
+    position.top -= relativeOffsetY;
+  }
+  return position;
+}
+function solveRelativeAlignmentAxis(options) {
+  let maxScroll = Math.max(options.naturalSize - options.visibleSize, 0);
+  let scroll = clamp(options.currentScroll, 0, maxScroll);
+  if (maxScroll === 0) {
+    return {
+      position: clamp(options.desiredPosition, options.minPosition, options.maxPosition),
+      scroll
+    };
+  }
+  let exactScrollMin = Math.max(0, options.minPosition - options.desiredPosition);
+  let exactScrollMax = Math.min(maxScroll, options.maxPosition - options.desiredPosition);
+  if (exactScrollMin <= exactScrollMax) {
+    scroll = clamp(scroll, exactScrollMin, exactScrollMax);
+  } else if (options.desiredPosition > options.maxPosition) {
+    scroll = 0;
+  } else if (options.desiredPosition + maxScroll < options.minPosition) {
+    scroll = maxScroll;
+  }
+  return {
+    position: clamp(options.desiredPosition + scroll, options.minPosition, options.maxPosition),
+    scroll
+  };
+}
+function anchor(floating, anchorTarget, options = {}) {
+  let lastAnchorRect;
+  let lastFloatingDimensions;
+  if (!(floating instanceof HTMLElement)) {
+    throw new TypeError("anchor() expected a floating HTMLElement");
+  }
+  if (!(anchorTarget instanceof HTMLElement) && !isAnchorPoint(anchorTarget)) {
+    throw new TypeError("anchor() expected an anchor HTMLElement or coordinates");
+  }
+  let { placement = "bottom", inset = false, relativeTo, offset: rawOffset = 0, offsetX: rawOffsetX = 0, offsetY: rawOffsetY = 0 } = options;
+  let anchorIsAbsolutePositioned = anchorTarget instanceof HTMLElement && getComputedStyle(anchorTarget).position !== "fixed";
+  let isFixed = floating.hasAttribute("popover") || !anchorIsAbsolutePositioned;
+  let animationFrameId = 0;
+  function updatePosition(anchorRect = readAnchorRect(anchorTarget), naturalDimensions = getFloatingDimensions(floating, relativeTo, {
+    ignoreInlineMaxSize: true
+  })) {
+    let offset = resolveOffsetValue(rawOffset, floating);
+    let offsetX = resolveOffsetValue(rawOffsetX, floating);
+    let offsetY = resolveOffsetValue(rawOffsetY, floating);
+    let viewport = getDocumentViewportBounds(isFixed, viewportPaddingPx);
+    let placementWidth = relativeTo && naturalDimensions.relativeWidth ? naturalDimensions.relativeWidth : naturalDimensions.width;
+    let placementHeight = relativeTo && naturalDimensions.relativeHeight ? naturalDimensions.relativeHeight : naturalDimensions.height;
+    let finalPlacement = getFlippedPlacement(placement, anchorRect, placementWidth, placementHeight, naturalDimensions.width, naturalDimensions.height, anchorIsAbsolutePositioned, inset, offset, offsetX, offsetY, naturalDimensions.relativeOffsetX, naturalDimensions.relativeOffsetY);
+    floating.setAttribute("data-anchor-placement", finalPlacement);
+    let position = calculateDocumentPosition(finalPlacement, anchorRect, placementWidth, placementHeight, inset, offset, offsetX, offsetY, isFixed, naturalDimensions.scrollContainerOffsetX, naturalDimensions.scrollContainerOffsetY, naturalDimensions.relativeOffsetX, naturalDimensions.relativeOffsetY);
+    let availableWidth = Math.max(getAvailableWidthForPlacement(finalPlacement, position.left, naturalDimensions.width, viewport), 0);
+    let availableHeight = Math.max(getAvailableHeightForPlacement(finalPlacement, position.top, naturalDimensions.height, viewport), 0);
+    floating.style.maxWidth = availableWidth < naturalDimensions.width ? `${Math.floor(availableWidth)}px` : "";
+    floating.style.maxHeight = availableHeight < naturalDimensions.height ? `${Math.floor(availableHeight)}px` : "";
+    let dimensions = getFloatingDimensions(floating, relativeTo);
+    placementWidth = relativeTo && dimensions.relativeWidth ? dimensions.relativeWidth : dimensions.width;
+    placementHeight = relativeTo && dimensions.relativeHeight ? dimensions.relativeHeight : dimensions.height;
+    position = calculateDocumentPosition(finalPlacement, anchorRect, placementWidth, placementHeight, inset, offset, offsetX, offsetY, isFixed, dimensions.scrollContainerOffsetX, dimensions.scrollContainerOffsetY, dimensions.relativeOffsetX, dimensions.relativeOffsetY);
+    let minX = viewport.left;
+    let minY = viewport.top;
+    let maxX = viewport.right;
+    let maxY = viewport.bottom;
+    let xRange = getConstrainedPositionRange(dimensions.width, minX, maxX);
+    let yRange = getConstrainedPositionRange(dimensions.height, minY, maxY);
+    if (isHorizontalPlacement(finalPlacement)) {
+      if (relativeTo && dimensions.relativeOffsetY !== null) {
+        let solvedY = solveRelativeAlignmentAxis({
+          currentScroll: dimensions.scrollContainer.scrollTop,
+          desiredPosition: position.top,
+          naturalSize: dimensions.scrollHeight,
+          visibleSize: dimensions.scrollViewportHeight,
+          minPosition: yRange.min,
+          maxPosition: yRange.max
+        });
+        dimensions.scrollContainer.scrollTop = solvedY.scroll;
+        position.top = solvedY.position;
+      } else {
+        position.top = constrainToAxis(position.top, dimensions.height, minY, maxY);
+      }
+      if (relativeTo) {
+        if (dimensions.relativeOffsetX !== null) {
+          let solvedX = solveRelativeAlignmentAxis({
+            currentScroll: dimensions.scrollContainer.scrollLeft,
+            desiredPosition: position.left,
+            naturalSize: dimensions.scrollWidth,
+            visibleSize: dimensions.scrollViewportWidth,
+            minPosition: xRange.min,
+            maxPosition: xRange.max
+          });
+          dimensions.scrollContainer.scrollLeft = solvedX.scroll;
+          position.left = solvedX.position;
+        } else {
+          position.left = clamp(position.left, xRange.min, xRange.max);
+        }
+      }
+    } else if (isVerticalPlacement(finalPlacement)) {
+      if (relativeTo && dimensions.relativeOffsetX !== null) {
+        let solvedX = solveRelativeAlignmentAxis({
+          currentScroll: dimensions.scrollContainer.scrollLeft,
+          desiredPosition: position.left,
+          naturalSize: dimensions.scrollWidth,
+          visibleSize: dimensions.scrollViewportWidth,
+          minPosition: xRange.min,
+          maxPosition: xRange.max
+        });
+        dimensions.scrollContainer.scrollLeft = solvedX.scroll;
+        position.left = solvedX.position;
+      } else {
+        position.left = constrainToAxis(position.left, dimensions.width, minX, maxX);
+      }
+      if (!isFixed && window.scrollY > 0 && position.top < viewport.top) {
+        position.top = viewport.top;
+      }
+      if (relativeTo) {
+        if (dimensions.relativeOffsetY !== null) {
+          let solvedY = solveRelativeAlignmentAxis({
+            currentScroll: dimensions.scrollContainer.scrollTop,
+            desiredPosition: position.top,
+            naturalSize: dimensions.scrollHeight,
+            visibleSize: dimensions.scrollViewportHeight,
+            minPosition: yRange.min,
+            maxPosition: yRange.max
+          });
+          dimensions.scrollContainer.scrollTop = solvedY.scroll;
+          position.top = solvedY.position;
+        } else {
+          position.top = clamp(position.top, yRange.min, yRange.max);
+        }
+      }
+    }
+    if (isHorizontalPlacement(finalPlacement)) {
+      let status = getOffScreenStatus(anchorRect, "horizontal");
+      if (status === "before") {
+        position.left = minX;
+      } else if (status === "after") {
+        position.left = maxX - dimensions.width;
+      }
+    } else if (isVerticalPlacement(finalPlacement)) {
+      let status = getOffScreenStatus(anchorRect, "vertical");
+      if (status === "before") {
+        position.top = minY;
+      } else if (status === "after") {
+        position.top = maxY - dimensions.height;
+      }
+    }
+    floating.style.position = isFixed ? "fixed" : "absolute";
+    floating.style.inset = "auto";
+    floating.style.top = `${position.top}px`;
+    floating.style.left = `${position.left}px`;
+    lastAnchorRect = anchorRect;
+    lastFloatingDimensions = dimensions;
+  }
+  updatePosition();
+  function pollForPositionChanges() {
+    let currentRect = readAnchorRect(anchorTarget);
+    let currentDimensions = getFloatingDimensions(floating, relativeTo);
+    if (hasRectChanged(currentRect, lastAnchorRect) || hasFloatingDimensionsChanged(currentDimensions, lastFloatingDimensions)) {
+      updatePosition(currentRect, currentDimensions);
+    }
+    animationFrameId = requestAnimationFrame(pollForPositionChanges);
+  }
+  function handleScroll() {
+    updatePosition();
+  }
+  function handleResize() {
+    updatePosition();
+  }
+  animationFrameId = requestAnimationFrame(pollForPositionChanges);
+  window.addEventListener("scroll", handleScroll, { passive: true });
+  window.addEventListener("resize", handleResize, { passive: true });
+  return () => {
+    cancelAnimationFrame(animationFrameId);
+    window.removeEventListener("scroll", handleScroll);
+    window.removeEventListener("resize", handleResize);
+  };
+}
+
+// node_modules/@remix-run/ui/dist/lib/outside-click.js
+var onOutsideClick = createMixin((handle) => {
+  let active = false;
+  let handler = () => {
+  };
+  let isInsideTarget = () => false;
+  let stopPropagation = true;
+  handle.addEventListener("insert", (event) => {
+    let node = event.node;
+    let doc = node.ownerDocument;
+    doc.addEventListener("click", (event2) => {
+      let target = event2.target instanceof Node ? event2.target : null;
+      if (!active || target && (node.contains(target) || isInsideTarget(target))) {
+        return;
+      }
+      if (stopPropagation) {
+        event2.stopPropagation();
+      }
+      handler(target);
+    }, { capture: true, signal: handle.signal });
+  });
+  return (nextActive, nextHandler, nextIsInsideTarget = () => false, nextStopPropagation = true) => {
+    active = nextActive;
+    handler = nextHandler;
+    isInsideTarget = nextIsInsideTarget;
+    stopPropagation = nextStopPropagation;
+  };
+});
+
+// node_modules/@remix-run/ui/dist/lib/scroll-lock.js
+var scrollLocks = /* @__PURE__ */ new WeakMap();
+function lockScroll(targetDocument = globalThis.document) {
+  if (!targetDocument?.body || !targetDocument.defaultView) {
+    return () => {
+    };
+  }
+  let document2 = targetDocument;
+  let documentElement = document2.documentElement;
+  let view = document2.defaultView;
+  let state = scrollLocks.get(document2);
+  if (!state) {
+    let scrollX = view.scrollX;
+    let scrollY = view.scrollY;
+    let scrollbarWidth = documentElement.clientWidth > 0 ? Math.max(view.innerWidth - documentElement.clientWidth, 0) : 0;
+    let computedScrollbarGutter = view.getComputedStyle(documentElement).scrollbarGutter;
+    state = {
+      count: 0,
+      documentOverflow: documentElement.style.overflow,
+      documentScrollbarGutter: documentElement.style.scrollbarGutter,
+      scrollX,
+      scrollY
+    };
+    documentElement.style.overflow = "hidden";
+    if (scrollbarWidth > 0 && computedScrollbarGutter === "auto") {
+      documentElement.style.scrollbarGutter = "stable";
+    }
+    scrollLocks.set(document2, state);
+  }
+  state.count++;
+  let unlocked = false;
+  return () => {
+    if (unlocked) {
+      return;
+    }
+    unlocked = true;
+    let currentState = scrollLocks.get(document2);
+    if (!currentState) {
+      return;
+    }
+    currentState.count--;
+    if (currentState.count > 0) {
+      return;
+    }
+    scrollLocks.delete(document2);
+    documentElement.style.overflow = currentState.documentOverflow;
+    documentElement.style.scrollbarGutter = currentState.documentScrollbarGutter;
+    view.scrollTo(currentState.scrollX, currentState.scrollY);
+  };
+}
+
+// node_modules/@remix-run/ui/dist/popover.js
+function PopoverProvider(handle) {
+  handle.context.set({
+    hideFocusTarget: null,
+    showFocusTarget: null,
+    surface: null,
+    anchor: null
+  });
+  return () => handle.props.children;
+}
+var anchorMixin = createMixin((handle) => {
+  let context = handle.context.get(PopoverProvider);
+  return (options) => {
+    handle.queueTask((node) => {
+      context.anchor = { target: node, options };
+    });
+  };
+});
+function anchorContains(anchor3, target) {
+  return anchor3?.target instanceof HTMLElement && anchor3.target.contains(target);
+}
+var surfaceMixin = createMixin((handle) => {
+  let openProp = false;
+  let cleanupAnchor = () => {
+  };
+  let unlockScroll = () => {
+  };
+  let context = handle.context.get(PopoverProvider);
+  handle.queueTask((node, signal) => {
+    context.surface = node;
+    signal.addEventListener("abort", () => {
+      if (context.surface === node) {
+        context.surface = null;
+      }
+    });
+  });
+  return (options) => {
+    let wasOpen = openProp;
+    openProp = options.open;
+    handle.queueTask(async (node) => {
+      if (openProp && !wasOpen) {
+        node.showPopover();
+      } else if (!openProp && wasOpen) {
+        node.hidePopover();
+      }
+    });
+    return [
+      attrs({ popover: "manual" }),
+      on("beforetoggle", (event) => {
+        if (event.newState === "open") {
+          let anchor3 = context.anchor;
+          if (!anchor3) {
+            throw new Error("popover.surface() requires a registered anchor before opening");
+          }
+          cleanupAnchor = anchor(event.currentTarget, anchor3.target, anchor3.options);
+          unlockScroll = lockScroll();
+        } else if (event.newState === "closed") {
+          cleanupAnchor();
+          unlockScroll();
+        }
+      }),
+      on("toggle", async (event) => {
+        if (event.newState === "open") {
+          context.showFocusTarget?.focus();
+        } else if (event.newState === "closed" && options.restoreFocusOnHide !== false) {
+          context.hideFocusTarget?.focus();
+        }
+      }),
+      on("keydown", (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          options.onHide({ reason: "escape-key" });
+        }
+      }),
+      onOutsideClick(openProp, (target) => {
+        options.onHide({ reason: "outside-click", target });
+      }, (target) => options.closeOnAnchorClick === false && anchorContains(context.anchor, target), options.stopOutsideClickPropagation ?? true)
+    ];
+  };
+});
+var focusOnShowMixin = createMixin((handle) => {
+  handle.addEventListener("insert", (event) => {
+    let context = handle.context.get(PopoverProvider);
+    context.showFocusTarget = event.node;
+  });
+});
+var focusOnHideMixin = createMixin((handle) => {
+  handle.addEventListener("insert", (event) => {
+    let context = handle.context.get(PopoverProvider);
+    context.hideFocusTarget = event.node;
+  });
+});
+var Context = PopoverProvider;
+var anchor2 = anchorMixin;
+var surface = surfaceMixin;
+
+// node_modules/@remix-run/ui/dist/lib/typeahead.js
+var HIDDEN_TYPEAHEAD_TIMEOUT = 750;
+var hiddenTypeahead = createMixin((handle) => {
+  let text = "";
+  let timeoutId = 0;
+  function clearTypeahead() {
+    clearTimeout(timeoutId);
+    timeoutId = 0;
+    text = "";
+  }
+  function updateTypeahead(nextText, onTypeahead) {
+    text = nextText;
+    onTypeahead(text);
+  }
+  handle.addEventListener("remove", clearTypeahead);
+  return (onTypeahead) => [
+    on("focusout", (event) => {
+      if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) {
+        return;
+      }
+      clearTypeahead();
+    }),
+    on("keydown", (event) => {
+      if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
+        clearTimeout(timeoutId);
+        updateTypeahead(text + event.key.toLowerCase(), onTypeahead);
+        timeoutId = window.setTimeout(clearTypeahead, HIDDEN_TYPEAHEAD_TIMEOUT);
+      } else if (event.key === "Escape") {
+        clearTypeahead();
+      } else if (event.key === "Backspace" && text.length > 0) {
+        clearTimeout(timeoutId);
+        updateTypeahead(text.slice(0, -1), onTypeahead);
+        timeoutId = window.setTimeout(clearTypeahead, HIDDEN_TYPEAHEAD_TIMEOUT);
+      }
+    })
+  ];
+});
+function itemMatchesSearchText(item, text, getSearchValues) {
+  let values = getSearchValues(item);
+  let searchValues = Array.isArray(values) ? values : [values];
+  let normalizedText = text.toLowerCase();
+  return searchValues.some((value) => value.toLowerCase().startsWith(normalizedText));
+}
+function matchNextItemBySearchText(text, items, options) {
+  if (text === "") {
+    return null;
+  }
+  for (let offset = 1; offset <= items.length; offset++) {
+    let item = items[(options.fromIndex + offset + items.length) % items.length];
+    if (itemMatchesSearchText(item, text, options.getSearchValues)) {
+      return item;
+    }
+  }
+  return null;
+}
+
+// node_modules/@remix-run/ui/dist/lib/wait-for-css-transition.js
+function waitForCssTransition(node, signal, action) {
+  return new Promise((resolve) => {
+    let resolved = false;
+    let sawTransitionRun = false;
+    let firstFrameId = 0;
+    let secondFrameId = 0;
+    function cleanup() {
+      cancelAnimationFrame(firstFrameId);
+      cancelAnimationFrame(secondFrameId);
+      node.removeEventListener("transitionrun", handleTransitionRun);
+      node.removeEventListener("transitionend", finish);
+      node.removeEventListener("transitioncancel", finish);
+      signal.removeEventListener("abort", finish);
+    }
+    function handleTransitionRun(event) {
+      if (event.target !== node) {
+        return;
+      }
+      sawTransitionRun = true;
+    }
+    function finish(event) {
+      if (event instanceof TransitionEvent && event.target !== node) {
+        return;
+      }
+      if (resolved) {
+        return;
+      }
+      resolved = true;
+      cleanup();
+      resolve();
+    }
+    node.addEventListener("transitionrun", handleTransitionRun);
+    node.addEventListener("transitionend", finish);
+    node.addEventListener("transitioncancel", finish);
+    signal.addEventListener("abort", finish, { once: true });
+    if (action) {
+      try {
+        action();
+      } catch (error) {
+        cleanup();
+        throw error;
+      }
+    }
+    if (signal.aborted) {
+      finish();
+      return;
+    }
+    firstFrameId = requestAnimationFrame(() => {
+      secondFrameId = requestAnimationFrame(() => {
+        if (!sawTransitionRun) {
+          finish();
+        }
+      });
+    });
+  });
+}
+
+// node_modules/@remix-run/ui/dist/lib/wait.js
+function wait(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+// node_modules/@remix-run/ui/dist/lib/hover-aim.js
+var HOVER_AIM_PADDING = 8;
+var HOVER_AIM_MAX_DURATION = 300;
+var HOVER_AIM_STALL_DURATION = 120;
+var HOVER_AIM_MIN_PROGRESS = 0.5;
+var HOVER_AIM_MAX_STALLED_UPDATES = 2;
+function createHoverAim() {
+  let lastPointer = null;
+  let session = null;
+  let pointerTrackingActive = false;
+  let processedEvents = /* @__PURE__ */ new WeakMap();
+  function handleDocumentPointerMove(event) {
+    accepts(event);
+  }
+  function startPointerTracking() {
+    if (pointerTrackingActive) {
+      return;
+    }
+    document.addEventListener("pointermove", handleDocumentPointerMove, { capture: true });
+    pointerTrackingActive = true;
+  }
+  function stopPointerTracking() {
+    if (!pointerTrackingActive) {
+      return;
+    }
+    document.removeEventListener("pointermove", handleDocumentPointerMove, { capture: true });
+    pointerTrackingActive = false;
+  }
+  function clearSession(reason, currentSession = session) {
+    if (!currentSession) {
+      return;
+    }
+    clearTimeout(currentSession.durationTimeoutId);
+    clearTimeout(currentSession.stallTimeoutId);
+    if (session === currentSession) {
+      session = null;
+    }
+    stopPointerTracking();
+    if (reason === "duration-timeout" || reason === "stall-timeout") {
+      currentSession.onExpire?.();
+    }
+  }
+  function scheduleDurationTimeout(currentSession) {
+    currentSession.durationTimeoutId = window.setTimeout(() => {
+      clearSession("duration-timeout", currentSession);
+    }, HOVER_AIM_MAX_DURATION);
+  }
+  function scheduleStallTimeout(currentSession) {
+    clearTimeout(currentSession.stallTimeoutId);
+    currentSession.stallTimeoutId = window.setTimeout(() => {
+      clearSession("stall-timeout", currentSession);
+    }, HOVER_AIM_STALL_DURATION);
+  }
+  function rememberPointer(event) {
+    if (!isMousePointer(event)) {
+      return;
+    }
+    lastPointer = getPoint(event);
+  }
+  function start(source, target, event, onExpire) {
+    clearSession("restart");
+    if (event && !isMousePointer(event)) {
+      return false;
+    }
+    if (!source.isConnected || !target.isConnected) {
+      return false;
+    }
+    let startPoint = event ? getPoint(event) : lastPointer;
+    if (!startPoint) {
+      return false;
+    }
+    if (event?.relatedTarget instanceof Node && target.contains(event.relatedTarget)) {
+      lastPointer = startPoint;
+      return true;
+    }
+    let sourceRect = toRect(source.getBoundingClientRect());
+    let actualRect = toRect(target.getBoundingClientRect());
+    if (isEmptyRect(sourceRect) || isEmptyRect(actualRect) || containsPoint(actualRect, startPoint) || !isHeadingTowardTarget(sourceRect, actualRect, startPoint)) {
+      return false;
+    }
+    lastPointer = startPoint;
+    let paddedRect = inflateRect(actualRect, HOVER_AIM_PADDING);
+    let currentSession = {
+      target,
+      actualRect,
+      polygon: createCorridor(startPoint, paddedRect),
+      startedAt: Date.now(),
+      lastDistance: distanceToRect(startPoint, actualRect),
+      lastPoint: startPoint,
+      durationTimeoutId: 0,
+      stalledUpdates: 0,
+      stallTimeoutId: 0,
+      onExpire
+    };
+    session = currentSession;
+    startPointerTracking();
+    scheduleDurationTimeout(currentSession);
+    scheduleStallTimeout(currentSession);
+    return true;
+  }
+  function accepts(event) {
+    if (processedEvents.has(event)) {
+      return processedEvents.get(event);
+    }
+    rememberPointer(event);
+    let currentSession = session;
+    if (!currentSession) {
+      processedEvents.set(event, true);
+      return true;
+    }
+    if (!isMousePointer(event) || event.type !== "pointermove") {
+      clearSession("non-pointermove", currentSession);
+      processedEvents.set(event, true);
+      return true;
+    }
+    if (!currentSession.target.isConnected) {
+      clearSession("target-disconnected", currentSession);
+      processedEvents.set(event, true);
+      return true;
+    }
+    let point = getPoint(event);
+    if (enteredTarget(currentSession, point, event.target)) {
+      clearSession("entered-target", currentSession);
+      processedEvents.set(event, true);
+      return true;
+    }
+    if (!pointInPolygon(point, currentSession.polygon)) {
+      clearSession("outside-corridor", currentSession);
+      processedEvents.set(event, true);
+      return true;
+    }
+    if (distanceBetweenPoints(currentSession.lastPoint, point) > 0) {
+      scheduleStallTimeout(currentSession);
+    }
+    let nextDistance = distanceToRect(point, currentSession.actualRect);
+    if (currentSession.lastDistance - nextDistance >= HOVER_AIM_MIN_PROGRESS) {
+      currentSession.stalledUpdates = 0;
+    } else {
+      currentSession.stalledUpdates++;
+    }
+    currentSession.lastPoint = point;
+    currentSession.lastDistance = nextDistance;
+    if (currentSession.stalledUpdates >= HOVER_AIM_MAX_STALLED_UPDATES) {
+      clearSession("stalled-updates", currentSession);
+      processedEvents.set(event, true);
+      return true;
+    }
+    if (Date.now() - currentSession.startedAt >= HOVER_AIM_MAX_DURATION) {
+      clearSession("max-duration", currentSession);
+      processedEvents.set(event, true);
+      return true;
+    }
+    processedEvents.set(event, false);
+    return false;
+  }
+  return { start, accepts };
+}
+function isMousePointer(event) {
+  return event.pointerType === void 0 || event.pointerType === "" || event.pointerType === "mouse";
+}
+function getPoint(event) {
+  return {
+    x: event.clientX,
+    y: event.clientY
+  };
+}
+function toRect(rect) {
+  return {
+    left: rect.left,
+    top: rect.top,
+    right: rect.right,
+    bottom: rect.bottom
+  };
+}
+function isEmptyRect(rect) {
+  return rect.left === rect.right || rect.top === rect.bottom;
+}
+function inflateRect(rect, padding) {
+  return {
+    left: rect.left - padding,
+    top: rect.top - padding,
+    right: rect.right + padding,
+    bottom: rect.bottom + padding
+  };
+}
+function containsPoint(rect, point) {
+  return point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom;
+}
+function isHeadingTowardTarget(sourceRect, targetRect, point) {
+  let sourceCenterX = sourceRect.left + (sourceRect.right - sourceRect.left) / 2;
+  let sourceCenterY = sourceRect.top + (sourceRect.bottom - sourceRect.top) / 2;
+  let targetCenterX = targetRect.left + (targetRect.right - targetRect.left) / 2;
+  let targetCenterY = targetRect.top + (targetRect.bottom - targetRect.top) / 2;
+  let deltaX = targetCenterX - sourceCenterX;
+  let deltaY = targetCenterY - sourceCenterY;
+  if (Math.abs(deltaX) >= Math.abs(deltaY)) {
+    return deltaX >= 0 ? point.x >= sourceCenterX : point.x <= sourceCenterX;
+  }
+  return deltaY >= 0 ? point.y >= sourceCenterY : point.y <= sourceCenterY;
+}
+function enteredTarget(session, point, eventTarget) {
+  if (containsPoint(session.actualRect, point)) {
+    return true;
+  }
+  return eventTarget instanceof Node && session.target.contains(eventTarget);
+}
+function distanceBetweenPoints(from, to) {
+  return Math.hypot(to.x - from.x, to.y - from.y);
+}
+function distanceToRect(point, rect) {
+  let dx = 0;
+  let dy = 0;
+  if (point.x < rect.left) {
+    dx = rect.left - point.x;
+  } else if (point.x > rect.right) {
+    dx = point.x - rect.right;
+  }
+  if (point.y < rect.top) {
+    dy = rect.top - point.y;
+  } else if (point.y > rect.bottom) {
+    dy = point.y - rect.bottom;
+  }
+  return Math.hypot(dx, dy);
+}
+function createCorridor(startPoint, rect) {
+  let points = dedupePoints([
+    startPoint,
+    { x: rect.left, y: rect.top },
+    { x: rect.right, y: rect.top },
+    { x: rect.right, y: rect.bottom },
+    { x: rect.left, y: rect.bottom }
+  ]);
+  if (points.length <= 2) {
+    return points;
+  }
+  points.sort((left, right) => {
+    if (left.x === right.x) {
+      return left.y - right.y;
+    }
+    return left.x - right.x;
+  });
+  let lower = [];
+  for (let point of points) {
+    while (lower.length >= 2 && crossProduct(lower[lower.length - 2], lower[lower.length - 1], point) <= 0) {
+      lower.pop();
+    }
+    lower.push(point);
+  }
+  let upper = [];
+  for (let index = points.length - 1; index >= 0; index--) {
+    let point = points[index];
+    while (upper.length >= 2 && crossProduct(upper[upper.length - 2], upper[upper.length - 1], point) <= 0) {
+      upper.pop();
+    }
+    upper.push(point);
+  }
+  return lower.slice(0, -1).concat(upper.slice(0, -1));
+}
+function crossProduct(origin, a, b) {
+  return (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x);
+}
+function dedupePoints(points) {
+  let seen = /* @__PURE__ */ new Set();
+  return points.filter((point) => {
+    let key = `${point.x}:${point.y}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+function pointInPolygon(point, polygon) {
+  if (polygon.length < 3) {
+    return false;
+  }
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    if (pointOnSegment(point, polygon[j], polygon[i])) {
+      return true;
+    }
+    if (polygon[i].y > point.y !== polygon[j].y > point.y && point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+function pointOnSegment(point, start, end) {
+  let cross = crossProduct(start, end, point);
+  if (Math.abs(cross) > 1e-3) {
+    return false;
+  }
+  return point.x >= Math.min(start.x, end.x) && point.x <= Math.max(start.x, end.x) && point.y >= Math.min(start.y, end.y) && point.y <= Math.max(start.y, end.y);
+}
+
+// node_modules/@remix-run/ui/dist/menu.js
+var MENU_SELECT_EVENT = "rmx:menu-select";
+var MENU_FLASH_DURATION_MS = 60;
+var SUBMENU_OPEN_DELAY_MS = 300;
+var SUBMENU_ANCHOR_RELATIVE_TO = '[role="menu"] > [role^="menuitem"]';
+var MenuSelectEvent = class extends Event {
+  item;
+  constructor(item) {
+    super(MENU_SELECT_EVENT, { bubbles: true });
+    this.item = item;
+  }
 };
+function isPrintableKey(event) {
+  return event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey;
+}
+function normalizeText(text) {
+  return (text ?? "").replace(/\s+/g, " ").trim();
+}
+function getItemLabel(node, label) {
+  return normalizeText(label ?? node?.textContent);
+}
+function getItemRole(type) {
+  switch (type) {
+    case "checkbox":
+      return "menuitemcheckbox";
+    case "radio":
+      return "menuitemradio";
+    default:
+      return "menuitem";
+  }
+}
+function eventBelongsToCurrentMenu(event) {
+  if (!(event.target instanceof Element) || !(event.currentTarget instanceof Element)) {
+    return false;
+  }
+  return event.target.closest('[role="menu"]') === event.currentTarget;
+}
+function shouldClearHighlightOnPointerLeave(event) {
+  if (!(event.currentTarget instanceof Element)) {
+    return false;
+  }
+  if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) {
+    return false;
+  }
+  if (!(event.relatedTarget instanceof Element)) {
+    return true;
+  }
+  let currentMenu = event.currentTarget.closest('[role="menu"]');
+  let nextItem = event.relatedTarget.closest('[role^="menuitem"]');
+  return !currentMenu || !nextItem || nextItem.closest('[role="menu"]') !== currentMenu;
+}
+function focusNode(node) {
+  if (!node || !node.isConnected || document.activeElement === node) {
+    return;
+  }
+  node.focus();
+  if ("scrollIntoView" in node) {
+    node.scrollIntoView({
+      block: "nearest",
+      inline: "nearest"
+    });
+  }
+}
+function MenuProvider(handle) {
+  let parent = handle.context.get(MenuProvider);
+  let activeId = null;
+  let childMenus = [];
+  let closeAnimation = "none";
+  let flashState = null;
+  let items = [];
+  let listRef;
+  let open = false;
+  let state = "idle";
+  let suppressNextPointerLeaveClear = false;
+  let surfaceRef;
+  let triggerId;
+  let triggerRef;
+  let hoverAim = createHoverAim();
+  function getItem(id) {
+    return items.find((item) => item.id === id);
+  }
+  function isVisibleItem(item) {
+    return !!item?.node?.isConnected && !item.hidden;
+  }
+  function isInteractableItem(item) {
+    return isVisibleItem(item) && !item.disabled;
+  }
+  function getInteractableItems() {
+    return items.filter(isInteractableItem);
+  }
+  function getOpenChild() {
+    return childMenus.find((menu) => menu.isOpen);
+  }
+  function closeChildrenSync(updates, options = { animation: "none" }) {
+    for (let child of childMenus) {
+      child.closeSync(updates, options);
+    }
+  }
+  function focusOpenStrategy(strategy, nextActiveId) {
+    let activeItem = getItem(nextActiveId);
+    if (strategy === "list" || strategy === "none" || !isInteractableItem(activeItem)) {
+      focusNode(listRef);
+      return;
+    }
+    focusNode(activeItem.node);
+  }
+  async function openMenu({ strategy = "list", focus = strategy !== "none" } = {}) {
+    if (state !== "idle") {
+      return;
+    }
+    let updates = [];
+    closeChildrenSync(updates, { animation: "none" });
+    let nextActiveId = null;
+    let interactableItems = getInteractableItems();
+    if (strategy === "first") {
+      nextActiveId = interactableItems[0]?.id ?? null;
+    } else if (strategy === "last") {
+      nextActiveId = interactableItems[interactableItems.length - 1]?.id ?? null;
+    }
+    let shouldUpdate = !open || activeId !== nextActiveId;
+    open = true;
+    activeId = nextActiveId;
+    if (shouldUpdate) {
+      updates.push(handle.update());
+    }
+    if (updates.length > 0) {
+      let signals = await Promise.all(updates);
+      if (signals.some((signal) => signal.aborted)) {
+        return;
+      }
+    }
+    if (focus) {
+      focusOpenStrategy(strategy, nextActiveId);
+    }
+  }
+  function closeSync(updates, { animation = "none" } = {}) {
+    let wasOpen = open;
+    closeAnimation = animation;
+    closeChildrenSync(updates, { animation });
+    if (!open && (animation === "fade" || activeId === null)) {
+      return;
+    }
+    open = false;
+    if (animation === "none") {
+      activeId = null;
+      state = "idle";
+    } else if (wasOpen && state === "idle") {
+      state = "dismissing";
+    }
+    updates.push(handle.update());
+  }
+  function finishDismissalSync(updates) {
+    for (let child of childMenus) {
+      child.finishDismissalSync(updates);
+    }
+    if (open) {
+      return;
+    }
+    let shouldUpdate = false;
+    if (activeId !== null) {
+      activeId = null;
+      shouldUpdate = true;
+    }
+    if (state !== "idle") {
+      state = "idle";
+      shouldUpdate = true;
+    }
+    if (closeAnimation !== "none") {
+      closeAnimation = "none";
+      shouldUpdate = true;
+    }
+    if (shouldUpdate) {
+      updates.push(handle.update());
+    }
+  }
+  async function closeBranch({ focusTrigger = false } = {}) {
+    let updates = [];
+    closeSync(updates, { animation: "none" });
+    if (updates.length > 0) {
+      let signals = await Promise.all(updates);
+      if (signals.some((signal) => signal.aborted)) {
+        return;
+      }
+    }
+    if (focusTrigger) {
+      parent?.suppressNextPointerLeaveClear();
+      focusNode(triggerRef);
+    }
+  }
+  async function closeAll({ focusRoot = true } = {}) {
+    if (parent) {
+      await context.root.closeAll({ focusRoot });
+      return;
+    }
+    let shouldWaitForTransition = open && !!surfaceRef?.isConnected;
+    let updates = [];
+    closeSync(updates, { animation: "fade" });
+    if (updates.length > 0) {
+      let signals = await Promise.all(updates);
+      if (signals.some((signal) => signal.aborted)) {
+        return;
+      }
+    }
+    if (shouldWaitForTransition && surfaceRef?.isConnected) {
+      await waitForCssTransition(surfaceRef, handle.signal);
+    }
+    updates = [];
+    finishDismissalSync(updates);
+    if (updates.length > 0) {
+      let signals = await Promise.all(updates);
+      if (signals.some((signal) => signal.aborted)) {
+        return;
+      }
+    }
+    if (focusRoot) {
+      focusNode(triggerRef);
+    }
+  }
+  function highlight(id, { focus = false } = {}) {
+    if (state !== "idle") {
+      return;
+    }
+    let nextItem = id ? getItem(id) : void 0;
+    if (id && !isInteractableItem(nextItem)) {
+      return;
+    }
+    let updates = [];
+    let openChild = getOpenChild();
+    if (openChild && nextItem?.submenu !== openChild) {
+      openChild.closeSync(updates, { animation: "none" });
+    }
+    if (activeId !== id) {
+      activeId = id;
+      updates.push(handle.update());
+    }
+    if (!focus) {
+      return;
+    }
+    let focusTarget = nextItem?.node;
+    if (updates.length === 0) {
+      focusNode(focusTarget);
+      return;
+    }
+    void Promise.all(updates).then((signals) => {
+      if (signals.some((signal) => signal.aborted)) {
+        return;
+      }
+      focusNode(focusTarget);
+    });
+  }
+  function navigate(strategy) {
+    if (state !== "idle") {
+      return;
+    }
+    let interactableItems = getInteractableItems();
+    let activeIndex = interactableItems.findIndex((item) => item.id === activeId);
+    let nextItem;
+    switch (strategy) {
+      case "next":
+        nextItem = activeIndex === -1 ? interactableItems[0] : interactableItems[activeIndex + 1] ?? interactableItems[activeIndex];
+        break;
+      case "previous":
+        nextItem = activeIndex === -1 ? interactableItems[interactableItems.length - 1] : interactableItems[activeIndex - 1];
+        break;
+      case "first":
+        nextItem = interactableItems[0];
+        break;
+      case "last":
+        nextItem = interactableItems[interactableItems.length - 1];
+        break;
+    }
+    if (nextItem) {
+      highlight(nextItem.id, { focus: true });
+    }
+  }
+  function highlightSearchMatch(text) {
+    if (state !== "idle") {
+      return;
+    }
+    let interactableItems = getInteractableItems();
+    let activeIndex = interactableItems.findIndex((item) => item.id === activeId);
+    let nextItem = matchNextItemBySearchText(text, interactableItems, {
+      fromIndex: activeIndex,
+      getSearchValues(item) {
+        return item.searchValue ?? item.label;
+      }
+    });
+    if (nextItem) {
+      highlight(nextItem.id, { focus: true });
+    }
+  }
+  async function activateItem(id) {
+    if (state !== "idle") {
+      return;
+    }
+    let item = getItem(id);
+    if (!isInteractableItem(item)) {
+      return;
+    }
+    if (item.submenu) {
+      await item.submenu.open({ strategy: "first" });
+      return;
+    }
+    let committedChecked = item.type === "checkbox" ? !item.checked : item.type === "radio" ? true : void 0;
+    state = "selecting";
+    activeId = item.id;
+    flashState = item.type === "item" ? { id: item.id } : { checked: committedChecked, id: item.id };
+    let signal = await handle.update();
+    if (signal.aborted) {
+      return;
+    }
+    item.node.dispatchEvent(new MenuSelectEvent({
+      checked: committedChecked,
+      id: item.id,
+      label: item.label,
+      name: item.name,
+      type: item.type,
+      value: item.value ?? null
+    }));
+    await wait(MENU_FLASH_DURATION_MS);
+    if (handle.signal.aborted) {
+      return;
+    }
+    flashState = null;
+    signal = await handle.update();
+    if (signal.aborted) {
+      return;
+    }
+    await closeAll();
+    state = "idle";
+    signal = await handle.update();
+    if (signal.aborted) {
+      return;
+    }
+  }
+  async function activateActive() {
+    if (!activeId) {
+      return;
+    }
+    await activateItem(activeId);
+  }
+  async function openActiveSubmenu() {
+    if (state !== "idle") {
+      return;
+    }
+    if (!activeId) {
+      return;
+    }
+    let item = getItem(activeId);
+    if (!isInteractableItem(item) || !item.submenu) {
+      return;
+    }
+    await item.submenu.open({ strategy: "first" });
+  }
+  let context = {
+    get activeId() {
+      return activeId ?? void 0;
+    },
+    get closeAnimation() {
+      return closeAnimation;
+    },
+    get flashingChecked() {
+      return flashState?.checked;
+    },
+    get flashingId() {
+      return flashState?.id;
+    },
+    get isOpen() {
+      return open;
+    },
+    get isRoot() {
+      return !parent;
+    },
+    get label() {
+      return handle.props.label;
+    },
+    get listId() {
+      return `${handle.id}-list`;
+    },
+    get parent() {
+      return parent;
+    },
+    get root() {
+      return parent?.root ?? context;
+    },
+    get state() {
+      return state;
+    },
+    get surfaceNode() {
+      return surfaceRef;
+    },
+    get triggerId() {
+      return triggerId;
+    },
+    activateActive,
+    activateItem,
+    allowsPointer(event) {
+      return hoverAim.accepts(event);
+    },
+    closeAll,
+    closeBranch,
+    closeSync,
+    consumePointerLeaveClearSuppression() {
+      if (!suppressNextPointerLeaveClear) {
+        return false;
+      }
+      suppressNextPointerLeaveClear = false;
+      return true;
+    },
+    finishDismissalSync,
+    getOpenChild,
+    hasOpenChild() {
+      return !!getOpenChild();
+    },
+    highlight,
+    highlightSearchMatch,
+    navigate,
+    openActiveSubmenu,
+    open: openMenu,
+    registerChild(menu) {
+      childMenus.push(menu);
+    },
+    registerItem(item) {
+      items.push(item);
+    },
+    registerList(node) {
+      listRef = node;
+    },
+    registerSurface(node) {
+      surfaceRef = node;
+    },
+    registerTrigger(node, id) {
+      triggerRef = node;
+      triggerId = id;
+    },
+    suppressNextPointerLeaveClear() {
+      suppressNextPointerLeaveClear = true;
+    },
+    startHoverAim(source, target, event) {
+      if (!source || !target) {
+        return false;
+      }
+      return hoverAim.start(source, target, event);
+    },
+    unregisterList(node) {
+      if (listRef === node) {
+        listRef = void 0;
+      }
+    },
+    unregisterSurface(node) {
+      if (surfaceRef === node) {
+        surfaceRef = void 0;
+      }
+    },
+    unregisterTrigger(node) {
+      if (triggerRef === node) {
+        triggerRef = void 0;
+        triggerId = void 0;
+      }
+    }
+  };
+  handle.context.set(context);
+  return () => {
+    childMenus = [];
+    items = [];
+    parent?.registerChild(context);
+    return jsx(Context, { children: handle.props.children });
+  };
+}
+var triggerMixin = createMixin((handle) => {
+  let context = handle.context.get(MenuProvider);
+  return (options = {}, props = options) => {
+    if (props === options) {
+      options = {};
+    }
+    return [
+      attrs({
+        id: handle.id,
+        "aria-controls": context.listId,
+        "aria-expanded": context.isOpen ? "true" : "false",
+        "aria-haspopup": "menu"
+      }),
+      ref((node, signal) => {
+        context.registerTrigger(node, handle.id);
+        signal.addEventListener("abort", () => {
+          context.unregisterTrigger(node);
+        });
+      }),
+      anchor2({
+        placement: "bottom-start",
+        ...options
+      }),
+      on("click", () => {
+        if (context.isOpen) {
+          void context.closeAll();
+        } else {
+          void context.open({ strategy: "list" });
+        }
+      }),
+      on("keydown", (event) => {
+        switch (event.key) {
+          case "ArrowDown":
+            event.preventDefault();
+            event.stopPropagation();
+            void context.open({ strategy: "first" });
+            break;
+          case "ArrowUp":
+            event.preventDefault();
+            event.stopPropagation();
+            void context.open({ strategy: "last" });
+            break;
+          case "Enter":
+          case " ":
+            event.preventDefault();
+            event.stopPropagation();
+            void context.open({ strategy: "list" });
+        }
+      })
+    ];
+  };
+});
+var contextTriggerMixin = createMixin((handle) => {
+  let context = handle.context.get(MenuProvider);
+  let popoverContext = handle.context.get(Context);
+  let anchorPoint = { x: 0, y: 0, width: 0, height: 0 };
+  function setAnchorPoint({ x, y, width = 0, height = 0 }, options) {
+    anchorPoint.x = x;
+    anchorPoint.y = y;
+    anchorPoint.width = width;
+    anchorPoint.height = height;
+    popoverContext.anchor = {
+      target: anchorPoint,
+      options: {
+        placement: "bottom-start",
+        ...options
+      }
+    };
+  }
+  return (options = {}, props = options) => {
+    if (props === options) {
+      options = {};
+    }
+    return [
+      attrs({
+        id: handle.id,
+        "aria-controls": context.listId,
+        "aria-expanded": context.isOpen ? "true" : "false",
+        "aria-haspopup": "menu"
+      }),
+      ref((node, signal) => {
+        context.registerTrigger(node, handle.id);
+        signal.addEventListener("abort", () => {
+          context.unregisterTrigger(node);
+        });
+      }),
+      on("contextmenu", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setAnchorPoint({ x: event.clientX, y: event.clientY }, options);
+        void context.open({ strategy: "list" });
+      }),
+      on("keydown", (event) => {
+        if (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10")) {
+          return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        let rect = event.currentTarget.getBoundingClientRect();
+        setAnchorPoint({
+          x: rect.left,
+          y: rect.top,
+          width: rect.width,
+          height: rect.height
+        }, options);
+        void context.open({ strategy: "list" });
+      })
+    ];
+  };
+});
+var popoverMixin = createMixin((handle) => {
+  let context = handle.context.get(MenuProvider);
+  return () => [
+    attrs({
+      "data-close-animation": context.closeAnimation === "none" ? "none" : void 0,
+      "data-menu-submenu": context.isRoot ? void 0 : "true"
+    }),
+    ref((node, signal) => {
+      context.registerSurface(node);
+      signal.addEventListener("abort", () => {
+        context.unregisterSurface(node);
+      });
+    }),
+    surface({
+      open: context.isOpen,
+      onHide(request) {
+        if (context.isRoot || request?.reason === "escape-key") {
+          void context.closeAll();
+          return;
+        }
+        if (request?.reason === "outside-click" && request.target instanceof Node && context.root.surfaceNode?.contains(request.target)) {
+          void context.closeBranch();
+        }
+      },
+      closeOnAnchorClick: false,
+      restoreFocusOnHide: false,
+      stopOutsideClickPropagation: false
+    })
+  ];
+});
+var listMixin = createMixin((handle) => {
+  let context = handle.context.get(MenuProvider);
+  return () => [
+    attrs({
+      id: context.listId,
+      role: "menu",
+      tabIndex: -1,
+      "aria-label": context.label,
+      "aria-labelledby": context.label ? void 0 : context.triggerId
+    }),
+    ref((node, signal) => {
+      context.registerList(node);
+      signal.addEventListener("abort", () => {
+        context.unregisterList(node);
+      });
+    }),
+    on("pointerleave", (event) => {
+      if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) {
+        return;
+      }
+      if (!context.hasOpenChild()) {
+        if (context.consumePointerLeaveClearSuppression()) {
+          return;
+        }
+        context.highlight(null);
+      }
+    }),
+    on("keydown", (event) => {
+      if (!eventBelongsToCurrentMenu(event)) {
+        return;
+      }
+      let isTypeaheadKey = isPrintableKey(event) || event.key === "Backspace";
+      if (isTypeaheadKey) {
+        event.stopPropagation();
+        return;
+      }
+      switch (event.key) {
+        case "ArrowDown":
+          event.preventDefault();
+          event.stopPropagation();
+          context.navigate("next");
+          return;
+        case "ArrowUp":
+          event.preventDefault();
+          event.stopPropagation();
+          context.navigate("previous");
+          return;
+        case "Home":
+          event.preventDefault();
+          event.stopPropagation();
+          context.navigate("first");
+          return;
+        case "End":
+          event.preventDefault();
+          event.stopPropagation();
+          context.navigate("last");
+          return;
+        case "Enter":
+        case " ":
+          event.preventDefault();
+          event.stopPropagation();
+          void context.activateActive();
+          return;
+        case "ArrowRight":
+          event.preventDefault();
+          event.stopPropagation();
+          void context.openActiveSubmenu();
+          return;
+        case "ArrowLeft":
+          if (!context.parent) {
+            return;
+          }
+          event.preventDefault();
+          event.stopPropagation();
+          void context.closeBranch({ focusTrigger: true });
+          return;
+        case "Escape":
+          event.preventDefault();
+          event.stopPropagation();
+          void context.closeAll();
+          return;
+        case "Tab":
+          event.stopPropagation();
+          void context.closeAll({ focusRoot: false });
+      }
+    }),
+    hiddenTypeahead((text) => {
+      context.highlightSearchMatch(text);
+    })
+  ];
+});
+var itemMixin = createMixin((handle) => {
+  let itemRef;
+  handle.queueTask((node) => {
+    itemRef = node;
+  });
+  return (options) => {
+    let context = handle.context.get(MenuProvider);
+    let type = options.type ?? "item";
+    let isFlashing = context.flashingId === handle.id;
+    context.registerItem({
+      checked: options.checked,
+      disabled: options.disabled,
+      id: handle.id,
+      name: options.name,
+      searchValue: options.searchValue,
+      type,
+      value: options.value,
+      get hidden() {
+        return itemRef?.hidden === true;
+      },
+      get label() {
+        return getItemLabel(itemRef, options.label);
+      },
+      get node() {
+        return itemRef;
+      }
+    });
+    return [
+      attrs({
+        id: handle.id,
+        role: getItemRole(type),
+        tabIndex: -1,
+        "aria-checked": type === "item" ? void 0 : isFlashing ? context.flashingChecked ? "true" : "false" : options.checked ? "true" : "false",
+        "aria-disabled": options.disabled ? "true" : void 0,
+        "data-menu-flash": isFlashing ? "true" : void 0,
+        "data-highlighted": context.activeId === handle.id ? "true" : void 0
+      }),
+      !options.disabled && [
+        on("click", () => {
+          void context.activateItem(handle.id);
+        }),
+        on("pointermove", (event) => {
+          if (!context.allowsPointer(event)) {
+            return;
+          }
+          context.highlight(handle.id, { focus: true });
+        }),
+        on("pointerleave", (event) => {
+          if (context.activeId !== handle.id) {
+            return;
+          }
+          if (!shouldClearHighlightOnPointerLeave(event)) {
+            return;
+          }
+          context.highlight(null);
+        }),
+        on("focus", () => {
+          context.highlight(handle.id);
+        })
+      ]
+    ];
+  };
+});
+var submenuTriggerMixin = createMixin((handle) => {
+  let itemRef;
+  let openTimeoutId = 0;
+  let aborted2 = false;
+  let childMenu = handle.context.get(MenuProvider);
+  let parentMenu = childMenu.parent;
+  let signal = handle.signal;
+  handle.queueTask((node) => {
+    itemRef = node;
+  });
+  function clearScheduledOpen() {
+    clearTimeout(openTimeoutId);
+    openTimeoutId = 0;
+  }
+  signal.addEventListener("abort", () => {
+    aborted2 = true;
+    clearScheduledOpen();
+  });
+  return (options) => {
+    if (!parentMenu) {
+      return [];
+    }
+    let parent = parentMenu;
+    parent.registerItem({
+      disabled: options.disabled,
+      id: handle.id,
+      searchValue: options.searchValue,
+      submenu: childMenu,
+      type: "item",
+      value: options.value,
+      get hidden() {
+        return itemRef?.hidden === true;
+      },
+      get label() {
+        return getItemLabel(itemRef, options.label);
+      },
+      get node() {
+        return itemRef;
+      }
+    });
+    function scheduleOpen() {
+      clearScheduledOpen();
+      if (options.disabled || childMenu.isOpen) {
+        return;
+      }
+      openTimeoutId = window.setTimeout(() => {
+        if (aborted2 || parent.activeId !== handle.id) {
+          return;
+        }
+        void childMenu.open({ focus: false, strategy: "none" });
+      }, SUBMENU_OPEN_DELAY_MS);
+    }
+    return [
+      attrs({
+        id: handle.id,
+        role: "menuitem",
+        tabIndex: -1,
+        "aria-controls": childMenu.listId,
+        "aria-disabled": options.disabled ? "true" : void 0,
+        "aria-expanded": childMenu.isOpen ? "true" : "false",
+        "aria-haspopup": "menu",
+        "data-submenu-state": childMenu.state === "idle" ? void 0 : childMenu.state,
+        "data-highlighted": parent.activeId === handle.id ? "true" : void 0
+      }),
+      ref((node, signal2) => {
+        childMenu.registerTrigger(node, handle.id);
+        signal2.addEventListener("abort", () => {
+          childMenu.unregisterTrigger(node);
+        });
+      }),
+      anchor2({
+        placement: "right-start",
+        relativeTo: SUBMENU_ANCHOR_RELATIVE_TO
+      }),
+      !options.disabled && [
+        on("click", () => {
+          parent.highlight(handle.id, { focus: true });
+          void childMenu.open({ focus: false, strategy: "none" });
+        }),
+        on("pointermove", (event) => {
+          if (!parent.allowsPointer(event)) {
+            return;
+          }
+          let shouldScheduleOpen = document.activeElement === itemRef && openTimeoutId === 0;
+          parent.highlight(handle.id, { focus: true });
+          if (shouldScheduleOpen) {
+            scheduleOpen();
+          }
+        }),
+        on("pointerleave", (event) => {
+          clearScheduledOpen();
+          let childSurface = childMenu.surfaceNode;
+          if (childMenu.isOpen && parent.startHoverAim(itemRef ?? null, childSurface ?? null, event)) {
+            return;
+          }
+          if (parent.activeId !== handle.id) {
+            return;
+          }
+          if (!shouldClearHighlightOnPointerLeave(event)) {
+            return;
+          }
+          parent.highlight(null);
+        }),
+        on("focus", (event) => {
+          parent.highlight(handle.id);
+          if (event.relatedTarget instanceof Element && event.relatedTarget.closest('[role="menu"]')?.id === childMenu.listId) {
+            return;
+          }
+          scheduleOpen();
+        }),
+        on("blur", () => {
+          clearScheduledOpen();
+        })
+      ]
+    ];
+  };
+});
+var Context2 = MenuProvider;
+var trigger = triggerMixin;
 
 // node_modules/@remix-run/route-pattern/dist/lib/route-pattern/split.js
 function split(source) {
@@ -8226,6 +10214,162 @@ var routes = createRoutes({
   question: createGetRoute("/:unit/:year/exam/:exam/question/:question"),
   questionRegion: createGetRoute("/:unit/:year/exam/:exam/question/:question/region")
 });
+
+// app/ui/header.tsx
+var QUIZ_PATH_PATTERN = /^\/unit-[^/]+\/\d{4}\/?$/;
+var navStyle = css({
+  position: "sticky",
+  top: 0,
+  zIndex: 50,
+  background: "linear-gradient(110deg, #1e3a5f, #152a45)",
+  color: "#fff",
+  borderBottom: "2px solid var(--color-accent)",
+  boxShadow: "0 4px 16px rgba(15, 23, 42, 0.16)"
+});
+var innerStyle = css({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "0.75rem",
+  maxWidth: "56rem",
+  margin: "0 auto",
+  padding: "0.5rem 1rem",
+  minHeight: "64px"
+});
+var brandStyle = css({
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.5rem",
+  color: "#fff",
+  textDecoration: "none"
+});
+var brandTitleStyle = css({
+  display: "block",
+  fontFamily: "var(--font-serif)",
+  fontWeight: 700,
+  fontSize: "1rem",
+  lineHeight: 1.3
+});
+var brandMetaStyle = css({ display: "block", fontSize: "0.7rem", opacity: 0.8 });
+var desktopListStyle = css({
+  display: "none",
+  gap: "0.25rem",
+  "@media (min-width: 40rem)": { display: "flex" }
+});
+var linkStyle = css({
+  padding: "0.375rem 0.625rem",
+  borderRadius: "var(--radius-control)",
+  fontSize: "0.875rem",
+  textDecoration: "none",
+  color: "rgba(255,255,255,0.82)",
+  '&[aria-current="page"]': {
+    color: "#fff",
+    background: "rgba(255,255,255,0.14)",
+    fontWeight: 600
+  }
+});
+var mobileTriggerStyle = css({
+  display: "inline-flex",
+  padding: "0.375rem 0.625rem",
+  border: "1px solid rgba(255,255,255,0.4)",
+  borderRadius: "var(--radius-control)",
+  background: "transparent",
+  color: "#fff",
+  font: "inherit",
+  cursor: "pointer",
+  "@media (min-width: 40rem)": { display: "none" }
+});
+var menuSurfaceStyle = css({
+  padding: "0.5rem",
+  background: "var(--color-bg-card)",
+  border: "1px solid var(--color-border)",
+  borderRadius: "var(--radius-card)",
+  boxShadow: "var(--shadow-card)",
+  "& a": {
+    display: "block",
+    padding: "0.5rem 0.75rem",
+    borderRadius: "var(--radius-control)",
+    color: "var(--color-primary)",
+    textDecoration: "none"
+  }
+});
+function activeFor(currentPath) {
+  if (currentPath.startsWith("/records")) return "records";
+  if (currentPath.startsWith("/slide-only")) return "slides";
+  if (currentPath.startsWith("/guide")) return "guide";
+  if (currentPath === "/" || QUIZ_PATH_PATTERN.test(currentPath)) return "quiz";
+  return null;
+}
+var Header = clientEntry(
+  "/assets/client.js#Header",
+  function HeaderEntry(handle) {
+    return () => {
+      const { currentPath } = handle.props;
+      const active = activeFor(currentPath);
+      const links = [
+        { id: "quiz", href: routes.home.href(), label: "\u554F\u984C" },
+        { id: "records", href: routes.records.href(), label: "\u5B66\u7FD2\u8A18\u9332" },
+        { id: "slides", href: routes.slideOnly.href(), label: "\u8B1B\u7FA9\u8CC7\u6599" },
+        { id: "guide", href: routes.guide.href(), label: "\u4F7F\u3044\u65B9" }
+      ];
+      return /* @__PURE__ */ jsx("nav", { "aria-label": "\u30E1\u30A4\u30F3\u30CA\u30D3\u30B2\u30FC\u30B7\u30E7\u30F3", mix: navStyle, children: /* @__PURE__ */ jsx("div", { mix: innerStyle, children: [
+        /* @__PURE__ */ jsx("a", { href: routes.home.href(), mix: brandStyle, children: [
+          /* @__PURE__ */ jsx("svg", { width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", "aria-hidden": "true", children: [
+            /* @__PURE__ */ jsx(
+              "path",
+              {
+                d: "M4 7.5 12 4l8 3.5-8 3.5L4 7.5Z",
+                stroke: "currentColor",
+                "stroke-width": "1.8",
+                "stroke-linejoin": "round"
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              "path",
+              {
+                d: "M7 10v4.2c0 1.6 2.2 2.8 5 2.8s5-1.2 5-2.8V10",
+                stroke: "currentColor",
+                "stroke-width": "1.8",
+                "stroke-linecap": "round"
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsx("span", { children: [
+            /* @__PURE__ */ jsx("span", { mix: brandTitleStyle, children: "\u57FA\u672C\u60C5\u5831\u6280\u8853 I" }),
+            /* @__PURE__ */ jsx("span", { mix: brandMetaStyle, children: "\u660E\u6CBB\u5927\u5B66" })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsx("div", { mix: desktopListStyle, children: links.map((link) => /* @__PURE__ */ jsx(
+          "a",
+          {
+            href: link.href,
+            mix: linkStyle,
+            "aria-current": active === link.id ? "page" : void 0,
+            children: link.label
+          },
+          link.id
+        )) }),
+        /* @__PURE__ */ jsx(Context2, { label: "\u30E1\u30CB\u30E5\u30FC", children: [
+          /* @__PURE__ */ jsx("button", { type: "button", mix: [mobileTriggerStyle, trigger()], children: "\u30E1\u30CB\u30E5\u30FC" }),
+          /* @__PURE__ */ jsx("div", { mix: [menuSurfaceStyle, popoverMixin()], children: links.map((link) => /* @__PURE__ */ jsx(
+            "a",
+            {
+              href: link.href,
+              "aria-current": active === link.id ? "page" : void 0,
+              children: link.label
+            },
+            link.id
+          )) })
+        ] })
+      ] }) });
+    };
+  }
+);
+
+// app/lib/dateTime.ts
+var systemClock = {
+  nowEpochMilliseconds: () => Date.now()
+};
 
 // app/features/markdown/questionToMarkdown.ts
 function tableToMarkdown(columns, rows) {
@@ -11601,6 +13745,239 @@ function PlayerEdgeNavigation(handle) {
   };
 }
 
+// node_modules/@remix-run/ui/dist/tabs.js
+var TABS_CHANGE_EVENT = "rmx:tabs-change";
+var TabsChangeEvent = class extends Event {
+  activeTab;
+  previousActiveTab;
+  constructor(activeTab, previousActiveTab) {
+    super(TABS_CHANGE_EVENT, {
+      bubbles: true
+    });
+    this.activeTab = activeTab;
+    this.previousActiveTab = previousActiveTab;
+  }
+};
+function encodeIdPart(value) {
+  return encodeURIComponent(value).replace(/%/g, "-");
+}
+function getTabState(active) {
+  return active ? "active" : "inactive";
+}
+function getTabsContext(handle) {
+  return handle.context.get(TabsProvider);
+}
+function TabsProvider(handle) {
+  let rootNode = null;
+  let renderedTabs = [];
+  let uncontrolledActiveTab = null;
+  let hasInitialized = false;
+  function getActiveTab() {
+    if (handle.props.activeTab !== void 0) {
+      return handle.props.activeTab;
+    }
+    if (!hasInitialized) {
+      uncontrolledActiveTab = handle.props.defaultActiveTab ?? null;
+      hasInitialized = true;
+    }
+    return uncontrolledActiveTab;
+  }
+  function getRegisteredTab(name) {
+    return renderedTabs.find((tab2) => tab2.name === name);
+  }
+  function dispatchChange(activeTab, previousActiveTab) {
+    rootNode?.dispatchEvent(new TabsChangeEvent(activeTab, previousActiveTab));
+  }
+  function activateTab(name) {
+    if (handle.props.disabled) {
+      return;
+    }
+    let tab2 = getRegisteredTab(name);
+    if (tab2?.disabled) {
+      return;
+    }
+    let previousActiveTab = getActiveTab();
+    if (previousActiveTab === name) {
+      return;
+    }
+    if (handle.props.activeTab === void 0) {
+      uncontrolledActiveTab = name;
+      void handle.update();
+    }
+    handle.props.onActiveTabChange?.(name);
+    dispatchChange(name, previousActiveTab);
+  }
+  function getFocusableTabs() {
+    return renderedTabs.filter((tab2) => !tab2.disabled && tab2.getTabNode() !== null);
+  }
+  function activateTabInDirection(name, direction) {
+    let tabs = getFocusableTabs();
+    if (tabs.length === 0) {
+      return;
+    }
+    let currentIndex = tabs.findIndex((tab2) => tab2.name === name);
+    let targetIndex = 0;
+    switch (direction) {
+      case "first":
+        targetIndex = 0;
+        break;
+      case "last":
+        targetIndex = tabs.length - 1;
+        break;
+      case "previous":
+        targetIndex = currentIndex <= 0 ? tabs.length - 1 : currentIndex - 1;
+        break;
+      case "next":
+        targetIndex = currentIndex === -1 || currentIndex === tabs.length - 1 ? 0 : currentIndex + 1;
+        break;
+    }
+    let targetTab = tabs[targetIndex];
+    targetTab?.getTabNode()?.focus();
+    if (targetTab) {
+      activateTab(targetTab.name);
+    }
+  }
+  function getTabId(name) {
+    return `${handle.id}-${encodeIdPart(name)}-tab`;
+  }
+  function getPanelId(name) {
+    return `${handle.id}-${encodeIdPart(name)}-panel`;
+  }
+  function registerTab(tab2) {
+    renderedTabs.push(tab2);
+    if (handle.props.activeTab === void 0 && getActiveTab() === null && !tab2.disabled) {
+      uncontrolledActiveTab = tab2.name;
+    }
+  }
+  handle.context.set({
+    get activeTab() {
+      return getActiveTab();
+    },
+    get disabled() {
+      return handle.props.disabled ?? false;
+    },
+    activateTab,
+    activateTabInDirection,
+    getPanelId,
+    getTabId,
+    isActiveTab(name) {
+      return getActiveTab() === name;
+    },
+    registerRoot(node) {
+      rootNode = node;
+    },
+    registerTab,
+    unregisterRoot(node) {
+      if (rootNode === node) {
+        rootNode = null;
+      }
+    }
+  });
+  return () => {
+    renderedTabs = [];
+    return handle.props.children;
+  };
+}
+var rootMixin = createMixin((handle) => {
+  let context = getTabsContext(handle);
+  handle.queueTask((node, signal) => {
+    context.registerRoot(node);
+    signal.addEventListener("abort", () => {
+      context.unregisterRoot(node);
+    });
+  });
+  return () => attrs({
+    "data-disabled": context.disabled ? "" : void 0
+  });
+});
+var listMixin2 = createMixin((handle) => {
+  let context = getTabsContext(handle);
+  return () => attrs({
+    "aria-disabled": context.disabled ? true : void 0,
+    role: "tablist"
+  });
+});
+var tabMixin = createMixin((handle, hostType) => {
+  let context = getTabsContext(handle);
+  let tabNode = null;
+  return (options, props) => {
+    let disabled = context.disabled || options.disabled === true || props.disabled === true;
+    context.registerTab({
+      disabled,
+      getTabNode: () => tabNode,
+      name: options.name
+    });
+    let active = context.isActiveTab(options.name);
+    return [
+      attrs({
+        "aria-controls": context.getPanelId(options.name),
+        "aria-selected": active ? "true" : "false",
+        "data-state": getTabState(active),
+        disabled: disabled ? true : void 0,
+        id: context.getTabId(options.name),
+        role: "tab",
+        tabIndex: active && !disabled ? 0 : -1,
+        type: hostType === "button" ? "button" : void 0
+      }),
+      ref((node, signal) => {
+        tabNode = node;
+        signal.addEventListener("abort", () => {
+          if (tabNode === node) {
+            tabNode = null;
+          }
+        });
+      }),
+      on("click", () => {
+        context.activateTab(options.name);
+      }),
+      on("keydown", (event) => {
+        switch (event.key) {
+          case "ArrowDown":
+          case "ArrowRight":
+            event.preventDefault();
+            context.activateTabInDirection(options.name, "next");
+            break;
+          case "ArrowUp":
+          case "ArrowLeft":
+            event.preventDefault();
+            context.activateTabInDirection(options.name, "previous");
+            break;
+          case "Home":
+            event.preventDefault();
+            context.activateTabInDirection(options.name, "first");
+            break;
+          case "End":
+            event.preventDefault();
+            context.activateTabInDirection(options.name, "last");
+            break;
+          case "Enter":
+          case " ":
+            event.preventDefault();
+            context.activateTab(options.name);
+            break;
+        }
+      })
+    ];
+  };
+});
+var panelMixin = createMixin((handle) => {
+  let context = getTabsContext(handle);
+  return (options) => {
+    let active = context.isActiveTab(options.name);
+    return attrs({
+      "aria-labelledby": context.getTabId(options.name),
+      "data-state": getTabState(active),
+      hidden: active ? void 0 : true,
+      id: context.getPanelId(options.name),
+      inert: active ? void 0 : true,
+      role: "tabpanel"
+    });
+  };
+});
+var Context3 = TabsProvider;
+var list = listMixin2;
+var tab = tabMixin;
+
 // app/features/challenge/ui/player-header.tsx
 var headerStyle = css({
   display: "flex",
@@ -11649,13 +14026,13 @@ var stepButtonStyle = css({
   font: "inherit",
   fontSize: "0.8rem",
   cursor: "pointer",
+  '&[aria-selected="true"]': {
+    background: "var(--color-primary)",
+    borderColor: "var(--color-primary)",
+    color: "#fff",
+    fontWeight: 700
+  },
   "&:disabled": { cursor: "default", opacity: 0.6 }
-});
-var stepCurrentStyle = css({
-  background: "var(--color-primary)",
-  borderColor: "var(--color-primary)",
-  color: "#fff",
-  fontWeight: 700
 });
 var trackStyle = css({
   flex: 1,
@@ -11681,6 +14058,7 @@ function PlayerHeader(handle) {
       disabled = false
     } = handle.props;
     const ratio = questions.length > 0 ? (currentQuestionIndex + 1) / questions.length : 0;
+    const activeId = questions[currentQuestionIndex]?.id;
     return /* @__PURE__ */ jsx("header", { mix: headerStyle, children: [
       /* @__PURE__ */ jsx("div", { mix: identityStyle, children: [
         questions.length > 1 ? /* @__PURE__ */ jsx(
@@ -11696,732 +14074,45 @@ function PlayerHeader(handle) {
         ) : null,
         /* @__PURE__ */ jsx("h2", { children: playerTitle })
       ] }),
-      /* @__PURE__ */ jsx("nav", { "aria-label": "\u554F\u984C\u756A\u53F7", mix: progressStyle, children: /* @__PURE__ */ jsx("div", { mix: stepsStyle, children: [
-        /* @__PURE__ */ jsx("ol", { children: questions.map((question, index) => /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(
-          "button",
-          {
-            type: "button",
-            "aria-label": `\u554F${index + 1}`,
-            "aria-current": index === currentQuestionIndex ? "step" : void 0,
-            mix: [
-              stepButtonStyle,
-              index === currentQuestionIndex ? stepCurrentStyle : null,
-              on("click", () => onSelectQuestion(index))
-            ],
-            disabled,
-            children: index + 1
-          }
-        ) }, question.id)) }),
-        /* @__PURE__ */ jsx(
-          "div",
-          {
-            mix: trackStyle,
-            role: "progressbar",
-            "aria-label": "\u554F\u984C\u306E\u9032\u6357",
-            "aria-valuemin": 0,
-            "aria-valuemax": questions.length,
-            "aria-valuenow": currentQuestionIndex + 1,
-            "aria-valuetext": `\u554F${currentQuestionIndex + 1} / ${questions.length}`,
-            children: /* @__PURE__ */ jsx("span", { style: { width: `${ratio * 100}%` } })
-          }
-        )
-      ] }) })
+      /* @__PURE__ */ jsx("nav", { "aria-label": "\u554F\u984C\u756A\u53F7", mix: progressStyle, children: /* @__PURE__ */ jsx(
+        Context3,
+        {
+          activeTab: activeId,
+          onActiveTabChange: (nextId) => {
+            const index = questions.findIndex((question) => question.id === nextId);
+            if (index >= 0) {
+              onSelectQuestion(index);
+            }
+          },
+          children: /* @__PURE__ */ jsx("div", { mix: stepsStyle, children: [
+            /* @__PURE__ */ jsx("ol", { mix: list(), children: questions.map((question, index) => /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(
+              "button",
+              {
+                type: "button",
+                mix: [stepButtonStyle, tab({ name: question.id })],
+                disabled,
+                children: index + 1
+              }
+            ) }, question.id)) }),
+            /* @__PURE__ */ jsx(
+              "div",
+              {
+                mix: trackStyle,
+                role: "progressbar",
+                "aria-label": "\u554F\u984C\u306E\u9032\u6357",
+                "aria-valuemin": 0,
+                "aria-valuemax": questions.length,
+                "aria-valuenow": currentQuestionIndex + 1,
+                "aria-valuetext": `\u554F${currentQuestionIndex + 1} / ${questions.length}`,
+                children: /* @__PURE__ */ jsx("span", { style: { width: `${ratio * 100}%` } })
+              }
+            )
+          ] })
+        }
+      ) })
     ] });
   };
 }
-
-// node_modules/@remix-run/ui/dist/anchor.js
-var viewportPaddingPx = 16;
-function isHorizontalPlacement(placement) {
-  return placement.startsWith("left") || placement.startsWith("right");
-}
-function isVerticalPlacement(placement) {
-  return placement.startsWith("top") || placement.startsWith("bottom");
-}
-function constrainToAxis(desiredPosition, elementSize, minBound, maxBound) {
-  let elementEnd = desiredPosition + elementSize;
-  if (elementEnd > maxBound) {
-    desiredPosition -= elementEnd - maxBound;
-  }
-  if (desiredPosition < minBound) {
-    desiredPosition = minBound;
-  }
-  return desiredPosition;
-}
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
-}
-function getConstrainedPositionRange(elementSize, minBound, maxBound) {
-  return {
-    min: minBound,
-    max: Math.max(minBound, maxBound - elementSize)
-  };
-}
-function getOffScreenStatus(anchorRect, axis) {
-  if (axis === "horizontal") {
-    if (anchorRect.right <= 0)
-      return "before";
-    if (anchorRect.left >= window.innerWidth)
-      return "after";
-    return "visible";
-  }
-  if (anchorRect.bottom <= 0)
-    return "before";
-  if (anchorRect.top >= window.innerHeight)
-    return "after";
-  return "visible";
-}
-function applyOffset(position, placement, offset, offsetX = 0, offsetY = 0) {
-  if (offset === 0 && offsetX === 0 && offsetY === 0) {
-    return position;
-  }
-  let { top, left } = position;
-  if (placement.startsWith("top")) {
-    top -= offset;
-  } else if (placement.startsWith("bottom")) {
-    top += offset;
-  } else if (placement.startsWith("left")) {
-    left -= offset;
-  } else if (placement.startsWith("right")) {
-    left += offset;
-  }
-  left += offsetX;
-  top += offsetY;
-  return { top, left };
-}
-function resolveOffsetValue(offset, floating) {
-  if (typeof offset === "function") {
-    return offset(floating);
-  }
-  return offset ?? 0;
-}
-function isAnchorPoint(value) {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-  if (!("x" in value) || !("y" in value)) {
-    return false;
-  }
-  let width = "width" in value ? value.width : void 0;
-  let height = "height" in value ? value.height : void 0;
-  return typeof value.x === "number" && typeof value.y === "number" && (width === void 0 || typeof width === "number") && (height === void 0 || typeof height === "number");
-}
-function readAnchorRect(anchorTarget) {
-  if (anchorTarget instanceof HTMLElement) {
-    return anchorTarget.getBoundingClientRect();
-  }
-  return new DOMRect(anchorTarget.x, anchorTarget.y, anchorTarget.width ?? 0, anchorTarget.height ?? 0);
-}
-function calculatePosition(placement, anchorRect, floatingWidth, floatingHeight, inset = false) {
-  let top = anchorRect.bottom;
-  let left = anchorRect.left + (anchorRect.width - floatingWidth) / 2;
-  if (placement === "bottom-start") {
-    left = anchorRect.left;
-  } else if (placement === "bottom-end") {
-    left = anchorRect.right - floatingWidth;
-  } else if (placement === "top") {
-    top = anchorRect.top - floatingHeight;
-  } else if (placement === "top-start") {
-    top = anchorRect.top - floatingHeight;
-    left = anchorRect.left;
-  } else if (placement === "top-end") {
-    top = anchorRect.top - floatingHeight;
-    left = anchorRect.right - floatingWidth;
-  } else if (placement === "left") {
-    top = anchorRect.top + (anchorRect.height - floatingHeight) / 2;
-    left = anchorRect.left - floatingWidth;
-  } else if (placement === "left-start") {
-    top = anchorRect.top;
-    left = anchorRect.left - floatingWidth;
-  } else if (placement === "left-end") {
-    top = anchorRect.bottom - floatingHeight;
-    left = anchorRect.left - floatingWidth;
-  } else if (placement === "right") {
-    top = anchorRect.top + (anchorRect.height - floatingHeight) / 2;
-    left = anchorRect.right;
-  } else if (placement === "right-start") {
-    top = anchorRect.top;
-    left = anchorRect.right;
-  } else if (placement === "right-end") {
-    top = anchorRect.bottom - floatingHeight;
-    left = anchorRect.right;
-  }
-  if (inset) {
-    if (placement.startsWith("bottom")) {
-      top = anchorRect.bottom - floatingHeight;
-    } else if (placement.startsWith("top")) {
-      top = anchorRect.top;
-    } else if (placement.startsWith("left")) {
-      left = anchorRect.left;
-    } else if (placement.startsWith("right")) {
-      left = anchorRect.right - floatingWidth;
-    }
-  }
-  return { top, left };
-}
-function isScrollableOverflow(value) {
-  return value === "auto" || value === "scroll" || value === "overlay";
-}
-function getRelativeScrollContainer(floating, relativeElement) {
-  let current = relativeElement.parentElement;
-  while (current && current !== floating) {
-    let style = getComputedStyle(current);
-    if (isScrollableOverflow(style.overflowX) || isScrollableOverflow(style.overflowY)) {
-      return current;
-    }
-    current = current.parentElement;
-  }
-  return floating;
-}
-function readFloatingDimensions(floating, relativeTo) {
-  let relativeElement = relativeTo ? floating.querySelector(relativeTo) : null;
-  if (relativeElement && !(relativeElement instanceof HTMLElement)) {
-    relativeElement = null;
-  }
-  let scrollContainer = relativeElement ? getRelativeScrollContainer(floating, relativeElement) : floating;
-  let relativeOffsetX = null;
-  let relativeOffsetY = null;
-  let scrollContainerOffsetX = 0;
-  let scrollContainerOffsetY = 0;
-  if (relativeElement instanceof HTMLElement) {
-    let floatingRect = floating.getBoundingClientRect();
-    let scrollContainerRect = scrollContainer.getBoundingClientRect();
-    let relativeRect = relativeElement.getBoundingClientRect();
-    scrollContainerOffsetX = scrollContainerRect.left - floatingRect.left;
-    scrollContainerOffsetY = scrollContainerRect.top - floatingRect.top;
-    relativeOffsetX = relativeRect.left - scrollContainerRect.left + scrollContainer.scrollLeft;
-    relativeOffsetY = relativeRect.top - scrollContainerRect.top + scrollContainer.scrollTop;
-  }
-  return {
-    width: floating.offsetWidth,
-    height: floating.offsetHeight,
-    scrollContainer,
-    scrollContainerOffsetX,
-    scrollContainerOffsetY,
-    scrollViewportWidth: scrollContainer.offsetWidth,
-    scrollViewportHeight: scrollContainer.offsetHeight,
-    scrollWidth: Math.max(scrollContainer.scrollWidth, scrollContainer.offsetWidth),
-    scrollHeight: Math.max(scrollContainer.scrollHeight, scrollContainer.offsetHeight),
-    relativeWidth: relativeElement instanceof HTMLElement ? relativeElement.offsetWidth : null,
-    relativeHeight: relativeElement instanceof HTMLElement ? relativeElement.offsetHeight : null,
-    relativeElement,
-    relativeOffsetX,
-    relativeOffsetY
-  };
-}
-function getFloatingDimensions(floating, relativeTo, { ignoreInlineMaxSize = false } = {}) {
-  let originalPosition = floating.style.position;
-  let originalLeft = floating.style.left;
-  let originalDisplay = floating.style.display;
-  let originalMaxWidth = floating.style.maxWidth;
-  let originalMaxHeight = floating.style.maxHeight;
-  if (ignoreInlineMaxSize) {
-    floating.style.maxWidth = "";
-    floating.style.maxHeight = "";
-  }
-  let needsTemporaryLayout = floating.offsetWidth === 0;
-  if (needsTemporaryLayout) {
-    floating.style.position = "absolute";
-    floating.style.left = "-9999px";
-    floating.style.display = "block";
-  }
-  let dimensions = readFloatingDimensions(floating, relativeTo);
-  if (needsTemporaryLayout) {
-    floating.style.position = originalPosition;
-    floating.style.left = originalLeft;
-    floating.style.display = originalDisplay;
-  }
-  if (ignoreInlineMaxSize) {
-    floating.style.maxWidth = originalMaxWidth;
-    floating.style.maxHeight = originalMaxHeight;
-  }
-  return dimensions;
-}
-function getClientViewportBounds(padding = 0) {
-  return {
-    left: padding,
-    top: padding,
-    right: window.innerWidth - padding,
-    bottom: window.innerHeight - padding
-  };
-}
-function getDocumentViewportBounds(isFixed, padding = 0) {
-  if (isFixed) {
-    return getClientViewportBounds(padding);
-  }
-  return {
-    left: window.scrollX + padding,
-    top: window.scrollY + padding,
-    right: window.scrollX + window.innerWidth - padding,
-    bottom: window.scrollY + window.innerHeight - padding
-  };
-}
-function getOverflowAmount(bounds, viewport) {
-  return Math.max(viewport.left - bounds.left, 0) + Math.max(bounds.right - viewport.right, 0) + Math.max(viewport.top - bounds.top, 0) + Math.max(bounds.bottom - viewport.bottom, 0);
-}
-function hasRectChanged(currentRect, previousRect) {
-  return Math.abs(currentRect.top - previousRect.top) >= 1 || Math.abs(currentRect.left - previousRect.left) >= 1 || Math.abs(currentRect.right - previousRect.right) >= 1 || Math.abs(currentRect.bottom - previousRect.bottom) >= 1;
-}
-function hasNullableNumberChanged(current, previous) {
-  if (current === null || previous === null) {
-    return current !== previous;
-  }
-  return Math.abs(current - previous) >= 1;
-}
-function hasFloatingDimensionsChanged(currentDimensions, previousDimensions) {
-  return Math.abs(currentDimensions.width - previousDimensions.width) >= 1 || Math.abs(currentDimensions.height - previousDimensions.height) >= 1 || Math.abs(currentDimensions.scrollViewportWidth - previousDimensions.scrollViewportWidth) >= 1 || Math.abs(currentDimensions.scrollViewportHeight - previousDimensions.scrollViewportHeight) >= 1 || Math.abs(currentDimensions.scrollWidth - previousDimensions.scrollWidth) >= 1 || Math.abs(currentDimensions.scrollHeight - previousDimensions.scrollHeight) >= 1 || Math.abs(currentDimensions.scrollContainerOffsetX - previousDimensions.scrollContainerOffsetX) >= 1 || Math.abs(currentDimensions.scrollContainerOffsetY - previousDimensions.scrollContainerOffsetY) >= 1 || hasNullableNumberChanged(currentDimensions.relativeWidth, previousDimensions.relativeWidth) || hasNullableNumberChanged(currentDimensions.relativeHeight, previousDimensions.relativeHeight) || hasNullableNumberChanged(currentDimensions.relativeOffsetX, previousDimensions.relativeOffsetX) || hasNullableNumberChanged(currentDimensions.relativeOffsetY, previousDimensions.relativeOffsetY);
-}
-function getOppositePlacement(placement) {
-  let opposites = {
-    top: "bottom",
-    "top-start": "bottom-start",
-    "top-end": "bottom-end",
-    bottom: "top",
-    "bottom-start": "top-start",
-    "bottom-end": "top-end",
-    left: "right",
-    "left-start": "right-start",
-    "left-end": "right-end",
-    right: "left",
-    "right-start": "left-start",
-    "right-end": "left-end"
-  };
-  return opposites[placement];
-}
-function calculateFloatingBounds(placement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY) {
-  let position = calculatePosition(placement, anchorRect, placementWidth, placementHeight, inset);
-  position = applyOffset(position, placement, offset, offsetX, offsetY);
-  if (relativeOffsetX !== null && relativeOffsetX !== void 0) {
-    position.left -= relativeOffsetX;
-  }
-  if (relativeOffsetY !== null && relativeOffsetY !== void 0) {
-    position.top -= relativeOffsetY;
-  }
-  return {
-    top: position.top,
-    left: position.left,
-    right: position.left + collisionWidth,
-    bottom: position.top + collisionHeight
-  };
-}
-function getPlacementScore(placement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY) {
-  let viewport = getClientViewportBounds(viewportPaddingPx);
-  let bounds = calculateFloatingBounds(placement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY);
-  let constraints = {
-    leftOk: bounds.left >= viewport.left,
-    rightOk: bounds.right <= viewport.right,
-    topOk: bounds.top >= viewport.top,
-    bottomOk: bounds.bottom <= viewport.bottom
-  };
-  let total = Object.values(constraints).filter(Boolean).length;
-  return {
-    overflow: getOverflowAmount(bounds, viewport),
-    total,
-    perfect: total === 4
-  };
-}
-function getFlippedPlacement(placement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, anchorIsAbsolutePositioned, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY) {
-  let hasScroll = window.scrollY > 0;
-  if (placement.startsWith("top") && anchorIsAbsolutePositioned && hasScroll) {
-    if (anchorRect.top - placementHeight < 0) {
-      return placement;
-    }
-  }
-  let original = getPlacementScore(placement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY);
-  if (original.perfect) {
-    return placement;
-  }
-  let flippedPlacement = getOppositePlacement(placement);
-  let flipped = getPlacementScore(flippedPlacement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY);
-  if (flipped.perfect || flipped.total > original.total || flipped.total === original.total && flipped.overflow < original.overflow) {
-    return flippedPlacement;
-  }
-  return placement;
-}
-function getAvailableWidthForPlacement(placement, left, width, viewport) {
-  if (placement.startsWith("left")) {
-    return left + width - viewport.left;
-  }
-  if (placement.startsWith("right")) {
-    return viewport.right - left;
-  }
-  return viewport.right - viewport.left;
-}
-function getAvailableHeightForPlacement(placement, top, height, viewport) {
-  if (placement.startsWith("top")) {
-    return top + height - viewport.top;
-  }
-  if (placement.startsWith("bottom")) {
-    return viewport.bottom - top;
-  }
-  return viewport.bottom - viewport.top;
-}
-function calculateDocumentPosition(placement, anchorRect, placementWidth, placementHeight, inset, offset, offsetX, offsetY, isFixed, scrollContainerOffsetX = 0, scrollContainerOffsetY = 0, relativeOffsetX, relativeOffsetY) {
-  let position = calculatePosition(placement, anchorRect, placementWidth, placementHeight, inset);
-  if (!isFixed) {
-    position.top += window.scrollY;
-    position.left += window.scrollX;
-  }
-  position = applyOffset(position, placement, offset, offsetX, offsetY);
-  position.left -= scrollContainerOffsetX;
-  position.top -= scrollContainerOffsetY;
-  if (relativeOffsetX !== null && relativeOffsetX !== void 0) {
-    position.left -= relativeOffsetX;
-  }
-  if (relativeOffsetY !== null && relativeOffsetY !== void 0) {
-    position.top -= relativeOffsetY;
-  }
-  return position;
-}
-function solveRelativeAlignmentAxis(options) {
-  let maxScroll = Math.max(options.naturalSize - options.visibleSize, 0);
-  let scroll = clamp(options.currentScroll, 0, maxScroll);
-  if (maxScroll === 0) {
-    return {
-      position: clamp(options.desiredPosition, options.minPosition, options.maxPosition),
-      scroll
-    };
-  }
-  let exactScrollMin = Math.max(0, options.minPosition - options.desiredPosition);
-  let exactScrollMax = Math.min(maxScroll, options.maxPosition - options.desiredPosition);
-  if (exactScrollMin <= exactScrollMax) {
-    scroll = clamp(scroll, exactScrollMin, exactScrollMax);
-  } else if (options.desiredPosition > options.maxPosition) {
-    scroll = 0;
-  } else if (options.desiredPosition + maxScroll < options.minPosition) {
-    scroll = maxScroll;
-  }
-  return {
-    position: clamp(options.desiredPosition + scroll, options.minPosition, options.maxPosition),
-    scroll
-  };
-}
-function anchor(floating, anchorTarget, options = {}) {
-  let lastAnchorRect;
-  let lastFloatingDimensions;
-  if (!(floating instanceof HTMLElement)) {
-    throw new TypeError("anchor() expected a floating HTMLElement");
-  }
-  if (!(anchorTarget instanceof HTMLElement) && !isAnchorPoint(anchorTarget)) {
-    throw new TypeError("anchor() expected an anchor HTMLElement or coordinates");
-  }
-  let { placement = "bottom", inset = false, relativeTo, offset: rawOffset = 0, offsetX: rawOffsetX = 0, offsetY: rawOffsetY = 0 } = options;
-  let anchorIsAbsolutePositioned = anchorTarget instanceof HTMLElement && getComputedStyle(anchorTarget).position !== "fixed";
-  let isFixed = floating.hasAttribute("popover") || !anchorIsAbsolutePositioned;
-  let animationFrameId = 0;
-  function updatePosition(anchorRect = readAnchorRect(anchorTarget), naturalDimensions = getFloatingDimensions(floating, relativeTo, {
-    ignoreInlineMaxSize: true
-  })) {
-    let offset = resolveOffsetValue(rawOffset, floating);
-    let offsetX = resolveOffsetValue(rawOffsetX, floating);
-    let offsetY = resolveOffsetValue(rawOffsetY, floating);
-    let viewport = getDocumentViewportBounds(isFixed, viewportPaddingPx);
-    let placementWidth = relativeTo && naturalDimensions.relativeWidth ? naturalDimensions.relativeWidth : naturalDimensions.width;
-    let placementHeight = relativeTo && naturalDimensions.relativeHeight ? naturalDimensions.relativeHeight : naturalDimensions.height;
-    let finalPlacement = getFlippedPlacement(placement, anchorRect, placementWidth, placementHeight, naturalDimensions.width, naturalDimensions.height, anchorIsAbsolutePositioned, inset, offset, offsetX, offsetY, naturalDimensions.relativeOffsetX, naturalDimensions.relativeOffsetY);
-    floating.setAttribute("data-anchor-placement", finalPlacement);
-    let position = calculateDocumentPosition(finalPlacement, anchorRect, placementWidth, placementHeight, inset, offset, offsetX, offsetY, isFixed, naturalDimensions.scrollContainerOffsetX, naturalDimensions.scrollContainerOffsetY, naturalDimensions.relativeOffsetX, naturalDimensions.relativeOffsetY);
-    let availableWidth = Math.max(getAvailableWidthForPlacement(finalPlacement, position.left, naturalDimensions.width, viewport), 0);
-    let availableHeight = Math.max(getAvailableHeightForPlacement(finalPlacement, position.top, naturalDimensions.height, viewport), 0);
-    floating.style.maxWidth = availableWidth < naturalDimensions.width ? `${Math.floor(availableWidth)}px` : "";
-    floating.style.maxHeight = availableHeight < naturalDimensions.height ? `${Math.floor(availableHeight)}px` : "";
-    let dimensions = getFloatingDimensions(floating, relativeTo);
-    placementWidth = relativeTo && dimensions.relativeWidth ? dimensions.relativeWidth : dimensions.width;
-    placementHeight = relativeTo && dimensions.relativeHeight ? dimensions.relativeHeight : dimensions.height;
-    position = calculateDocumentPosition(finalPlacement, anchorRect, placementWidth, placementHeight, inset, offset, offsetX, offsetY, isFixed, dimensions.scrollContainerOffsetX, dimensions.scrollContainerOffsetY, dimensions.relativeOffsetX, dimensions.relativeOffsetY);
-    let minX = viewport.left;
-    let minY = viewport.top;
-    let maxX = viewport.right;
-    let maxY = viewport.bottom;
-    let xRange = getConstrainedPositionRange(dimensions.width, minX, maxX);
-    let yRange = getConstrainedPositionRange(dimensions.height, minY, maxY);
-    if (isHorizontalPlacement(finalPlacement)) {
-      if (relativeTo && dimensions.relativeOffsetY !== null) {
-        let solvedY = solveRelativeAlignmentAxis({
-          currentScroll: dimensions.scrollContainer.scrollTop,
-          desiredPosition: position.top,
-          naturalSize: dimensions.scrollHeight,
-          visibleSize: dimensions.scrollViewportHeight,
-          minPosition: yRange.min,
-          maxPosition: yRange.max
-        });
-        dimensions.scrollContainer.scrollTop = solvedY.scroll;
-        position.top = solvedY.position;
-      } else {
-        position.top = constrainToAxis(position.top, dimensions.height, minY, maxY);
-      }
-      if (relativeTo) {
-        if (dimensions.relativeOffsetX !== null) {
-          let solvedX = solveRelativeAlignmentAxis({
-            currentScroll: dimensions.scrollContainer.scrollLeft,
-            desiredPosition: position.left,
-            naturalSize: dimensions.scrollWidth,
-            visibleSize: dimensions.scrollViewportWidth,
-            minPosition: xRange.min,
-            maxPosition: xRange.max
-          });
-          dimensions.scrollContainer.scrollLeft = solvedX.scroll;
-          position.left = solvedX.position;
-        } else {
-          position.left = clamp(position.left, xRange.min, xRange.max);
-        }
-      }
-    } else if (isVerticalPlacement(finalPlacement)) {
-      if (relativeTo && dimensions.relativeOffsetX !== null) {
-        let solvedX = solveRelativeAlignmentAxis({
-          currentScroll: dimensions.scrollContainer.scrollLeft,
-          desiredPosition: position.left,
-          naturalSize: dimensions.scrollWidth,
-          visibleSize: dimensions.scrollViewportWidth,
-          minPosition: xRange.min,
-          maxPosition: xRange.max
-        });
-        dimensions.scrollContainer.scrollLeft = solvedX.scroll;
-        position.left = solvedX.position;
-      } else {
-        position.left = constrainToAxis(position.left, dimensions.width, minX, maxX);
-      }
-      if (!isFixed && window.scrollY > 0 && position.top < viewport.top) {
-        position.top = viewport.top;
-      }
-      if (relativeTo) {
-        if (dimensions.relativeOffsetY !== null) {
-          let solvedY = solveRelativeAlignmentAxis({
-            currentScroll: dimensions.scrollContainer.scrollTop,
-            desiredPosition: position.top,
-            naturalSize: dimensions.scrollHeight,
-            visibleSize: dimensions.scrollViewportHeight,
-            minPosition: yRange.min,
-            maxPosition: yRange.max
-          });
-          dimensions.scrollContainer.scrollTop = solvedY.scroll;
-          position.top = solvedY.position;
-        } else {
-          position.top = clamp(position.top, yRange.min, yRange.max);
-        }
-      }
-    }
-    if (isHorizontalPlacement(finalPlacement)) {
-      let status = getOffScreenStatus(anchorRect, "horizontal");
-      if (status === "before") {
-        position.left = minX;
-      } else if (status === "after") {
-        position.left = maxX - dimensions.width;
-      }
-    } else if (isVerticalPlacement(finalPlacement)) {
-      let status = getOffScreenStatus(anchorRect, "vertical");
-      if (status === "before") {
-        position.top = minY;
-      } else if (status === "after") {
-        position.top = maxY - dimensions.height;
-      }
-    }
-    floating.style.position = isFixed ? "fixed" : "absolute";
-    floating.style.inset = "auto";
-    floating.style.top = `${position.top}px`;
-    floating.style.left = `${position.left}px`;
-    lastAnchorRect = anchorRect;
-    lastFloatingDimensions = dimensions;
-  }
-  updatePosition();
-  function pollForPositionChanges() {
-    let currentRect = readAnchorRect(anchorTarget);
-    let currentDimensions = getFloatingDimensions(floating, relativeTo);
-    if (hasRectChanged(currentRect, lastAnchorRect) || hasFloatingDimensionsChanged(currentDimensions, lastFloatingDimensions)) {
-      updatePosition(currentRect, currentDimensions);
-    }
-    animationFrameId = requestAnimationFrame(pollForPositionChanges);
-  }
-  function handleScroll() {
-    updatePosition();
-  }
-  function handleResize() {
-    updatePosition();
-  }
-  animationFrameId = requestAnimationFrame(pollForPositionChanges);
-  window.addEventListener("scroll", handleScroll, { passive: true });
-  window.addEventListener("resize", handleResize, { passive: true });
-  return () => {
-    cancelAnimationFrame(animationFrameId);
-    window.removeEventListener("scroll", handleScroll);
-    window.removeEventListener("resize", handleResize);
-  };
-}
-
-// node_modules/@remix-run/ui/dist/lib/outside-click.js
-var onOutsideClick = createMixin((handle) => {
-  let active = false;
-  let handler = () => {
-  };
-  let isInsideTarget = () => false;
-  let stopPropagation = true;
-  handle.addEventListener("insert", (event) => {
-    let node = event.node;
-    let doc = node.ownerDocument;
-    doc.addEventListener("click", (event2) => {
-      let target = event2.target instanceof Node ? event2.target : null;
-      if (!active || target && (node.contains(target) || isInsideTarget(target))) {
-        return;
-      }
-      if (stopPropagation) {
-        event2.stopPropagation();
-      }
-      handler(target);
-    }, { capture: true, signal: handle.signal });
-  });
-  return (nextActive, nextHandler, nextIsInsideTarget = () => false, nextStopPropagation = true) => {
-    active = nextActive;
-    handler = nextHandler;
-    isInsideTarget = nextIsInsideTarget;
-    stopPropagation = nextStopPropagation;
-  };
-});
-
-// node_modules/@remix-run/ui/dist/lib/scroll-lock.js
-var scrollLocks = /* @__PURE__ */ new WeakMap();
-function lockScroll(targetDocument = globalThis.document) {
-  if (!targetDocument?.body || !targetDocument.defaultView) {
-    return () => {
-    };
-  }
-  let document2 = targetDocument;
-  let documentElement = document2.documentElement;
-  let view = document2.defaultView;
-  let state = scrollLocks.get(document2);
-  if (!state) {
-    let scrollX = view.scrollX;
-    let scrollY = view.scrollY;
-    let scrollbarWidth = documentElement.clientWidth > 0 ? Math.max(view.innerWidth - documentElement.clientWidth, 0) : 0;
-    let computedScrollbarGutter = view.getComputedStyle(documentElement).scrollbarGutter;
-    state = {
-      count: 0,
-      documentOverflow: documentElement.style.overflow,
-      documentScrollbarGutter: documentElement.style.scrollbarGutter,
-      scrollX,
-      scrollY
-    };
-    documentElement.style.overflow = "hidden";
-    if (scrollbarWidth > 0 && computedScrollbarGutter === "auto") {
-      documentElement.style.scrollbarGutter = "stable";
-    }
-    scrollLocks.set(document2, state);
-  }
-  state.count++;
-  let unlocked = false;
-  return () => {
-    if (unlocked) {
-      return;
-    }
-    unlocked = true;
-    let currentState = scrollLocks.get(document2);
-    if (!currentState) {
-      return;
-    }
-    currentState.count--;
-    if (currentState.count > 0) {
-      return;
-    }
-    scrollLocks.delete(document2);
-    documentElement.style.overflow = currentState.documentOverflow;
-    documentElement.style.scrollbarGutter = currentState.documentScrollbarGutter;
-    view.scrollTo(currentState.scrollX, currentState.scrollY);
-  };
-}
-
-// node_modules/@remix-run/ui/dist/popover.js
-function PopoverProvider(handle) {
-  handle.context.set({
-    hideFocusTarget: null,
-    showFocusTarget: null,
-    surface: null,
-    anchor: null
-  });
-  return () => handle.props.children;
-}
-var anchorMixin = createMixin((handle) => {
-  let context = handle.context.get(PopoverProvider);
-  return (options) => {
-    handle.queueTask((node) => {
-      context.anchor = { target: node, options };
-    });
-  };
-});
-function anchorContains(anchor2, target) {
-  return anchor2?.target instanceof HTMLElement && anchor2.target.contains(target);
-}
-var surfaceMixin = createMixin((handle) => {
-  let openProp = false;
-  let cleanupAnchor = () => {
-  };
-  let unlockScroll = () => {
-  };
-  let context = handle.context.get(PopoverProvider);
-  handle.queueTask((node, signal) => {
-    context.surface = node;
-    signal.addEventListener("abort", () => {
-      if (context.surface === node) {
-        context.surface = null;
-      }
-    });
-  });
-  return (options) => {
-    let wasOpen = openProp;
-    openProp = options.open;
-    handle.queueTask(async (node) => {
-      if (openProp && !wasOpen) {
-        node.showPopover();
-      } else if (!openProp && wasOpen) {
-        node.hidePopover();
-      }
-    });
-    return [
-      attrs({ popover: "manual" }),
-      on("beforetoggle", (event) => {
-        if (event.newState === "open") {
-          let anchor2 = context.anchor;
-          if (!anchor2) {
-            throw new Error("popover.surface() requires a registered anchor before opening");
-          }
-          cleanupAnchor = anchor(event.currentTarget, anchor2.target, anchor2.options);
-          unlockScroll = lockScroll();
-        } else if (event.newState === "closed") {
-          cleanupAnchor();
-          unlockScroll();
-        }
-      }),
-      on("toggle", async (event) => {
-        if (event.newState === "open") {
-          context.showFocusTarget?.focus();
-        } else if (event.newState === "closed" && options.restoreFocusOnHide !== false) {
-          context.hideFocusTarget?.focus();
-        }
-      }),
-      on("keydown", (event) => {
-        if (event.key === "Escape") {
-          event.preventDefault();
-          options.onHide({ reason: "escape-key" });
-        }
-      }),
-      onOutsideClick(openProp, (target) => {
-        options.onHide({ reason: "outside-click", target });
-      }, (target) => options.closeOnAnchorClick === false && anchorContains(context.anchor, target), options.stopOutsideClickPropagation ?? true)
-    ];
-  };
-});
-var focusOnShowMixin = createMixin((handle) => {
-  handle.addEventListener("insert", (event) => {
-    let context = handle.context.get(PopoverProvider);
-    context.showFocusTarget = event.node;
-  });
-});
-var focusOnHideMixin = createMixin((handle) => {
-  handle.addEventListener("insert", (event) => {
-    let context = handle.context.get(PopoverProvider);
-    context.hideFocusTarget = event.node;
-  });
-});
-var Context = PopoverProvider;
-var surface = surfaceMixin;
 
 // app/features/challenge/ui/player-list.tsx
 var panelStyle2 = css({
@@ -14349,7 +16040,7 @@ var combineResultList = (resultList) => {
       acc = err(result.error);
       break;
     } else {
-      acc.map((list) => list.push(result.value));
+      acc.map((list2) => list2.push(result.value));
     }
   }
   return acc;
@@ -14935,7 +16626,7 @@ var listStyle3 = css({
   display: "grid",
   gap: "0.25rem"
 });
-var linkStyle = css({
+var linkStyle2 = css({
   color: "var(--color-primary)",
   textDecoration: "none",
   "&:hover": { textDecoration: "underline" }
@@ -14972,7 +16663,7 @@ var ContinueLearning = clientEntry(
       const visible = expanded ? items : items.slice(0, 5);
       return /* @__PURE__ */ jsx("section", { mix: sectionStyle2, "aria-labelledby": "continue-learning-title", children: [
         /* @__PURE__ */ jsx("h2", { id: "continue-learning-title", children: "\u524D\u56DE\u306E\u7D9A\u304D" }),
-        /* @__PURE__ */ jsx("ul", { mix: listStyle3, children: visible.map((item) => /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { mix: linkStyle, href: item.href, children: [
+        /* @__PURE__ */ jsx("ul", { mix: listStyle3, children: visible.map((item) => /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { mix: linkStyle2, href: item.href, children: [
           item.unitName,
           " ",
           item.year,

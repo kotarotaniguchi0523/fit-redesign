@@ -1,5 +1,6 @@
 // clientEntry を解決するため、島モジュールをバンドルへ含める（副作用 import）。
 import "../../ui/copy-button.tsx";
+import "../../ui/header.tsx";
 import "../../features/challenge/ui/exam-player.tsx";
 import "../../features/progress/ui/records-view.tsx";
 import "../../features/answer/ui/continue-learning.tsx";

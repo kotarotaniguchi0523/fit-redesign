@@ -41,8 +41,8 @@
 
 - [x] 問題一覧ドロワ → `popover`（+ `animation`）
 - [x] ○/× 判定 → `toggle`
-- [ ] ヘッダーのモバイルメニュー → `menu`
-- [ ] 年度/単元タブ → `tabs`
+- [x] ヘッダーのモバイルメニュー → `menu`（Header を clientEntry 化）
+- [x] 問題ナビゲーション → `tabs`（PlayerHeader）
 - [x] 解答開閉のアニメーション → `animation`
 - [ ] ホームの単元リスト → `accordion`
 - [ ] アイコンは `app/ui/icons.tsx` に集約（`@remix-run/ui` に無いため自作を維持）
@@ -68,3 +68,16 @@
 | `app/features/progress/*` | `features/progress/{model,storage,api,ui}/` |
 | `app/ui/{Header,PageHeading,figures,copy-button}` | `app/ui/`（共有のみ）+ ドメイン固有は features へ |
 | `public/style.css`（2671 行） | トークン/base のみ（数十行）+ コンポーネント `css()` |
+
+## 補足: プリミティブはハイドレーションが前提
+
+`@remix-run/ui` のプリミティブは振る舞いを `mix` で与えるため、**クライアントで hydrate される
+コンポーネント内**でのみ動作する。導入箇所と hydration 境界:
+
+| プリミティブ | 使用箇所 | hydration |
+| --- | --- | --- |
+| `menu` | `app/ui/header.tsx` | `clientEntry`（Header） |
+| `tabs` | `features/challenge/ui/player-header.tsx` | `clientEntry`（ExamPlayer）配下 |
+| `popover` | `features/challenge/ui/player-list.tsx` | 同上 |
+| `toggle` | `features/challenge/ui/answer-panel.tsx` | 同上 |
+| `animation` | answer-panel / player-list | 同上 |
