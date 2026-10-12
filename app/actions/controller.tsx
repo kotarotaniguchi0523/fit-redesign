@@ -15,6 +15,7 @@ import {
 	getIntegratedTitle,
 	UnitYearPage,
 } from "../pages/unit-year-page.tsx";
+import { UnitYearRegion } from "../pages/unit-year-region.tsx";
 import { routes } from "../routes.ts";
 import type { ExamNumber, Year } from "../types/index.ts";
 
@@ -96,6 +97,16 @@ export default createController(routes, {
 						mode: "exam",
 					}}
 				/>,
+			);
+		},
+		async unitYearRegion(context) {
+			const unit = unitBasedTabs.find((candidate) => candidate.id === context.params.unit);
+			if (!unit) {
+				return new Response("Not Found", { status: 404 });
+			}
+			const sections = await buildUnitExamSections(unit, context.params.year);
+			return context.render(
+				<UnitYearRegion unitId={unit.id} year={context.params.year} sections={sections} />,
 			);
 		},
 

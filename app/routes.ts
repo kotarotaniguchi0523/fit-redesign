@@ -30,6 +30,7 @@ export const routes = route({
 	},
 
 	unitYear: get("/:unit/:year"),
+	unitYearRegion: get("/:unit/:year/region"),
 	exam: get("/:unit/:year/exam/:exam"),
 	question: get("/:unit/:year/exam/:exam/question/:question"),
 	questionRegion: get("/:unit/:year/exam/:exam/question/:question/region"),

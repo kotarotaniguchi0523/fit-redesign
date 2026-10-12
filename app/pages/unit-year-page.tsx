@@ -1,11 +1,12 @@
 import type { Handle } from "remix/component";
-import { css } from "remix/component";
+import { css, Frame } from "remix/component";
 
 import { getExamByNumber, selectVisibleExamNumbers } from "../data/exams/index.ts";
 import { routes } from "../routes.ts";
 import type { UnitBasedTab, Year } from "../types/index.ts";
 import { PageHeading } from "../ui/page-heading.tsx";
 import { Document } from "./document.tsx";
+import { type ExamSection, ExamSections } from "./exam-sections.tsx";
 
 const mainStyle = css({
 	maxWidth: "52rem",
@@ -13,46 +14,17 @@ const mainStyle = css({
 	padding: "1rem 1rem 4rem",
 });
 
-const sectionStyle = css({
-	marginTop: "1.5rem",
-	background: "var(--color-bg-card)",
-	border: "1px solid var(--color-border)",
-	borderRadius: "0.75rem",
-	padding: "1rem 1.25rem",
-});
+export type UnitExamSection = ExamSection;
 
-const sectionTitleStyle = css({
-	fontSize: "1.05rem",
-	fontWeight: 700,
-	color: "var(--color-primary)",
-	margin: "0 0 0.5rem",
-});
-
-const listStyle = css({
-	listStyle: "none",
-	margin: 0,
-	padding: 0,
-	display: "grid",
-	gap: "0.25rem",
-});
-
-const linkStyle = css({
-	color: "var(--color-primary)",
-	textDecoration: "none",
-	"&:hover": { textDecoration: "underline" },
-});
-
-export interface UnitExamSection {
-	examNumber: number;
-	title: string;
-	questions: ReadonlyArray<{ id: string; number: number; text: string }>;
-}
-
+/**
+ * 単元・年度ページ。小テスト一覧は `/:unit/:year/region` を指す `<Frame>` として描画し、
+ * 一覧を独立したルート所有の領域として扱う。
+ */
 export function UnitYearPage(
 	handle: Handle<{
 		unit: UnitBasedTab;
 		year: string;
-		sections: readonly UnitExamSection[];
+		sections: readonly ExamSection[];
 		integratedTitle?: string;
 		currentPath: string;
 	}>,
@@ -72,30 +44,11 @@ export function UnitYearPage(
 						title={unit.name}
 						description={integratedTitle ?? unit.description}
 					/>
-					{sections.map((section) => (
-						<section key={section.examNumber} mix={sectionStyle}>
-							<h2 mix={sectionTitleStyle}>
-								小テスト{section.examNumber}: {section.title}
-							</h2>
-							<ul mix={listStyle}>
-								{section.questions.map((question) => (
-									<li key={question.id}>
-										<a
-											mix={linkStyle}
-											href={routes.question.href({
-												unit: unit.id,
-												year,
-												exam: String(section.examNumber),
-												question: question.id,
-											})}
-										>
-											問{question.number}
-										</a>
-									</li>
-								))}
-							</ul>
-						</section>
-					))}
+					<Frame
+						name="exams"
+						src={routes.unitYearRegion.href({ unit: unit.id, year })}
+						fallback={<ExamSections unitId={unit.id} year={year} sections={sections} />}
+					/>
 				</main>
 			</Document>
 		);
@@ -106,7 +59,7 @@ export function UnitYearPage(
 export async function buildUnitExamSections(
 	unit: UnitBasedTab,
 	year: string,
-): Promise<UnitExamSection[]> {
+): Promise<ExamSection[]> {
 	const mapping = unit.examMapping.find((item) => item.year === year);
 	if (!mapping) {
 		return [];
