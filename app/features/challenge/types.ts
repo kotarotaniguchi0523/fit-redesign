@@ -1,5 +1,5 @@
-import type { Judgment } from "../../types/index.ts";
 import type { ChallengeId, ExamId, QuestionId } from "../../types/browser.ts";
+import type { Judgment } from "../../types/index.ts";
 
 export type { ChallengeId } from "../../types/browser.ts";
 

@@ -1,5 +1,5 @@
-import * as assert from 'remix/assert'
-import { describe, it } from 'remix/test'
+import * as assert from "remix/assert";
+import { describe, it } from "remix/test";
 import type { FlowchartEdge, FlowchartNode } from "../../types/index.ts";
 import {
 	buildEdgeRenderData,
@@ -73,7 +73,7 @@ describe("buildNodeRenderData", () => {
 		const nodes: FlowchartNode[] = [{ id: "d1", type: "decision", label: "?", x: 100, y: 100 }];
 		const result = buildNodeRenderData(nodes);
 		assert.ok(result[0].points !== undefined);
-		assert.ok((result[0].points).includes("100,"));
+		assert.ok(result[0].points.includes("100,"));
 	});
 
 	it("includes rx and ry for start/end nodes", () => {
@@ -107,7 +107,7 @@ describe("buildEdgeRenderData", () => {
 		const edges: FlowchartEdge[] = [{ from: "n1", to: "n2" }];
 		const result = buildEdgeRenderData(nodes, edges);
 
-		assert.equal((result).length, 1);
+		assert.equal(result.length, 1);
 		assert.match(result[0].pathD, /^M .+ L .+$/);
 	});
 
@@ -120,7 +120,7 @@ describe("buildEdgeRenderData", () => {
 	it("skips edges with unknown node ids", () => {
 		const edges: FlowchartEdge[] = [{ from: "n1", to: "unknown" }];
 		const result = buildEdgeRenderData(nodes, edges);
-		assert.equal((result).length, 0);
+		assert.equal(result.length, 0);
 	});
 
 	it("uses waypoints when edge has points", () => {
@@ -132,7 +132,7 @@ describe("buildEdgeRenderData", () => {
 			},
 		];
 		const result = buildEdgeRenderData(nodes, edges);
-		assert.ok((result[0].pathD).includes("150 100"));
+		assert.ok(result[0].pathD.includes("150 100"));
 		// When points exist, label position uses the first waypoint
 		assert.equal(result[0].labelX, 150);
 		assert.equal(result[0].labelY, 100);

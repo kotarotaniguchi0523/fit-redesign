@@ -1,5 +1,5 @@
-import * as assert from 'remix/assert'
-import { beforeEach, describe, it } from 'remix/test'
+import * as assert from "remix/assert";
+import { beforeEach, describe, it } from "remix/test";
 
 import { QuestionSchema } from "../../../data/exams/schema.ts";
 import { ChallengeIdSchema, ExamIdSchema, QuestionIdSchema } from "../../../types/browser.ts";
@@ -32,7 +32,7 @@ const props: ExamPlayerProps = {
 
 // `remix test` は Node 上で動くため、このモジュールが読むブラウザー API を与える。
 if (typeof globalThis.localStorage === "undefined") {
-	const store = new Map<string, string>()
+	const store = new Map<string, string>();
 	Object.defineProperty(globalThis, "localStorage", {
 		value: {
 			getItem: (key: string) => (store.has(key) ? (store.get(key) as string) : null),
@@ -41,11 +41,11 @@ if (typeof globalThis.localStorage === "undefined") {
 			clear: () => store.clear(),
 			key: (index: number) => [...store.keys()][index] ?? null,
 			get length() {
-				return store.size
+				return store.size;
 			},
 		},
 		configurable: true,
-	})
+	});
 }
 if (typeof globalThis.window === "undefined") {
 	Object.defineProperty(globalThis, "window", {
@@ -56,7 +56,7 @@ if (typeof globalThis.window === "undefined") {
 			removeEventListener: () => {},
 		},
 		configurable: true,
-	})
+	});
 }
 
 describe("resolveInitialPlayerSession", () => {

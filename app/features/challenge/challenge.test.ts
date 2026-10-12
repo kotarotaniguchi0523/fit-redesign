@@ -1,5 +1,5 @@
-import * as assert from 'remix/assert'
-import { describe, it } from 'remix/test'
+import * as assert from "remix/assert";
+import { describe, it } from "remix/test";
 
 import type { ChallengeId } from "../../types/browser.ts";
 import { ChallengeIdSchema, ExamIdSchema, QuestionIdSchema } from "../../types/browser.ts";
@@ -86,7 +86,10 @@ describe("challenge core", () => {
 	});
 
 	it("完了時刻をすべてのanswers.updatedAtへ揃える", () => {
-		let state: ChallengeState = challengeReducer(initialState(), { type: "REVEAL_QUESTION", questionId: q1 });
+		let state: ChallengeState = challengeReducer(initialState(), {
+			type: "REVEAL_QUESTION",
+			questionId: q1,
+		});
 		state = challengeReducer(state, {
 			type: "JUDGE_QUESTION",
 			questionId: q1,
@@ -101,9 +104,15 @@ describe("challenge core", () => {
 			answerCreatedAt: 1_700_000_000_020,
 		});
 
-		state = challengeReducer(state as never, { type: "COMPLETE", updatedAt: 1_700_000_000_100 }) as typeof state;
+		state = challengeReducer(state as never, {
+			type: "COMPLETE",
+			updatedAt: 1_700_000_000_100,
+		}) as typeof state;
 		const completed = toCompletedChallengePayload(state as never, 1_700_000_000_100);
-		assert.equal(completed?.answers.every((answer) => answer.updatedAt === 1_700_000_000_100), true);
+		assert.equal(
+			completed?.answers.every((answer) => answer.updatedAt === 1_700_000_000_100),
+			true,
+		);
 	});
 
 	it("総合正解率は試行ごとの率ではなく判定数で重み付けする", () => {

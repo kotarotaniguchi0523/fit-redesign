@@ -1,33 +1,32 @@
-import { css } from 'remix/component'
-import type { Handle } from 'remix/component'
+import type { Handle } from "remix/component";
+import { css } from "remix/component";
 
-import { slideOnlyUnits } from '../data/units.ts'
-import { routes } from '../routes.ts'
-import { PageHeading } from '../ui/PageHeading.tsx'
-import { Document } from './document.tsx'
+import { slideOnlyUnits } from "../data/units.ts";
+import { PageHeading } from "../ui/PageHeading.tsx";
+import { Document } from "./document.tsx";
 
-const mainStyle = css({ maxWidth: '52rem', margin: '0 auto', padding: '1rem 1rem 4rem' })
+const mainStyle = css({ maxWidth: "52rem", margin: "0 auto", padding: "1rem 1rem 4rem" });
 
 const panelStyle = css({
-	background: 'var(--color-bg-card)',
-	border: '1px solid var(--color-border)',
-	borderRadius: '0.75rem',
-	padding: '1rem 1.25rem',
-	marginTop: '1.25rem',
-})
+	background: "var(--color-bg-card)",
+	border: "1px solid var(--color-border)",
+	borderRadius: "0.75rem",
+	padding: "1rem 1.25rem",
+	marginTop: "1.25rem",
+});
 
 const sectionTitleStyle = css({
-	fontSize: '1.05rem',
+	fontSize: "1.05rem",
 	fontWeight: 700,
-	color: 'var(--color-primary)',
-	margin: '0 0 0.5rem',
-})
+	color: "var(--color-primary)",
+	margin: "0 0 0.5rem",
+});
 
 const linkStyle = css({
-	color: 'var(--color-primary)',
-	textDecoration: 'none',
-	'&:hover': { textDecoration: 'underline' },
-})
+	color: "var(--color-primary)",
+	textDecoration: "none",
+	"&:hover": { textDecoration: "underline" },
+});
 
 /** 講義資料のみの単元（PDF は明治大学の公開ページを外部参照）。 */
 export function SlideOnlyPage(handle: Handle<{ currentPath: string }>) {
@@ -49,12 +48,7 @@ export function SlideOnlyPage(handle: Handle<{ currentPath: string }>) {
 						<ul>
 							{unit.slides.map((slide) => (
 								<li key={slide.id}>
-									<a
-										mix={linkStyle}
-										href={slide.pdfPath}
-										target="_blank"
-										rel="noreferrer noopener"
-									>
+									<a mix={linkStyle} href={slide.pdfPath} target="_blank" rel="noreferrer noopener">
 										{slide.title}（PDF）
 									</a>
 								</li>
@@ -64,5 +58,5 @@ export function SlideOnlyPage(handle: Handle<{ currentPath: string }>) {
 				))}
 			</main>
 		</Document>
-	)
+	);
 }

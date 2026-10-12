@@ -1,5 +1,5 @@
-import * as assert from 'remix/assert'
-import { describe, it } from 'remix/test'
+import * as assert from "remix/assert";
+import { describe, it } from "remix/test";
 import type { TableFigureData } from "./table-renderer.ts";
 import { buildTableConfig } from "./table-renderer.ts";
 
@@ -52,7 +52,7 @@ describe("buildTableConfig", () => {
 			const config = buildTableConfig(data);
 
 			assert.equal(config.ariaLabel, "Huffman coding table");
-			assert.equal((config.columns).length, 2);
+			assert.equal(config.columns.length, 2);
 			assert.equal(config.columns[0].key, "character");
 			assert.equal(config.columns[1].key, "probability");
 			assert.deepEqual(config.rows, [
@@ -75,7 +75,7 @@ describe("buildTableConfig", () => {
 			const config = buildTableConfig(data);
 
 			assert.equal(config.ariaLabel, "Linked list table");
-			assert.equal((config.columns).length, 3);
+			assert.equal(config.columns.length, 3);
 			assert.deepEqual(config.rows, [
 				{ address: "100", data: "X", pointer: "200" },
 				{ address: "200", data: "Y", pointer: "-1" },
@@ -106,7 +106,7 @@ describe("buildTableConfig", () => {
 			const config = buildTableConfig(data);
 
 			assert.equal(config.ariaLabel, "Normal distribution table");
-			assert.equal((config.columns).length, 2);
+			assert.equal(config.columns.length, 2);
 			assert.equal(config.columns[0].key, "u");
 			assert.equal(config.columns[1].key, "probability");
 			assert.deepEqual(config.rows, [

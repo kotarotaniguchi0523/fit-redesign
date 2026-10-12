@@ -1,8 +1,7 @@
-import { on } from 'remix/component'
-import type { Handle } from 'remix/component'
-
-import { MenuIcon } from './icons.tsx'
-import type { PlayerQuestion } from '../types.ts'
+import type { Handle } from "remix/component";
+import { on } from "remix/component";
+import type { PlayerQuestion } from "../types.ts";
+import { MenuIcon } from "./icons.tsx";
 
 /**
  * プレイヤーのヘッダー。タイトルと問題の進捗（番号ボタン + プログレスバー）を描く。
@@ -10,12 +9,12 @@ import type { PlayerQuestion } from '../types.ts'
  */
 export function PlayerHeader(
 	handle: Handle<{
-		playerTitle: string
-		questions: readonly PlayerQuestion[]
-		currentQuestionIndex: number
-		onOpenQuestionList: () => void
-		onSelectQuestion: (index: number) => void
-		disabled?: boolean
+		playerTitle: string;
+		questions: readonly PlayerQuestion[];
+		currentQuestionIndex: number;
+		onOpenQuestionList: () => void;
+		onSelectQuestion: (index: number) => void;
+		disabled?: boolean;
 	}>,
 ) {
 	return () => {
@@ -26,7 +25,7 @@ export function PlayerHeader(
 			onOpenQuestionList,
 			onSelectQuestion,
 			disabled = false,
-		} = handle.props
+		} = handle.props;
 
 		return (
 			<header class="exam-player__header">
@@ -38,7 +37,7 @@ export function PlayerHeader(
 							aria-label="問題一覧を開く"
 							title="問題一覧を開く"
 							disabled={disabled}
-							mix={on('click', onOpenQuestionList)}
+							mix={on("click", onOpenQuestionList)}
 						>
 							<MenuIcon />
 						</button>
@@ -53,10 +52,10 @@ export function PlayerHeader(
 									<button
 										type="button"
 										aria-label={`問${index + 1}`}
-										aria-current={index === currentQuestionIndex ? 'step' : undefined}
-										class={index === currentQuestionIndex ? 'is-current' : ''}
+										aria-current={index === currentQuestionIndex ? "step" : undefined}
+										class={index === currentQuestionIndex ? "is-current" : ""}
 										disabled={disabled}
-										mix={on('click', () => onSelectQuestion(index))}
+										mix={on("click", () => onSelectQuestion(index))}
 									>
 										{index + 1}
 									</button>
@@ -81,6 +80,6 @@ export function PlayerHeader(
 					</div>
 				</nav>
 			</header>
-		)
-	}
+		);
+	};
 }

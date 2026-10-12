@@ -1,5 +1,5 @@
-import type { ChallengeId } from "../../../types/index.ts";
 import { ChallengeIdSchema } from "../../../types/browser.ts";
+import type { ChallengeId } from "../../../types/index.ts";
 
 export type InitialChallengeView = Readonly<{
 	view: "player" | "result";

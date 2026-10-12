@@ -1,5 +1,5 @@
-import * as assert from 'remix/assert'
-import { describe, it } from 'remix/test'
+import * as assert from "remix/assert";
+import { describe, it } from "remix/test";
 
 import { QuestionSchema } from "../../../data/exams/schema.ts";
 import { ChallengeIdSchema, ExamIdSchema, QuestionIdSchema } from "../../../types/browser.ts";
@@ -150,10 +150,9 @@ describe("player model", () => {
 			{ ...answer, questionId: q2 },
 		]);
 
-		assert.deepEqual(
-			filterChallengeHistory([examAttempt, q1Attempt, q2Attempt], examId, "exam"),
-			[examAttempt],
-		);
+		assert.deepEqual(filterChallengeHistory([examAttempt, q1Attempt, q2Attempt], examId, "exam"), [
+			examAttempt,
+		]);
 		assert.deepEqual(
 			filterChallengeHistory([examAttempt, q1Attempt, q2Attempt], examId, "question", q1),
 			[q1Attempt],

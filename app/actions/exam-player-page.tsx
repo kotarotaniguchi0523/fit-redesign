@@ -1,16 +1,16 @@
-import { css } from 'remix/component'
-import type { Handle } from 'remix/component'
+import type { Handle } from "remix/component";
+import { css } from "remix/component";
 
-import { ExamPlayer } from '../features/challenge/player/exam-player.tsx'
-import type { ExamPlayerProps, PlayerQuestion } from '../features/challenge/player/types.ts'
-import { PageHeading } from '../ui/PageHeading.tsx'
-import { Document } from './document.tsx'
+import { ExamPlayer } from "../features/challenge/player/exam-player.tsx";
+import type { ExamPlayerProps, PlayerQuestion } from "../features/challenge/player/types.ts";
+import { PageHeading } from "../ui/PageHeading.tsx";
+import { Document } from "./document.tsx";
 
 const mainStyle = css({
-	maxWidth: '52rem',
-	margin: '0 auto',
-	padding: '1rem 1rem 4rem',
-})
+	maxWidth: "52rem",
+	margin: "0 auto",
+	padding: "1rem 1rem 4rem",
+});
 
 /**
  * 小テスト / タイムアタックのプレイヤーページ。
@@ -19,15 +19,14 @@ const mainStyle = css({
  */
 export function ExamPlayerPage(
 	handle: Handle<{
-		playerTitle: string
-		heading: string
-		description?: string
-		player: ExamPlayerProps
-		currentPath: string
+		heading: string;
+		description?: string;
+		player: ExamPlayerProps;
+		currentPath: string;
 	}>,
 ) {
 	return () => {
-		const { playerTitle, heading, description, player, currentPath } = handle.props
+		const { heading, description, player, currentPath } = handle.props;
 
 		return (
 			<Document title={`${heading} - 基本情報技術 I`} noindex currentPath={currentPath}>
@@ -36,8 +35,8 @@ export function ExamPlayerPage(
 					<ExamPlayer {...player} />
 				</main>
 			</Document>
-		)
-	}
+		);
+	};
 }
 
-export type { PlayerQuestion }
+export type { PlayerQuestion };

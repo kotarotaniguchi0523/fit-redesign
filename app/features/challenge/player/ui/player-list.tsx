@@ -1,82 +1,82 @@
-import { on } from 'remix/component'
-import type { Handle } from 'remix/component'
+import type { Handle } from "remix/component";
+import { on } from "remix/component";
 
-import type { QuestionId } from '../../../../types/index.ts'
-import { formatDuration } from '../../challenge.ts'
-import type { ChallengeState } from '../../types.ts'
-import type { PlayerMode, PlayerQuestion } from '../types.ts'
-import { CloseIcon } from './icons.tsx'
+import type { QuestionId } from "../../../../types/index.ts";
+import { formatDuration } from "../../challenge.ts";
+import type { ChallengeState } from "../../types.ts";
+import type { PlayerMode, PlayerQuestion } from "../types.ts";
+import { CloseIcon } from "./icons.tsx";
 
 function PlayerListItem(
 	handle: Handle<{
-		question: PlayerQuestion
-		index: number
-		mode: PlayerMode
-		state: ChallengeState
-		currentQuestionId: QuestionId | undefined
-		onSelect: (index: number) => void
+		question: PlayerQuestion;
+		index: number;
+		mode: PlayerMode;
+		state: ChallengeState;
+		currentQuestionId: QuestionId | undefined;
+		onSelect: (index: number) => void;
 	}>,
 ) {
 	return () => {
-		const { question, index, mode, state, currentQuestionId, onSelect } = handle.props
-		const judgment = state.judgments[question.id]
-		const isCurrent = question.id === currentQuestionId
+		const { question, index, mode, state, currentQuestionId, onSelect } = handle.props;
+		const judgment = state.judgments[question.id];
+		const isCurrent = question.id === currentQuestionId;
 
 		return (
 			<li>
 				<button
 					type="button"
-					class={`exam-question-list__item ${mode === 'question' ? 'exam-question-list__item--focus' : ''} ${isCurrent ? 'is-current' : ''}`}
+					class={`exam-question-list__item ${mode === "question" ? "exam-question-list__item--focus" : ""} ${isCurrent ? "is-current" : ""}`}
 					aria-label={`問${question.number ?? index + 1} ${question.text}`}
-					aria-current={isCurrent ? 'true' : undefined}
-					mix={on('click', () => onSelect(index))}
+					aria-current={isCurrent ? "true" : undefined}
+					mix={on("click", () => onSelect(index))}
 				>
 					<span>問{question.number ?? index + 1}</span>
-					{mode === 'exam' ? (
+					{mode === "exam" ? (
 						<span class="exam-question-list__time">
 							{formatDuration(state.questionElapsedMs[question.id] ?? 0)}
 						</span>
 					) : null}
-					{mode === 'exam' && judgment ? (
+					{mode === "exam" && judgment ? (
 						<span class={`exam-question-list__judgment is-${judgment}`}>
-							{judgment === 'correct' ? '○' : '×'}
+							{judgment === "correct" ? "○" : "×"}
 						</span>
 					) : null}
 					<span class="exam-question-list__prompt">{question.text}</span>
 				</button>
 			</li>
-		)
-	}
+		);
+	};
 }
 
 /** 問題一覧のドロワ。 */
 export function PlayerList(
 	handle: Handle<{
-		state: ChallengeState
-		questions: readonly PlayerQuestion[]
-		mode: PlayerMode
-		open: boolean
-		onSelect: (index: number) => void
-		onClose: () => void
+		state: ChallengeState;
+		questions: readonly PlayerQuestion[];
+		mode: PlayerMode;
+		open: boolean;
+		onSelect: (index: number) => void;
+		onClose: () => void;
 	}>,
 ) {
 	return () => {
-		const { state, questions, mode, open, onSelect, onClose } = handle.props
+		const { state, questions, mode, open, onSelect, onClose } = handle.props;
 		if (!open) {
-			return null
+			return null;
 		}
 
-		const currentQuestionId = state.questionIds[state.currentIndex]
+		const currentQuestionId = state.questionIds[state.currentIndex];
 		const listedQuestions =
-			mode === 'question'
+			mode === "question"
 				? questions
 				: state.questionIds
 						.map((questionId) => questions.find((item) => item.id === questionId))
-						.filter((question): question is PlayerQuestion => question !== undefined)
+						.filter((question): question is PlayerQuestion => question !== undefined);
 		const totalElapsedMs = Object.values(state.questionElapsedMs).reduce<number>(
 			(sum, value) => sum + (value ?? 0),
 			0,
-		)
+		);
 
 		return (
 			<>
@@ -84,7 +84,7 @@ export function PlayerList(
 					class="exam-question-list__backdrop"
 					type="button"
 					aria-label="問題一覧を閉じる"
-					mix={on('click', onClose)}
+					mix={on("click", onClose)}
 				/>
 				<aside class="exam-question-list" aria-label="問題一覧">
 					<div class="exam-question-list__toolbar">
@@ -92,7 +92,7 @@ export function PlayerList(
 							<h2>問題一覧</h2>
 						</div>
 						<div class="exam-question-list__actions">
-							{mode === 'exam' ? (
+							{mode === "exam" ? (
 								<p>
 									<span>全体</span>
 									<strong>{formatDuration(totalElapsedMs)}</strong>
@@ -103,7 +103,7 @@ export function PlayerList(
 								class="exam-action"
 								aria-label="問題一覧を閉じる"
 								title="問題一覧を閉じる"
-								mix={on('click', onClose)}
+								mix={on("click", onClose)}
 							>
 								<CloseIcon />
 							</button>
@@ -124,6 +124,6 @@ export function PlayerList(
 					</ol>
 				</aside>
 			</>
-		)
-	}
+		);
+	};
 }

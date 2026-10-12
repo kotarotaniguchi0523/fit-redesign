@@ -1,15 +1,15 @@
-import { formData } from 'remix/middleware/form-data'
-import { logger } from 'remix/middleware/logger'
-import { render } from 'remix/middleware/render'
-import { createRouter } from 'remix/router'
-import type { RouterContext } from 'remix/router'
+import { formData } from "remix/middleware/form-data";
+import { logger } from "remix/middleware/logger";
+import { render } from "remix/middleware/render";
+import type { RouterContext } from "remix/router";
+import { createRouter } from "remix/router";
 
-import controller from './actions/controller.tsx'
-import markdownController from './actions/markdown/controller.ts'
-import progressController from './actions/progress/controller.ts'
-import { loadDatabase } from './middleware/database.ts'
-import { securityHeaders } from './middleware/security.ts'
-import { routes } from './routes.ts'
+import controller from "./actions/controller.tsx";
+import markdownController from "./actions/markdown/controller.ts";
+import progressController from "./actions/progress/controller.ts";
+import { loadDatabase } from "./middleware/database.ts";
+import { securityHeaders } from "./middleware/security.ts";
+import { routes } from "./routes.ts";
 
 /**
  * アプリのルーター。ミドルウェアの順序は「依存する側の前に提供する側」を置く。
@@ -24,16 +24,16 @@ import { routes } from './routes.ts'
  */
 export const router = createRouter({
 	middleware: [logger(), securityHeaders(), loadDatabase(), formData(), render()],
-})
+});
 
-export type AppContext = RouterContext<typeof router>
+export type AppContext = RouterContext<typeof router>;
 
-declare module 'remix' {
+declare module "remix" {
 	interface RouterTypes {
-		context: AppContext
+		context: AppContext;
 	}
 }
 
-router.map(routes, controller)
-router.map(routes.markdown, markdownController)
-router.map(routes.progress, progressController)
+router.map(routes, controller);
+router.map(routes.markdown, markdownController);
+router.map(routes.progress, progressController);

@@ -1,43 +1,43 @@
-import { css } from 'remix/component'
-import type { Handle, RemixNode } from 'remix/component'
+import type { Handle, RemixNode } from "remix/component";
+import { css } from "remix/component";
 
-import { SITE_URL } from '../data/site.ts'
-import { Header } from '../ui/Header.tsx'
+import { SITE_URL } from "../data/site.ts";
+import { Header } from "../ui/Header.tsx";
 
-const SITE_NAME = '基本情報技術 I - 明治大学'
-const DEFAULT_DESCRIPTION = '明治大学 基本情報技術 I 演習問題サイト'
+const SITE_NAME = "基本情報技術 I - 明治大学";
+const DEFAULT_DESCRIPTION = "明治大学 基本情報技術 I 演習問題サイト";
 
 export interface DocumentProps {
-	children?: RemixNode
-	head?: RemixNode
-	title: string
-	description?: string
-	canonicalPath?: string
-	noCanonical?: boolean
-	noindex?: boolean
-	jsonLd?: unknown
-	currentPath?: string
+	children?: RemixNode;
+	head?: RemixNode;
+	title: string;
+	description?: string;
+	canonicalPath?: string;
+	noCanonical?: boolean;
+	noindex?: boolean;
+	jsonLd?: unknown;
+	currentPath?: string;
 }
 
 const bodyStyle = css({
-	'min-height': '100vh',
-	background: 'var(--color-bg)',
-})
+	"min-height": "100vh",
+	background: "var(--color-bg)",
+});
 
 const skipLinkStyle = css({
-	position: 'absolute',
-	left: '-9999px',
+	position: "absolute",
+	left: "-9999px",
 	top: 0,
-	'&:focus': {
-		left: '0.5rem',
-		top: '0.5rem',
+	"&:focus": {
+		left: "0.5rem",
+		top: "0.5rem",
 		zIndex: 100,
-		background: 'var(--color-primary)',
-		color: '#fff',
-		padding: '0.5rem 0.75rem',
-		borderRadius: '0.375rem',
+		background: "var(--color-primary)",
+		color: "#fff",
+		padding: "0.5rem 0.75rem",
+		borderRadius: "0.375rem",
 	},
-})
+});
 
 /**
  * すべてのページが通る Document シェル。
@@ -56,10 +56,10 @@ export function Document(handle: Handle<DocumentProps>) {
 			noCanonical,
 			noindex,
 			jsonLd,
-			currentPath = '/',
-		} = handle.props
+			currentPath = "/",
+		} = handle.props;
 
-		const canonical = noCanonical ? null : new URL(canonicalPath ?? currentPath, SITE_URL).href
+		const canonical = noCanonical ? null : new URL(canonicalPath ?? currentPath, SITE_URL).href;
 
 		return (
 			<html lang="ja">
@@ -87,9 +87,7 @@ export function Document(handle: Handle<DocumentProps>) {
 					/>
 					<link rel="stylesheet" href="/style.css" />
 					<script type="module" src="/assets/client.js"></script>
-					{jsonLd ? (
-						<script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
-					) : null}
+					{jsonLd ? <script type="application/ld+json">{JSON.stringify(jsonLd)}</script> : null}
 					{head}
 					<title>{title}</title>
 				</head>
@@ -101,6 +99,6 @@ export function Document(handle: Handle<DocumentProps>) {
 					{children}
 				</body>
 			</html>
-		)
-	}
+		);
+	};
 }

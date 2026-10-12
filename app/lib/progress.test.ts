@@ -1,5 +1,5 @@
-import * as assert from 'remix/assert'
-import { describe, it } from 'remix/test'
+import * as assert from "remix/assert";
+import { describe, it } from "remix/test";
 
 import { type ProgressEntry, ProgressEntrySchema } from "../types/browser.ts";
 import { mergeLatestProgressEntries } from "./progress.ts";

@@ -1,12 +1,12 @@
 import { isRecord } from "../../lib/guards.ts";
 import { subscribeToStorageChanges } from "../../lib/storageSubscription.ts";
-import type { Judgment, QuestionId } from "../../types/index.ts";
 import {
 	ChallengeIdSchema,
 	ExamIdSchema,
 	JudgmentSchema,
 	QuestionIdSchema,
 } from "../../types/browser.ts";
+import type { Judgment, QuestionId } from "../../types/index.ts";
 import {
 	createChallengeSnapshot,
 	mergeCompletedChallenges,

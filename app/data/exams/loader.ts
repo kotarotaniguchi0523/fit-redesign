@@ -1,34 +1,34 @@
-import { type DeepReadonly, deepFreezeInPlace } from '../../lib/immutable.ts'
-import { safeParseOrThrow } from '../../lib/zod.ts'
-import type { ExamByYear } from '../../types/index.ts'
-import metaJson from '../exams-json/exams-meta.json' with { type: 'json' }
-import { assembleExamsByYear, type ParsedExamEntry } from './assemble.ts'
-import { examModules } from './modules.generated.ts'
+import { type DeepReadonly, deepFreezeInPlace } from "../../lib/immutable.ts";
+import { safeParseOrThrow } from "../../lib/zod.ts";
+import type { ExamByYear } from "../../types/index.ts";
+import metaJson from "../exams-json/exams-meta.json" with { type: "json" };
+import { assembleExamsByYear, type ParsedExamEntry } from "./assemble.ts";
+import { examModules } from "./modules.generated.ts";
 import {
 	ExamJsonSchema,
 	ExamsMetaSchema,
 	JsonModuleSchema,
 	ParsedJsonExamFilePathSchema,
-} from './schema.ts'
+} from "./schema.ts";
 
 function getJsonValue(module: unknown): unknown {
-	const parsed = JsonModuleSchema.safeParse(module)
-	return parsed.success ? parsed.data.default : module
+	const parsed = JsonModuleSchema.safeParse(module);
+	return parsed.success ? parsed.data.default : module;
 }
 
 function parseExamEntries(): ParsedExamEntry[] {
 	return Object.entries(examModules).flatMap(([filePath, module]) => {
-		const path = ParsedJsonExamFilePathSchema.safeParse(filePath)
+		const path = ParsedJsonExamFilePathSchema.safeParse(filePath);
 		if (!path.success) {
-			return []
+			return [];
 		}
 		const data = safeParseOrThrow(
 			ExamJsonSchema,
 			getJsonValue(module),
 			`Invalid exam json: ${filePath}`,
-		)
-		return [{ ...path.data, data }]
-	})
+		);
+		return [{ ...path.data, data }];
+	});
 }
 
 /**
@@ -40,11 +40,10 @@ function parseExamEntries(): ParsedExamEntry[] {
  * シグネチャは consumer（index.ts の `await getAllExams()`）が壊れないよう
  * Promise を返す async のまま維持する。
  */
-// biome-ignore lint/suspicious/useAwait: consumer の Promise シグネチャ安定のため async を維持（中身は同期）
 export async function loadExams(): Promise<DeepReadonly<ExamByYear[]>> {
-	const parsedMeta = safeParseOrThrow(ExamsMetaSchema, metaJson, 'Invalid exams meta')
-	const entries = parseExamEntries()
-	const exams = assembleExamsByYear(parsedMeta.exams, entries)
-	deepFreezeInPlace(exams)
-	return exams
+	const parsedMeta = safeParseOrThrow(ExamsMetaSchema, metaJson, "Invalid exams meta");
+	const entries = parseExamEntries();
+	const exams = assembleExamsByYear(parsedMeta.exams, entries);
+	deepFreezeInPlace(exams);
+	return exams;
 }

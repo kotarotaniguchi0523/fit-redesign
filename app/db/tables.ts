@@ -1,4 +1,4 @@
-import { column as c, table } from 'remix/data-table'
+import { column as c, table } from "remix/data-table";
 
 /**
  * `migrations/0001_initial.sql` の D1 スキーマに対応する data-table 定義。
@@ -6,17 +6,17 @@ import { column as c, table } from 'remix/data-table'
  */
 
 export const syncLinks = table({
-	name: 'sync_links',
-	primaryKey: 'id',
+	name: "sync_links",
+	primaryKey: "id",
 	columns: {
 		id: c.text().notNull(),
 		created_at: c.integer().notNull(),
 	},
-})
+});
 
 export const questionProgress = table({
-	name: 'question_progress',
-	primaryKey: ['sync_link_id', 'question_id'],
+	name: "question_progress",
+	primaryKey: ["sync_link_id", "question_id"],
 	columns: {
 		sync_link_id: c.text().notNull(),
 		question_id: c.text().notNull(),
@@ -24,11 +24,11 @@ export const questionProgress = table({
 		created_at: c.integer().notNull(),
 		updated_at: c.integer().notNull(),
 	},
-})
+});
 
 export const challenges = table({
-	name: 'challenges',
-	primaryKey: 'id',
+	name: "challenges",
+	primaryKey: "id",
 	columns: {
 		id: c.text().notNull(),
 		sync_link_id: c.text().notNull(),
@@ -36,17 +36,17 @@ export const challenges = table({
 		created_at: c.integer().notNull(),
 		updated_at: c.integer().notNull(),
 	},
-})
+});
 
 export const answers = table({
-	name: 'answers',
-	primaryKey: ['challenge_id', 'question_id'],
+	name: "answers",
+	primaryKey: ["challenge_id", "question_id"],
 	columns: {
 		challenge_id: c.text().notNull(),
 		question_id: c.text().notNull(),
 		elapsed_ms: c.integer().notNull(),
-		judgment: c.enum(['correct', 'incorrect']).notNull(),
+		judgment: c.enum(["correct", "incorrect"]).notNull(),
 		created_at: c.integer().notNull(),
 		updated_at: c.integer().notNull(),
 	},
-})
+});

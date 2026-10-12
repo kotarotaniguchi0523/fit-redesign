@@ -1,5 +1,5 @@
-import * as assert from 'remix/assert'
-import { describe, it } from 'remix/test'
+import * as assert from "remix/assert";
+import { describe, it } from "remix/test";
 import type { TreeNode } from "../../types/index.ts";
 import { calculatePositions, getEdgeLines, getTreeDepth } from "./binary-tree.ts";
 
@@ -46,7 +46,7 @@ describe("calculatePositions", () => {
 	it("produces a single position for a single-node tree", () => {
 		const root: TreeNode = { value: "A" };
 		const positions = calculatePositions(root, 400, 200, 20);
-		assert.equal((positions).length, 1);
+		assert.equal(positions.length, 1);
 	});
 
 	it("centers the single node horizontally", () => {
@@ -66,7 +66,7 @@ describe("calculatePositions", () => {
 			right: { value: "C" },
 		};
 		const positions = calculatePositions(root, 400, 200, 20);
-		assert.equal((positions).length, 3);
+		assert.equal(positions.length, 3);
 	});
 
 	it("uses explicit x/y coordinates when provided on nodes", () => {
@@ -82,7 +82,7 @@ describe("getEdgeLines", () => {
 		const root: TreeNode = { value: "A" };
 		const positions = calculatePositions(root, 400, 200, 20);
 		const edges = getEdgeLines(positions, 20);
-		assert.equal((edges).length, 0);
+		assert.equal(edges.length, 0);
 	});
 
 	it("returns correct number of edges for a tree with children", () => {
@@ -93,7 +93,7 @@ describe("getEdgeLines", () => {
 		};
 		const positions = calculatePositions(root, 400, 200, 20);
 		const edges = getEdgeLines(positions, 20);
-		assert.equal((edges).length, 2);
+		assert.equal(edges.length, 2);
 	});
 
 	it("shortens edge lines by nodeRadius on both ends", () => {
@@ -118,6 +118,6 @@ describe("getEdgeLines", () => {
 		const edgeDist = Math.sqrt(edgeDx * edgeDx + edgeDy * edgeDy);
 
 		// Edge length should be approximately fullDist - 2 * nodeRadius
-		assert.ok(Math.abs((edgeDist) - (fullDist - 2 * nodeRadius)) < 1e-6);
+		assert.ok(Math.abs(edgeDist - (fullDist - 2 * nodeRadius)) < 1e-6);
 	});
 });

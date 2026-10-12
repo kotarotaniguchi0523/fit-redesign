@@ -1,5 +1,5 @@
-import * as assert from 'remix/assert'
-import { describe, it } from 'remix/test'
+import * as assert from "remix/assert";
+import { describe, it } from "remix/test";
 import type { LogicGate, LogicInput, LogicOutput, LogicWire } from "../../types/index.ts";
 import { getGateSymbolPath, getLogicCircuitViewport, getWirePath } from "./logic-circuit.ts";
 
@@ -10,8 +10,8 @@ describe("getGateSymbolPath", () => {
 		it(`returns a non-empty SVG string for gate type "${type}"`, () => {
 			const gate: LogicGate = { id: "g1", type, x: 100, y: 100 };
 			const result = getGateSymbolPath(gate);
-			assert.ok((result.length) > (0));
-			assert.ok((result).includes("<g>"));
+			assert.ok(result.length > 0);
+			assert.ok(result.includes("<g>"));
 		});
 	}
 });
@@ -25,15 +25,15 @@ describe("getWirePath", () => {
 		const wire: LogicWire = { from: "i1", to: "g1" };
 		const result = getWirePath(wire, inputs, outputs, gates);
 		assert.ok(result !== null);
-		assert.ok((result).includes("M"));
-		assert.ok((result).includes("L"));
+		assert.ok(result.includes("M"));
+		assert.ok(result.includes("L"));
 	});
 
 	it("returns a path string for a valid wire from gate to output", () => {
 		const wire: LogicWire = { from: "g1", to: "o1" };
 		const result = getWirePath(wire, inputs, outputs, gates);
 		assert.ok(result !== null);
-		assert.ok((result).includes("M"));
+		assert.ok(result.includes("M"));
 	});
 
 	it("returns null for a wire with a missing source element", () => {
@@ -59,8 +59,8 @@ describe("getWirePath", () => {
 		};
 		const result = getWirePath(wire, inputs, outputs, gates);
 		assert.ok(result !== null);
-		assert.ok((result).includes("60 50"));
-		assert.ok((result).includes("80 70"));
+		assert.ok(result.includes("60 50"));
+		assert.ok(result.includes("80 70"));
 	});
 
 	it("connects an explicit route horizontally to a gate input", () => {
@@ -92,9 +92,9 @@ describe("getLogicCircuitViewport", () => {
 			[],
 		);
 
-		assert.ok((viewport.width) < (350));
-		assert.ok((viewport.height) < (150));
-		assert.ok((viewport.x) < (50));
-		assert.ok((viewport.y) < (60));
+		assert.ok(viewport.width < 350);
+		assert.ok(viewport.height < 150);
+		assert.ok(viewport.x < 50);
+		assert.ok(viewport.y < 60);
 	});
 });

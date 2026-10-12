@@ -5,39 +5,39 @@
  * Workers Assets バインディング（`env.ASSETS`）へ委譲する。
  * `runWorkerFirst: true` なので全リクエストが Worker へ来る。
  */
-const ASSET_PREFIX = '/assets/'
+const ASSET_PREFIX = "/assets/";
 
 const ASSET_EXTENSIONS = new Set([
-	'.js',
-	'.mjs',
-	'.css',
-	'.map',
-	'.svg',
-	'.png',
-	'.jpg',
-	'.jpeg',
-	'.gif',
-	'.webp',
-	'.avif',
-	'.ico',
-	'.woff',
-	'.woff2',
-	'.ttf',
-	'.otf',
-	'.txt',
-	'.xml',
-	'.json',
-	'.webmanifest',
-	'.pdf',
-])
+	".js",
+	".mjs",
+	".css",
+	".map",
+	".svg",
+	".png",
+	".jpg",
+	".jpeg",
+	".gif",
+	".webp",
+	".avif",
+	".ico",
+	".woff",
+	".woff2",
+	".ttf",
+	".otf",
+	".txt",
+	".xml",
+	".json",
+	".webmanifest",
+	".pdf",
+]);
 
 export function looksLikeAsset(pathname: string): boolean {
 	if (pathname.startsWith(ASSET_PREFIX)) {
-		return true
+		return true;
 	}
-	const lastDot = pathname.lastIndexOf('.')
-	if (lastDot <= 0 || lastDot < pathname.lastIndexOf('/')) {
-		return false
+	const lastDot = pathname.lastIndexOf(".");
+	if (lastDot <= 0 || lastDot < pathname.lastIndexOf("/")) {
+		return false;
 	}
-	return ASSET_EXTENSIONS.has(pathname.slice(lastDot).toLowerCase())
+	return ASSET_EXTENSIONS.has(pathname.slice(lastDot).toLowerCase());
 }

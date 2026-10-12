@@ -1,64 +1,64 @@
-import { css } from 'remix/component'
-import type { Handle } from 'remix/component'
+import type { Handle } from "remix/component";
+import { css } from "remix/component";
 
-import { getExamByNumber, selectVisibleExamNumbers } from '../data/exams/index.ts'
-import type { UnitBasedTab, Year } from '../types/index.ts'
-import { routes } from '../routes.ts'
-import { PageHeading } from '../ui/PageHeading.tsx'
-import { Document } from './document.tsx'
+import { getExamByNumber, selectVisibleExamNumbers } from "../data/exams/index.ts";
+import { routes } from "../routes.ts";
+import type { UnitBasedTab, Year } from "../types/index.ts";
+import { PageHeading } from "../ui/PageHeading.tsx";
+import { Document } from "./document.tsx";
 
 const mainStyle = css({
-	maxWidth: '52rem',
-	margin: '0 auto',
-	padding: '1rem 1rem 4rem',
-})
+	maxWidth: "52rem",
+	margin: "0 auto",
+	padding: "1rem 1rem 4rem",
+});
 
 const sectionStyle = css({
-	marginTop: '1.5rem',
-	background: 'var(--color-bg-card)',
-	border: '1px solid var(--color-border)',
-	borderRadius: '0.75rem',
-	padding: '1rem 1.25rem',
-})
+	marginTop: "1.5rem",
+	background: "var(--color-bg-card)",
+	border: "1px solid var(--color-border)",
+	borderRadius: "0.75rem",
+	padding: "1rem 1.25rem",
+});
 
 const sectionTitleStyle = css({
-	fontSize: '1.05rem',
+	fontSize: "1.05rem",
 	fontWeight: 700,
-	color: 'var(--color-primary)',
-	margin: '0 0 0.5rem',
-})
+	color: "var(--color-primary)",
+	margin: "0 0 0.5rem",
+});
 
 const listStyle = css({
-	listStyle: 'none',
+	listStyle: "none",
 	margin: 0,
 	padding: 0,
-	display: 'grid',
-	gap: '0.25rem',
-})
+	display: "grid",
+	gap: "0.25rem",
+});
 
 const linkStyle = css({
-	color: 'var(--color-primary)',
-	textDecoration: 'none',
-	'&:hover': { textDecoration: 'underline' },
-})
+	color: "var(--color-primary)",
+	textDecoration: "none",
+	"&:hover": { textDecoration: "underline" },
+});
 
 export interface UnitExamSection {
-	examNumber: number
-	title: string
-	questions: ReadonlyArray<{ id: string; number: number; text: string }>
+	examNumber: number;
+	title: string;
+	questions: ReadonlyArray<{ id: string; number: number; text: string }>;
 }
 
 export function UnitYearPage(
 	handle: Handle<{
-		unit: UnitBasedTab
-		year: string
-		sections: readonly UnitExamSection[]
-		integratedTitle?: string
-		currentPath: string
+		unit: UnitBasedTab;
+		year: string;
+		sections: readonly UnitExamSection[];
+		integratedTitle?: string;
+		currentPath: string;
 	}>,
 ) {
 	return () => {
-		const { unit, year, sections, integratedTitle, currentPath } = handle.props
+		const { unit, year, sections, integratedTitle, currentPath } = handle.props;
 
 		return (
 			<Document
@@ -98,8 +98,8 @@ export function UnitYearPage(
 					))}
 				</main>
 			</Document>
-		)
-	}
+		);
+	};
 }
 
 /** 単元・年度から表示すべき小テストの一覧を組み立てる。 */
@@ -107,9 +107,9 @@ export async function buildUnitExamSections(
 	unit: UnitBasedTab,
 	year: string,
 ): Promise<UnitExamSection[]> {
-	const mapping = unit.examMapping.find((item) => item.year === year)
+	const mapping = unit.examMapping.find((item) => item.year === year);
 	if (!mapping) {
-		return []
+		return [];
 	}
 
 	const candidates = await Promise.all(
@@ -117,7 +117,7 @@ export async function buildUnitExamSections(
 			examNumber,
 			exam: (await getExamByNumber(examNumber))?.exams[year as Year],
 		})),
-	)
+	);
 
 	const visible = new Set(
 		selectVisibleExamNumbers(
@@ -126,21 +126,21 @@ export async function buildUnitExamSections(
 				questionIds: (exam?.questions ?? []).map((question) => question.id),
 			})),
 		),
-	)
+	);
 
 	return candidates
 		.filter(({ examNumber }) => visible.has(examNumber))
 		.map(({ examNumber, exam }) => ({
 			examNumber,
-			title: exam?.title ?? '',
+			title: exam?.title ?? "",
 			questions: (exam?.questions ?? []).map((question) => ({
 				id: question.id,
 				number: question.number,
 				text: question.text,
 			})),
-		}))
+		}));
 }
 
 export function getIntegratedTitle(unit: UnitBasedTab, year: string): string | undefined {
-	return unit.examMapping.find((item) => item.year === year)?.integratedTitle
+	return unit.examMapping.find((item) => item.year === year)?.integratedTitle;
 }

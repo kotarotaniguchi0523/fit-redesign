@@ -1,5 +1,5 @@
-import * as assert from 'remix/assert'
-import { describe, it } from 'remix/test'
+import * as assert from "remix/assert";
+import { describe, it } from "remix/test";
 import type { StateNode, Transition } from "../../types/index.ts";
 import {
 	buildTransitionData,
@@ -78,10 +78,10 @@ describe("getArrowHead", () => {
 		const [tipA, wing1, tipB, wing2] = parsePoints(path);
 		assert.deepEqual(tipA, { x: 80, y: 0 });
 		assert.deepEqual(tipB, { x: 80, y: 0 });
-		assert.ok(Math.abs((wing1.x) - (74.803_847_577)) < 1e-6);
-		assert.ok(Math.abs((wing1.y) - (3)) < 1e-6);
-		assert.ok(Math.abs((wing2.x) - (74.803_847_577)) < 1e-6);
-		assert.ok(Math.abs((wing2.y) - (-3)) < 1e-6);
+		assert.ok(Math.abs(wing1.x - 74.803_847_577) < 1e-6);
+		assert.ok(Math.abs(wing1.y - 3) < 1e-6);
+		assert.ok(Math.abs(wing2.x - 74.803_847_577) < 1e-6);
+		assert.ok(Math.abs(wing2.y - -3) < 1e-6);
 	});
 
 	it("offsets the tip by the supplied nodeRadius", () => {
@@ -129,7 +129,7 @@ describe("buildTransitionData", () => {
 		const transitions: Transition[] = [{ from: "q0", to: "q1", label: "a" }];
 		const result = buildTransitionData(nodes, transitions);
 
-		assert.equal((result).length, 1);
+		assert.equal(result.length, 1);
 		assert.equal(result[0].type, "normal");
 		assert.equal(result[0].label, "a");
 		assert.ok(result[0].pathD !== undefined);
@@ -142,7 +142,7 @@ describe("buildTransitionData", () => {
 		const transitions: Transition[] = [{ from: "q0", to: "q0", label: "b" }];
 		const result = buildTransitionData(nodes, transitions);
 
-		assert.equal((result).length, 1);
+		assert.equal(result.length, 1);
 		assert.equal(result[0].type, "selfLoop");
 		assert.equal(result[0].label, "b");
 		assert.ok(result[0].cx !== undefined);
@@ -154,7 +154,7 @@ describe("buildTransitionData", () => {
 	it("skips transitions with unknown node ids", () => {
 		const transitions: Transition[] = [{ from: "q0", to: "q99", label: "x" }];
 		const result = buildTransitionData(nodes, transitions);
-		assert.equal((result).length, 0);
+		assert.equal(result.length, 0);
 	});
 
 	it("handles multiple transitions including mixed types", () => {
@@ -165,7 +165,7 @@ describe("buildTransitionData", () => {
 		];
 		const result = buildTransitionData(nodes, transitions);
 
-		assert.equal((result).length, 3);
+		assert.equal(result.length, 3);
 		assert.equal(result[0].type, "normal");
 		assert.equal(result[1].type, "selfLoop");
 		assert.equal(result[2].type, "normal");
@@ -187,6 +187,6 @@ describe("buildTransitionData", () => {
 			throw new Error("self-loop transition は cy を定義しているはず");
 		}
 		// Accepting node self-loop should be positioned higher (further from node center).
-		assert.ok((acceptingCy) < (normalCy));
+		assert.ok(acceptingCy < normalCy);
 	});
 });

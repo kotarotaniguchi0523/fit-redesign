@@ -1,4 +1,4 @@
-import type { Handle } from 'remix/component'
+import type { Handle } from "remix/component";
 
 import type { FigureData } from "../../types/index.ts";
 import { BinaryTree } from "./BinaryTree.tsx";
@@ -22,30 +22,34 @@ function assertNever(value: never): never {
 /** FigureData の判別可能 Union を、対応する Hono JSX 図表へ変換する。 */
 export function Figure(handle: Handle<FigureProps>) {
 	return () => {
-		const { data, mode = "responsive" } = handle.props
+		const { data, mode = "responsive" } = handle.props;
 
-	switch (data.type) {
-		case "stateDiagram":
-			return <StateDiagram nodes={data.nodes} transitions={data.transitions} />;
-		case "binaryTree":
-			return <BinaryTree root={data.root} width={data.width} height={data.height} />;
-		case "parityCheck":
-			return <ParityCheck data={data.data} />;
-		case "logicCircuit":
-			return <LogicCircuit circuit={data} mode={mode} />;
-		case "flowchart":
-			return (
-				<Flowchart nodes={data.nodes} edges={data.edges} width={data.width} height={data.height} />
-			);
-		case "dataTable":
-		case "truthTable":
-		case "huffmanTable":
-		case "linkedListTable":
-		case "normalDistributionTable":
-			return <TableRenderer figureData={data} />;
-		default:
-			return assertNever(data);
-	}
-}
-
+		switch (data.type) {
+			case "stateDiagram":
+				return <StateDiagram nodes={data.nodes} transitions={data.transitions} />;
+			case "binaryTree":
+				return <BinaryTree root={data.root} width={data.width} height={data.height} />;
+			case "parityCheck":
+				return <ParityCheck data={data.data} />;
+			case "logicCircuit":
+				return <LogicCircuit circuit={data} mode={mode} />;
+			case "flowchart":
+				return (
+					<Flowchart
+						nodes={data.nodes}
+						edges={data.edges}
+						width={data.width}
+						height={data.height}
+					/>
+				);
+			case "dataTable":
+			case "truthTable":
+			case "huffmanTable":
+			case "linkedListTable":
+			case "normalDistributionTable":
+				return <TableRenderer figureData={data} />;
+			default:
+				return assertNever(data);
+		}
+	};
 }

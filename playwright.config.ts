@@ -1,4 +1,4 @@
-import { defineConfig } from 'playwright/test'
+import { defineConfig } from "playwright/test";
 
 /**
  * `remix test` の E2E/browser テストで使う Playwright 設定。
@@ -6,15 +6,15 @@ import { defineConfig } from 'playwright/test'
  * ここではブラウザーの実行条件とタイムアウトのみを設定する。
  */
 export default defineConfig({
-	testDir: '.',
+	testDir: ".",
 	fullyParallel: true,
 	forbidOnly: true,
 	retries: 0,
-	reporter: 'list',
+	reporter: "list",
 	timeout: 30_000,
 	use: {
 		headless: true,
 		viewport: { width: 1280, height: 900 },
 	},
-	projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
-})
+	projects: [{ name: "chromium", use: { browserName: "chromium" } }],
+});

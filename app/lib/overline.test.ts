@@ -1,5 +1,5 @@
-import * as assert from 'remix/assert'
-import { describe, it } from 'remix/test'
+import * as assert from "remix/assert";
+import { describe, it } from "remix/test";
 
 import { overlineToHtml } from "./overline.ts";
 
@@ -17,7 +17,10 @@ describe("overlineToHtml", () => {
 	});
 
 	it("複数のオーバーラインを個別に変換する", () => {
-		assert.equal(overlineToHtml("B̅ ∨ A̅"), '<span class="ovl">B</span> ∨ <span class="ovl">A</span>');
+		assert.equal(
+			overlineToHtml("B̅ ∨ A̅"),
+			'<span class="ovl">B</span> ∨ <span class="ovl">A</span>',
+		);
 	});
 
 	it("HTML特殊文字をエスケープする（XSS防止）", () => {

@@ -1,5 +1,5 @@
-import * as assert from 'remix/assert'
-import { describe, it } from 'remix/test'
+import * as assert from "remix/assert";
+import { describe, it } from "remix/test";
 import { calculateParity } from "./parity-check.ts";
 
 describe("calculateParity", () => {
@@ -40,7 +40,7 @@ describe("calculateParity", () => {
 		];
 		const result = calculateParity(data, 40);
 
-		assert.equal((result.dataCells).length, 4);
+		assert.equal(result.dataCells.length, 4);
 		assert.deepEqual(result.dataCells[0], { bit: 1, rowIndex: 0, colIndex: 0 });
 		assert.deepEqual(result.dataCells[3], { bit: 1, rowIndex: 1, colIndex: 1 });
 	});

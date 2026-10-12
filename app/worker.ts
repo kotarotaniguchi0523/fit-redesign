@@ -1,9 +1,9 @@
-import { env } from 'cloudflare:workers'
+import { env } from "cloudflare:workers";
 
-import { createD1Database } from './db/d1.ts'
-import { setDatabase, setRateLimiter } from './db/registry.ts'
-import { looksLikeAsset } from './middleware/assets.ts'
-import { router } from './router.ts'
+import { createD1Database } from "./db/d1.ts";
+import { setDatabase, setRateLimiter } from "./db/registry.ts";
+import { looksLikeAsset } from "./middleware/assets.ts";
+import { router } from "./router.ts";
 
 /**
  * Cloudflare Workers エントリポイント。
@@ -16,25 +16,25 @@ import { router } from './router.ts'
  * ミドルウェアがリクエストコンテキストへ載せる。静的アセットは Workers Assets
  * （`env.ASSETS`）へ委譲する。
  */
-setDatabase(createD1Database(env.DB))
-setRateLimiter(env.PROGRESS_RATE_LIMITER)
+setDatabase(createD1Database(env.DB));
+setRateLimiter(env.PROGRESS_RATE_LIMITER);
 
 export default {
-	async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
-		const url = new URL(request.url)
+	async fetch(request: Request, _env: Env, _ctx: ExecutionContext): Promise<Response> {
+		const url = new URL(request.url);
 
 		if (looksLikeAsset(url.pathname)) {
-			const assetResponse = await env.ASSETS.fetch(request)
+			const assetResponse = await env.ASSETS.fetch(request);
 			if (assetResponse.status !== 404) {
-				return assetResponse
+				return assetResponse;
 			}
 		}
 
 		try {
-			return await router.fetch(request)
+			return await router.fetch(request);
 		} catch (error) {
-			console.error('Unhandled error while fetching', request.url, error)
-			return new Response('Internal Server Error', { status: 500 })
+			console.error("Unhandled error while fetching", request.url, error);
+			return new Response("Internal Server Error", { status: 500 });
 		}
 	},
-} satisfies ExportedHandler<Env>
+} satisfies ExportedHandler<Env>;

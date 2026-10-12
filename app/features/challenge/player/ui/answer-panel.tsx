@@ -1,9 +1,9 @@
-import {on, unsafeHTML} from 'remix/component'
-import type { Handle } from 'remix/component'
+import type { Handle } from "remix/component";
+import { on, unsafeHTML } from "remix/component";
 
-import { overlineToHtml } from '../../../../lib/overline.ts'
-import type { Judgment } from '../../../../types/index.ts'
-import type { PlayerQuestion } from '../types.ts'
+import { overlineToHtml } from "../../../../lib/overline.ts";
+import type { Judgment } from "../../../../types/index.ts";
+import type { PlayerQuestion } from "../types.ts";
 
 /**
  * 解答・解説と自己判定。
@@ -11,16 +11,16 @@ import type { PlayerQuestion } from '../types.ts'
  */
 export function AnswerPanel(
 	handle: Handle<{
-		question: PlayerQuestion
-		isOpen: boolean
-		judgment: Judgment | undefined
-		onJudge: (judgment: Judgment) => void
+		question: PlayerQuestion;
+		isOpen: boolean;
+		judgment: Judgment | undefined;
+		onJudge: (judgment: Judgment) => void;
 	}>,
 ) {
 	return () => {
-		const { question, isOpen, judgment, onJudge } = handle.props
+		const { question, isOpen, judgment, onJudge } = handle.props;
 		if (!isOpen) {
-			return null
+			return null;
 		}
 
 		return (
@@ -45,27 +45,27 @@ export function AnswerPanel(
 						<legend class="sr-only">自己判定</legend>
 						<button
 							type="button"
-							class={`judgment-button judgment-button--correct ${judgment === 'correct' ? 'is-selected' : ''}`}
+							class={`judgment-button judgment-button--correct ${judgment === "correct" ? "is-selected" : ""}`}
 							aria-label="正解として記録"
-							aria-pressed={judgment === 'correct' ? 'true' : 'false'}
+							aria-pressed={judgment === "correct" ? "true" : "false"}
 							disabled={judgment !== undefined}
-							mix={on('click', () => onJudge('correct'))}
+							mix={on("click", () => onJudge("correct"))}
 						>
 							○
 						</button>
 						<button
 							type="button"
-							class={`judgment-button judgment-button--incorrect ${judgment === 'incorrect' ? 'is-selected' : ''}`}
+							class={`judgment-button judgment-button--incorrect ${judgment === "incorrect" ? "is-selected" : ""}`}
 							aria-label="不正解として記録"
-							aria-pressed={judgment === 'incorrect' ? 'true' : 'false'}
+							aria-pressed={judgment === "incorrect" ? "true" : "false"}
 							disabled={judgment !== undefined}
-							mix={on('click', () => onJudge('incorrect'))}
+							mix={on("click", () => onJudge("incorrect"))}
 						>
 							×
 						</button>
 					</fieldset>
 				</div>
 			</section>
-		)
-	}
+		);
+	};
 }

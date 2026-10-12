@@ -1,10 +1,10 @@
 // clientEntry を解決するため、島モジュールをバンドルへ含める（副作用 import）。
-import '../../ui/copy-button.tsx'
-import '../../features/challenge/player/exam-player.tsx'
-import '../../features/progress/ui/records-view.tsx'
-import '../../features/answer/ui/continue-learning.tsx'
+import "../../ui/copy-button.tsx";
+import "../../features/challenge/player/exam-player.tsx";
+import "../../features/progress/ui/records-view.tsx";
+import "../../features/answer/ui/continue-learning.tsx";
 
-import { run } from 'remix/component'
+import { run } from "remix/component";
 
 /**
  * ブラウザーエントリ。`run()` が clientEntry を hydrate する。
@@ -16,13 +16,13 @@ import { run } from 'remix/component'
  */
 const app = run({
 	async loadModule(moduleUrl, exportName) {
-		const mod = (await import(/* @vite-ignore */ moduleUrl)) as Record<string, unknown>
-		const component = mod[exportName]
-		if (typeof component !== 'function') {
-			throw new Error(`Unknown component: ${moduleUrl}#${exportName}`)
+		const mod = (await import(/* @vite-ignore */ moduleUrl)) as Record<string, unknown>;
+		const component = mod[exportName];
+		if (typeof component !== "function") {
+			throw new Error(`Unknown component: ${moduleUrl}#${exportName}`);
 		}
-		return component as never
+		return component as never;
 	},
-})
+});
 
-await app.ready()
+await app.ready();
