@@ -14,7 +14,8 @@
 			"!!**/.idea",
 			"!!**/screenshots",
 			"!!**/dist",
-			"!!**/dist-ssr"
+			"!!**/dist-ssr",
+			"!!**/*.generated.ts"
 		]
 	},
 	"assist": {
