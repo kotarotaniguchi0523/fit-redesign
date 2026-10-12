@@ -79,9 +79,9 @@
 - [x] `app/db/registry.ts` / `app/middleware/database.ts`（`cloudflare:workers` をルーターから隔離）
 - [x] `migrations/0001_initial.sql`（履歴破棄、現行スキーマを初期マイグレーション化）
 - [x] D1 ドライバの実 SQLite テスト（node:sqlite シム、6/6 pass）
-- [ ] `app/server/*Repository` → data-table の query/CRUD へ移植
-- [ ] 同期キー（syncKey/syncLinkId）を Web Crypto ベースで移植
-- [ ] リポジトリテストを `remix test` へ移植
+- [x] `app/server/*Repository` → data-table の query/CRUD へ移植（app/db/progress.ts）
+- [x] 同期キー（syncKey/syncLinkId）を Web Crypto ベースで移植
+- [x] リポジトリテストを `remix test` へ移植（33/33 pass）
 - [ ] ローカル D1（`wrangler d1 migrations apply --local`）でエンドツーエンド確認
 
 ## Stage 5: ページ移植（SSR + Remix component）
@@ -110,15 +110,15 @@
 
 ## Stage 7: API ルート
 
-- [ ] `/progress/links` POST
-- [ ] `/progress/sync` POST
-- [ ] `/progress/challenges` POST
-- [ ] `/progress` DELETE
+- [x] `/progress/links` POST
+- [x] `/progress/sync` POST
+- [x] `/progress/challenges` POST
+- [x] `/progress` DELETE
 - [ ] `/markdown` GET（ETag / 304 / Cache-Control）
 - [ ] `/markdown/:unit/:year` GET
-- [ ] `/health` GET
+- [x] `/health` GET
 - [ ] `/llms.txt`, `/llms-full.txt`
-- [ ] CSRF / レート制限 / 入力検証
+- [x] クロスオリジン保護(cop) / レート制限 / 入力検証
 
 ## Stage 8: 検証・デプロイ
 
