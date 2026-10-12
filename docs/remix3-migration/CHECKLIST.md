@@ -86,15 +86,15 @@
 
 ## Stage 5: ページ移植（SSR + Remix component）
 
-- [ ] `app/ui/`（Header, PageHeading, NotFoundPage, SlideSection, icons 等）
-- [ ] ホームページ（単元タブ、続きから、JSON-LD）
-- [ ] `/:unit/:year`（単元ナビ、小テスト一覧）
-- [ ] `/:unit/:year/exam/:exam`（問題一覧）
-- [ ] `/:unit/:year/exam/:exam/question/:question`（単問）
+- [x] `app/ui/`（Header, PageHeading）
+- [x] ホームページ（単元×年度テーブル、JSON-LD）
+- [x] `/:unit/:year`（小テスト一覧）
+- [x] `/:unit/:year/exam/:exam`（問題一覧）
+- [x] `/:unit/:year/exam/:exam/question/:question`（単問・真偽値表/データ表）
 - [ ] 図表コンポーネント（LogicCircuit, StateDiagram, Flowchart, BinaryTree, ParityCheck, TableRenderer）
 - [ ] `QuestionContent` / CopyButton
-- [ ] `/guide`（MDX → コンポーネント）
-- [ ] `/slide-only`
+- [x] `/guide`（MDX → ビルド時 HTML 生成）
+- [x] `/slide-only`
 - [ ] `/records`
 - [ ] 404
 
@@ -104,7 +104,7 @@
 - [ ] `$SolutionReveal` / `$ContinueLearning`
 - [ ] `$ChallengeHistory`
 - [ ] `$ProgressHistory` / `$SyncSettings`
-- [ ] `$CopyButton`
+- [x] `$CopyButton`（clientEntry + esbuild バンドル、公開URL方式）
 - [ ] `@remix-run/ui` の tabs / accordion / menu 等を適所で採用
 - [ ] JS 無効でも閲覧できること（progressive enhancement）を確認
 
@@ -114,10 +114,10 @@
 - [x] `/progress/sync` POST
 - [x] `/progress/challenges` POST
 - [x] `/progress` DELETE
-- [ ] `/markdown` GET（ETag / 304 / Cache-Control）
-- [ ] `/markdown/:unit/:year` GET
+- [x] `/markdown` GET（ETag / 304 / Cache-Control）
+- [x] `/markdown/:unit/:year` GET
 - [x] `/health` GET
-- [ ] `/llms.txt`, `/llms-full.txt`
+- [x] `/llms.txt`, `/llms-full.txt`
 - [x] クロスオリジン保護(cop) / レート制限 / 入力検証
 
 ## Stage 8: 検証・デプロイ

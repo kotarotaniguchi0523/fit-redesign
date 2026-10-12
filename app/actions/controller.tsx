@@ -7,10 +7,12 @@ import { questionToMarkdown } from '../features/markdown/questionToMarkdown.ts'
 import { unitBasedTabs } from '../data/units.ts'
 import type { Year } from '../types/index.ts'
 import { routes } from '../routes.ts'
+import { GuidePage } from './guide-page.tsx'
 import { HomePage } from './home-page.tsx'
 import { NotFoundPage } from './not-found-page.tsx'
 import { PlaceholderPage } from './placeholder-page.tsx'
 import { QuestionPage } from './question-page.tsx'
+import { SlideOnlyPage } from './slide-only-page.tsx'
 import {
 	buildUnitExamSections,
 	getIntegratedTitle,
@@ -32,9 +34,7 @@ export default createController(routes, {
 		},
 
 		guide(context) {
-			return context.render(
-				<PlaceholderPage title="利用ガイド" currentPath={context.url.pathname} />,
-			)
+			return context.render(<GuidePage currentPath={context.url.pathname} />)
 		},
 
 		records(context) {
@@ -44,9 +44,7 @@ export default createController(routes, {
 		},
 
 		slideOnly(context) {
-			return context.render(
-				<PlaceholderPage title="講義スライド" currentPath={context.url.pathname} />,
-			)
+			return context.render(<SlideOnlyPage currentPath={context.url.pathname} />)
 		},
 
 		async unitYear(context) {
