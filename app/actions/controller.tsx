@@ -3,6 +3,7 @@ import { createController } from 'remix/router'
 import { getExamByNumber } from '../data/exams/index.ts'
 import { loadHomeExamCatalog } from '../data/exams/homeCatalog.ts'
 import { generateLlmsFullTxt, generateLlmsTxt } from '../features/markdown/llms.ts'
+import { questionToMarkdown } from '../features/markdown/questionToMarkdown.ts'
 import { unitBasedTabs } from '../data/units.ts'
 import type { Year } from '../types/index.ts'
 import { routes } from '../routes.ts'
@@ -116,6 +117,7 @@ export default createController(routes, {
 					examNumber={examNumber}
 					examTitle={exam.title}
 					question={question}
+					copyText={questionToMarkdown(question, { headingLevel: 2 })}
 					currentPath={context.url.pathname}
 				/>,
 			)

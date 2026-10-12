@@ -5,6 +5,7 @@ import type { DeepReadonly } from '../lib/immutable.ts'
 import type { Question } from '../types/index.ts'
 import type { FigureData } from '../types/index.ts'
 import { routes } from '../routes.ts'
+import { CopyButton } from '../ui/copy-button.tsx'
 import { Document } from './document.tsx'
 
 const mainStyle = css({
@@ -71,11 +72,13 @@ export function QuestionPage(
 		examNumber: number
 		examTitle: string
 		question: DeepReadonly<Question>
+		copyText: string
 		currentPath: string
 	}>,
 ) {
 	return () => {
-		const { unitName, unitId, year, examNumber, examTitle, question, currentPath } = handle.props
+		const { unitName, unitId, year, examNumber, examTitle, question, copyText, currentPath } =
+			handle.props
 		const figure = question.figureData as FigureData | undefined
 
 		return (
@@ -91,7 +94,10 @@ export function QuestionPage(
 						</a>
 					</p>
 					<article mix={cardStyle}>
-						<h1>問{question.number}</h1>
+						<div mix={headerRowStyle}>
+							<h1>問{question.number}</h1>
+							<CopyButton text={copyText} />
+						</div>
 						<p mix={questionTextStyle}>{question.text}</p>
 
 						{question.options ? (
@@ -157,6 +163,13 @@ function Figure(handle: Handle<{ data: FigureData }>) {
 		return <p>(図: {data.type})</p>
 	}
 }
+
+const headerRowStyle = css({
+	display: 'flex',
+	alignItems: 'center',
+	justifyContent: 'space-between',
+	gap: '0.75rem',
+})
 
 const tableStyle = css({
 	width: '100%',

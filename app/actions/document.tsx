@@ -86,6 +86,7 @@ export function Document(handle: Handle<DocumentProps>) {
 						rel="stylesheet"
 					/>
 					<link rel="stylesheet" href="/style.css" />
+					<script type="module" src="/assets/client.js"></script>
 					{jsonLd ? (
 						<script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
 					) : null}
