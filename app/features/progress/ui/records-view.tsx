@@ -1,5 +1,5 @@
 import type { Handle } from "remix/component";
-import { clientEntry, on } from "remix/component";
+import { clientEntry, css, on } from "remix/component";
 import type { SyncKey } from "../../../types/index.ts";
 import { formatAccuracy, formatDuration, summarizeChallenge } from "../../challenge/challenge.ts";
 import { syncChallenges } from "../../challenge/challengeApi.ts";
@@ -13,6 +13,25 @@ import {
 	removeSyncKey,
 	saveSyncKey,
 } from "../progressStorage.ts";
+
+const recordsSectionStyle = css({
+	marginTop: "1.5rem",
+	padding: "1rem 1.25rem",
+	background: "var(--color-bg-card)",
+	border: "1px solid var(--color-border)",
+	borderRadius: "var(--radius-card)",
+	"& h2": { marginTop: 0, fontSize: "1.05rem", color: "var(--color-primary)" },
+	"& ul": { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: "0.25rem" },
+	"& li": { display: "flex", justifyContent: "space-between", gap: "0.75rem" },
+});
+
+const recordsActionsStyle = css({ display: "flex", gap: "0.5rem", flexWrap: "wrap" });
+
+const recordsStatusStyle = css({
+	marginTop: "0.5rem",
+	fontSize: "0.85rem",
+	color: "var(--color-text-muted)",
+});
 
 type Status = Readonly<{ kind: "idle" | "busy" | "ok" | "error"; message: string }>;
 
@@ -114,15 +133,15 @@ export const RecordsView = clientEntry(
 			const syncKey = readSyncKey();
 
 			return (
-				<section class="records-view">
-					<header class="records-view__section">
+				<section>
+					<header mix={recordsSectionStyle}>
 						<h2>同期</h2>
 						{syncKey ? (
 							<>
 								<p>
 									この端末は同期リンクで保護されています。リンクを知っている端末だけが記録を共有できます。
 								</p>
-								<div class="records-view__actions">
+								<div mix={recordsActionsStyle}>
 									<button type="button" mix={on("click", copyLink)}>
 										リンクをコピー
 									</button>
@@ -143,13 +162,13 @@ export const RecordsView = clientEntry(
 							</>
 						)}
 						{status.message ? (
-							<p role="status" class={`records-view__status is-${status.kind}`}>
+							<p role="status" mix={recordsStatusStyle}>
 								{status.message}
 							</p>
 						) : null}
 					</header>
 
-					<section class="records-view__section">
+					<section mix={recordsSectionStyle}>
 						<h2>答えを確認した問題（{view.progress.length}）</h2>
 						{view.progress.length === 0 ? (
 							<p>まだ記録はありません。</p>
@@ -165,7 +184,7 @@ export const RecordsView = clientEntry(
 						)}
 					</section>
 
-					<section class="records-view__section">
+					<section mix={recordsSectionStyle}>
 						<h2>小テストの結果（{view.challenges.length}）</h2>
 						{view.challenges.length === 0 ? (
 							<p>まだ結果はありません。</p>

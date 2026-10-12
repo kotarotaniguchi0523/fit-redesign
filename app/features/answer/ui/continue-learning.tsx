@@ -1,5 +1,6 @@
 import type { Handle } from "remix/component";
 import { clientEntry, css, on } from "remix/component";
+import { quietButtonStyle } from "../../challenge/player/ui/buttons.ts";
 
 import { readProgress } from "../../progress/progressStorage.ts";
 
@@ -16,6 +17,14 @@ const sectionStyle = css({
 	background: "var(--color-bg-card)",
 	border: "1px solid var(--color-border)",
 	borderRadius: "0.75rem",
+});
+
+const listStyle = css({
+	listStyle: "none",
+	margin: "0 0 0.5rem",
+	padding: 0,
+	display: "grid",
+	gap: "0.25rem",
 });
 
 const linkStyle = css({
@@ -64,7 +73,7 @@ export const ContinueLearning = clientEntry(
 			return (
 				<section mix={sectionStyle} aria-labelledby="continue-learning-title">
 					<h2 id="continue-learning-title">前回の続き</h2>
-					<ul class="continue-learning__list">
+					<ul mix={listStyle}>
 						{visible.map((item) => (
 							<li key={item.questionId}>
 								<a mix={linkStyle} href={item.href}>
@@ -76,11 +85,13 @@ export const ContinueLearning = clientEntry(
 					{items.length > visible.length || expanded ? (
 						<button
 							type="button"
-							class="exam-footer-button exam-footer-button--quiet"
-							mix={on("click", () => {
-								expanded = !expanded;
-								void handle.update();
-							})}
+							mix={[
+								quietButtonStyle,
+								on("click", () => {
+									expanded = !expanded;
+									void handle.update();
+								}),
+							]}
 						>
 							{expanded ? "閉じる" : "もっと見る"}
 						</button>

@@ -1,5 +1,6 @@
 import type { Handle } from "remix/component";
-import { on, ref } from "remix/component";
+import { css, on, ref } from "remix/component";
+
 import { CopyButton } from "../../../../ui/copy-button.tsx";
 import { formatDuration } from "../../challenge.ts";
 import { projectElapsedTime } from "../timerRuntime.ts";
@@ -14,7 +15,48 @@ import {
 	TimerIcon,
 } from "./icons.tsx";
 
-/** 問題の操作（コピー / 解答表示 / タイマー）と、経過時間のライブ表示。 */
+const actionStyle = css({
+	display: "inline-flex",
+	alignItems: "center",
+	justifyContent: "center",
+	width: "2.25rem",
+	height: "2.25rem",
+	border: "1px solid var(--color-border)",
+	borderRadius: "var(--radius-control)",
+	background: "var(--color-bg-card)",
+	color: "var(--color-primary)",
+	cursor: "pointer",
+	"&:hover": { background: "var(--color-primary-soft)" },
+	"&:disabled": { cursor: "default", opacity: 0.5 },
+});
+
+const actionsRowStyle = css({
+	display: "flex",
+	alignItems: "center",
+	gap: "0.5rem",
+	border: 0,
+	margin: "0.75rem 0 0",
+	padding: 0,
+});
+
+const timersStyle = css({
+	display: "flex",
+	gap: "1rem",
+	margin: "0.75rem 0 0",
+	border: 0,
+	padding: 0,
+	"& div": { display: "flex", alignItems: "baseline", gap: "0.375rem" },
+	"& span": { fontSize: "0.8rem", color: "var(--color-text-muted)" },
+	"& strong": { fontFamily: "var(--font-mono)", fontSize: "1rem" },
+});
+
+const edgeNavStyle = css({
+	display: "flex",
+	justifyContent: "space-between",
+	marginTop: "1rem",
+});
+
+/** 問題の操作（コピー / 解答表示 / タイマー）。 */
 export function QuestionActions(
 	handle: Handle<{
 		copyText: string;
@@ -28,27 +70,26 @@ export function QuestionActions(
 		const { copyText, answerOpen, onToggleAnswer, timerRunning, onToggleTimer } = handle.props;
 
 		return (
-			<fieldset class="exam-player__actions">
+			<fieldset mix={actionsRowStyle}>
 				<legend class="sr-only">問題の操作</legend>
 				<CopyButton text={copyText} label="問題文をコピー" />
 				<button
 					type="button"
-					class="exam-action exam-action--answer"
+					mix={[actionStyle, on("click", onToggleAnswer)]}
 					aria-label={answerOpen ? "解答を隠す" : "解答を表示"}
 					title={answerOpen ? "解答を隠す" : "解答を表示"}
 					aria-expanded={answerOpen ? "true" : "false"}
 					aria-controls={answerOpen ? "exam-answer" : undefined}
-					mix={on("click", onToggleAnswer)}
 				>
 					{answerOpen ? <CloseIcon /> : <AnswerSheetIcon />}
 				</button>
 				<button
 					type="button"
-					class={`exam-action exam-action--timer ${timerRunning ? "exam-action--timer-running" : ""}`}
+					mix={[actionStyle, on("click", onToggleTimer)]}
 					aria-label={timerRunning ? "計測を一時停止" : "計測を再開"}
 					title={timerRunning ? "計測を一時停止" : "計測を再開"}
 					aria-pressed={timerRunning ? "true" : "false"}
-					mix={on("click", onToggleTimer)}
+					style={timerRunning ? { borderColor: "var(--color-accent)" } : undefined}
 				>
 					{timerRunning ? <PauseIcon /> : <TimerIcon />}
 				</button>
@@ -58,8 +99,8 @@ export function QuestionActions(
 }
 
 /**
- * 経過時間の表示。Remix には effect が無いため、`ref` ミニクスで
- * DOM への attach / detach に合わせて 1 秒間隔の更新を開始・停止する。
+ * 経過時間の表示。Remix には effect が無いため、`ref` ミニクスで DOM への
+ * attach / detach に合わせて 1 秒間隔の更新を開始・停止する。
  */
 export function ChallengeTimerDisplay(
 	handle: Handle<{
@@ -106,14 +147,16 @@ export function ChallengeTimerDisplay(
 
 		return (
 			<fieldset
-				mix={ref((node) => {
-					if (node) {
-						syncTicking(timerRunning);
-					} else {
-						stopTicking();
-					}
-				})}
-				class={`exam-player__timers ${mode === "question" ? "is-single" : ""}`}
+				mix={[
+					timersStyle,
+					ref((node) => {
+						if (node) {
+							syncTicking(timerRunning);
+						} else {
+							stopTicking();
+						}
+					}),
+				]}
 			>
 				<legend class="sr-only">経過時間</legend>
 				{mode === "exam" ? (
@@ -155,26 +198,26 @@ export function PlayerEdgeNavigation(
 		}
 
 		return (
-			<nav class="exam-player__edge-nav" aria-label="問題移動">
+			<nav aria-label="問題移動" mix={edgeNavStyle}>
 				{showPrevious ? (
 					<button
 						type="button"
-						class="exam-action exam-player__edge-nav-button exam-player__edge-nav-button--previous"
+						mix={[actionStyle, on("click", onPrevious)]}
 						aria-label="前の問題"
 						title="前の問題"
 						disabled={isFirst}
-						mix={on("click", onPrevious)}
 					>
 						<ChevronLeftIcon />
 					</button>
-				) : null}
+				) : (
+					<span />
+				)}
 				<button
 					type="button"
-					class="exam-action exam-player__edge-nav-button exam-player__edge-nav-button--next"
+					mix={[actionStyle, on("click", isLast ? onFinish : onNext)]}
 					aria-label={isLast ? "結果を見る" : "次の問題"}
 					title={isLast ? "結果を見る" : "次の問題"}
 					disabled={isLast && !canFinish}
-					mix={on("click", isLast ? onFinish : onNext)}
 				>
 					{isLast ? <CheckIcon /> : <ChevronRightIcon />}
 				</button>

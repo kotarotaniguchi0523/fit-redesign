@@ -1,5 +1,5 @@
 import type { Handle } from "remix/component";
-import { clientEntry, on } from "remix/component";
+import { clientEntry, css, on } from "remix/component";
 
 import { systemClock } from "../../../lib/dateTime.ts";
 import { questionToMarkdown } from "../../markdown/questionToMarkdown.ts";
@@ -20,6 +20,7 @@ import {
 } from "./timerRuntime.ts";
 import type { ExamPlayerProps, PlayerMode, PlayerQuestion } from "./types.ts";
 import { AnswerPanel } from "./ui/answer-panel.tsx";
+import { primaryButtonStyle, quietButtonStyle } from "./ui/buttons.ts";
 import { ChallengeResultView } from "./ui/challenge-result.tsx";
 import {
 	ChallengeTimerDisplay,
@@ -29,6 +30,44 @@ import {
 import { PlayerHeader } from "./ui/player-header.tsx";
 import { PlayerList } from "./ui/player-list.tsx";
 import { QuestionContent } from "./ui/question-content.tsx";
+
+const shellStyle = css({
+	position: "relative",
+	background: "var(--color-bg-card)",
+	border: "1px solid var(--color-border)",
+	borderRadius: "var(--radius-card)",
+	overflow: "hidden",
+});
+
+const messageStyle = css({ padding: "2rem 1rem", textAlign: "center" });
+
+const resumeStyle = css({
+	maxWidth: "32rem",
+	margin: "0 auto",
+	padding: "1.5rem",
+	background: "var(--color-bg-card)",
+	border: "1px solid var(--color-border)",
+	borderRadius: "var(--radius-card)",
+});
+
+const eyebrowStyle = css({
+	margin: "0 0 0.25rem",
+	fontSize: "0.8rem",
+	letterSpacing: "0.08em",
+	textTransform: "uppercase",
+	color: "var(--color-text-muted)",
+});
+
+const resumeActionsStyle = css({
+	display: "flex",
+	gap: "0.75rem",
+	flexWrap: "wrap",
+	marginTop: "1rem",
+});
+
+const workspaceStyle = css({ padding: "1.25rem" });
+
+const questionStyle = css({ display: "grid", gap: "0.25rem" });
 
 type Phase = "player" | "resume" | "result" | "missing" | "locked";
 
@@ -55,7 +94,7 @@ export const ExamPlayer = clientEntry(
 		let resultHistory: readonly CompletedChallengePayload[] = session.resultHistory;
 		let solutionOpen = false;
 		let questionListOpen = false;
-		let navigationDirection: "forward" | "backward" = "forward";
+		// リモート同期のメッセージは未実装（同期は /records の RecordsView が担当）。
 		const syncMessage: string | null = null;
 
 		const runtime: MutableTimerRuntime = {
@@ -173,8 +212,6 @@ export const ExamPlayer = clientEntry(
 				return;
 			}
 			const moveIndex = listed ? index : (questionIndexById.get(targetId) ?? 0);
-			const fromIndex = navigation().currentQuestionIndex;
-			navigationDirection = moveIndex >= fromIndex ? "forward" : "backward";
 			state = challengeReducer(state, { type: "MOVE_TO", index: moveIndex });
 			resetTimerRuntimeInPlace(runtime, currentQuestionId());
 			runtime.running = true;
@@ -256,9 +293,6 @@ export const ExamPlayer = clientEntry(
 		};
 
 		return () => {
-			const syncMessageValue = syncMessage;
-			void syncMessageValue;
-
 			if (!state && typeof window === "undefined") {
 				return <ExamPlayerPreview props={props} />;
 			}
@@ -272,7 +306,7 @@ export const ExamPlayer = clientEntry(
 						mode={props.mode}
 						unitId={props.unitId}
 						year={props.year}
-						syncMessage={syncMessage}
+						syncMessage={syncMessage as string | null}
 						onRetry={retry}
 					/>
 				);
@@ -280,12 +314,9 @@ export const ExamPlayer = clientEntry(
 
 			if (phase === "missing") {
 				return (
-					<div class="exam-player-message">
+					<div mix={messageStyle}>
 						<p>この結果は端末内に見つかりませんでした。</p>
-						<a
-							class="exam-footer-button exam-footer-button--primary"
-							href={`/${props.unitId}/${props.year}`}
-						>
+						<a mix={primaryButtonStyle} href={`/${props.unitId}/${props.year}`}>
 							問題一覧へ戻る
 						</a>
 					</div>
@@ -298,22 +329,14 @@ export const ExamPlayer = clientEntry(
 
 			if (phase === "resume") {
 				return (
-					<section class="exam-resume" aria-labelledby="exam-resume-title">
-						<p class="page-heading__eyebrow">続きがあります</p>
+					<section mix={resumeStyle} aria-labelledby="exam-resume-title">
+						<p mix={eyebrowStyle}>続きがあります</p>
 						<h2 id="exam-resume-title">前回の試行をどうしますか？</h2>
-						<div class="exam-resume__actions">
-							<button
-								type="button"
-								class="exam-footer-button exam-footer-button--primary"
-								mix={on("click", resume)}
-							>
+						<div mix={resumeActionsStyle}>
+							<button type="button" mix={[primaryButtonStyle, on("click", resume)]}>
 								続きから
 							</button>
-							<button
-								type="button"
-								class="exam-footer-button exam-footer-button--quiet"
-								mix={on("click", retry)}
-							>
+							<button type="button" mix={[quietButtonStyle, on("click", retry)]}>
 								最初から
 							</button>
 						</div>
@@ -323,7 +346,7 @@ export const ExamPlayer = clientEntry(
 
 			const question = currentQuestion();
 			if (!question) {
-				return <div class="exam-player-message">問題を表示できませんでした。</div>;
+				return <div mix={messageStyle}>問題を表示できませんでした。</div>;
 			}
 
 			const { currentQuestionIndex, navigationLength } = navigation();
@@ -332,7 +355,7 @@ export const ExamPlayer = clientEntry(
 
 			return (
 				<section
-					class="exam-player-shell"
+					mix={shellStyle}
 					aria-label={props.mode === "exam" ? "小テストプレイヤー" : "タイムアタックプレイヤー"}
 				>
 					<PlayerHeader
@@ -356,8 +379,8 @@ export const ExamPlayer = clientEntry(
 						}}
 						onSelect={(index) => selectIndex(index, true)}
 					/>
-					<div class="exam-player__workspace">
-						<div class={`exam-player__question exam-player__question--${navigationDirection}`}>
+					<div mix={workspaceStyle}>
+						<div mix={questionStyle}>
 							<QuestionContent question={question} />
 							<ChallengeTimerDisplay
 								mode={props.mode}
@@ -405,11 +428,11 @@ function ExamPlayerPreview(handle: Handle<{ props: ExamPlayerProps }>) {
 		const { props } = handle.props;
 		const question = props.questions[0];
 		if (!question) {
-			return <div class="exam-player-shell" aria-hidden="true" />;
+			return <div mix={shellStyle} aria-hidden="true" />;
 		}
 		return (
 			<section
-				class="exam-player-shell"
+				mix={shellStyle}
 				aria-label={props.mode === "exam" ? "小テストプレイヤー" : "タイムアタックプレイヤー"}
 			>
 				<PlayerHeader
@@ -420,8 +443,8 @@ function ExamPlayerPreview(handle: Handle<{ props: ExamPlayerProps }>) {
 					onOpenQuestionList={() => {}}
 					onSelectQuestion={() => {}}
 				/>
-				<div class="exam-player__workspace">
-					<div class="exam-player__question">
+				<div mix={workspaceStyle}>
+					<div mix={questionStyle}>
 						<QuestionContent question={question} />
 						<ChallengeTimerDisplay
 							mode={props.mode}

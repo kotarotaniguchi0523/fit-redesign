@@ -1,7 +1,15 @@
 import type { Handle } from "remix/component";
+import { css } from "remix/component";
 
 import { buildTransitionData, STATE_DEFAULTS } from "../../lib/figures/state-diagram.ts";
 import type { StateNode, Transition } from "../../types/index.ts";
+
+const svgStyle = css({
+	maxWidth: "100%",
+	height: "auto",
+	border: "1px solid var(--color-border)",
+	borderRadius: "var(--radius-control)",
+});
 
 interface StateDiagramProps {
 	nodes: StateNode[];
@@ -25,7 +33,7 @@ export function StateDiagram(handle: Handle<StateDiagramProps>) {
 				height="auto"
 				viewBox={`0 0 ${width} ${height}`}
 				preserveAspectRatio="xMidYMid meet"
-				class="border border-gray-300 rounded max-w-full h-auto"
+				mix={svgStyle}
 				style={`aspect-ratio: ${width}/${height}`}
 				aria-label="状態遷移図"
 			>

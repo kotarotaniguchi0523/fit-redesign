@@ -1,4 +1,5 @@
 import type { Handle } from "remix/component";
+import { css } from "remix/component";
 
 import {
 	buildEdgeRenderData,
@@ -6,6 +7,8 @@ import {
 	FLOWCHART_DEFAULTS,
 } from "../../lib/figures/flowchart.ts";
 import type { FlowchartEdge, FlowchartNode } from "../../types/index.ts";
+
+const svgStyle = css({ maxWidth: "100%", height: "auto" });
 
 interface FlowchartProps {
 	nodes: FlowchartNode[];
@@ -32,7 +35,7 @@ export function Flowchart(handle: Handle<FlowchartProps>) {
 				height="auto"
 				viewBox={`0 0 ${width} ${height}`}
 				preserveAspectRatio="xMidYMid meet"
-				class="max-w-full h-auto"
+				mix={svgStyle}
 				style={`aspect-ratio: ${width}/${height}`}
 				aria-label="フローチャート"
 			>

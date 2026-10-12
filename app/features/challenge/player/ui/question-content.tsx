@@ -8,6 +8,13 @@ const bodyStyle = css({
 	"& p": { whiteSpace: "pre-wrap", lineHeight: 1.9 },
 });
 
+const headingStyle = css({
+	fontSize: "0.95rem",
+	letterSpacing: "0.06em",
+	color: "var(--color-text-muted)",
+	margin: "0 0 0.25rem",
+});
+
 const optionListStyle = css({
 	listStyle: "none",
 	margin: "1rem 0",
@@ -27,8 +34,8 @@ export function QuestionContent(handle: Handle<{ question: PlayerQuestion }>) {
 	return () => {
 		const { question } = handle.props;
 		return (
-			<div class="exam-question" mix={bodyStyle}>
-				<h3 class="exam-question__heading">問{question.number}</h3>
+			<div mix={bodyStyle}>
+				<h3 mix={headingStyle}>問{question.number}</h3>
 				<p>{question.text}</p>
 				{question.options ? (
 					<ul mix={optionListStyle}>

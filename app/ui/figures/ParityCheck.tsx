@@ -1,6 +1,12 @@
 import type { Handle } from "remix/component";
+import { css } from "remix/component";
 
 import { calculateParity } from "../../lib/figures/parity-check.ts";
+
+const svgStyle = css({
+	border: "1px solid var(--color-border)",
+	borderRadius: "var(--radius-control)",
+});
 
 interface ParityCheckProps {
 	data: number[][];
@@ -20,7 +26,7 @@ export function ParityCheck(handle: Handle<ParityCheckProps>) {
 				width={width}
 				height={height}
 				viewBox={`0 0 ${parity.svgWidth} ${parity.svgHeight}`}
-				class="border border-gray-300 rounded"
+				mix={svgStyle}
 				aria-label="パリティ検査図"
 			>
 				<title>パリティ検査図</title>

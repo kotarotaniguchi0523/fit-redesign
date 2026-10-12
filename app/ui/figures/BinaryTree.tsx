@@ -1,7 +1,15 @@
 import type { Handle } from "remix/component";
+import { css } from "remix/component";
 
 import { calculatePositions, getEdgeLines } from "../../lib/figures/binary-tree.ts";
 import type { TreeNode } from "../../types/index.ts";
+
+const svgStyle = css({
+	maxWidth: "100%",
+	height: "auto",
+	border: "1px solid var(--color-border)",
+	borderRadius: "var(--radius-control)",
+});
 
 interface BinaryTreeProps {
 	root: TreeNode;
@@ -23,7 +31,7 @@ export function BinaryTree(handle: Handle<BinaryTreeProps>) {
 				height="auto"
 				viewBox={`0 0 ${width} ${height}`}
 				preserveAspectRatio="xMidYMid meet"
-				class="border border-gray-300 rounded max-w-full h-auto"
+				mix={svgStyle}
 				style={`aspect-ratio: ${width}/${height}`}
 				aria-label="二分木"
 			>

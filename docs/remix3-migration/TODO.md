@@ -12,10 +12,10 @@
 
 ## P1: グローバル CSS の縮小
 
-- [ ] `scripts/build-css.mjs` を「トークン + base + sr-only」のみ出力に変更
-- [ ] 各コンポーネントのクラス指定を `css()` 併置へ移行（ドメインごと）
-- [ ] `public/style.css` から旧コンポーネントクラスを削除
-- [ ] 旧 `legacy/index.css` への依存を完全に切る
+- [x] `scripts/build-css.mjs` を「トークン + base + sr-only」のみ出力に変更（app/styles/global.css へ集約、73行）
+- [x] 各コンポーネントのクラス指定を `css()` 併置へ移行（app/** の class= は sr-only を除き 0）
+- [x] `public/style.css` から旧コンポーネントクラスを削除
+- [x] 旧 `legacy/index.css` への依存を完全に切る
 
 ## P2: features の再分割
 
@@ -39,11 +39,11 @@
 
 ## P5: `@remix-run/ui` への置換
 
-- [ ] 問題一覧ドロワ → `popover`
-- [ ] ○/× 判定 → `toggle`
+- [x] 問題一覧ドロワ → `popover`（+ `animation`）
+- [x] ○/× 判定 → `toggle`
 - [ ] ヘッダーのモバイルメニュー → `menu`
 - [ ] 年度/単元タブ → `tabs`
-- [ ] 解答開閉・結果表示のアニメーション → `animation`
+- [x] 解答開閉のアニメーション → `animation`
 - [ ] ホームの単元リスト → `accordion`
 - [ ] アイコンは `app/ui/icons.tsx` に集約（`@remix-run/ui` に無いため自作を維持）
 

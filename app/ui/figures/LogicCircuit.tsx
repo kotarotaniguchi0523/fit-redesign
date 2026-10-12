@@ -1,5 +1,5 @@
 import type { Handle } from "remix/component";
-import { unsafeHTML } from "remix/component";
+import { css, unsafeHTML } from "remix/component";
 
 import {
 	getGateSymbolPath,
@@ -9,6 +9,13 @@ import {
 } from "../../lib/figures/logic-circuit.ts";
 import type { FigureData } from "../../types/index.ts";
 import type { FigureRenderMode } from "./Figure.tsx";
+
+const svgResponsiveStyle = css({ display: "block", maxWidth: "100%" });
+const circuitFrameStyle = css({
+	overflow: "hidden",
+	border: "1px solid var(--color-border)",
+	borderRadius: "var(--radius-control)",
+});
 
 interface LogicCircuitProps {
 	circuit: Extract<FigureData, { type: "logicCircuit" }>;
@@ -31,7 +38,7 @@ export function LogicCircuit(handle: Handle<LogicCircuitProps>) {
 				height={responsive ? "100%" : height}
 				viewBox={`${viewport.x} ${viewport.y} ${viewport.width} ${viewport.height}`}
 				preserveAspectRatio="xMidYMid meet"
-				class={responsive ? "block max-w-full" : undefined}
+				mix={responsive ? svgResponsiveStyle : undefined}
 				style="background-color: #fff"
 				aria-label="論理回路図"
 			>
@@ -116,10 +123,7 @@ export function LogicCircuit(handle: Handle<LogicCircuitProps>) {
 			: `position:relative;width:${width}px;height:${height}px;background:#fff`;
 
 		return (
-			<div
-				class={responsive ? "overflow-hidden rounded border border-gray-300" : undefined}
-				style={wrapperStyle}
-			>
+			<div mix={responsive ? circuitFrameStyle : undefined} style={wrapperStyle}>
 				{svg}
 				{inputs.map((input) => (
 					<span aria-hidden="true" style={labelStyle(input.x - 17, input.y, 14)}>

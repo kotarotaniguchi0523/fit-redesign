@@ -1,10 +1,85 @@
 import type { Handle } from "remix/component";
-import { on } from "remix/component";
+import { css, on } from "remix/component";
 import type { PlayerQuestion } from "../types.ts";
 import { MenuIcon } from "./icons.tsx";
 
+const headerStyle = css({
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "space-between",
+	flexWrap: "wrap",
+	gap: "0.75rem",
+	padding: "0.75rem 1rem",
+	background: "var(--color-bg-card)",
+	borderBottom: "1px solid var(--color-border)",
+});
+
+const identityStyle = css({
+	display: "flex",
+	alignItems: "center",
+	gap: "0.5rem",
+	minWidth: 0,
+	"& h2": {
+		margin: 0,
+		fontFamily: "var(--font-serif)",
+		fontSize: "1.05rem",
+		fontWeight: 700,
+		color: "var(--color-primary)",
+	},
+});
+
+const progressStyle = css({ flex: "1 1 16rem", minWidth: 0 });
+
+const stepsStyle = css({
+	display: "flex",
+	alignItems: "center",
+	gap: "0.75rem",
+	"& ol": {
+		display: "flex",
+		flexWrap: "wrap",
+		gap: "0.25rem",
+		listStyle: "none",
+		margin: 0,
+		padding: 0,
+	},
+});
+
+const stepButtonStyle = css({
+	width: "1.75rem",
+	height: "1.75rem",
+	border: "1px solid var(--color-border)",
+	borderRadius: "999px",
+	background: "var(--color-bg)",
+	color: "var(--color-text-muted)",
+	font: "inherit",
+	fontSize: "0.8rem",
+	cursor: "pointer",
+	"&:disabled": { cursor: "default", opacity: 0.6 },
+});
+
+const stepCurrentStyle = css({
+	background: "var(--color-primary)",
+	borderColor: "var(--color-primary)",
+	color: "#fff",
+	fontWeight: 700,
+});
+
+const trackStyle = css({
+	flex: 1,
+	height: "0.375rem",
+	borderRadius: "999px",
+	background: "var(--color-primary-soft)",
+	overflow: "hidden",
+	"& > span": {
+		display: "block",
+		height: "100%",
+		background: "var(--color-accent)",
+		transition: "width 150ms ease",
+	},
+});
+
 /**
- * プレイヤーのヘッダー。タイトルと問題の進捗（番号ボタン + プログレスバー）を描く。
+ * プレイヤーのヘッダー。タイトルと問題の進捗（番号ボタン + プログレスバー）。
  * 状態は持たず、操作は親（ExamPlayer）から受け取る。
  */
 export function PlayerHeader(
@@ -26,26 +101,26 @@ export function PlayerHeader(
 			onSelectQuestion,
 			disabled = false,
 		} = handle.props;
+		const ratio = questions.length > 0 ? (currentQuestionIndex + 1) / questions.length : 0;
 
 		return (
-			<header class="exam-player__header">
-				<div class="exam-player__identity">
+			<header mix={headerStyle}>
+				<div mix={identityStyle}>
 					{questions.length > 1 ? (
 						<button
 							type="button"
-							class="exam-action exam-player__list-toggle"
+							mix={on("click", onOpenQuestionList)}
 							aria-label="問題一覧を開く"
 							title="問題一覧を開く"
 							disabled={disabled}
-							mix={on("click", onOpenQuestionList)}
 						>
 							<MenuIcon />
 						</button>
 					) : null}
 					<h2>{playerTitle}</h2>
 				</div>
-				<nav class="exam-player__progress" aria-label="問題番号">
-					<div class="exam-player__progress-steps">
+				<nav aria-label="問題番号" mix={progressStyle}>
+					<div mix={stepsStyle}>
 						<ol>
 							{questions.map((question, index) => (
 								<li key={question.id}>
@@ -53,9 +128,12 @@ export function PlayerHeader(
 										type="button"
 										aria-label={`問${index + 1}`}
 										aria-current={index === currentQuestionIndex ? "step" : undefined}
-										class={index === currentQuestionIndex ? "is-current" : ""}
+										mix={[
+											stepButtonStyle,
+											index === currentQuestionIndex ? stepCurrentStyle : null,
+											on("click", () => onSelectQuestion(index)),
+										]}
 										disabled={disabled}
-										mix={on("click", () => onSelectQuestion(index))}
 									>
 										{index + 1}
 									</button>
@@ -63,7 +141,7 @@ export function PlayerHeader(
 							))}
 						</ol>
 						<div
-							class="exam-player__progress-track"
+							mix={trackStyle}
 							role="progressbar"
 							aria-label="問題の進捗"
 							aria-valuemin={0}
@@ -71,11 +149,7 @@ export function PlayerHeader(
 							aria-valuenow={currentQuestionIndex + 1}
 							aria-valuetext={`問${currentQuestionIndex + 1} / ${questions.length}`}
 						>
-							<span
-								style={{
-									width: `${((currentQuestionIndex + 1) / questions.length) * 100}%`,
-								}}
-							/>
+							<span style={{ width: `${ratio * 100}%` }} />
 						</div>
 					</div>
 				</nav>

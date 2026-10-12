@@ -1122,6 +1122,11 @@ function normalizeChildren(children) {
   }
   return children;
 }
+function assertRemixNodes(values) {
+  for (let value of values) {
+    invariant(isRemixNode(value), "Invalid child node");
+  }
+}
 function isRemixNode(value) {
   if (value == null)
     return true;
@@ -2224,18 +2229,18 @@ function commitComponentNode(node, content) {
   committed._content = content;
   return committed;
 }
-function diffVNodes(curr, next, domParent, vParent, context, anchor, cursor) {
+function diffVNodes(curr, next, domParent, vParent, context, anchor2, cursor) {
   if (curr === null) {
-    return insert(next, domParent, vParent, context, anchor, cursor);
+    return insert(next, domParent, vParent, context, anchor2, cursor);
   }
   if (isCommittedClientEntryNode(curr) && next.kind === "component" && isEntry(next.type)) {
     return diffClientEntryBoundary(curr, next, vParent, context);
   }
   if (componentStalenessCheck !== null && curr.kind === "component" && next.kind === "component" && componentStalenessCheck(curr.type) === true) {
-    return replace(curr, next, domParent, vParent, context, anchor);
+    return replace(curr, next, domParent, vParent, context, anchor2);
   }
   if (curr.kind !== next.kind || curr.type !== next.type) {
-    return replace(curr, next, domParent, vParent, context, anchor);
+    return replace(curr, next, domParent, vParent, context, anchor2);
   }
   switch (next.kind) {
     case "host": {
@@ -2250,18 +2255,18 @@ function diffVNodes(curr, next, domParent, vParent, context, anchor, cursor) {
     case "fragment": {
       let childInputs = next._children;
       let committed = beginFragmentNode(next, vParent, getSvgContext(vParent, next));
-      committed._children = diffChildren(curr._children, childInputs, domParent, committed, context, void 0, anchor);
+      committed._children = diffChildren(curr._children, childInputs, domParent, committed, context, void 0, anchor2);
       return committed;
     }
     case "frame": {
-      return diffFrame(curr, next, domParent, vParent, context, getSvgContext(vParent, next), anchor);
+      return diffFrame(curr, next, domParent, vParent, context, getSvgContext(vParent, next), anchor2);
     }
     case "component": {
-      return diffComponent(curr, next, domParent, vParent, context, getSvgContext(vParent, next), anchor, cursor);
+      return diffComponent(curr, next, domParent, vParent, context, getSvgContext(vParent, next), anchor2, cursor);
     }
   }
 }
-function replace(curr, next, domParent, vParent, context, anchor) {
+function replace(curr, next, domParent, vParent, context, anchor2) {
   let currAnchor = findFirstDomAnchor(curr);
   if (currAnchor && currAnchor.parentNode === domParent) {
     let replacementAnchor2 = document.createComment("rmx:replace");
@@ -2273,7 +2278,7 @@ function replace(curr, next, domParent, vParent, context, anchor) {
       replacementAnchor2.parentNode?.removeChild(replacementAnchor2);
     }
   }
-  let replacementAnchor = findNextSiblingDomAnchor(curr) ?? anchor;
+  let replacementAnchor = findNextSiblingDomAnchor(curr) ?? anchor2;
   remove(curr, domParent, context);
   return insert(next, domParent, vParent, context, replacementAnchor);
 }
@@ -2423,15 +2428,15 @@ function diffText(curr, next, vParent, svg) {
   }
   return commitTextNode(next, vParent, svg, curr._dom);
 }
-function insert(node, domParent, vParent, context, anchor, cursor) {
+function insert(node, domParent, vParent, context, anchor2, cursor) {
   let { frame, scheduler, styles } = context;
   let svg = getSvgContext(vParent, node);
   let hydrationNode = cursor?.current;
-  if (hydrationNode && anchor && hydrationNode === anchor) {
+  if (hydrationNode && anchor2 && hydrationNode === anchor2) {
     hydrationNode = null;
   }
   hydrationNode = skipCommentsExceptBoundaryStart(hydrationNode ?? null, node.kind === "component" || node.kind === "fragment" || node.kind === "empty");
-  if (hydrationNode && anchor && hydrationNode === anchor) {
+  if (hydrationNode && anchor2 && hydrationNode === anchor2) {
     hydrationNode = null;
   }
   if (cursor)
@@ -2449,7 +2454,7 @@ function insert(node, domParent, vParent, context, anchor, cursor) {
       return committed;
     }
   }
-  let doInsert = anchor ? (dom) => domParent.insertBefore(dom, anchor) : (dom) => domParent.appendChild(dom);
+  let doInsert = anchor2 ? (dom) => domParent.insertBefore(dom, anchor2) : (dom) => domParent.appendChild(dom);
   if (node.kind === "empty") {
     return commitNonRenderNode(node, vParent, svg);
   }
@@ -2592,32 +2597,32 @@ function insert(node, domParent, vParent, context, anchor, cursor) {
     let committed = beginFragmentNode(node, vParent, svg);
     let children = childInputs;
     for (let i = 0; i < childInputs.length; i++) {
-      children[i] = insert(childInputs[i], domParent, committed, context, anchor, cursor);
+      children[i] = insert(childInputs[i], domParent, committed, context, anchor2, cursor);
     }
     committed._children = children;
     return committed;
   }
   if (node.kind === "component") {
-    return diffComponent(null, node, domParent, vParent, context, svg, anchor, cursor);
+    return diffComponent(null, node, domParent, vParent, context, svg, anchor2, cursor);
   }
   if (node.kind === "frame") {
-    return insertFrame(node, domParent, vParent, context, svg, anchor, cursor);
+    return insertFrame(node, domParent, vParent, context, svg, anchor2, cursor);
   }
   invariant(false, "Unexpected node type");
 }
-function diffFrame(curr, next, domParent, vParent, context, svg, anchor) {
+function diffFrame(curr, next, domParent, vParent, context, svg, anchor2) {
   let { frame } = context;
   let currSrc = getFrameSrc(curr);
   let nextSrc = getFrameSrc(next);
   let currName = getFrameName(curr);
   let nextName = getFrameName(next);
   if (currName !== nextName) {
-    let replaceAnchor = curr._rangeEnd.nextSibling ?? anchor;
+    let replaceAnchor = curr._rangeEnd.nextSibling ?? anchor2;
     remove(curr, domParent, context);
     return insertFrame(next, domParent, vParent, context, svg, replaceAnchor);
   }
   if (currSrc !== nextSrc && !curr._state.resolved) {
-    let replaceAnchor = curr._rangeEnd.nextSibling ?? anchor;
+    let replaceAnchor = curr._rangeEnd.nextSibling ?? anchor2;
     remove(curr, domParent, context);
     return insertFrame(next, domParent, vParent, context, svg, replaceAnchor);
   }
@@ -2647,7 +2652,7 @@ function diffFrame(curr, next, domParent, vParent, context, svg, anchor) {
   }
   return committed;
 }
-function insertFrame(node, domParent, vParent, context, svg, anchor, cursor) {
+function insertFrame(node, domParent, vParent, context, svg, anchor2, cursor) {
   let { frame, styles } = context;
   let runtime = getFrameRuntime(frame);
   if (!runtime || runtime.canResolveFrames === false) {
@@ -2702,7 +2707,7 @@ function insertFrame(node, domParent, vParent, context, svg, anchor, cursor) {
   }
   let start = document.createComment(` rmx:f:${randomFrameId()} `);
   let end = document.createComment(" /rmx:f ");
-  let doInsert = anchor ? (dom) => domParent.insertBefore(dom, anchor) : (dom) => domParent.appendChild(dom);
+  let doInsert = anchor2 ? (dom) => domParent.insertBefore(dom, anchor2) : (dom) => domParent.appendChild(dom);
   doInsert(start);
   doInsert(end);
   let fallbackRoot = createRangeRoot([start, end], {
@@ -2919,7 +2924,7 @@ function findFrameEndComment(start) {
   }
   return null;
 }
-function renderComponent(currContent, next, domParent, context, anchor, cursor) {
+function renderComponent(currContent, next, domParent, context, anchor2, cursor) {
   let { scheduler } = context;
   let handle = next._handle;
   if (handle.isRemoved()) {
@@ -2927,13 +2932,13 @@ function renderComponent(currContent, next, domParent, context, anchor, cursor) 
     return next;
   }
   let [element, tasks] = handle.render(next.props);
-  let content = diffVNodes(currContent, toVNode(element), domParent, next, context, anchor, cursor);
+  let content = diffVNodes(currContent, toVNode(element), domParent, next, context, anchor2, cursor);
   let committed = commitComponentNode(next, content);
   handle.setScheduleUpdate(scheduler, committed, domParent);
   scheduler.enqueueTasks(tasks);
   return committed;
 }
-function diffComponent(curr, next, domParent, vParent, context, svg, anchor, cursor) {
+function diffComponent(curr, next, domParent, vParent, context, svg, anchor2, cursor) {
   let { frame } = context;
   if (curr === null) {
     let componentId = vParent.kind === "root" ? vParent._pendingHydrationComponentId : void 0;
@@ -2958,10 +2963,10 @@ function diffComponent(curr, next, domParent, vParent, context, svg, anchor, cur
       }
     });
     let mounting2 = beginComponentNode(next, vParent, svg, handle, context);
-    return renderComponent(null, mounting2, domParent, context, anchor, cursor);
+    return renderComponent(null, mounting2, domParent, context, anchor2, cursor);
   }
   let mounting = beginComponentNode(next, vParent, svg, curr._handle, context);
-  return renderComponent(curr._content, mounting, domParent, context, anchor, cursor);
+  return renderComponent(curr._content, mounting, domParent, context, anchor2, cursor);
 }
 function commitClientEntryBoundary(node, parent, svg, start, end) {
   return {
@@ -3109,7 +3114,7 @@ function performHostNodeRemoval(node, domParent, context) {
     node._dom.parentNode?.removeChild(node._dom);
   }
 }
-function diffChildren(curr, next, domParent, vParent, context, cursor, anchor) {
+function diffChildren(curr, next, domParent, vParent, context, cursor, anchor2) {
   let hasKeys = hasKeyedChildren(next);
   let committed = next;
   if (curr === null) {
@@ -3117,11 +3122,11 @@ function diffChildren(curr, next, domParent, vParent, context, cursor, anchor) {
       warnDuplicateKeys(next);
     }
     for (let i = 0; i < next.length; i++) {
-      committed[i] = insert(next[i], domParent, vParent, context, anchor, cursor);
+      committed[i] = insert(next[i], domParent, vParent, context, anchor2, cursor);
     }
     return committed;
   }
-  if (curr.length > 0 && next.length === 0 && anchor === void 0 && !parentUsesInnerHTML(vParent) && canBulkClearChildren(curr)) {
+  if (curr.length > 0 && next.length === 0 && anchor2 === void 0 && !parentUsesInnerHTML(vParent) && canBulkClearChildren(curr)) {
     for (let i = 0; i < curr.length; i++) {
       cleanupDescendants(curr[i], context);
     }
@@ -3131,7 +3136,7 @@ function diffChildren(curr, next, domParent, vParent, context, cursor, anchor) {
   if (!hasKeys) {
     for (let i = 0; i < next.length; i++) {
       let currentNode = i < curr.length ? curr[i] : null;
-      committed[i] = diffVNodes(currentNode, next[i], domParent, vParent, context, anchor, cursor);
+      committed[i] = diffVNodes(currentNode, next[i], domParent, vParent, context, anchor2, cursor);
     }
     if (curr.length > next.length) {
       for (let i = next.length; i < curr.length; i++) {
@@ -3142,7 +3147,7 @@ function diffChildren(curr, next, domParent, vParent, context, cursor, anchor) {
     }
     return committed;
   }
-  return patchKeyedChildren(curr, next, domParent, vParent, context, cursor, anchor);
+  return patchKeyedChildren(curr, next, domParent, vParent, context, cursor, anchor2);
 }
 function parentUsesInnerHTML(parent) {
   return isHostNode(parent) && getHostProps(parent).innerHTML != null;
@@ -3199,7 +3204,7 @@ function warnDuplicateKeys(children) {
     console.warn(`Duplicate keys detected in siblings: ${quotedKeys.join(", ")}. Keys should be unique.`);
   }
 }
-function patchKeyedChildren(curr, next, domParent, vParent, context, cursor, anchor) {
+function patchKeyedChildren(curr, next, domParent, vParent, context, cursor, anchor2) {
   let matches = matchKeyedChildrenInOrder(curr, next) ?? matchKeyedChildrenAfterSingleRemoval(curr, next) ?? matchKeyedChildrenAfterPairSwap(curr, next);
   if (!matches) {
     warnDuplicateKeys(next);
@@ -3224,7 +3229,7 @@ function patchKeyedChildren(curr, next, domParent, vParent, context, cursor, anc
   for (let index = 0; index < next.length; index++) {
     let oldIndex = matches[index];
     let oldNode = oldIndex >= 0 ? curr[oldIndex] : null;
-    committed[index] = diffVNodes(oldNode, next[index], domParent, vParent, context, anchor, cursor);
+    committed[index] = diffVNodes(oldNode, next[index], domParent, vParent, context, anchor2, cursor);
   }
   let committedChildren = committed;
   if (matchAnalysis.canSkipPlacement) {
@@ -3232,7 +3237,7 @@ function patchKeyedChildren(curr, next, domParent, vParent, context, cursor, anc
   }
   let stableIndexes = lisMatches(matches);
   let stableCursor = stableIndexes.length - 1;
-  let placementAnchor = anchor ?? null;
+  let placementAnchor = anchor2 ?? null;
   for (let index = next.length - 1; index >= 0; index--) {
     let nextNode = committedChildren[index];
     let isStable = stableIndexes[stableCursor] === index;
@@ -3417,18 +3422,18 @@ function lisMatches(matches) {
   }
   return tails;
 }
-function placeVNode(node, domParent, anchor) {
+function placeVNode(node, domParent, anchor2) {
   let firstDom = findFirstDomAnchor(node);
   if (!firstDom || firstDom.parentNode !== domParent)
     return;
   let lastDom = findLastDomAnchor(node);
   if (!lastDom)
     return;
-  if (anchor && domRangeContainsNode(firstDom, lastDom, anchor))
+  if (anchor2 && domRangeContainsNode(firstDom, lastDom, anchor2))
     return;
-  if (firstDom === anchor)
+  if (firstDom === anchor2)
     return;
-  moveDomRange(domParent, firstDom, lastDom, anchor);
+  moveDomRange(domParent, firstDom, lastDom, anchor2);
 }
 function findFirstDomAnchor(node) {
   if (!node)
@@ -3837,9 +3842,9 @@ function createScheduler(doc, rootTarget, styles = defaultStyleManager) {
             if (!trackCascadingUpdate(vnode))
               return;
             let curr = vnode._content;
-            let anchor = findNextSiblingDomAnchor(vnode) || void 0;
+            let anchor2 = findNextSiblingDomAnchor(vnode) || void 0;
             try {
-              renderComponent(curr, vnode, domParent, vnode._context, anchor);
+              renderComponent(curr, vnode, domParent, vnode._context, anchor2);
             } catch (error) {
               dispatchError(error);
             }
@@ -4414,18 +4419,18 @@ function diffSiblingUnits(currentNodes, nextNodes, parent, regionTailRef, contex
     }
     committed[i] = currentUnit;
   }
-  let anchor = regionTailRef;
+  let anchor2 = regionTailRef;
   for (let i = committed.length - 1; i >= 0; i--) {
     let unit = committed[i];
     let first = getSiblingUnitFirstNode(unit);
-    let ref2 = anchor?.parentNode === parent ? anchor : null;
+    let ref2 = anchor2?.parentNode === parent ? anchor2 : null;
     if (unit.kind === "node" && isPreservedDomElement(unit.node) && unit.node.parentNode === parent) {
-      anchor = unit.node;
+      anchor2 = unit.node;
       continue;
     }
     placeSiblingUnitBefore(unit, parent, ref2);
     if (first.parentNode === parent)
-      anchor = first;
+      anchor2 = first;
   }
   for (let i = 0; i < currentUnits.length; i++) {
     if (!used[i])
@@ -5601,10 +5606,10 @@ function createFrame(root, init) {
     }
   }
   async function reload(options) {
-    let transition = startReloadTransition(options);
-    void transition.committed.catch(() => {
+    let transition2 = startReloadTransition(options);
+    void transition2.committed.catch(() => {
     });
-    return await transition.finished;
+    return await transition2.finished;
   }
   function startReloadTransition(options) {
     let controller = startReload(options?.signal);
@@ -6726,7 +6731,7 @@ function getFormEncType(form, submitter) {
 // node_modules/@remix-run/component/dist/runtime/navigation.js
 var formSubmissionNavigationInfoType = /* @__PURE__ */ Symbol("frame-form-submission");
 var frameRedirectNavigationInfoType = "frame-redirect";
-function resyncWebKitScrollAfterNavigation(event, resetScroll, transition) {
+function resyncWebKitScrollAfterNavigation(event, resetScroll, transition2) {
   let userAgent = navigator.userAgent;
   if (!userAgent.includes("AppleWebKit") || isChromiumUserAgent(userAgent))
     return;
@@ -6734,7 +6739,7 @@ function resyncWebKitScrollAfterNavigation(event, resetScroll, transition) {
     return;
   if (new URL(event.destination.url).hash)
     return;
-  void transition.finished.then(() => {
+  void transition2.finished.then(() => {
     if (event.signal.aborted || window.scrollX !== 0 || window.scrollY !== 0)
       return;
     window.scrollTo({ behavior: "instant", left: 0, top: 1 });
@@ -6925,13 +6930,13 @@ function interceptNavigation(navigation, event, resetScroll, options) {
       return;
     if (event.signal.aborted)
       return scrollStyleWorkarounds?.remove();
-    let transition = navigation.transition;
-    if (!transition)
+    let transition2 = navigation.transition;
+    if (!transition2)
       return scrollStyleWorkarounds?.remove();
     transitionBound = true;
-    resyncWebKitScrollAfterNavigation(event, resetScroll, transition);
+    resyncWebKitScrollAfterNavigation(event, resetScroll, transition2);
     if (scrollStyleWorkarounds) {
-      scheduleNavigationScrollCleanup(transition, scrollStyleWorkarounds.remove, scrollStyleWorkarounds.cleanup);
+      scheduleNavigationScrollCleanup(transition2, scrollStyleWorkarounds.remove, scrollStyleWorkarounds.cleanup);
     }
   }
   let interceptOptions = {
@@ -7014,13 +7019,13 @@ function installNavigationScrollStyleWorkarounds(event, resetScroll) {
     event.signal.addEventListener("abort", remove2, { once: true });
   return { remove: remove2, cleanup: scrollStyles.cleanup };
 }
-function scheduleNavigationScrollCleanup(transition, removeScrollStyles, cleanup) {
+function scheduleNavigationScrollCleanup(transition2, removeScrollStyles, cleanup) {
   function removeAfterSuccess() {
     if (cleanup === "finished")
       return removeScrollStyles();
     requestAnimationFrame(() => requestAnimationFrame(removeScrollStyles));
   }
-  void transition.finished.then(removeAfterSuccess, removeScrollStyles);
+  void transition2.finished.then(removeAfterSuccess, removeScrollStyles);
 }
 function getRuntimeNavigation(navigation, event, resolveFormNavigation) {
   if (event.navigationType === "traverse") {
@@ -7191,6 +7196,27 @@ function run(init) {
   });
 }
 
+// node_modules/@remix-run/component/dist/runtime/create-element.js
+function createElement2(type, props, ...children) {
+  let nextProps = { ...props ?? {} };
+  if (isMixinElementType(type)) {
+    if (children.length > 0) {
+      console.error(new Error("mixin elements must not receive children"));
+    }
+  } else {
+    assertRemixNodes(children);
+    nextProps.children = normalizeChildren(children);
+  }
+  if (nextProps.key != null) {
+    let { key, ...rest } = nextProps;
+    return jsx(type, rest, key);
+  }
+  return jsx(type, nextProps);
+}
+function isMixinElementType(type) {
+  return typeof type === "function" && "__rmxMixinElementType" in type;
+}
+
 // node_modules/@remix-run/component/dist/runtime/mixins/ref-mixin.js
 var ref = createMixin((handle) => {
   let controller;
@@ -7209,6 +7235,22 @@ var ref = createMixin((handle) => {
     return handle.element;
   };
 });
+
+// node_modules/@remix-run/component/dist/runtime/mixins/attrs-mixin.js
+var attrsMixin = createMixin((handle) => (defaults, props) => {
+  let nextProps = props;
+  for (let key in defaults) {
+    if (props[key] !== void 0)
+      continue;
+    if (nextProps === props)
+      nextProps = { ...props };
+    nextProps[key] = defaults[key];
+  }
+  return nextProps === props ? handle.element : createElement2(handle.element, nextProps);
+});
+function attrs(defaults) {
+  return attrsMixin(defaults);
+}
 
 // node_modules/@remix-run/component/dist/style/css-mixin.js
 var clientStyleCache = /* @__PURE__ */ new Map();
@@ -7278,7 +7320,7 @@ var buttonStyle = css({
 });
 var CopyButton = clientEntry(
   "/assets/client.js#CopyButton",
-  function CopyButton2(handle) {
+  function CopyButtonEntry(handle) {
     let state = "idle";
     return () => {
       const label = state === "copied" ? "\u30B3\u30D4\u30FC\u3057\u307E\u3057\u305F" : state === "failed" ? "\u30B3\u30D4\u30FC\u5931\u6557" : handle.props.label ?? "Markdown\u3092\u30B3\u30D4\u30FC";
@@ -7313,6 +7355,403 @@ var CopyButton = clientEntry(
 var systemClock = {
   nowEpochMilliseconds: () => Date.now()
 };
+
+// app/features/markdown/questionToMarkdown.ts
+function tableToMarkdown(columns, rows) {
+  const header = `| ${columns.map((c) => c.label).join(" | ")} |`;
+  const separator = `| ${columns.map(() => "---").join(" | ")} |`;
+  const dataRows = rows.map((row) => {
+    const cells = columns.map((c) => String(row[c.key] ?? ""));
+    return `| ${cells.join(" | ")} |`;
+  });
+  return [header, separator].concat(dataRows).join("\n");
+}
+function figureDataToMarkdown(figureData) {
+  switch (figureData.type) {
+    case "truthTable":
+    case "dataTable":
+      return tableToMarkdown(figureData.columns, figureData.rows);
+    case "huffmanTable": {
+      const { characters, probabilities } = figureData.data;
+      return ["| \u6587\u5B57 | \u78BA\u7387 |", "| --- | --- |"].concat(characters.map((c, i) => `| ${c} | ${probabilities[i]} |`)).join("\n");
+    }
+    case "linkedListTable":
+      return ["| \u30A2\u30C9\u30EC\u30B9 | \u30C7\u30FC\u30BF | \u30DD\u30A4\u30F3\u30BF |", "| --- | --- | --- |"].concat(figureData.entries.map((e) => `| ${e.address} | ${e.data} | ${e.pointer} |`)).join("\n");
+    case "normalDistributionTable":
+      return ["| u | \u78BA\u7387 |", "| --- | --- |"].concat(figureData.entries.map((e) => `| ${e.u} | ${e.probability} |`)).join("\n");
+    case "parityCheck":
+      return figureData.data.map((row) => `| ${row.join(" | ")} |`).join("\n");
+    case "stateDiagram": {
+      const { nodes, transitions } = figureData;
+      const nodeLines = nodes.map((node) => {
+        const markers = [
+          ...node.isInitial ? ["\u521D\u671F\u72B6\u614B"] : [],
+          ...node.isAccepting ? ["\u53D7\u7406\u72B6\u614B"] : []
+        ];
+        const markerStr = markers.length > 0 ? ` (${markers.join(", ")})` : "";
+        return `- ${node.label}${markerStr}`;
+      });
+      const nodeById = new Map(nodes.map((n) => [n.id, n]));
+      const transLines = transitions.map((t) => {
+        const fromNode = nodeById.get(t.from);
+        const toNode = nodeById.get(t.to);
+        return `- ${fromNode?.label ?? t.from} --[${t.label}]--> ${toNode?.label ?? t.to}`;
+      });
+      return ["**\u72B6\u614B\u9077\u79FB\u56F3**", "", "\u72B6\u614B:"].concat(nodeLines, ["", "\u9077\u79FB:"], transLines).join("\n");
+    }
+    case "binaryTree": {
+      const collectNodes = (node, depth) => {
+        if (!node) {
+          return [];
+        }
+        const indent2 = "  ".repeat(depth);
+        return [indent2.concat(`- ${node.value}`)].concat(
+          collectNodes(node.left, depth + 1),
+          collectNodes(node.right, depth + 1)
+        );
+      };
+      return ["**\u4E8C\u5206\u6728**", ""].concat(collectNodes(figureData.root, 0)).join("\n");
+    }
+    case "logicCircuit": {
+      const { inputs, outputs, gates } = figureData;
+      return [
+        "**\u8AD6\u7406\u56DE\u8DEF**",
+        "",
+        `\u5165\u529B: ${inputs.map((i) => i.label).join(", ")}`,
+        `\u51FA\u529B: ${outputs.map((o) => o.label).join(", ")}`,
+        `\u30B2\u30FC\u30C8: ${gates.map((g) => `${g.id}(${g.type})`).join(", ")}`
+      ].join("\n");
+    }
+    case "flowchart": {
+      const { nodes, edges } = figureData;
+      const nodeLines = nodes.map((node) => `- [${node.type}] ${node.label}`);
+      const nodeById = new Map(nodes.map((n) => [n.id, n]));
+      const edgeLines = edges.map((edge) => {
+        const fromNode = nodeById.get(edge.from);
+        const toNode = nodeById.get(edge.to);
+        const label = edge.label ? ` (${edge.label})` : "";
+        return `- ${fromNode?.label ?? edge.from} --> ${toNode?.label ?? edge.to}${label}`;
+      });
+      return ["**\u30D5\u30ED\u30FC\u30C1\u30E3\u30FC\u30C8**", "", "\u30CE\u30FC\u30C9:"].concat(nodeLines, ["", "\u30D5\u30ED\u30FC:"], edgeLines).join("\n");
+    }
+    default:
+      return "";
+  }
+}
+function buildFigureSection(question, sectionHeading) {
+  if (question.figureData) {
+    return [`${sectionHeading} \u56F3`, "", figureDataToMarkdown(question.figureData), ""];
+  }
+  if (question.figureDescription) {
+    return [`> **\u56F3**: ${question.figureDescription}`, ""];
+  }
+  return [];
+}
+function questionToMarkdown(question, {
+  includeSolution = true,
+  headingLevel = 2
+} = {}) {
+  const heading = "#".repeat(headingLevel);
+  const sectionHeading = `${heading}#`;
+  const base = [`${heading} \u554F\u984C ${question.number}`, "", question.text, ""];
+  const figure = buildFigureSection(question, sectionHeading);
+  const options = question.options && question.options.length > 0 ? [`${sectionHeading} \u9078\u629E\u80A2`].concat(
+    question.options.map(
+      (option) => `- **${option.label}**: ${option.value || "(\u672A\u5165\u529B)"}`
+    )
+  ).concat("") : [];
+  const answer = includeSolution ? [`${sectionHeading} \u89E3\u7B54`, question.answer, ""] : [];
+  const explanation = includeSolution && question.explanation ? [`${sectionHeading} \u89E3\u8AAC`, question.explanation] : [];
+  return base.concat(figure, options, answer, explanation).join("\n").trim();
+}
+
+// app/lib/questionOrder.ts
+function sortByQuestionId(values) {
+  return values.toSorted((left, right) => left.questionId.localeCompare(right.questionId));
+}
+
+// app/lib/sort.ts
+function sortNewestFirst(values) {
+  return values.toSorted((left, right) => right.updatedAt - left.updatedAt);
+}
+
+// app/features/challenge/challenge.ts
+var MAX_REASONABLE_TIMER_DELTA_MS = 24 * 60 * 60 * 1e3;
+function calculateElapsedDelta(runtime, now) {
+  if (!runtime.running || runtime.lastSample === null) {
+    return 0;
+  }
+  const delta = now - runtime.lastSample;
+  if (!Number.isFinite(delta) || delta < 0 || delta > MAX_REASONABLE_TIMER_DELTA_MS) {
+    return 0;
+  }
+  return delta;
+}
+function createInitialChallengeState(input) {
+  const maxIndex = Math.max(input.questionIds.length - 1, 0);
+  return {
+    version: 1,
+    challengeId: input.challengeId,
+    scopeKey: input.scopeKey,
+    examId: input.examId,
+    mode: input.mode,
+    questionIds: [...input.questionIds],
+    createdAt: input.createdAt,
+    updatedAt: null,
+    currentIndex: Math.min(Math.max(input.initialIndex ?? 0, 0), maxIndex),
+    revealedQuestionIds: /* @__PURE__ */ new Set(),
+    judgments: {},
+    answerCreatedAt: {},
+    questionElapsedMs: {},
+    status: "active"
+  };
+}
+function revealQuestion(state, action) {
+  if (!state.questionIds.includes(action.questionId) || state.revealedQuestionIds.has(action.questionId)) {
+    return state;
+  }
+  return {
+    ...state,
+    revealedQuestionIds: /* @__PURE__ */ new Set([...state.revealedQuestionIds, action.questionId])
+  };
+}
+function judgeQuestion(state, action) {
+  if (!state.questionIds.includes(action.questionId)) {
+    return state;
+  }
+  if (state.revealedQuestionIds.has(action.questionId) === false) {
+    return state;
+  }
+  if (state.judgments[action.questionId]) {
+    return state;
+  }
+  return {
+    ...state,
+    judgments: { ...state.judgments, [action.questionId]: action.judgment },
+    answerCreatedAt: {
+      ...state.answerCreatedAt,
+      [action.questionId]: action.answerCreatedAt
+    }
+  };
+}
+function applyElapsed(state, action) {
+  if (!state.questionIds.includes(action.questionId)) {
+    return state;
+  }
+  if (!Number.isFinite(action.deltaMs) || action.deltaMs <= 0) {
+    return state;
+  }
+  const current = state.questionElapsedMs[action.questionId] ?? 0;
+  return {
+    ...state,
+    questionElapsedMs: {
+      ...state.questionElapsedMs,
+      [action.questionId]: current + action.deltaMs
+    }
+  };
+}
+function moveTo(state, action) {
+  if (!Number.isInteger(action.index)) {
+    return state;
+  }
+  if (action.index < 0 || action.index >= state.questionIds.length) {
+    return state;
+  }
+  if (action.index === state.currentIndex) {
+    return state;
+  }
+  return { ...state, currentIndex: action.index };
+}
+function completeChallenge(state, action) {
+  return state.status === "active" && isChallengeComplete(state) ? { ...state, status: "completed", updatedAt: action.updatedAt } : state;
+}
+function challengeReducer(state, action) {
+  if (state.status !== "active") {
+    return state;
+  }
+  switch (action.type) {
+    case "REVEAL_QUESTION":
+      return revealQuestion(state, action);
+    case "JUDGE_QUESTION":
+      return judgeQuestion(state, action);
+    case "APPLY_ELAPSED":
+      return applyElapsed(state, action);
+    case "MOVE_TO":
+      return moveTo(state, action);
+    case "COMPLETE":
+      return completeChallenge(state, action);
+    case "MARK_INCOMPLETE":
+      return state.status === "active" ? { ...state, status: "incomplete" } : state;
+    default:
+      action;
+      return state;
+  }
+}
+function applyElapsedDelta(state, questionId, deltaMs) {
+  return challengeReducer(state, { type: "APPLY_ELAPSED", questionId, deltaMs });
+}
+function isChallengeComplete(state) {
+  return state.questionIds.length > 0 && state.questionIds.every(
+    (id) => state.judgments[id] !== void 0 && state.answerCreatedAt[id] !== void 0
+  );
+}
+function createChallengeSnapshot(state) {
+  const snapshot = {
+    version: 1,
+    challengeId: state.challengeId,
+    scopeKey: state.scopeKey,
+    examId: state.examId,
+    mode: state.mode,
+    questionIds: [...state.questionIds],
+    createdAt: state.createdAt,
+    currentIndex: state.currentIndex,
+    revealedQuestionIds: [...state.revealedQuestionIds],
+    judgments: { ...state.judgments },
+    answerCreatedAt: { ...state.answerCreatedAt },
+    questionElapsedMs: { ...state.questionElapsedMs }
+  };
+  return state.status === "completed" ? { ...snapshot, status: "completed", updatedAt: state.updatedAt } : { ...snapshot, status: state.status, updatedAt: null };
+}
+function restoreChallengeState(snapshot) {
+  return {
+    ...snapshot,
+    questionIds: [...snapshot.questionIds],
+    revealedQuestionIds: new Set(snapshot.revealedQuestionIds),
+    judgments: { ...snapshot.judgments },
+    answerCreatedAt: { ...snapshot.answerCreatedAt },
+    questionElapsedMs: { ...snapshot.questionElapsedMs }
+  };
+}
+function toCompletedChallengePayload(state, updatedAt) {
+  if (!isChallengeComplete(state)) {
+    return null;
+  }
+  const answers = state.questionIds.flatMap((questionId) => {
+    const judgment = state.judgments[questionId];
+    const createdAt = state.answerCreatedAt[questionId];
+    if (judgment === void 0 || createdAt === void 0) {
+      return [];
+    }
+    return [
+      {
+        questionId,
+        elapsedMs: Math.max(0, Math.round(state.questionElapsedMs[questionId] ?? 0)),
+        judgment,
+        createdAt,
+        updatedAt
+      }
+    ];
+  });
+  if (answers.length !== state.questionIds.length) {
+    return null;
+  }
+  return {
+    challengeId: state.challengeId,
+    examId: state.examId,
+    createdAt: state.createdAt,
+    updatedAt,
+    answers
+  };
+}
+function formatDuration(elapsedMs) {
+  const totalSeconds = Math.max(0, Math.floor(elapsedMs / 1e3));
+  const seconds = totalSeconds % 60;
+  const minutes = Math.floor(totalSeconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return hours > 0 ? `${hours}:${String(remainingMinutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}` : `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+function formatAccuracy(accuracy) {
+  return accuracy === null ? "\u2014" : `${Math.round(accuracy * 100)}%`;
+}
+function countJudgments(answers) {
+  const correctCount = answers.filter((answer) => answer.judgment === "correct").length;
+  return { correctCount, incorrectCount: answers.length - correctCount };
+}
+function summarizeChallenge(challenge) {
+  const { correctCount, incorrectCount } = countJudgments(challenge.answers);
+  const judgedCount = correctCount + incorrectCount;
+  return {
+    challengeCount: 1,
+    judgedCount,
+    correctCount,
+    incorrectCount,
+    accuracy: judgedCount === 0 ? null : correctCount / judgedCount,
+    totalElapsedMs: challenge.answers.reduce((total, answer) => total + answer.elapsedMs, 0)
+  };
+}
+function aggregateChallengeResults(completed) {
+  const answers = completed.flatMap((challenge) => challenge.answers);
+  const { correctCount, incorrectCount } = countJudgments(answers);
+  const judgedCount = correctCount + incorrectCount;
+  const byQuestion = Object.fromEntries(
+    Array.from(
+      Map.groupBy(answers, (answer) => answer.questionId),
+      ([questionId, questionAnswers]) => {
+        const questionJudgments = countJudgments(questionAnswers);
+        const questionJudgedCount = questionJudgments.correctCount + questionJudgments.incorrectCount;
+        const totalElapsedMs = questionAnswers.reduce(
+          (total, answer) => total + answer.elapsedMs,
+          0
+        );
+        return [
+          questionId,
+          {
+            questionId,
+            challengeCount: questionAnswers.length,
+            judgedCount: questionJudgedCount,
+            correctCount: questionJudgments.correctCount,
+            incorrectCount: questionJudgments.incorrectCount,
+            totalElapsedMs,
+            averageElapsedMs: totalElapsedMs / questionJudgedCount
+          }
+        ];
+      }
+    )
+  );
+  return {
+    challengeCount: completed.length,
+    judgedCount,
+    correctCount,
+    incorrectCount,
+    accuracy: judgedCount === 0 ? null : correctCount / judgedCount,
+    totalElapsedMs: answers.reduce((total, answer) => total + answer.elapsedMs, 0),
+    byQuestion
+  };
+}
+function canonicalChallenge(challenge) {
+  return {
+    ...challenge,
+    answers: sortByQuestionId(challenge.answers)
+  };
+}
+function mergeCompletedChallenges(local, remote) {
+  const grouped = Map.groupBy(
+    [...local, ...remote].map(canonicalChallenge),
+    (challenge) => challenge.challengeId
+  );
+  const merged = Array.from(
+    grouped.values(),
+    ([first, ...duplicates]) => duplicates.reduce(
+      (current, candidate) => JSON.stringify(current) === JSON.stringify(candidate) ? candidate : current,
+      first
+    )
+  );
+  return sortNewestFirst(merged);
+}
+function isCompletedChallengePayload(value) {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const challenge = value;
+  return typeof challenge.challengeId === "string" && typeof challenge.examId === "string" && typeof challenge.createdAt === "number" && typeof challenge.updatedAt === "number" && challenge.createdAt <= challenge.updatedAt && Array.isArray(challenge.answers) && challenge.answers.every((answer) => {
+    if (!answer || typeof answer !== "object") {
+      return false;
+    }
+    const candidate = answer;
+    return typeof candidate.questionId === "string" && typeof candidate.elapsedMs === "number" && candidate.elapsedMs >= 0 && (candidate.judgment === "correct" || candidate.judgment === "incorrect") && typeof candidate.createdAt === "number" && typeof candidate.updatedAt === "number" && candidate.createdAt <= candidate.updatedAt && candidate.updatedAt === challenge.updatedAt;
+  });
+}
 
 // app/lib/guards.ts
 function isRecord3(value) {
@@ -9026,294 +9465,6 @@ var SyncHeaderSchema = object({
 });
 var ProgressSnapshotSchema = record(string2(), unknown());
 
-// app/lib/questionOrder.ts
-function sortByQuestionId(values) {
-  return values.toSorted((left, right) => left.questionId.localeCompare(right.questionId));
-}
-
-// app/lib/sort.ts
-function sortNewestFirst(values) {
-  return values.toSorted((left, right) => right.updatedAt - left.updatedAt);
-}
-
-// app/features/challenge/challenge.ts
-var MAX_REASONABLE_TIMER_DELTA_MS = 24 * 60 * 60 * 1e3;
-function calculateElapsedDelta(runtime, now) {
-  if (!runtime.running || runtime.lastSample === null) {
-    return 0;
-  }
-  const delta = now - runtime.lastSample;
-  if (!Number.isFinite(delta) || delta < 0 || delta > MAX_REASONABLE_TIMER_DELTA_MS) {
-    return 0;
-  }
-  return delta;
-}
-function createInitialChallengeState(input) {
-  const maxIndex = Math.max(input.questionIds.length - 1, 0);
-  return {
-    version: 1,
-    challengeId: input.challengeId,
-    scopeKey: input.scopeKey,
-    examId: input.examId,
-    mode: input.mode,
-    questionIds: [...input.questionIds],
-    createdAt: input.createdAt,
-    updatedAt: null,
-    currentIndex: Math.min(Math.max(input.initialIndex ?? 0, 0), maxIndex),
-    revealedQuestionIds: /* @__PURE__ */ new Set(),
-    judgments: {},
-    answerCreatedAt: {},
-    questionElapsedMs: {},
-    status: "active"
-  };
-}
-function revealQuestion(state, action) {
-  if (!state.questionIds.includes(action.questionId) || state.revealedQuestionIds.has(action.questionId)) {
-    return state;
-  }
-  return {
-    ...state,
-    revealedQuestionIds: /* @__PURE__ */ new Set([...state.revealedQuestionIds, action.questionId])
-  };
-}
-function judgeQuestion(state, action) {
-  if (!state.questionIds.includes(action.questionId)) {
-    return state;
-  }
-  if (state.revealedQuestionIds.has(action.questionId) === false) {
-    return state;
-  }
-  if (state.judgments[action.questionId]) {
-    return state;
-  }
-  return {
-    ...state,
-    judgments: { ...state.judgments, [action.questionId]: action.judgment },
-    answerCreatedAt: {
-      ...state.answerCreatedAt,
-      [action.questionId]: action.answerCreatedAt
-    }
-  };
-}
-function applyElapsed(state, action) {
-  if (!state.questionIds.includes(action.questionId)) {
-    return state;
-  }
-  if (!Number.isFinite(action.deltaMs) || action.deltaMs <= 0) {
-    return state;
-  }
-  const current = state.questionElapsedMs[action.questionId] ?? 0;
-  return {
-    ...state,
-    questionElapsedMs: {
-      ...state.questionElapsedMs,
-      [action.questionId]: current + action.deltaMs
-    }
-  };
-}
-function moveTo(state, action) {
-  if (!Number.isInteger(action.index)) {
-    return state;
-  }
-  if (action.index < 0 || action.index >= state.questionIds.length) {
-    return state;
-  }
-  if (action.index === state.currentIndex) {
-    return state;
-  }
-  return { ...state, currentIndex: action.index };
-}
-function completeChallenge(state, action) {
-  return state.status === "active" && isChallengeComplete(state) ? { ...state, status: "completed", updatedAt: action.updatedAt } : state;
-}
-function challengeReducer(state, action) {
-  if (state.status !== "active") {
-    return state;
-  }
-  switch (action.type) {
-    case "REVEAL_QUESTION":
-      return revealQuestion(state, action);
-    case "JUDGE_QUESTION":
-      return judgeQuestion(state, action);
-    case "APPLY_ELAPSED":
-      return applyElapsed(state, action);
-    case "MOVE_TO":
-      return moveTo(state, action);
-    case "COMPLETE":
-      return completeChallenge(state, action);
-    case "MARK_INCOMPLETE":
-      return state.status === "active" ? { ...state, status: "incomplete" } : state;
-    default:
-      action;
-      return state;
-  }
-}
-function applyElapsedDelta(state, questionId, deltaMs) {
-  return challengeReducer(state, { type: "APPLY_ELAPSED", questionId, deltaMs });
-}
-function isChallengeComplete(state) {
-  return state.questionIds.length > 0 && state.questionIds.every(
-    (id) => state.judgments[id] !== void 0 && state.answerCreatedAt[id] !== void 0
-  );
-}
-function createChallengeSnapshot(state) {
-  const snapshot = {
-    version: 1,
-    challengeId: state.challengeId,
-    scopeKey: state.scopeKey,
-    examId: state.examId,
-    mode: state.mode,
-    questionIds: [...state.questionIds],
-    createdAt: state.createdAt,
-    currentIndex: state.currentIndex,
-    revealedQuestionIds: [...state.revealedQuestionIds],
-    judgments: { ...state.judgments },
-    answerCreatedAt: { ...state.answerCreatedAt },
-    questionElapsedMs: { ...state.questionElapsedMs }
-  };
-  return state.status === "completed" ? { ...snapshot, status: "completed", updatedAt: state.updatedAt } : { ...snapshot, status: state.status, updatedAt: null };
-}
-function restoreChallengeState(snapshot) {
-  return {
-    ...snapshot,
-    questionIds: [...snapshot.questionIds],
-    revealedQuestionIds: new Set(snapshot.revealedQuestionIds),
-    judgments: { ...snapshot.judgments },
-    answerCreatedAt: { ...snapshot.answerCreatedAt },
-    questionElapsedMs: { ...snapshot.questionElapsedMs }
-  };
-}
-function toCompletedChallengePayload(state, updatedAt) {
-  if (!isChallengeComplete(state)) {
-    return null;
-  }
-  const answers = state.questionIds.flatMap((questionId) => {
-    const judgment = state.judgments[questionId];
-    const createdAt = state.answerCreatedAt[questionId];
-    if (judgment === void 0 || createdAt === void 0) {
-      return [];
-    }
-    return [
-      {
-        questionId,
-        elapsedMs: Math.max(0, Math.round(state.questionElapsedMs[questionId] ?? 0)),
-        judgment,
-        createdAt,
-        updatedAt
-      }
-    ];
-  });
-  if (answers.length !== state.questionIds.length) {
-    return null;
-  }
-  return {
-    challengeId: state.challengeId,
-    examId: state.examId,
-    createdAt: state.createdAt,
-    updatedAt,
-    answers
-  };
-}
-function formatDuration(elapsedMs) {
-  const totalSeconds = Math.max(0, Math.floor(elapsedMs / 1e3));
-  const seconds = totalSeconds % 60;
-  const minutes = Math.floor(totalSeconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  return hours > 0 ? `${hours}:${String(remainingMinutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}` : `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-}
-function formatAccuracy(accuracy) {
-  return accuracy === null ? "\u2014" : `${Math.round(accuracy * 100)}%`;
-}
-function countJudgments(answers) {
-  const correctCount = answers.filter((answer) => answer.judgment === "correct").length;
-  return { correctCount, incorrectCount: answers.length - correctCount };
-}
-function summarizeChallenge(challenge) {
-  const { correctCount, incorrectCount } = countJudgments(challenge.answers);
-  const judgedCount = correctCount + incorrectCount;
-  return {
-    challengeCount: 1,
-    judgedCount,
-    correctCount,
-    incorrectCount,
-    accuracy: judgedCount === 0 ? null : correctCount / judgedCount,
-    totalElapsedMs: challenge.answers.reduce((total, answer) => total + answer.elapsedMs, 0)
-  };
-}
-function aggregateChallengeResults(completed) {
-  const answers = completed.flatMap((challenge) => challenge.answers);
-  const { correctCount, incorrectCount } = countJudgments(answers);
-  const judgedCount = correctCount + incorrectCount;
-  const byQuestion = Object.fromEntries(
-    Array.from(
-      Map.groupBy(answers, (answer) => answer.questionId),
-      ([questionId, questionAnswers]) => {
-        const questionJudgments = countJudgments(questionAnswers);
-        const questionJudgedCount = questionJudgments.correctCount + questionJudgments.incorrectCount;
-        const totalElapsedMs = questionAnswers.reduce(
-          (total, answer) => total + answer.elapsedMs,
-          0
-        );
-        return [
-          questionId,
-          {
-            questionId,
-            challengeCount: questionAnswers.length,
-            judgedCount: questionJudgedCount,
-            correctCount: questionJudgments.correctCount,
-            incorrectCount: questionJudgments.incorrectCount,
-            totalElapsedMs,
-            averageElapsedMs: totalElapsedMs / questionJudgedCount
-          }
-        ];
-      }
-    )
-  );
-  return {
-    challengeCount: completed.length,
-    judgedCount,
-    correctCount,
-    incorrectCount,
-    accuracy: judgedCount === 0 ? null : correctCount / judgedCount,
-    totalElapsedMs: answers.reduce((total, answer) => total + answer.elapsedMs, 0),
-    byQuestion
-  };
-}
-function canonicalChallenge(challenge) {
-  return {
-    ...challenge,
-    answers: sortByQuestionId(challenge.answers)
-  };
-}
-function mergeCompletedChallenges(local, remote) {
-  const grouped = Map.groupBy(
-    [...local, ...remote].map(canonicalChallenge),
-    (challenge) => challenge.challengeId
-  );
-  const merged = Array.from(
-    grouped.values(),
-    ([first, ...duplicates]) => duplicates.reduce(
-      (current, candidate) => JSON.stringify(current) === JSON.stringify(candidate) ? candidate : current,
-      first
-    )
-  );
-  return sortNewestFirst(merged);
-}
-function isCompletedChallengePayload(value) {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-  const challenge = value;
-  return typeof challenge.challengeId === "string" && typeof challenge.examId === "string" && typeof challenge.createdAt === "number" && typeof challenge.updatedAt === "number" && challenge.createdAt <= challenge.updatedAt && Array.isArray(challenge.answers) && challenge.answers.every((answer) => {
-    if (!answer || typeof answer !== "object") {
-      return false;
-    }
-    const candidate = answer;
-    return typeof candidate.questionId === "string" && typeof candidate.elapsedMs === "number" && candidate.elapsedMs >= 0 && (candidate.judgment === "correct" || candidate.judgment === "incorrect") && typeof candidate.createdAt === "number" && typeof candidate.updatedAt === "number" && candidate.createdAt <= candidate.updatedAt && candidate.updatedAt === challenge.updatedAt;
-  });
-}
-
 // app/features/challenge/challengeStorage.ts
 var ACTIVE_CHALLENGES_STORAGE_KEY = "fit-challenge-active-v1";
 var CHALLENGE_HISTORY_STORAGE_KEY = "fit-challenge-history-v1";
@@ -9452,115 +9603,6 @@ function archiveCompletedChallenge(state, updatedAt) {
 }
 function createChallengeStateFromSnapshot(snapshot) {
   return restoreChallengeState(snapshot);
-}
-
-// app/features/markdown/questionToMarkdown.ts
-function tableToMarkdown(columns, rows) {
-  const header = `| ${columns.map((c) => c.label).join(" | ")} |`;
-  const separator = `| ${columns.map(() => "---").join(" | ")} |`;
-  const dataRows = rows.map((row) => {
-    const cells = columns.map((c) => String(row[c.key] ?? ""));
-    return `| ${cells.join(" | ")} |`;
-  });
-  return [header, separator].concat(dataRows).join("\n");
-}
-function figureDataToMarkdown(figureData) {
-  switch (figureData.type) {
-    case "truthTable":
-    case "dataTable":
-      return tableToMarkdown(figureData.columns, figureData.rows);
-    case "huffmanTable": {
-      const { characters, probabilities } = figureData.data;
-      return ["| \u6587\u5B57 | \u78BA\u7387 |", "| --- | --- |"].concat(characters.map((c, i) => `| ${c} | ${probabilities[i]} |`)).join("\n");
-    }
-    case "linkedListTable":
-      return ["| \u30A2\u30C9\u30EC\u30B9 | \u30C7\u30FC\u30BF | \u30DD\u30A4\u30F3\u30BF |", "| --- | --- | --- |"].concat(figureData.entries.map((e) => `| ${e.address} | ${e.data} | ${e.pointer} |`)).join("\n");
-    case "normalDistributionTable":
-      return ["| u | \u78BA\u7387 |", "| --- | --- |"].concat(figureData.entries.map((e) => `| ${e.u} | ${e.probability} |`)).join("\n");
-    case "parityCheck":
-      return figureData.data.map((row) => `| ${row.join(" | ")} |`).join("\n");
-    case "stateDiagram": {
-      const { nodes, transitions } = figureData;
-      const nodeLines = nodes.map((node) => {
-        const markers = [
-          ...node.isInitial ? ["\u521D\u671F\u72B6\u614B"] : [],
-          ...node.isAccepting ? ["\u53D7\u7406\u72B6\u614B"] : []
-        ];
-        const markerStr = markers.length > 0 ? ` (${markers.join(", ")})` : "";
-        return `- ${node.label}${markerStr}`;
-      });
-      const nodeById = new Map(nodes.map((n) => [n.id, n]));
-      const transLines = transitions.map((t) => {
-        const fromNode = nodeById.get(t.from);
-        const toNode = nodeById.get(t.to);
-        return `- ${fromNode?.label ?? t.from} --[${t.label}]--> ${toNode?.label ?? t.to}`;
-      });
-      return ["**\u72B6\u614B\u9077\u79FB\u56F3**", "", "\u72B6\u614B:"].concat(nodeLines, ["", "\u9077\u79FB:"], transLines).join("\n");
-    }
-    case "binaryTree": {
-      const collectNodes = (node, depth) => {
-        if (!node) {
-          return [];
-        }
-        const indent2 = "  ".repeat(depth);
-        return [indent2.concat(`- ${node.value}`)].concat(
-          collectNodes(node.left, depth + 1),
-          collectNodes(node.right, depth + 1)
-        );
-      };
-      return ["**\u4E8C\u5206\u6728**", ""].concat(collectNodes(figureData.root, 0)).join("\n");
-    }
-    case "logicCircuit": {
-      const { inputs, outputs, gates } = figureData;
-      return [
-        "**\u8AD6\u7406\u56DE\u8DEF**",
-        "",
-        `\u5165\u529B: ${inputs.map((i) => i.label).join(", ")}`,
-        `\u51FA\u529B: ${outputs.map((o) => o.label).join(", ")}`,
-        `\u30B2\u30FC\u30C8: ${gates.map((g) => `${g.id}(${g.type})`).join(", ")}`
-      ].join("\n");
-    }
-    case "flowchart": {
-      const { nodes, edges } = figureData;
-      const nodeLines = nodes.map((node) => `- [${node.type}] ${node.label}`);
-      const nodeById = new Map(nodes.map((n) => [n.id, n]));
-      const edgeLines = edges.map((edge) => {
-        const fromNode = nodeById.get(edge.from);
-        const toNode = nodeById.get(edge.to);
-        const label = edge.label ? ` (${edge.label})` : "";
-        return `- ${fromNode?.label ?? edge.from} --> ${toNode?.label ?? edge.to}${label}`;
-      });
-      return ["**\u30D5\u30ED\u30FC\u30C1\u30E3\u30FC\u30C8**", "", "\u30CE\u30FC\u30C9:"].concat(nodeLines, ["", "\u30D5\u30ED\u30FC:"], edgeLines).join("\n");
-    }
-    default:
-      return "";
-  }
-}
-function buildFigureSection(question, sectionHeading) {
-  if (question.figureData) {
-    return [`${sectionHeading} \u56F3`, "", figureDataToMarkdown(question.figureData), ""];
-  }
-  if (question.figureDescription) {
-    return [`> **\u56F3**: ${question.figureDescription}`, ""];
-  }
-  return [];
-}
-function questionToMarkdown(question, {
-  includeSolution = true,
-  headingLevel = 2
-} = {}) {
-  const heading = "#".repeat(headingLevel);
-  const sectionHeading = `${heading}#`;
-  const base = [`${heading} \u554F\u984C ${question.number}`, "", question.text, ""];
-  const figure = buildFigureSection(question, sectionHeading);
-  const options = question.options && question.options.length > 0 ? [`${sectionHeading} \u9078\u629E\u80A2`].concat(
-    question.options.map(
-      (option) => `- **${option.label}**: ${option.value || "(\u672A\u5165\u529B)"}`
-    )
-  ).concat("") : [];
-  const answer = includeSolution ? [`${sectionHeading} \u89E3\u7B54`, question.answer, ""] : [];
-  const explanation = includeSolution && question.explanation ? [`${sectionHeading} \u89E3\u8AAC`, question.explanation] : [];
-  return base.concat(figure, options, answer, explanation).join("\n").trim();
 }
 
 // app/features/challenge/player/id.ts
@@ -9763,6 +9805,475 @@ function resetTimerRuntimeInPlace(runtime, questionId) {
   runtime.running = false;
 }
 
+// node_modules/@remix-run/ui/dist/animation/animate-mixins.js
+var DEFAULT_ENTER = {
+  opacity: 0,
+  duration: 150,
+  easing: "ease-out"
+};
+var DEFAULT_EXIT = {
+  opacity: 0,
+  duration: 150,
+  easing: "ease-in"
+};
+var animatingNodes = /* @__PURE__ */ new WeakMap();
+var initialEntranceSeenByParent = /* @__PURE__ */ new WeakMap();
+function extractStyleProps(config2) {
+  let result = {};
+  for (let key in config2) {
+    if (key === "duration" || key === "easing" || key === "delay" || key === "composite" || key === "initial") {
+      continue;
+    }
+    let value = config2[key];
+    if (value === void 0)
+      continue;
+    if (typeof value !== "string" && typeof value !== "number")
+      continue;
+    result[key] = value;
+  }
+  return result;
+}
+function buildEnterKeyframes(config2) {
+  let keyframe = extractStyleProps(config2);
+  return [keyframe, {}];
+}
+function buildExitKeyframes(config2) {
+  let keyframe = extractStyleProps(config2);
+  return [{}, keyframe];
+}
+function resolveEnterConfig(config2) {
+  if (!config2)
+    return null;
+  if (config2 === true)
+    return DEFAULT_ENTER;
+  return config2;
+}
+function resolveExitConfig(config2) {
+  if (!config2)
+    return null;
+  if (config2 === true)
+    return DEFAULT_EXIT;
+  return config2;
+}
+function createAnimationOptions(config2, fill) {
+  return {
+    duration: config2.duration,
+    delay: config2.delay,
+    easing: config2.easing,
+    composite: config2.composite,
+    fill
+  };
+}
+function collectAnimatedProperties(keyframes) {
+  let properties = /* @__PURE__ */ new Set();
+  for (let keyframe of keyframes) {
+    for (let key in keyframe) {
+      if (key === "offset" || key === "easing" || key === "composite")
+        continue;
+      properties.add(key);
+    }
+  }
+  return [...properties];
+}
+function toCssPropertyName(property) {
+  return property.includes("-") ? property : property.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`);
+}
+function readInlineStyle(style, property) {
+  return style.getPropertyValue(toCssPropertyName(property));
+}
+function writeInlineStyle(style, property, value) {
+  let cssProperty = toCssPropertyName(property);
+  if (value === "") {
+    style.removeProperty(cssProperty);
+    return;
+  }
+  style.setProperty(cssProperty, value);
+}
+function trackAnimation(node, animation, keyframes) {
+  let properties = collectAnimatedProperties(keyframes);
+  animatingNodes.set(node, { animation, properties });
+  animation.finished.catch(() => {
+  }).finally(() => {
+    let current = animatingNodes.get(node);
+    if (current?.animation !== animation)
+      return;
+    animatingNodes.delete(node);
+  });
+}
+function waitForAnimationOrAbort(animation, signal) {
+  if (signal.aborted)
+    return Promise.resolve();
+  return new Promise((resolve) => {
+    let settled = false;
+    let settle = () => {
+      if (settled)
+        return;
+      settled = true;
+      signal.removeEventListener("abort", settle);
+      resolve();
+    };
+    signal.addEventListener("abort", settle, { once: true });
+    void animation.finished.catch(() => {
+    }).finally(settle);
+  });
+}
+function shouldSkipInitialEntrance(event, config2) {
+  if (config2.initial !== false)
+    return false;
+  if (event.key == null)
+    return false;
+  let seenForParent = initialEntranceSeenByParent.get(event.parent);
+  if (!seenForParent) {
+    seenForParent = /* @__PURE__ */ new Set();
+    initialEntranceSeenByParent.set(event.parent, seenForParent);
+  }
+  if (seenForParent.has(event.key))
+    return false;
+  seenForParent.add(event.key);
+  return true;
+}
+var animateEntranceMixin = createMixin((handle) => {
+  let currentConfig = true;
+  handle.addEventListener("insert", (event) => {
+    let node = event.node;
+    let current = animatingNodes.get(node);
+    if (current && current.animation.playState === "running") {
+      return;
+    }
+    let config2 = resolveEnterConfig(currentConfig);
+    if (!config2)
+      return;
+    if (shouldSkipInitialEntrance(event, config2))
+      return;
+    let keyframes = buildEnterKeyframes(config2);
+    let options = createAnimationOptions(config2, "backwards");
+    let animation = node.animate(keyframes, options);
+    trackAnimation(node, animation, keyframes);
+  });
+  return (config2) => {
+    currentConfig = config2;
+    return handle.element;
+  };
+});
+var animateExitMixin = createMixin((handle) => {
+  let currentConfig = true;
+  let node = null;
+  handle.addEventListener("insert", (event) => {
+    node = event.node;
+  });
+  handle.addEventListener("reclaimed", (event) => {
+    node = event.node;
+    let current = animatingNodes.get(event.node);
+    if (current && current.animation.playState === "running") {
+      try {
+        current.animation.commitStyles();
+      } catch {
+      }
+      current.animation.cancel();
+      let style = event.node.style;
+      let computed = getComputedStyle(event.node);
+      let from = {};
+      for (let property of current.properties) {
+        let cssProperty = toCssPropertyName(property);
+        let value = readInlineStyle(style, property) || computed.getPropertyValue(cssProperty);
+        if (value !== "") {
+          from[property] = value;
+        }
+        writeInlineStyle(style, property, "");
+      }
+      let enterConfig = resolveEnterConfig(currentConfig) ?? DEFAULT_ENTER;
+      let keyframes = [from, {}];
+      let options = createAnimationOptions(enterConfig, "none");
+      let animation = event.node.animate(keyframes, options);
+      trackAnimation(event.node, animation, keyframes);
+    }
+  });
+  handle.addEventListener("beforeRemove", (event) => {
+    let config2 = resolveExitConfig(currentConfig);
+    if (!config2)
+      return;
+    event.persistNode(async (signal) => {
+      if (!node)
+        throw new Error("Cannot animate an element before it is inserted");
+      let current = animatingNodes.get(node);
+      if (current && current.animation.playState === "running") {
+        current.animation.reverse();
+        await waitForAnimationOrAbort(current.animation, signal);
+        return;
+      }
+      let keyframes = buildExitKeyframes(config2);
+      let options = createAnimationOptions(config2, "forwards");
+      let animation = node.animate(keyframes, options);
+      trackAnimation(node, animation, keyframes);
+      await waitForAnimationOrAbort(animation, signal);
+    });
+  });
+  return (config2) => {
+    currentConfig = config2;
+    return handle.element;
+  };
+});
+function animateEntrance(config2 = true) {
+  return animateEntranceMixin(config2);
+}
+function animateExit(config2 = true) {
+  return animateExitMixin(config2);
+}
+
+// node_modules/@remix-run/ui/dist/animation/spring.js
+var presets = {
+  smooth: { duration: 400, bounce: -0.3 },
+  snappy: { duration: 200, bounce: 0 },
+  bouncy: { duration: 400, bounce: 0.3 }
+};
+var restSpeed = 0.01;
+var restDelta = 5e-3;
+var maxSettlingTime = 2e4;
+var frameMs = 1e3 / 60;
+function createSpring(presetOrOptions, overrides) {
+  let options = resolveOptions(presetOrOptions, overrides);
+  let { position, settlingTime, easing } = computeSpring(options);
+  let duration2 = Math.round(settlingTime);
+  function* generator() {
+    let t = 0;
+    while (t < settlingTime) {
+      yield position(t);
+      t += frameMs;
+    }
+    yield 1;
+  }
+  let iter = generator();
+  Object.defineProperties(iter, {
+    duration: { value: duration2, enumerable: true },
+    easing: { value: easing, enumerable: true },
+    toString: {
+      value() {
+        return `${duration2}ms ${easing}`;
+      }
+    }
+  });
+  return iter;
+}
+function transition(property, presetOrOptions, overrides) {
+  let s = typeof presetOrOptions === "string" ? createSpring(presetOrOptions, overrides) : createSpring(presetOrOptions);
+  let properties = Array.isArray(property) ? property : [property];
+  return properties.map((p) => `${p} ${s}`).join(", ");
+}
+var spring = Object.assign(createSpring, {
+  transition,
+  presets
+});
+function resolveOptions(presetOrOptions, overrides) {
+  if (typeof presetOrOptions === "string") {
+    let preset = presets[presetOrOptions];
+    return {
+      duration: overrides?.duration ?? preset.duration,
+      bounce: preset.bounce,
+      velocity: overrides?.velocity
+    };
+  }
+  if (presetOrOptions) {
+    return presetOrOptions;
+  }
+  return presets.snappy;
+}
+function computeSpring(options) {
+  let { duration: durationMs = 300, bounce = 0, velocity = 0 } = options;
+  let durationSec = durationMs / 1e3;
+  let omega0 = 2 * Math.PI / durationSec;
+  bounce = Math.max(-1, Math.min(0.95, bounce));
+  let zeta = bounce >= 0 ? 1 - bounce : 1 / (1 + bounce);
+  let omega0Ms = omega0 / 1e3;
+  let velocityMs = -velocity / 1e3;
+  let position;
+  if (zeta < 1) {
+    let omegaD = omega0Ms * Math.sqrt(1 - zeta * zeta);
+    position = (t) => {
+      let envelope = Math.exp(-zeta * omega0Ms * t);
+      return 1 - envelope * ((velocityMs + zeta * omega0Ms) / omegaD * Math.sin(omegaD * t) + Math.cos(omegaD * t));
+    };
+  } else if (zeta > 1) {
+    let sqrtTerm = Math.sqrt(zeta * zeta - 1);
+    let s1 = omega0Ms * (-zeta + sqrtTerm);
+    let s2 = omega0Ms * (-zeta - sqrtTerm);
+    let A = (s2 + velocityMs) / (s2 - s1);
+    let B = 1 - A;
+    position = (t) => 1 - A * Math.exp(s1 * t) - B * Math.exp(s2 * t);
+  } else {
+    position = (t) => 1 - Math.exp(-omega0Ms * t) * (1 + (velocityMs + omega0Ms) * t);
+  }
+  let velocitySampleMs = 0.5;
+  function velocityAt(t) {
+    if (t < velocitySampleMs) {
+      return (position(velocitySampleMs) - position(0)) / velocitySampleMs * 1e3;
+    }
+    return (position(t) - position(t - velocitySampleMs)) / velocitySampleMs * 1e3;
+  }
+  let settlingTime = maxSettlingTime;
+  let step = 50;
+  for (let t = 0; t < maxSettlingTime; t += step) {
+    let pos = position(t);
+    let vel = Math.abs(velocityAt(t));
+    let displacement = Math.abs(1 - pos);
+    if (vel <= restSpeed && displacement <= restDelta) {
+      settlingTime = t;
+      break;
+    }
+  }
+  let easing = generateEasing(position, settlingTime);
+  return { position, settlingTime, easing };
+}
+function generateEasing(position, settlingTime) {
+  let points = adaptiveSample(position, settlingTime);
+  return `linear(${points.map((p, i) => {
+    let isLast = i === points.length - 1;
+    let value = isLast ? 1 : Math.round(p.value * 1e4) / 1e4;
+    if (i === 0 || isLast) {
+      return value === 1 ? "1" : value.toString();
+    }
+    let percent = Math.round(p.t / settlingTime * 1e3) / 10;
+    return `${value} ${percent}%`;
+  }).join(", ")})`;
+}
+function adaptiveSample(resolve, duration2, tolerance = 2e-3, minSegment = 8) {
+  let points = [];
+  function addPoint(t, value) {
+    if (points.length === 0 || points[points.length - 1].t < t) {
+      points.push({ t, value });
+    }
+  }
+  function subdivide(t0, v0, t1, v1, depth = 0) {
+    if (depth > 12) {
+      addPoint(t0, v0);
+      return;
+    }
+    let tMid = (t0 + t1) / 2;
+    let vMid = resolve(tMid);
+    let vLinear = (v0 + v1) / 2;
+    let error = Math.abs(vMid - vLinear);
+    if (error > tolerance && t1 - t0 > minSegment) {
+      subdivide(t0, v0, tMid, vMid, depth + 1);
+      subdivide(tMid, vMid, t1, v1, depth + 1);
+    } else {
+      addPoint(t0, v0);
+    }
+  }
+  subdivide(0, resolve(0), duration2, resolve(duration2));
+  addPoint(duration2, resolve(duration2));
+  return points;
+}
+
+// node_modules/@remix-run/ui/dist/toggle.js
+var TOGGLE_CHANGE_EVENT = "rmx:toggle-change";
+var ToggleChangeEvent = class extends Event {
+  checked;
+  constructor(checked) {
+    super(TOGGLE_CHANGE_EVENT, { bubbles: true });
+    this.checked = checked;
+  }
+};
+function getBooleanState(value) {
+  return value === true || value === false ? value : void 0;
+}
+function propIsTrue(value) {
+  return value === true || value === "true" || value === "";
+}
+function isDisabled(options, props) {
+  return options.disabled === true || propIsTrue(props.disabled) || propIsTrue(props["aria-disabled"]);
+}
+function isReadOnly(options, props) {
+  return options.readOnly === true || propIsTrue(props.readOnly) || propIsTrue(props["aria-readonly"]);
+}
+var controlMixin = createMixin((handle, hostType) => {
+  let uncontrolledChecked = false;
+  let hasInitialized = false;
+  function getChecked(options, props) {
+    let optionChecked = getBooleanState(options.checked);
+    if (optionChecked !== void 0) {
+      return optionChecked;
+    }
+    let propChecked = getBooleanState(props.checked);
+    if (propChecked !== void 0) {
+      return propChecked;
+    }
+    if (!hasInitialized) {
+      uncontrolledChecked = getBooleanState(options.defaultChecked) ?? getBooleanState(props.defaultChecked) ?? false;
+      hasInitialized = true;
+    }
+    return uncontrolledChecked;
+  }
+  function setChecked(node, options, props, nextChecked) {
+    if (isDisabled(options, props) || isReadOnly(options, props)) {
+      if (node instanceof HTMLInputElement) {
+        node.checked = getChecked(options, props);
+      }
+      return;
+    }
+    if (options.checked === void 0 && props.checked === void 0) {
+      uncontrolledChecked = nextChecked;
+      void handle.update();
+    }
+    options.onCheckedChange?.(nextChecked);
+    node.dispatchEvent(new ToggleChangeEvent(nextChecked));
+  }
+  return (options = {}, props) => {
+    let checked = getChecked(options, props);
+    let disabled = isDisabled(options, props);
+    let readOnly = isReadOnly(options, props);
+    let required2 = options.required ?? props.required;
+    let nextProps = {
+      ...props,
+      "aria-checked": hostType === "input" ? void 0 : checked,
+      "aria-disabled": hostType === "input" ? void 0 : disabled || void 0,
+      "aria-readonly": hostType === "input" ? void 0 : readOnly || void 0,
+      "aria-required": hostType === "input" ? void 0 : required2 || void 0,
+      checked: hostType === "input" ? checked : props.checked,
+      defaultChecked: hostType === "input" ? void 0 : props.defaultChecked,
+      disabled: hostType === "input" ? disabled || void 0 : props.disabled,
+      form: hostType === "input" ? options.form ?? props.form : props.form,
+      name: hostType === "input" ? options.name ?? props.name : props.name,
+      readOnly: hostType === "input" ? readOnly || void 0 : props.readOnly,
+      required: hostType === "input" ? required2 : props.required,
+      role: "switch",
+      tabIndex: hostType === "input" ? options.tabIndex ?? props.tabIndex : disabled ? void 0 : options.tabIndex ?? props.tabIndex ?? 0,
+      type: hostType === "input" ? props.type === void 0 ? "checkbox" : props.type : hostType === "button" && props.type === void 0 ? "button" : props.type,
+      value: hostType === "input" ? options.value ?? props.value : props.value,
+      "data-state": checked ? "checked" : "unchecked"
+    };
+    return createElement2(handle.element, {
+      ...nextProps,
+      mix: [
+        ref((node, signal) => {
+          if (node instanceof HTMLInputElement) {
+            options.inputRef?.(node, signal);
+          }
+        }),
+        on("click", (event) => {
+          if (hostType !== "input") {
+            event.preventDefault();
+          }
+          if (disabled || readOnly) {
+            if (event.currentTarget instanceof HTMLInputElement) {
+              event.currentTarget.checked = checked;
+            }
+            return;
+          }
+          let nextChecked = event.currentTarget instanceof HTMLInputElement ? event.currentTarget.checked : !checked;
+          setChecked(event.currentTarget, options, props, nextChecked);
+        }),
+        on("keydown", (event) => {
+          if (hostType === "input" || event.key !== " ") {
+            return;
+          }
+          event.preventDefault();
+          setChecked(event.currentTarget, options, props, !checked);
+        })
+      ]
+    });
+  };
+});
+var control = controlMixin;
+
 // app/lib/overline.ts
 var COMBINING_OVERLINE = /(.)[̅̄]+/gu;
 function escapeHtml(input) {
@@ -9773,6 +10284,51 @@ function overlineToHtml(input) {
 }
 
 // app/features/challenge/player/ui/answer-panel.tsx
+var panelStyle = css({
+  marginTop: "1rem",
+  padding: "1rem 1.25rem",
+  background: "var(--color-bg-card)",
+  border: "1px solid var(--color-border)",
+  borderLeft: "3px solid var(--color-accent)",
+  borderRadius: "var(--radius-card)"
+});
+var labelStyle = css({
+  fontSize: "0.8rem",
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  color: "var(--color-text-muted)",
+  margin: "0 0 0.25rem"
+});
+var bodyStyle = css({
+  "& p": { whiteSpace: "pre-wrap", lineHeight: 1.9, margin: "0 0 0.75rem" }
+});
+var judgmentRowStyle = css({
+  display: "flex",
+  gap: "0.75rem",
+  margin: "1rem 0 0",
+  padding: 0,
+  border: 0
+});
+var judgmentButtonStyle = css({
+  width: "3rem",
+  height: "3rem",
+  borderRadius: "999px",
+  border: "1px solid var(--color-border)",
+  background: "var(--color-bg-card)",
+  fontSize: "1.25rem",
+  cursor: "pointer",
+  "&:disabled": { cursor: "default", opacity: 0.7 }
+});
+var correctSelectedStyle = css({
+  borderColor: "var(--color-primary)",
+  background: "var(--color-primary-soft)",
+  color: "var(--color-primary)"
+});
+var incorrectSelectedStyle = css({
+  borderColor: "#b91c1c",
+  background: "#fee2e2",
+  color: "#7f1d1d"
+});
 function AnswerPanel(handle) {
   return () => {
     const { question, isOpen, judgment, onJudge } = handle.props;
@@ -9782,28 +10338,33 @@ function AnswerPanel(handle) {
     return /* @__PURE__ */ jsx(
       "section",
       {
-        class: "exam-answer exam-answer--entered",
         id: "exam-answer",
         "aria-labelledby": "exam-answer-heading",
         "aria-live": "polite",
-        children: /* @__PURE__ */ jsx("div", { class: "exam-answer__body", "aria-live": "polite", children: [
-          /* @__PURE__ */ jsx("h3", { class: "exam-answer__label", id: "exam-answer-heading", children: "\u89E3\u7B54" }),
+        mix: [panelStyle, animateEntrance({ opacity: 0, ...spring("snappy") })],
+        children: /* @__PURE__ */ jsx("div", { mix: bodyStyle, children: [
+          /* @__PURE__ */ jsx("h3", { mix: labelStyle, id: "exam-answer-heading", children: "\u89E3\u7B54" }),
           /* @__PURE__ */ jsx("p", { innerHTML: unsafeHTML(overlineToHtml(question.answer)) }),
           question.explanation ? /* @__PURE__ */ jsx(Fragment, { children: [
-            /* @__PURE__ */ jsx("p", { class: "exam-answer__label", children: "\u89E3\u8AAC" }),
+            /* @__PURE__ */ jsx("p", { mix: labelStyle, children: "\u89E3\u8AAC" }),
             /* @__PURE__ */ jsx("p", { innerHTML: unsafeHTML(overlineToHtml(question.explanation)) })
           ] }) : null,
-          /* @__PURE__ */ jsx("fieldset", { class: "exam-judgment", children: [
+          /* @__PURE__ */ jsx("fieldset", { mix: judgmentRowStyle, children: [
             /* @__PURE__ */ jsx("legend", { class: "sr-only", children: "\u81EA\u5DF1\u5224\u5B9A" }),
             /* @__PURE__ */ jsx(
               "button",
               {
                 type: "button",
-                class: `judgment-button judgment-button--correct ${judgment === "correct" ? "is-selected" : ""}`,
+                mix: [
+                  judgmentButtonStyle,
+                  judgment === "correct" ? correctSelectedStyle : null,
+                  control({
+                    checked: judgment === "correct",
+                    onCheckedChange: () => onJudge("correct"),
+                    disabled: judgment !== void 0
+                  })
+                ],
                 "aria-label": "\u6B63\u89E3\u3068\u3057\u3066\u8A18\u9332",
-                "aria-pressed": judgment === "correct" ? "true" : "false",
-                disabled: judgment !== void 0,
-                mix: on("click", () => onJudge("correct")),
                 children: "\u25CB"
               }
             ),
@@ -9811,11 +10372,16 @@ function AnswerPanel(handle) {
               "button",
               {
                 type: "button",
-                class: `judgment-button judgment-button--incorrect ${judgment === "incorrect" ? "is-selected" : ""}`,
+                mix: [
+                  judgmentButtonStyle,
+                  judgment === "incorrect" ? incorrectSelectedStyle : null,
+                  control({
+                    checked: judgment === "incorrect",
+                    onCheckedChange: () => onJudge("incorrect"),
+                    disabled: judgment !== void 0
+                  })
+                ],
                 "aria-label": "\u4E0D\u6B63\u89E3\u3068\u3057\u3066\u8A18\u9332",
-                "aria-pressed": judgment === "incorrect" ? "true" : "false",
-                disabled: judgment !== void 0,
-                mix: on("click", () => onJudge("incorrect")),
                 children: "\xD7"
               }
             )
@@ -9826,878 +10392,92 @@ function AnswerPanel(handle) {
   };
 }
 
-// node_modules/@remix-run/route-pattern/dist/lib/route-pattern/split.js
-function split(source) {
-  let result = {
-    protocol: null,
-    hostname: null,
-    port: null,
-    pathname: null,
-    search: null
-  };
-  let questionMarkIndex = source.indexOf("?");
-  if (questionMarkIndex !== -1) {
-    result.search = span(questionMarkIndex + 1, source.length);
-    source = source.slice(0, questionMarkIndex);
-  }
-  let solidusIndex = source.indexOf("://");
-  if (solidusIndex === -1) {
-    result.pathname = pathnameSpan(source, 0, source.length);
-    return result;
-  }
-  let slashIndex = source.indexOf("/");
-  if (slashIndex === solidusIndex + 1) {
-    slashIndex = source.indexOf("/", solidusIndex + 3);
-  }
-  if (slashIndex === -1) {
-    result.protocol = span(0, solidusIndex);
-    let host2 = span(solidusIndex + 3, source.length);
-    if (host2) {
-      let { hostname, port } = hostSpans(source, host2);
-      result.hostname = hostname;
-      result.port = port;
-    }
-    return result;
-  }
-  if (slashIndex < solidusIndex) {
-    result.pathname = pathnameSpan(source, 0, source.length);
-    return result;
-  }
-  result.protocol = span(0, solidusIndex);
-  let host = span(solidusIndex + 3, slashIndex);
-  if (host) {
-    let { hostname, port } = hostSpans(source, host);
-    result.hostname = hostname;
-    result.port = port;
-  }
-  result.pathname = pathnameSpan(source, slashIndex, source.length);
-  return result;
-}
-function span(start, end) {
-  if (start === end)
-    return null;
-  return [start, end];
-}
-function hostSpans(source, host) {
-  let lastColonIndex = source.slice(0, host[1]).lastIndexOf(":");
-  if (lastColonIndex === -1 || lastColonIndex < host[0])
-    return { hostname: host, port: null };
-  if (source.slice(lastColonIndex + 1, host[1]).match(/^\d+$/)) {
-    return { hostname: span(host[0], lastColonIndex), port: span(lastColonIndex + 1, host[1]) };
-  }
-  return { hostname: host, port: null };
-}
-function pathnameSpan(source, begin, end) {
-  if (source[begin] === "/")
-    begin += 1;
-  return span(begin, end);
-}
-
-// node_modules/@remix-run/route-pattern/dist/lib/route-pattern/parse.js
-var IDENTIFIER_RE = /^[a-zA-Z_$][a-zA-Z_$0-9]*/;
-function parsePattern(source) {
-  let spans = split(source);
-  if (spans.port && !spans.hostname) {
-    throw new ParseError("missing hostname", source, spans.port[0] - 1);
-  }
-  return createRoutePattern({
-    protocol: parseProtocol(source, spans.protocol),
-    hostname: parseHostname(source, spans.hostname),
-    port: spans.port ? source.slice(...spans.port) : null,
-    pathname: spans.pathname ? parsePart(source, { span: spans.pathname, type: "pathname" }) : parsePart("", { span: [0, 0], type: "pathname" }),
-    search: spans.search ? parseSearch(source.slice(...spans.search)) : /* @__PURE__ */ new Map()
-  });
-}
-function parsePart(source, options) {
-  let span2 = options.span ?? [0, source.length];
-  let separator = options.type === "hostname" ? "." : "/";
-  let tokens = [];
-  let tokenIndices = [];
-  let optionals = /* @__PURE__ */ new Map();
-  let appendText = (text) => {
-    let currentToken = tokens.at(-1);
-    if (currentToken?.type === "text") {
-      currentToken.text += text;
-    } else {
-      tokens.push({ type: "text", text });
-      tokenIndices.push(i);
-    }
-  };
-  let i = span2[0];
-  let optionalStack = [];
-  let emptyOptionals = [];
-  while (i < span2[1]) {
-    let char = source[i];
-    if (char === "(") {
-      optionalStack.push({ tokenIndex: tokens.length, sourceIndex: i });
-      tokens.push({ type: char });
-      tokenIndices.push(i);
-      i += 1;
-      continue;
-    }
-    if (char === ")") {
-      let optional = optionalStack.pop();
-      if (optional === void 0) {
-        throw new ParseError("unmatched )", source, i);
-      }
-      if (optional.tokenIndex === tokens.length - 1) {
-        emptyOptionals.push(optional.sourceIndex);
-      }
-      optionals.set(optional.tokenIndex, tokens.length);
-      tokens.push({ type: char });
-      tokenIndices.push(i);
-      i += 1;
-      continue;
-    }
-    if (char === ":") {
-      i += 1;
-      let name = IDENTIFIER_RE.exec(source.slice(i, span2[1]))?.[0];
-      if (!name) {
-        throw new ParseError("missing variable name", source, i - 1);
-      }
-      tokens.push({ type: ":", name });
-      tokenIndices.push(i - 1);
-      i += name.length;
-      continue;
-    }
-    if (char === "*") {
-      i += 1;
-      let name = IDENTIFIER_RE.exec(source.slice(i, span2[1]))?.[0];
-      tokens.push({ type: "*", name: name ?? "*" });
-      tokenIndices.push(i - 1);
-      i += name?.length ?? 0;
-      continue;
-    }
-    if (char === separator) {
-      tokens.push({ type: "separator" });
-      tokenIndices.push(i);
-      i += 1;
-      continue;
-    }
-    if (char === "\\") {
-      if (i + 1 === span2[1]) {
-        throw new ParseError("dangling escape", source, i);
-      }
-      let text = source.slice(i + 1, i + 2);
-      appendText(text);
-      i += 2;
-      continue;
-    }
-    appendText(char);
-    i += 1;
-  }
-  let unmatchedOptional = optionalStack.at(-1);
-  if (unmatchedOptional !== void 0) {
-    throw new ParseError("unmatched (", source, unmatchedOptional.sourceIndex);
-  }
-  if (emptyOptionals.length > 0) {
-    throw new ParseError("empty optional", source, emptyOptionals[0]);
-  }
-  validateTokenGrammar(source, tokens, optionals, tokenIndices);
-  validateOptionalCaptureSchemas(source, tokens, optionals, tokenIndices);
-  return { tokens, optionals, type: options.type };
-}
-function validateTokenGrammar(source, tokens, optionals, tokenIndices) {
-  for (let [index, token] of tokens.entries()) {
-    if (token.type !== ":" && token.type !== "*")
-      continue;
-    for (let next of nextConsumingTokenIndices(tokens, optionals, index + 1)) {
-      if (next === tokens.length)
-        continue;
-      let nextToken = tokens[next];
-      if (token.type === "*") {
-        if (nextToken.type === "*") {
-          throw new ParseError("adjacent wildcards", source, tokenIndices[next]);
-        }
-        continue;
-      }
-      if (nextToken.type === "separator" || nextToken.type === "*" || nextToken.type === "text" && nextToken.text.startsWith(".")) {
-        continue;
-      }
-      throw new ParseError("invalid param delimiter", source, tokenIndices[next]);
-    }
-  }
-}
-function nextConsumingTokenIndices(tokens, optionals, start) {
-  let result = /* @__PURE__ */ new Set();
-  let pending = [start];
-  let visited = /* @__PURE__ */ new Set();
-  while (pending.length > 0) {
-    let index = pending.pop();
-    if (index === void 0)
-      break;
-    if (visited.has(index))
-      continue;
-    visited.add(index);
-    let token = tokens[index];
-    if (token === void 0) {
-      result.add(tokens.length);
-    } else if (token.type === "(") {
-      let end = optionals.get(index);
-      if (end === void 0)
-        throw new Error("missing optional end");
-      pending.push(index + 1, end + 1);
-    } else if (token.type === ")") {
-      pending.push(index + 1);
-    } else {
-      result.add(index);
-    }
-  }
-  return result;
-}
-function validateOptionalCaptureSchemas(source, tokens, optionals, tokenIndices) {
-  for (let [begin, end] of optionals) {
-    let nextBegin = end + 1;
-    if (tokens[nextBegin]?.type !== "(")
-      continue;
-    let nextEnd = optionals.get(nextBegin);
-    if (nextEnd === void 0)
-      continue;
-    let first = optionalStructure(tokens, begin + 1, end);
-    let second = optionalStructure(tokens, nextBegin + 1, nextEnd);
-    if (first.structure === second.structure && first.captures !== second.captures) {
-      throw new ParseError("ambiguous optional captures", source, tokenIndices[nextBegin]);
-    }
-  }
-}
-function optionalStructure(tokens, begin, end) {
-  let structure = "";
-  let captures = "";
-  for (let i = begin; i < end; i++) {
-    let token = tokens[i];
-    if (token.type === ":" || token.type === "*") {
-      structure += token.type;
-      captures += `${token.type}:${token.name}|`;
-    } else if (token.type === "text") {
-      structure += `t:${token.text}|`;
-    } else {
-      structure += `${token.type}|`;
-    }
-  }
-  return { structure, captures };
-}
-function parseProtocol(source, span2) {
-  if (!span2)
-    return null;
-  let protocol = source.slice(...span2);
-  if (protocol === "" || protocol === "http" || protocol === "https" || protocol === "http(s)") {
-    return protocol === "" ? null : protocol;
-  }
-  throw new ParseError("invalid protocol", source, span2[0]);
-}
-function parseHostname(source, span2) {
-  if (!span2)
-    return null;
-  let part = parsePart(source, { span: span2, type: "hostname" });
-  if (isNamelessWildcard(part))
-    return null;
-  return part;
-}
-function isNamelessWildcard(part) {
-  if (part.tokens.length !== 1)
-    return false;
-  let token = part.tokens[0];
-  if (token.type !== "*")
-    return false;
-  return token.name === "*";
-}
-function parseSearch(source) {
-  let constraints = /* @__PURE__ */ new Map();
-  let searchParams = new URLSearchParams(source);
-  for (let [key, value] of searchParams) {
-    let requiredValues = constraints.get(key);
-    if (!requiredValues) {
-      requiredValues = /* @__PURE__ */ new Set();
-      constraints.set(key, requiredValues);
-    }
-    if (value === "")
-      continue;
-    requiredValues.add(value);
-  }
-  return constraints;
-}
-var ParseError = class extends Error {
-  /** The parse failure category. */
-  type;
-  /** Original pattern source being parsed. */
-  source;
-  /** Character index where parsing failed. */
-  index;
-  constructor(type, source, index) {
-    let underline = " ".repeat(index) + "^";
-    let message = `${type}
-
-${source}
-${underline}`;
-    super(message);
-    this.name = "ParseError";
-    this.type = type;
-    this.source = source;
-    this.index = index;
-  }
-};
-
-// node_modules/@remix-run/route-pattern/dist/lib/unreachable.js
-function unreachable(value) {
-  let message = value === void 0 ? "Unreachable" : `Unreachable: ${value}`;
-  throw new Error(message);
-}
-
-// node_modules/@remix-run/route-pattern/dist/lib/route-pattern/serialize.js
-function serializePattern(pattern) {
-  let protocol = serializeProtocol(pattern);
-  let hostname = serializeHostname(pattern);
-  let port = serializePort(pattern);
-  let pathname = serializePathname(pattern);
-  let search = serializeSearch(pattern);
-  let result = "";
-  if (protocol || hostname || port) {
-    result += `${protocol}://${hostname}${port === "" ? "" : `:${port}`}`;
-  }
-  result += "/" + pathname;
-  if (search)
-    result += `?${search}`;
-  return result;
-}
-function serializePatternParts(pattern) {
-  return {
-    protocol: serializeProtocol(pattern),
-    hostname: serializeHostname(pattern),
-    port: serializePort(pattern),
-    pathname: serializePathname(pattern),
-    search: serializeSearch(pattern)
-  };
-}
-function serializeProtocol(pattern) {
-  return pattern.protocol ?? "";
-}
-function serializeHostname(pattern) {
-  return pattern.hostname ? serializePart(pattern.hostname) : "";
-}
-function serializePort(pattern) {
-  return pattern.port ?? "";
-}
-function serializePathname(pattern) {
-  return serializePart(pattern.pathname);
-}
-function serializeSearch(pattern) {
-  if (pattern.search.size === 0)
-    return "";
-  let searchParams = new URLSearchParams();
-  for (let [key, constraint] of pattern.search) {
-    if (constraint.size === 0) {
-      searchParams.append(key, "");
-    } else {
-      for (let value of constraint) {
-        searchParams.append(key, value);
-      }
-    }
-  }
-  return searchParams.toString();
-}
-function escapeText(text) {
-  return text.replaceAll(/[:*()\\]/g, "\\$&");
-}
-function serializePart(part) {
-  let separator = part.type === "hostname" ? "." : "/";
-  let result = "";
-  for (let token of part.tokens) {
-    if (token.type === "(" || token.type === ")") {
-      result += token.type;
-      continue;
-    }
-    if (token.type === "text") {
-      result += escapeText(token.text);
-      continue;
-    }
-    if (token.type === ":" || token.type === "*") {
-      let name = token.name === "*" ? "" : token.name;
-      result += `${token.type}${name}`;
-      continue;
-    }
-    if (token.type === "separator") {
-      result += separator;
-      continue;
-    }
-    unreachable(token.type);
-  }
-  return result;
-}
-
-// node_modules/@remix-run/route-pattern/dist/lib/route-pattern.js
-var RoutePattern = class {
-  /** Parsed parts of this pattern. Internal; not part of the public API. */
-  _parts;
-  /**
-   * Create a new `RoutePattern` from its parsed parts.
-   *
-   * The parts are not part of the public API. Use the {@link RoutePattern} `parse` method to create a pattern
-   * from a source string.
-   *
-   * @param parts The parsed parts of the pattern.
-   */
-  constructor(parts) {
-    this._parts = parts;
-  }
-  /**
-   * Create a new `RoutePattern` by parsing a source string.
-   *
-   * @param source The route pattern source string.
-   * @returns The parsed route pattern.
-   */
-  static parse(source) {
-    return parsePattern(source);
-  }
-  /** Normalized string representation of this pattern. */
-  get source() {
-    return serializePattern(this._parts);
-  }
-  /**
-   * Returns a string representing this route pattern.
-   *
-   * @returns The same normalized pattern string as `RoutePattern.source`.
-   */
-  toString() {
-    return this.source;
-  }
-  /**
-   * Returns a JSON-serializable object containing each serialized part of this route pattern.
-   *
-   * @returns The serialized protocol, hostname, port, pathname, and search.
-   */
-  toJSON() {
-    return serializePatternParts(this._parts);
-  }
-};
-function createRoutePattern(parts) {
-  return new RoutePattern(parts);
-}
-
-// node_modules/@remix-run/route-pattern/dist/lib/href.js
-function createHref(pattern, ...args) {
-  pattern = typeof pattern === "string" ? RoutePattern.parse(pattern) : pattern;
-  let patternParts = pattern._parts;
-  let [params, options] = args;
-  let hasOrigin = patternParts.protocol !== null || patternParts.hostname !== null || patternParts.port !== null;
-  let result = "";
-  let targetOrigin;
-  if (hasOrigin) {
-    let protocol = patternParts.protocol === null || patternParts.protocol === "http(s)" ? "https" : patternParts.protocol;
-    if (patternParts.hostname === null) {
-      throw new CreateHrefError({ type: "missing-hostname", pattern });
-    }
-    let hostname = hrefPart(pattern, patternParts.hostname, params ?? {});
-    let port = patternParts.port === null ? "" : `:${patternParts.port}`;
-    targetOrigin = `${protocol}://${hostname}${port}`;
-    result += targetOrigin;
-  }
-  let pathname = hrefPart(pattern, patternParts.pathname, params ?? {});
-  pathname = "/" + pathname.replace(/^\/+/, "");
-  result += pathname;
-  let search = hrefSearch(patternParts.search, options?.searchParams);
-  let searchSuffix = search === void 0 ? "" : `?${search}`;
-  result += searchSuffix;
-  if (options?.baseURL !== void 0) {
-    let baseURL = new URL(options.baseURL);
-    let baseOrigin = baseURL.origin;
-    let targetURLOrigin = targetOrigin === void 0 ? baseOrigin : new URL(targetOrigin).origin;
-    if (targetURLOrigin === baseOrigin) {
-      new URL("/", baseURL);
-      return relativeHref(pathname, searchSuffix, baseURL);
-    }
-  }
-  return result;
-}
-function relativeHref(pathname, search, baseURL) {
-  let baseSegments = pathnameSegments(baseURL.pathname);
-  if (!baseURL.pathname.endsWith("/"))
-    baseSegments.pop();
-  let targetSegments = pathnameSegments(pathname);
-  let targetIsDirectory = pathname.endsWith("/");
-  let targetFile = targetIsDirectory ? void 0 : targetSegments.pop();
-  let common = 0;
-  while (common < baseSegments.length && common < targetSegments.length && baseSegments[common] === targetSegments[common]) {
-    common += 1;
-  }
-  let relativeSegments = [
-    ...Array.from({ length: baseSegments.length - common }, () => ".."),
-    ...targetSegments.slice(common)
-  ];
-  if (targetFile !== void 0)
-    relativeSegments.push(targetFile);
-  let result = relativeSegments.join("/");
-  if (targetIsDirectory)
-    result = result === "" ? "./" : `${result}/`;
-  if (result === "")
-    result = "./";
-  if (/^[\\/]/.test(result) || /^[^/]*:/.test(result))
-    result = `./${result}`;
-  return result + search;
-}
-function pathnameSegments(pathname) {
-  let segments = pathname.slice(1).split("/");
-  if (pathname.endsWith("/"))
-    segments.pop();
-  return segments;
-}
-function hrefPart(pattern, part, params) {
-  let separator = part.type === "hostname" ? "." : "/";
-  let missingParams = [];
-  let stack = [{ href: "" }];
-  let i = 0;
-  while (i < part.tokens.length) {
-    let token = part.tokens[i];
-    if (token.type === "text") {
-      stack[stack.length - 1].href += token.text;
-      i += 1;
-      continue;
-    }
-    if (token.type === "separator") {
-      stack[stack.length - 1].href += separator;
-      i += 1;
-      continue;
-    }
-    if (token.type === "(") {
-      stack.push({ begin: i, href: "" });
-      i += 1;
-      continue;
-    }
-    if (token.type === ")") {
-      let frame = stack.pop();
-      stack[stack.length - 1].href += frame.href;
-      i += 1;
-      continue;
-    }
-    if (token.type === ":" || token.type === "*") {
-      let value = params[token.name];
-      if (value == null) {
-        if (stack.length <= 1) {
-          if (token.name === "*") {
-            throw new CreateHrefError({ type: "nameless-wildcard", pattern });
-          }
-          if (!missingParams.includes(token.name))
-            missingParams.push(token.name);
-          i += 1;
-          continue;
-        }
-        let frame = stack.pop();
-        i = part.optionals.get(frame.begin) + 1;
-        if (stack[stack.length - 1].href.endsWith(separator) && part.tokens[i]?.type === "separator") {
-          i += 1;
-        }
-        continue;
-      }
-      stack[stack.length - 1].href += part.type === "pathname" && token.type === ":" ? encodePathnameVariableParam(pattern, token.name, value) : part.type === "pathname" && token.type === "*" ? encodePathnameWildcard(value) : part.type === "hostname" && token.type === ":" ? validateHostnameVariable(value) : part.type === "hostname" && token.type === "*" ? validateHostnameWildcard(value) : unreachable();
-      i += 1;
-      continue;
-    }
-    unreachable(token.type);
-  }
-  if (missingParams.length > 0) {
-    throw new CreateHrefError({
-      type: "missing-params",
-      pattern,
-      missingParams,
-      params
-    });
-  }
-  if (stack.length !== 1)
-    unreachable();
-  return stack[0].href;
-}
-function hrefSearch(constraints, searchParams) {
-  let urlSearchParams = searchParams instanceof URLSearchParams ? new URLSearchParams(searchParams) : new URLSearchParams();
-  if (searchParams !== void 0 && !(searchParams instanceof URLSearchParams)) {
-    for (let [key, value] of Object.entries(searchParams)) {
-      if (Array.isArray(value)) {
-        for (let v of value) {
-          if (v != null)
-            urlSearchParams.append(key, String(v));
-        }
-      } else if (value != null) {
-        urlSearchParams.append(key, String(value));
-      }
-    }
-  }
-  for (let [key, requiredValues] of constraints) {
-    if (requiredValues.size === 0) {
-      if (urlSearchParams.has(key))
-        continue;
-      urlSearchParams.append(key, "");
-    } else {
-      for (let value of requiredValues) {
-        if (urlSearchParams.getAll(key).includes(value))
-          continue;
-        urlSearchParams.append(key, value);
-      }
-    }
-  }
-  let result = urlSearchParams.toString();
-  return result || void 0;
-}
-var CreateHrefError = class _CreateHrefError extends Error {
-  details;
-  constructor(details) {
-    super(_CreateHrefError.message(details));
-    this.name = "CreateHrefError";
-    this.details = details;
-  }
-  static message(details) {
-    if (details.type === "missing-hostname") {
-      return `pattern requires hostname
-
-Pattern: ${details.pattern}`;
-    }
-    if (details.type === "nameless-wildcard") {
-      return `pattern contains nameless wildcard
-
-Pattern: ${details.pattern}`;
-    }
-    if (details.type === "missing-params") {
-      let params = details.missingParams.map((p) => `'${p}'`).join(", ");
-      return `missing param(s): ${params}
-
-Pattern: ${details.pattern}
-Params: ${JSON.stringify(details.params)}`;
-    }
-    if (details.type === "invalid-hostname-variable") {
-      return `invalid hostname variable param: ${JSON.stringify(details.value)} contains ${JSON.stringify(details.char)}`;
-    }
-    if (details.type === "invalid-hostname-wildcard") {
-      return `invalid hostname wildcard param: ${JSON.stringify(details.value)} contains ${JSON.stringify(details.char)}`;
-    }
-    if (details.type === "invalid-pathname-variable") {
-      return `invalid pathname variable param: '${details.paramName}' cannot be empty
-
-Pattern: ${details.pattern}
-Value: ${JSON.stringify(details.value)}`;
-    }
-    if (details.type === "invalid-pathname-wildcard") {
-      return `invalid pathname wildcard param: ${JSON.stringify(details.value)} contains dot segment ${JSON.stringify(details.segment)}`;
-    }
-    unreachable(details);
-  }
-};
-function encodePathnameVariableParam(pattern, paramName, value) {
-  let serialized = String(value);
-  if (serialized.length === 0) {
-    throw new CreateHrefError({
-      type: "invalid-pathname-variable",
-      pattern,
-      paramName,
-      value: serialized
-    });
-  }
-  return encodePathnameVariableSegment(serialized);
-}
-function encodePathnameWildcard(value) {
-  let serialized = String(value);
-  return serialized.split("/").map((segment) => {
-    if (segment === "." || segment === "..") {
-      throw new CreateHrefError({ type: "invalid-pathname-wildcard", value: serialized, segment });
-    }
-    return encodePathnameSegment(segment);
-  }).join("/");
-}
-function encodePathnameSegment(value) {
-  return encodeURIComponent(value);
-}
-function encodePathnameVariableSegment(value) {
-  return encodePathnameSegment(value).replaceAll(".", "%2E");
-}
-var HOSTNAME_PARAM_STRUCTURAL_CHARS = ["@", ":", "/", "\\", "?", "#", "%"];
-function validateHostnameVariable(value) {
-  let serialized = String(value);
-  for (let char of serialized) {
-    if (char === "." || isInvalidHostnameParamChar(char)) {
-      throw new CreateHrefError({
-        type: "invalid-hostname-variable",
-        value: serialized,
-        char
-      });
-    }
-  }
-  return serialized;
-}
-function validateHostnameWildcard(value) {
-  let serialized = String(value);
-  for (let char of serialized) {
-    if (isInvalidHostnameParamChar(char)) {
-      throw new CreateHrefError({
-        type: "invalid-hostname-wildcard",
-        value: serialized,
-        char
-      });
-    }
-  }
-  return serialized;
-}
-function isInvalidHostnameParamChar(char) {
-  let code = char.charCodeAt(0);
-  return code <= 31 || code === 127 || HOSTNAME_PARAM_STRUCTURAL_CHARS.includes(char);
-}
-
-// node_modules/@remix-run/route-pattern/dist/lib/join.js
-function joinPatterns(base, next) {
-  let basePattern = typeof base === "string" ? RoutePattern.parse(base) : base;
-  let nextPattern = typeof next === "string" ? RoutePattern.parse(next) : next;
-  let baseParts = basePattern._parts;
-  let nextParts = nextPattern._parts;
-  return createRoutePattern({
-    protocol: nextParts.protocol ?? baseParts.protocol,
-    hostname: nextParts.hostname ?? baseParts.hostname,
-    port: nextParts.port ?? baseParts.port,
-    pathname: joinPathname(baseParts.pathname, nextParts.pathname),
-    search: joinSearch(baseParts.search, nextParts.search)
-  });
-}
-function joinPathname(base, next) {
-  if (base.tokens.length === 0)
-    return next;
-  if (next.tokens.length === 0)
-    return base;
-  let tokens = [];
-  let baseLastNonOptionalIndex = base.tokens.findLastIndex((token) => token.type !== "(" && token.type !== ")");
-  let baseLastNonOptional = base.tokens[baseLastNonOptionalIndex];
-  let baseHasTrailingSeparator = baseLastNonOptional?.type === "separator";
-  base.tokens.forEach((token, index) => {
-    if (index === baseLastNonOptionalIndex && token.type === "separator")
-      return;
-    tokens.push(token);
-  });
-  let nextFirstNonOptional = next.tokens.find((token) => token.type !== "(" && token.type !== ")");
-  let needsSeparator = nextFirstNonOptional === void 0 || nextFirstNonOptional.type !== "separator";
-  if (needsSeparator)
-    tokens.push({ type: "separator" });
-  let tokenOffset = tokens.length;
-  next.tokens.forEach((token) => tokens.push(token));
-  let optionals = /* @__PURE__ */ new Map();
-  for (let [begin, end] of base.optionals) {
-    if (baseHasTrailingSeparator) {
-      if (begin > baseLastNonOptionalIndex)
-        begin -= 1;
-      if (end > baseLastNonOptionalIndex)
-        end -= 1;
-    }
-    optionals.set(begin, end);
-  }
-  for (let [begin, end] of next.optionals) {
-    optionals.set(tokenOffset + begin, tokenOffset + end);
-  }
-  return { tokens, optionals, type: "pathname" };
-}
-function joinSearch(base, next) {
-  let result = /* @__PURE__ */ new Map();
-  for (let [name, values] of base) {
-    result.set(name, new Set(values));
-  }
-  for (let [name, values] of next) {
-    let current = result.get(name);
-    if (current === void 0) {
-      result.set(name, new Set(values));
-      continue;
-    }
-    for (let value of values) {
-      current.add(value);
-    }
-  }
-  return result;
-}
-
-// node_modules/@remix-run/fetch-router/dist/lib/route-map.js
-var Route = class {
-  /**
-   * The HTTP method this route matches.
-   */
-  method;
-  /**
-   * The parsed route-pattern AST. Useful for advanced consumers (e.g. matchers) that want to skip
-   * re-parsing the source string.
-   */
-  pattern;
-  /**
-   * @param method The HTTP method this route matches
-   * @param pattern The route-pattern source string or pre-parsed AST
-   */
-  constructor(method, pattern) {
-    this.method = method;
-    this.pattern = typeof pattern === "string" ? RoutePattern.parse(pattern) : pattern;
-  }
-  /**
-   * Build a URL href for this route using the given route params and href options.
-   *
-   * @param args Route params and href options
-   * @returns The built URL href
-   */
-  href(...args) {
-    return createHref(this.pattern, ...args);
-  }
-};
-function createRoutes(baseOrDefs, defs) {
-  let baseIsPattern = typeof baseOrDefs === "string" || baseOrDefs instanceof RoutePattern;
-  if (baseIsPattern) {
-    let baseAst = typeof baseOrDefs === "string" ? RoutePattern.parse(baseOrDefs) : baseOrDefs;
-    return buildRouteMap(baseAst, defs);
-  }
-  return buildRouteMap(RoutePattern.parse("/"), baseOrDefs);
-}
-function buildRouteMap(base, defs) {
-  let routes2 = {};
-  for (let key in defs) {
-    let def = defs[key];
-    if (def instanceof Route) {
-      routes2[key] = new Route(def.method, joinPatterns(base, def.pattern));
-    } else if (typeof def === "string") {
-      routes2[key] = new Route("ANY", joinPatterns(base, RoutePattern.parse(def)));
-    } else if (def instanceof RoutePattern) {
-      routes2[key] = new Route("ANY", joinPatterns(base, def));
-    } else if (typeof def === "object" && def != null && "pattern" in def) {
-      let defPattern = typeof def.pattern === "string" ? RoutePattern.parse(def.pattern) : def.pattern;
-      routes2[key] = new Route(def.method ?? "ANY", joinPatterns(base, defPattern));
-    } else {
-      routes2[key] = buildRouteMap(base, def);
-    }
-  }
-  return routes2;
-}
-
-// node_modules/@remix-run/fetch-router/dist/lib/route-helpers/method.js
-function createDeleteRoute(pattern) {
-  return new Route("DELETE", pattern);
-}
-function createGetRoute(pattern) {
-  return new Route("GET", pattern);
-}
-function createPostRoute(pattern) {
-  return new Route("POST", pattern);
-}
-
-// app/routes.ts
-var routes = createRoutes({
-  home: createGetRoute("/"),
-  guide: createGetRoute("/guide"),
-  records: createGetRoute("/records"),
-  slideOnly: createGetRoute("/slide-only"),
-  health: createGetRoute("/health"),
-  llms: createGetRoute("/llms.txt"),
-  llmsFull: createGetRoute("/llms-full.txt"),
-  markdown: {
-    index: createGetRoute("/markdown"),
-    unitYear: createGetRoute("/markdown/:unit/:year")
-  },
-  progress: {
-    links: createPostRoute("/progress/links"),
-    sync: createPostRoute("/progress/sync"),
-    challenges: createPostRoute("/progress/challenges"),
-    destroy: createDeleteRoute("/progress")
-  },
-  unitYear: createGetRoute("/:unit/:year"),
-  exam: createGetRoute("/:unit/:year/exam/:exam"),
-  question: createGetRoute("/:unit/:year/exam/:exam/question/:question")
+// app/features/challenge/player/ui/buttons.ts
+var primaryButtonStyle = css({
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "0.625rem 1.25rem",
+  borderRadius: "var(--radius-control)",
+  border: "1px solid var(--color-primary)",
+  background: "var(--color-primary)",
+  color: "#fff",
+  font: "inherit",
+  textDecoration: "none",
+  cursor: "pointer"
+});
+var quietButtonStyle = css({
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "0.625rem 1.25rem",
+  borderRadius: "var(--radius-control)",
+  border: "1px solid var(--color-border)",
+  background: "var(--color-bg-card)",
+  color: "var(--color-primary)",
+  font: "inherit",
+  textDecoration: "none",
+  cursor: "pointer"
 });
 
 // app/features/challenge/player/ui/challenge-result.tsx
 var SUCCESS_THRESHOLD = 0.8;
+var sectionStyle = css({
+  maxWidth: "36rem",
+  margin: "0 auto",
+  padding: "1.5rem",
+  background: "var(--color-bg-card)",
+  border: "1px solid var(--color-border)",
+  borderRadius: "var(--radius-card)"
+});
+var eyebrowStyle = css({
+  margin: "0 0 0.25rem",
+  fontSize: "0.8rem",
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  color: "var(--color-text-muted)"
+});
+var statsStyle = css({
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(8rem, 1fr))",
+  gap: "0.75rem",
+  margin: "1rem 0",
+  "& dt": { fontSize: "0.8rem", color: "var(--color-text-muted)" },
+  "& dd": { margin: 0, fontFamily: "var(--font-mono)", fontSize: "1.1rem" }
+});
+var listStyle = css({
+  listStyle: "none",
+  margin: "0 0 1rem",
+  padding: 0,
+  "& li": {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "0.75rem",
+    padding: "0.375rem 0",
+    borderBottom: "1px solid var(--color-border)"
+  }
+});
+var actionsStyle = css({
+  display: "flex",
+  gap: "0.75rem",
+  flexWrap: "wrap"
+});
+var primaryButtonStyle2 = css({
+  padding: "0.625rem 1.25rem",
+  borderRadius: "var(--radius-control)",
+  border: "1px solid var(--color-primary)",
+  background: "var(--color-primary)",
+  color: "#fff",
+  font: "inherit",
+  cursor: "pointer"
+});
+var quietLinkStyle = css({
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "0.625rem 1.25rem",
+  borderRadius: "var(--radius-control)",
+  border: "1px solid var(--color-border)",
+  color: "var(--color-primary)",
+  textDecoration: "none"
+});
 function ChallengeResultView(handle) {
   return () => {
     const { payload, history, questions, mode, unitId, year, syncMessage, onRetry } = handle.props;
@@ -10706,10 +10486,10 @@ function ChallengeResultView(handle) {
     const questionById = new Map(questions.map((question) => [question.id, question]));
     const accuracy = mode === "exam" ? aggregate.accuracy : summary.accuracy;
     const isSuccess = accuracy !== null && accuracy >= SUCCESS_THRESHOLD;
-    return /* @__PURE__ */ jsx("section", { class: "exam-result", "aria-labelledby": "exam-result-title", children: [
-      /* @__PURE__ */ jsx("p", { class: "page-heading__eyebrow", children: "\u7D50\u679C" }),
+    return /* @__PURE__ */ jsx("section", { "aria-labelledby": "exam-result-title", mix: sectionStyle, children: [
+      /* @__PURE__ */ jsx("p", { mix: eyebrowStyle, children: "\u7D50\u679C" }),
       /* @__PURE__ */ jsx("h2", { id: "exam-result-title", children: isSuccess ? "\u3088\u304F\u3067\u304D\u307E\u3057\u305F" : "\u304A\u3064\u304B\u308C\u3055\u307E\u3067\u3057\u305F" }),
-      /* @__PURE__ */ jsx("dl", { class: "exam-result__stats", children: [
+      /* @__PURE__ */ jsx("dl", { mix: statsStyle, children: [
         /* @__PURE__ */ jsx("div", { children: [
           /* @__PURE__ */ jsx("dt", { children: "\u6B63\u7B54\u7387" }),
           /* @__PURE__ */ jsx("dd", { children: formatAccuracy(accuracy) })
@@ -10734,35 +10514,1155 @@ function ChallengeResultView(handle) {
           ] })
         ] }) : null
       ] }),
-      /* @__PURE__ */ jsx("ol", { class: "exam-result__list", children: payload.answers.map((answer) => {
+      /* @__PURE__ */ jsx("ol", { mix: listStyle, children: payload.answers.map((answer) => {
         const question = questionById.get(answer.questionId);
-        return /* @__PURE__ */ jsx("li", { class: `is-${answer.judgment}`, children: [
+        return /* @__PURE__ */ jsx("li", { children: [
           /* @__PURE__ */ jsx("span", { children: question ? `\u554F${question.number}` : answer.questionId }),
           /* @__PURE__ */ jsx("span", { children: answer.judgment === "correct" ? "\u25CB" : "\xD7" }),
           /* @__PURE__ */ jsx("span", { children: formatDuration(answer.elapsedMs) })
         ] }, answer.questionId);
       }) }),
-      syncMessage ? /* @__PURE__ */ jsx("p", { class: "exam-result__sync", children: syncMessage }) : null,
-      /* @__PURE__ */ jsx("div", { class: "exam-result__actions", children: [
-        /* @__PURE__ */ jsx(
+      syncMessage ? /* @__PURE__ */ jsx("p", { role: "status", children: syncMessage }) : null,
+      /* @__PURE__ */ jsx("div", { mix: actionsStyle, children: [
+        /* @__PURE__ */ jsx("button", { type: "button", mix: [primaryButtonStyle2, on("click", onRetry)], children: "\u3082\u3046\u4E00\u5EA6\u6311\u6226\u3059\u308B" }),
+        /* @__PURE__ */ jsx("a", { mix: quietLinkStyle, href: `/${unitId}/${year}`, children: "\u554F\u984C\u4E00\u89A7\u3078\u623B\u308B" })
+      ] })
+    ] });
+  };
+}
+
+// app/features/challenge/player/ui/icons.tsx
+function icon(children) {
+  return function Icon(handle) {
+    void handle;
+    return () => /* @__PURE__ */ jsx(
+      "svg",
+      {
+        width: "16",
+        height: "16",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        "stroke-width": "2",
+        "stroke-linecap": "round",
+        "stroke-linejoin": "round",
+        "aria-hidden": "true",
+        children: children()
+      }
+    );
+  };
+}
+var MenuIcon = icon(() => /* @__PURE__ */ jsx("path", { d: "M4 6h16M4 12h16M4 18h16" }));
+var CloseIcon = icon(() => /* @__PURE__ */ jsx("path", { d: "m6 6 12 12M18 6 6 18" }));
+var ChevronLeftIcon = icon(() => /* @__PURE__ */ jsx("path", { d: "m15 18-6-6 6-6" }));
+var ChevronRightIcon = icon(() => /* @__PURE__ */ jsx("path", { d: "m9 18 6-6-6-6" }));
+var CheckIcon = icon(() => /* @__PURE__ */ jsx("polyline", { points: "20 6 9 17 4 12" }));
+var PauseIcon = icon(() => /* @__PURE__ */ jsx("path", { d: "M9 5v14M15 5v14" }));
+var TimerIcon = icon(() => /* @__PURE__ */ jsx(Fragment, { children: [
+  /* @__PURE__ */ jsx("circle", { cx: "12", cy: "13", r: "8" }),
+  /* @__PURE__ */ jsx("path", { d: "M12 9v4l2.5 1.5M10 2h4m-2 0v3M19 6l-1.5 1.5" })
+] }));
+var AnswerSheetIcon = icon(() => /* @__PURE__ */ jsx(Fragment, { children: [
+  /* @__PURE__ */ jsx("path", { d: "M7 3.5h7l4.5 4.5v12.5H7z" }),
+  /* @__PURE__ */ jsx("path", { d: "M14 3.5V8h4.5M9.5 14l2 2 4-4" })
+] }));
+
+// app/features/challenge/player/ui/player-controls.tsx
+var actionStyle = css({
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "2.25rem",
+  height: "2.25rem",
+  border: "1px solid var(--color-border)",
+  borderRadius: "var(--radius-control)",
+  background: "var(--color-bg-card)",
+  color: "var(--color-primary)",
+  cursor: "pointer",
+  "&:hover": { background: "var(--color-primary-soft)" },
+  "&:disabled": { cursor: "default", opacity: 0.5 }
+});
+var actionsRowStyle = css({
+  display: "flex",
+  alignItems: "center",
+  gap: "0.5rem",
+  border: 0,
+  margin: "0.75rem 0 0",
+  padding: 0
+});
+var timersStyle = css({
+  display: "flex",
+  gap: "1rem",
+  margin: "0.75rem 0 0",
+  border: 0,
+  padding: 0,
+  "& div": { display: "flex", alignItems: "baseline", gap: "0.375rem" },
+  "& span": { fontSize: "0.8rem", color: "var(--color-text-muted)" },
+  "& strong": { fontFamily: "var(--font-mono)", fontSize: "1rem" }
+});
+var edgeNavStyle = css({
+  display: "flex",
+  justifyContent: "space-between",
+  marginTop: "1rem"
+});
+function QuestionActions(handle) {
+  return () => {
+    const { copyText, answerOpen, onToggleAnswer, timerRunning, onToggleTimer } = handle.props;
+    return /* @__PURE__ */ jsx("fieldset", { mix: actionsRowStyle, children: [
+      /* @__PURE__ */ jsx("legend", { class: "sr-only", children: "\u554F\u984C\u306E\u64CD\u4F5C" }),
+      /* @__PURE__ */ jsx(CopyButton, { text: copyText, label: "\u554F\u984C\u6587\u3092\u30B3\u30D4\u30FC" }),
+      /* @__PURE__ */ jsx(
+        "button",
+        {
+          type: "button",
+          mix: [actionStyle, on("click", onToggleAnswer)],
+          "aria-label": answerOpen ? "\u89E3\u7B54\u3092\u96A0\u3059" : "\u89E3\u7B54\u3092\u8868\u793A",
+          title: answerOpen ? "\u89E3\u7B54\u3092\u96A0\u3059" : "\u89E3\u7B54\u3092\u8868\u793A",
+          "aria-expanded": answerOpen ? "true" : "false",
+          "aria-controls": answerOpen ? "exam-answer" : void 0,
+          children: answerOpen ? /* @__PURE__ */ jsx(CloseIcon, {}) : /* @__PURE__ */ jsx(AnswerSheetIcon, {})
+        }
+      ),
+      /* @__PURE__ */ jsx(
+        "button",
+        {
+          type: "button",
+          mix: [actionStyle, on("click", onToggleTimer)],
+          "aria-label": timerRunning ? "\u8A08\u6E2C\u3092\u4E00\u6642\u505C\u6B62" : "\u8A08\u6E2C\u3092\u518D\u958B",
+          title: timerRunning ? "\u8A08\u6E2C\u3092\u4E00\u6642\u505C\u6B62" : "\u8A08\u6E2C\u3092\u518D\u958B",
+          "aria-pressed": timerRunning ? "true" : "false",
+          style: timerRunning ? { borderColor: "var(--color-accent)" } : void 0,
+          children: timerRunning ? /* @__PURE__ */ jsx(PauseIcon, {}) : /* @__PURE__ */ jsx(TimerIcon, {})
+        }
+      )
+    ] });
+  };
+}
+function ChallengeTimerDisplay(handle) {
+  let now = 0;
+  let interval;
+  const stopTicking = () => {
+    if (interval !== void 0) {
+      clearInterval(interval);
+      interval = void 0;
+    }
+  };
+  const syncTicking = (running) => {
+    if (!running) {
+      stopTicking();
+      return;
+    }
+    if (interval === void 0) {
+      now = typeof performance === "undefined" ? 0 : performance.now();
+      interval = setInterval(() => {
+        now = performance.now();
+        void handle.update();
+      }, 1e3);
+    }
+  };
+  return () => {
+    const { mode, totalElapsedMs, questionElapsedMs, timerRunning, timerStartedAt } = handle.props;
+    const displayedTotalMs = projectElapsedTime(totalElapsedMs, timerRunning, timerStartedAt, now);
+    const displayedQuestionMs = projectElapsedTime(
+      questionElapsedMs,
+      timerRunning,
+      timerStartedAt,
+      now
+    );
+    return /* @__PURE__ */ jsx(
+      "fieldset",
+      {
+        mix: [
+          timersStyle,
+          ref((node) => {
+            if (node) {
+              syncTicking(timerRunning);
+            } else {
+              stopTicking();
+            }
+          })
+        ],
+        children: [
+          /* @__PURE__ */ jsx("legend", { class: "sr-only", children: "\u7D4C\u904E\u6642\u9593" }),
+          mode === "exam" ? /* @__PURE__ */ jsx("div", { children: [
+            /* @__PURE__ */ jsx("span", { children: "\u5168\u4F53" }),
+            /* @__PURE__ */ jsx("strong", { "data-testid": "challenge-total-time", "aria-live": "off", children: formatDuration(displayedTotalMs) })
+          ] }) : null,
+          /* @__PURE__ */ jsx("div", { children: [
+            /* @__PURE__ */ jsx("span", { children: mode === "question" ? "\u8A08\u6E2C\u6642\u9593" : "\u3053\u306E\u554F\u984C" }),
+            /* @__PURE__ */ jsx("strong", { "data-testid": "challenge-question-time", "aria-live": "off", children: formatDuration(displayedQuestionMs) })
+          ] })
+        ]
+      }
+    );
+  };
+}
+function PlayerEdgeNavigation(handle) {
+  return () => {
+    const { showPrevious, isFirst, isLast, canFinish, onPrevious, onNext, onFinish } = handle.props;
+    if (!(showPrevious || isLast)) {
+      return null;
+    }
+    return /* @__PURE__ */ jsx("nav", { "aria-label": "\u554F\u984C\u79FB\u52D5", mix: edgeNavStyle, children: [
+      showPrevious ? /* @__PURE__ */ jsx(
+        "button",
+        {
+          type: "button",
+          mix: [actionStyle, on("click", onPrevious)],
+          "aria-label": "\u524D\u306E\u554F\u984C",
+          title: "\u524D\u306E\u554F\u984C",
+          disabled: isFirst,
+          children: /* @__PURE__ */ jsx(ChevronLeftIcon, {})
+        }
+      ) : /* @__PURE__ */ jsx("span", {}),
+      /* @__PURE__ */ jsx(
+        "button",
+        {
+          type: "button",
+          mix: [actionStyle, on("click", isLast ? onFinish : onNext)],
+          "aria-label": isLast ? "\u7D50\u679C\u3092\u898B\u308B" : "\u6B21\u306E\u554F\u984C",
+          title: isLast ? "\u7D50\u679C\u3092\u898B\u308B" : "\u6B21\u306E\u554F\u984C",
+          disabled: isLast && !canFinish,
+          children: isLast ? /* @__PURE__ */ jsx(CheckIcon, {}) : /* @__PURE__ */ jsx(ChevronRightIcon, {})
+        }
+      )
+    ] });
+  };
+}
+
+// app/features/challenge/player/ui/player-header.tsx
+var headerStyle = css({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  flexWrap: "wrap",
+  gap: "0.75rem",
+  padding: "0.75rem 1rem",
+  background: "var(--color-bg-card)",
+  borderBottom: "1px solid var(--color-border)"
+});
+var identityStyle = css({
+  display: "flex",
+  alignItems: "center",
+  gap: "0.5rem",
+  minWidth: 0,
+  "& h2": {
+    margin: 0,
+    fontFamily: "var(--font-serif)",
+    fontSize: "1.05rem",
+    fontWeight: 700,
+    color: "var(--color-primary)"
+  }
+});
+var progressStyle = css({ flex: "1 1 16rem", minWidth: 0 });
+var stepsStyle = css({
+  display: "flex",
+  alignItems: "center",
+  gap: "0.75rem",
+  "& ol": {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.25rem",
+    listStyle: "none",
+    margin: 0,
+    padding: 0
+  }
+});
+var stepButtonStyle = css({
+  width: "1.75rem",
+  height: "1.75rem",
+  border: "1px solid var(--color-border)",
+  borderRadius: "999px",
+  background: "var(--color-bg)",
+  color: "var(--color-text-muted)",
+  font: "inherit",
+  fontSize: "0.8rem",
+  cursor: "pointer",
+  "&:disabled": { cursor: "default", opacity: 0.6 }
+});
+var stepCurrentStyle = css({
+  background: "var(--color-primary)",
+  borderColor: "var(--color-primary)",
+  color: "#fff",
+  fontWeight: 700
+});
+var trackStyle = css({
+  flex: 1,
+  height: "0.375rem",
+  borderRadius: "999px",
+  background: "var(--color-primary-soft)",
+  overflow: "hidden",
+  "& > span": {
+    display: "block",
+    height: "100%",
+    background: "var(--color-accent)",
+    transition: "width 150ms ease"
+  }
+});
+function PlayerHeader(handle) {
+  return () => {
+    const {
+      playerTitle,
+      questions,
+      currentQuestionIndex,
+      onOpenQuestionList,
+      onSelectQuestion,
+      disabled = false
+    } = handle.props;
+    const ratio = questions.length > 0 ? (currentQuestionIndex + 1) / questions.length : 0;
+    return /* @__PURE__ */ jsx("header", { mix: headerStyle, children: [
+      /* @__PURE__ */ jsx("div", { mix: identityStyle, children: [
+        questions.length > 1 ? /* @__PURE__ */ jsx(
           "button",
           {
             type: "button",
-            class: "exam-footer-button exam-footer-button--primary",
-            mix: on("click", onRetry),
-            children: "\u3082\u3046\u4E00\u5EA6\u6311\u6226\u3059\u308B"
+            mix: on("click", onOpenQuestionList),
+            "aria-label": "\u554F\u984C\u4E00\u89A7\u3092\u958B\u304F",
+            title: "\u554F\u984C\u4E00\u89A7\u3092\u958B\u304F",
+            disabled,
+            children: /* @__PURE__ */ jsx(MenuIcon, {})
           }
-        ),
-        /* @__PURE__ */ jsx(
-          "a",
+        ) : null,
+        /* @__PURE__ */ jsx("h2", { children: playerTitle })
+      ] }),
+      /* @__PURE__ */ jsx("nav", { "aria-label": "\u554F\u984C\u756A\u53F7", mix: progressStyle, children: /* @__PURE__ */ jsx("div", { mix: stepsStyle, children: [
+        /* @__PURE__ */ jsx("ol", { children: questions.map((question, index) => /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(
+          "button",
           {
-            class: "exam-footer-button exam-footer-button--quiet",
-            href: routes.unitYear.href({ unit: unitId, year }),
-            children: "\u554F\u984C\u4E00\u89A7\u3078\u623B\u308B"
+            type: "button",
+            "aria-label": `\u554F${index + 1}`,
+            "aria-current": index === currentQuestionIndex ? "step" : void 0,
+            mix: [
+              stepButtonStyle,
+              index === currentQuestionIndex ? stepCurrentStyle : null,
+              on("click", () => onSelectQuestion(index))
+            ],
+            disabled,
+            children: index + 1
+          }
+        ) }, question.id)) }),
+        /* @__PURE__ */ jsx(
+          "div",
+          {
+            mix: trackStyle,
+            role: "progressbar",
+            "aria-label": "\u554F\u984C\u306E\u9032\u6357",
+            "aria-valuemin": 0,
+            "aria-valuemax": questions.length,
+            "aria-valuenow": currentQuestionIndex + 1,
+            "aria-valuetext": `\u554F${currentQuestionIndex + 1} / ${questions.length}`,
+            children: /* @__PURE__ */ jsx("span", { style: { width: `${ratio * 100}%` } })
           }
         )
-      ] })
+      ] }) })
     ] });
+  };
+}
+
+// node_modules/@remix-run/ui/dist/anchor.js
+var viewportPaddingPx = 16;
+function isHorizontalPlacement(placement) {
+  return placement.startsWith("left") || placement.startsWith("right");
+}
+function isVerticalPlacement(placement) {
+  return placement.startsWith("top") || placement.startsWith("bottom");
+}
+function constrainToAxis(desiredPosition, elementSize, minBound, maxBound) {
+  let elementEnd = desiredPosition + elementSize;
+  if (elementEnd > maxBound) {
+    desiredPosition -= elementEnd - maxBound;
+  }
+  if (desiredPosition < minBound) {
+    desiredPosition = minBound;
+  }
+  return desiredPosition;
+}
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+function getConstrainedPositionRange(elementSize, minBound, maxBound) {
+  return {
+    min: minBound,
+    max: Math.max(minBound, maxBound - elementSize)
+  };
+}
+function getOffScreenStatus(anchorRect, axis) {
+  if (axis === "horizontal") {
+    if (anchorRect.right <= 0)
+      return "before";
+    if (anchorRect.left >= window.innerWidth)
+      return "after";
+    return "visible";
+  }
+  if (anchorRect.bottom <= 0)
+    return "before";
+  if (anchorRect.top >= window.innerHeight)
+    return "after";
+  return "visible";
+}
+function applyOffset(position, placement, offset, offsetX = 0, offsetY = 0) {
+  if (offset === 0 && offsetX === 0 && offsetY === 0) {
+    return position;
+  }
+  let { top, left } = position;
+  if (placement.startsWith("top")) {
+    top -= offset;
+  } else if (placement.startsWith("bottom")) {
+    top += offset;
+  } else if (placement.startsWith("left")) {
+    left -= offset;
+  } else if (placement.startsWith("right")) {
+    left += offset;
+  }
+  left += offsetX;
+  top += offsetY;
+  return { top, left };
+}
+function resolveOffsetValue(offset, floating) {
+  if (typeof offset === "function") {
+    return offset(floating);
+  }
+  return offset ?? 0;
+}
+function isAnchorPoint(value) {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  if (!("x" in value) || !("y" in value)) {
+    return false;
+  }
+  let width = "width" in value ? value.width : void 0;
+  let height = "height" in value ? value.height : void 0;
+  return typeof value.x === "number" && typeof value.y === "number" && (width === void 0 || typeof width === "number") && (height === void 0 || typeof height === "number");
+}
+function readAnchorRect(anchorTarget) {
+  if (anchorTarget instanceof HTMLElement) {
+    return anchorTarget.getBoundingClientRect();
+  }
+  return new DOMRect(anchorTarget.x, anchorTarget.y, anchorTarget.width ?? 0, anchorTarget.height ?? 0);
+}
+function calculatePosition(placement, anchorRect, floatingWidth, floatingHeight, inset = false) {
+  let top = anchorRect.bottom;
+  let left = anchorRect.left + (anchorRect.width - floatingWidth) / 2;
+  if (placement === "bottom-start") {
+    left = anchorRect.left;
+  } else if (placement === "bottom-end") {
+    left = anchorRect.right - floatingWidth;
+  } else if (placement === "top") {
+    top = anchorRect.top - floatingHeight;
+  } else if (placement === "top-start") {
+    top = anchorRect.top - floatingHeight;
+    left = anchorRect.left;
+  } else if (placement === "top-end") {
+    top = anchorRect.top - floatingHeight;
+    left = anchorRect.right - floatingWidth;
+  } else if (placement === "left") {
+    top = anchorRect.top + (anchorRect.height - floatingHeight) / 2;
+    left = anchorRect.left - floatingWidth;
+  } else if (placement === "left-start") {
+    top = anchorRect.top;
+    left = anchorRect.left - floatingWidth;
+  } else if (placement === "left-end") {
+    top = anchorRect.bottom - floatingHeight;
+    left = anchorRect.left - floatingWidth;
+  } else if (placement === "right") {
+    top = anchorRect.top + (anchorRect.height - floatingHeight) / 2;
+    left = anchorRect.right;
+  } else if (placement === "right-start") {
+    top = anchorRect.top;
+    left = anchorRect.right;
+  } else if (placement === "right-end") {
+    top = anchorRect.bottom - floatingHeight;
+    left = anchorRect.right;
+  }
+  if (inset) {
+    if (placement.startsWith("bottom")) {
+      top = anchorRect.bottom - floatingHeight;
+    } else if (placement.startsWith("top")) {
+      top = anchorRect.top;
+    } else if (placement.startsWith("left")) {
+      left = anchorRect.left;
+    } else if (placement.startsWith("right")) {
+      left = anchorRect.right - floatingWidth;
+    }
+  }
+  return { top, left };
+}
+function isScrollableOverflow(value) {
+  return value === "auto" || value === "scroll" || value === "overlay";
+}
+function getRelativeScrollContainer(floating, relativeElement) {
+  let current = relativeElement.parentElement;
+  while (current && current !== floating) {
+    let style = getComputedStyle(current);
+    if (isScrollableOverflow(style.overflowX) || isScrollableOverflow(style.overflowY)) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return floating;
+}
+function readFloatingDimensions(floating, relativeTo) {
+  let relativeElement = relativeTo ? floating.querySelector(relativeTo) : null;
+  if (relativeElement && !(relativeElement instanceof HTMLElement)) {
+    relativeElement = null;
+  }
+  let scrollContainer = relativeElement ? getRelativeScrollContainer(floating, relativeElement) : floating;
+  let relativeOffsetX = null;
+  let relativeOffsetY = null;
+  let scrollContainerOffsetX = 0;
+  let scrollContainerOffsetY = 0;
+  if (relativeElement instanceof HTMLElement) {
+    let floatingRect = floating.getBoundingClientRect();
+    let scrollContainerRect = scrollContainer.getBoundingClientRect();
+    let relativeRect = relativeElement.getBoundingClientRect();
+    scrollContainerOffsetX = scrollContainerRect.left - floatingRect.left;
+    scrollContainerOffsetY = scrollContainerRect.top - floatingRect.top;
+    relativeOffsetX = relativeRect.left - scrollContainerRect.left + scrollContainer.scrollLeft;
+    relativeOffsetY = relativeRect.top - scrollContainerRect.top + scrollContainer.scrollTop;
+  }
+  return {
+    width: floating.offsetWidth,
+    height: floating.offsetHeight,
+    scrollContainer,
+    scrollContainerOffsetX,
+    scrollContainerOffsetY,
+    scrollViewportWidth: scrollContainer.offsetWidth,
+    scrollViewportHeight: scrollContainer.offsetHeight,
+    scrollWidth: Math.max(scrollContainer.scrollWidth, scrollContainer.offsetWidth),
+    scrollHeight: Math.max(scrollContainer.scrollHeight, scrollContainer.offsetHeight),
+    relativeWidth: relativeElement instanceof HTMLElement ? relativeElement.offsetWidth : null,
+    relativeHeight: relativeElement instanceof HTMLElement ? relativeElement.offsetHeight : null,
+    relativeElement,
+    relativeOffsetX,
+    relativeOffsetY
+  };
+}
+function getFloatingDimensions(floating, relativeTo, { ignoreInlineMaxSize = false } = {}) {
+  let originalPosition = floating.style.position;
+  let originalLeft = floating.style.left;
+  let originalDisplay = floating.style.display;
+  let originalMaxWidth = floating.style.maxWidth;
+  let originalMaxHeight = floating.style.maxHeight;
+  if (ignoreInlineMaxSize) {
+    floating.style.maxWidth = "";
+    floating.style.maxHeight = "";
+  }
+  let needsTemporaryLayout = floating.offsetWidth === 0;
+  if (needsTemporaryLayout) {
+    floating.style.position = "absolute";
+    floating.style.left = "-9999px";
+    floating.style.display = "block";
+  }
+  let dimensions = readFloatingDimensions(floating, relativeTo);
+  if (needsTemporaryLayout) {
+    floating.style.position = originalPosition;
+    floating.style.left = originalLeft;
+    floating.style.display = originalDisplay;
+  }
+  if (ignoreInlineMaxSize) {
+    floating.style.maxWidth = originalMaxWidth;
+    floating.style.maxHeight = originalMaxHeight;
+  }
+  return dimensions;
+}
+function getClientViewportBounds(padding = 0) {
+  return {
+    left: padding,
+    top: padding,
+    right: window.innerWidth - padding,
+    bottom: window.innerHeight - padding
+  };
+}
+function getDocumentViewportBounds(isFixed, padding = 0) {
+  if (isFixed) {
+    return getClientViewportBounds(padding);
+  }
+  return {
+    left: window.scrollX + padding,
+    top: window.scrollY + padding,
+    right: window.scrollX + window.innerWidth - padding,
+    bottom: window.scrollY + window.innerHeight - padding
+  };
+}
+function getOverflowAmount(bounds, viewport) {
+  return Math.max(viewport.left - bounds.left, 0) + Math.max(bounds.right - viewport.right, 0) + Math.max(viewport.top - bounds.top, 0) + Math.max(bounds.bottom - viewport.bottom, 0);
+}
+function hasRectChanged(currentRect, previousRect) {
+  return Math.abs(currentRect.top - previousRect.top) >= 1 || Math.abs(currentRect.left - previousRect.left) >= 1 || Math.abs(currentRect.right - previousRect.right) >= 1 || Math.abs(currentRect.bottom - previousRect.bottom) >= 1;
+}
+function hasNullableNumberChanged(current, previous) {
+  if (current === null || previous === null) {
+    return current !== previous;
+  }
+  return Math.abs(current - previous) >= 1;
+}
+function hasFloatingDimensionsChanged(currentDimensions, previousDimensions) {
+  return Math.abs(currentDimensions.width - previousDimensions.width) >= 1 || Math.abs(currentDimensions.height - previousDimensions.height) >= 1 || Math.abs(currentDimensions.scrollViewportWidth - previousDimensions.scrollViewportWidth) >= 1 || Math.abs(currentDimensions.scrollViewportHeight - previousDimensions.scrollViewportHeight) >= 1 || Math.abs(currentDimensions.scrollWidth - previousDimensions.scrollWidth) >= 1 || Math.abs(currentDimensions.scrollHeight - previousDimensions.scrollHeight) >= 1 || Math.abs(currentDimensions.scrollContainerOffsetX - previousDimensions.scrollContainerOffsetX) >= 1 || Math.abs(currentDimensions.scrollContainerOffsetY - previousDimensions.scrollContainerOffsetY) >= 1 || hasNullableNumberChanged(currentDimensions.relativeWidth, previousDimensions.relativeWidth) || hasNullableNumberChanged(currentDimensions.relativeHeight, previousDimensions.relativeHeight) || hasNullableNumberChanged(currentDimensions.relativeOffsetX, previousDimensions.relativeOffsetX) || hasNullableNumberChanged(currentDimensions.relativeOffsetY, previousDimensions.relativeOffsetY);
+}
+function getOppositePlacement(placement) {
+  let opposites = {
+    top: "bottom",
+    "top-start": "bottom-start",
+    "top-end": "bottom-end",
+    bottom: "top",
+    "bottom-start": "top-start",
+    "bottom-end": "top-end",
+    left: "right",
+    "left-start": "right-start",
+    "left-end": "right-end",
+    right: "left",
+    "right-start": "left-start",
+    "right-end": "left-end"
+  };
+  return opposites[placement];
+}
+function calculateFloatingBounds(placement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY) {
+  let position = calculatePosition(placement, anchorRect, placementWidth, placementHeight, inset);
+  position = applyOffset(position, placement, offset, offsetX, offsetY);
+  if (relativeOffsetX !== null && relativeOffsetX !== void 0) {
+    position.left -= relativeOffsetX;
+  }
+  if (relativeOffsetY !== null && relativeOffsetY !== void 0) {
+    position.top -= relativeOffsetY;
+  }
+  return {
+    top: position.top,
+    left: position.left,
+    right: position.left + collisionWidth,
+    bottom: position.top + collisionHeight
+  };
+}
+function getPlacementScore(placement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY) {
+  let viewport = getClientViewportBounds(viewportPaddingPx);
+  let bounds = calculateFloatingBounds(placement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY);
+  let constraints = {
+    leftOk: bounds.left >= viewport.left,
+    rightOk: bounds.right <= viewport.right,
+    topOk: bounds.top >= viewport.top,
+    bottomOk: bounds.bottom <= viewport.bottom
+  };
+  let total = Object.values(constraints).filter(Boolean).length;
+  return {
+    overflow: getOverflowAmount(bounds, viewport),
+    total,
+    perfect: total === 4
+  };
+}
+function getFlippedPlacement(placement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, anchorIsAbsolutePositioned, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY) {
+  let hasScroll = window.scrollY > 0;
+  if (placement.startsWith("top") && anchorIsAbsolutePositioned && hasScroll) {
+    if (anchorRect.top - placementHeight < 0) {
+      return placement;
+    }
+  }
+  let original = getPlacementScore(placement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY);
+  if (original.perfect) {
+    return placement;
+  }
+  let flippedPlacement = getOppositePlacement(placement);
+  let flipped = getPlacementScore(flippedPlacement, anchorRect, placementWidth, placementHeight, collisionWidth, collisionHeight, inset, offset, offsetX, offsetY, relativeOffsetX, relativeOffsetY);
+  if (flipped.perfect || flipped.total > original.total || flipped.total === original.total && flipped.overflow < original.overflow) {
+    return flippedPlacement;
+  }
+  return placement;
+}
+function getAvailableWidthForPlacement(placement, left, width, viewport) {
+  if (placement.startsWith("left")) {
+    return left + width - viewport.left;
+  }
+  if (placement.startsWith("right")) {
+    return viewport.right - left;
+  }
+  return viewport.right - viewport.left;
+}
+function getAvailableHeightForPlacement(placement, top, height, viewport) {
+  if (placement.startsWith("top")) {
+    return top + height - viewport.top;
+  }
+  if (placement.startsWith("bottom")) {
+    return viewport.bottom - top;
+  }
+  return viewport.bottom - viewport.top;
+}
+function calculateDocumentPosition(placement, anchorRect, placementWidth, placementHeight, inset, offset, offsetX, offsetY, isFixed, scrollContainerOffsetX = 0, scrollContainerOffsetY = 0, relativeOffsetX, relativeOffsetY) {
+  let position = calculatePosition(placement, anchorRect, placementWidth, placementHeight, inset);
+  if (!isFixed) {
+    position.top += window.scrollY;
+    position.left += window.scrollX;
+  }
+  position = applyOffset(position, placement, offset, offsetX, offsetY);
+  position.left -= scrollContainerOffsetX;
+  position.top -= scrollContainerOffsetY;
+  if (relativeOffsetX !== null && relativeOffsetX !== void 0) {
+    position.left -= relativeOffsetX;
+  }
+  if (relativeOffsetY !== null && relativeOffsetY !== void 0) {
+    position.top -= relativeOffsetY;
+  }
+  return position;
+}
+function solveRelativeAlignmentAxis(options) {
+  let maxScroll = Math.max(options.naturalSize - options.visibleSize, 0);
+  let scroll = clamp(options.currentScroll, 0, maxScroll);
+  if (maxScroll === 0) {
+    return {
+      position: clamp(options.desiredPosition, options.minPosition, options.maxPosition),
+      scroll
+    };
+  }
+  let exactScrollMin = Math.max(0, options.minPosition - options.desiredPosition);
+  let exactScrollMax = Math.min(maxScroll, options.maxPosition - options.desiredPosition);
+  if (exactScrollMin <= exactScrollMax) {
+    scroll = clamp(scroll, exactScrollMin, exactScrollMax);
+  } else if (options.desiredPosition > options.maxPosition) {
+    scroll = 0;
+  } else if (options.desiredPosition + maxScroll < options.minPosition) {
+    scroll = maxScroll;
+  }
+  return {
+    position: clamp(options.desiredPosition + scroll, options.minPosition, options.maxPosition),
+    scroll
+  };
+}
+function anchor(floating, anchorTarget, options = {}) {
+  let lastAnchorRect;
+  let lastFloatingDimensions;
+  if (!(floating instanceof HTMLElement)) {
+    throw new TypeError("anchor() expected a floating HTMLElement");
+  }
+  if (!(anchorTarget instanceof HTMLElement) && !isAnchorPoint(anchorTarget)) {
+    throw new TypeError("anchor() expected an anchor HTMLElement or coordinates");
+  }
+  let { placement = "bottom", inset = false, relativeTo, offset: rawOffset = 0, offsetX: rawOffsetX = 0, offsetY: rawOffsetY = 0 } = options;
+  let anchorIsAbsolutePositioned = anchorTarget instanceof HTMLElement && getComputedStyle(anchorTarget).position !== "fixed";
+  let isFixed = floating.hasAttribute("popover") || !anchorIsAbsolutePositioned;
+  let animationFrameId = 0;
+  function updatePosition(anchorRect = readAnchorRect(anchorTarget), naturalDimensions = getFloatingDimensions(floating, relativeTo, {
+    ignoreInlineMaxSize: true
+  })) {
+    let offset = resolveOffsetValue(rawOffset, floating);
+    let offsetX = resolveOffsetValue(rawOffsetX, floating);
+    let offsetY = resolveOffsetValue(rawOffsetY, floating);
+    let viewport = getDocumentViewportBounds(isFixed, viewportPaddingPx);
+    let placementWidth = relativeTo && naturalDimensions.relativeWidth ? naturalDimensions.relativeWidth : naturalDimensions.width;
+    let placementHeight = relativeTo && naturalDimensions.relativeHeight ? naturalDimensions.relativeHeight : naturalDimensions.height;
+    let finalPlacement = getFlippedPlacement(placement, anchorRect, placementWidth, placementHeight, naturalDimensions.width, naturalDimensions.height, anchorIsAbsolutePositioned, inset, offset, offsetX, offsetY, naturalDimensions.relativeOffsetX, naturalDimensions.relativeOffsetY);
+    floating.setAttribute("data-anchor-placement", finalPlacement);
+    let position = calculateDocumentPosition(finalPlacement, anchorRect, placementWidth, placementHeight, inset, offset, offsetX, offsetY, isFixed, naturalDimensions.scrollContainerOffsetX, naturalDimensions.scrollContainerOffsetY, naturalDimensions.relativeOffsetX, naturalDimensions.relativeOffsetY);
+    let availableWidth = Math.max(getAvailableWidthForPlacement(finalPlacement, position.left, naturalDimensions.width, viewport), 0);
+    let availableHeight = Math.max(getAvailableHeightForPlacement(finalPlacement, position.top, naturalDimensions.height, viewport), 0);
+    floating.style.maxWidth = availableWidth < naturalDimensions.width ? `${Math.floor(availableWidth)}px` : "";
+    floating.style.maxHeight = availableHeight < naturalDimensions.height ? `${Math.floor(availableHeight)}px` : "";
+    let dimensions = getFloatingDimensions(floating, relativeTo);
+    placementWidth = relativeTo && dimensions.relativeWidth ? dimensions.relativeWidth : dimensions.width;
+    placementHeight = relativeTo && dimensions.relativeHeight ? dimensions.relativeHeight : dimensions.height;
+    position = calculateDocumentPosition(finalPlacement, anchorRect, placementWidth, placementHeight, inset, offset, offsetX, offsetY, isFixed, dimensions.scrollContainerOffsetX, dimensions.scrollContainerOffsetY, dimensions.relativeOffsetX, dimensions.relativeOffsetY);
+    let minX = viewport.left;
+    let minY = viewport.top;
+    let maxX = viewport.right;
+    let maxY = viewport.bottom;
+    let xRange = getConstrainedPositionRange(dimensions.width, minX, maxX);
+    let yRange = getConstrainedPositionRange(dimensions.height, minY, maxY);
+    if (isHorizontalPlacement(finalPlacement)) {
+      if (relativeTo && dimensions.relativeOffsetY !== null) {
+        let solvedY = solveRelativeAlignmentAxis({
+          currentScroll: dimensions.scrollContainer.scrollTop,
+          desiredPosition: position.top,
+          naturalSize: dimensions.scrollHeight,
+          visibleSize: dimensions.scrollViewportHeight,
+          minPosition: yRange.min,
+          maxPosition: yRange.max
+        });
+        dimensions.scrollContainer.scrollTop = solvedY.scroll;
+        position.top = solvedY.position;
+      } else {
+        position.top = constrainToAxis(position.top, dimensions.height, minY, maxY);
+      }
+      if (relativeTo) {
+        if (dimensions.relativeOffsetX !== null) {
+          let solvedX = solveRelativeAlignmentAxis({
+            currentScroll: dimensions.scrollContainer.scrollLeft,
+            desiredPosition: position.left,
+            naturalSize: dimensions.scrollWidth,
+            visibleSize: dimensions.scrollViewportWidth,
+            minPosition: xRange.min,
+            maxPosition: xRange.max
+          });
+          dimensions.scrollContainer.scrollLeft = solvedX.scroll;
+          position.left = solvedX.position;
+        } else {
+          position.left = clamp(position.left, xRange.min, xRange.max);
+        }
+      }
+    } else if (isVerticalPlacement(finalPlacement)) {
+      if (relativeTo && dimensions.relativeOffsetX !== null) {
+        let solvedX = solveRelativeAlignmentAxis({
+          currentScroll: dimensions.scrollContainer.scrollLeft,
+          desiredPosition: position.left,
+          naturalSize: dimensions.scrollWidth,
+          visibleSize: dimensions.scrollViewportWidth,
+          minPosition: xRange.min,
+          maxPosition: xRange.max
+        });
+        dimensions.scrollContainer.scrollLeft = solvedX.scroll;
+        position.left = solvedX.position;
+      } else {
+        position.left = constrainToAxis(position.left, dimensions.width, minX, maxX);
+      }
+      if (!isFixed && window.scrollY > 0 && position.top < viewport.top) {
+        position.top = viewport.top;
+      }
+      if (relativeTo) {
+        if (dimensions.relativeOffsetY !== null) {
+          let solvedY = solveRelativeAlignmentAxis({
+            currentScroll: dimensions.scrollContainer.scrollTop,
+            desiredPosition: position.top,
+            naturalSize: dimensions.scrollHeight,
+            visibleSize: dimensions.scrollViewportHeight,
+            minPosition: yRange.min,
+            maxPosition: yRange.max
+          });
+          dimensions.scrollContainer.scrollTop = solvedY.scroll;
+          position.top = solvedY.position;
+        } else {
+          position.top = clamp(position.top, yRange.min, yRange.max);
+        }
+      }
+    }
+    if (isHorizontalPlacement(finalPlacement)) {
+      let status = getOffScreenStatus(anchorRect, "horizontal");
+      if (status === "before") {
+        position.left = minX;
+      } else if (status === "after") {
+        position.left = maxX - dimensions.width;
+      }
+    } else if (isVerticalPlacement(finalPlacement)) {
+      let status = getOffScreenStatus(anchorRect, "vertical");
+      if (status === "before") {
+        position.top = minY;
+      } else if (status === "after") {
+        position.top = maxY - dimensions.height;
+      }
+    }
+    floating.style.position = isFixed ? "fixed" : "absolute";
+    floating.style.inset = "auto";
+    floating.style.top = `${position.top}px`;
+    floating.style.left = `${position.left}px`;
+    lastAnchorRect = anchorRect;
+    lastFloatingDimensions = dimensions;
+  }
+  updatePosition();
+  function pollForPositionChanges() {
+    let currentRect = readAnchorRect(anchorTarget);
+    let currentDimensions = getFloatingDimensions(floating, relativeTo);
+    if (hasRectChanged(currentRect, lastAnchorRect) || hasFloatingDimensionsChanged(currentDimensions, lastFloatingDimensions)) {
+      updatePosition(currentRect, currentDimensions);
+    }
+    animationFrameId = requestAnimationFrame(pollForPositionChanges);
+  }
+  function handleScroll() {
+    updatePosition();
+  }
+  function handleResize() {
+    updatePosition();
+  }
+  animationFrameId = requestAnimationFrame(pollForPositionChanges);
+  window.addEventListener("scroll", handleScroll, { passive: true });
+  window.addEventListener("resize", handleResize, { passive: true });
+  return () => {
+    cancelAnimationFrame(animationFrameId);
+    window.removeEventListener("scroll", handleScroll);
+    window.removeEventListener("resize", handleResize);
+  };
+}
+
+// node_modules/@remix-run/ui/dist/lib/outside-click.js
+var onOutsideClick = createMixin((handle) => {
+  let active = false;
+  let handler = () => {
+  };
+  let isInsideTarget = () => false;
+  let stopPropagation = true;
+  handle.addEventListener("insert", (event) => {
+    let node = event.node;
+    let doc = node.ownerDocument;
+    doc.addEventListener("click", (event2) => {
+      let target = event2.target instanceof Node ? event2.target : null;
+      if (!active || target && (node.contains(target) || isInsideTarget(target))) {
+        return;
+      }
+      if (stopPropagation) {
+        event2.stopPropagation();
+      }
+      handler(target);
+    }, { capture: true, signal: handle.signal });
+  });
+  return (nextActive, nextHandler, nextIsInsideTarget = () => false, nextStopPropagation = true) => {
+    active = nextActive;
+    handler = nextHandler;
+    isInsideTarget = nextIsInsideTarget;
+    stopPropagation = nextStopPropagation;
+  };
+});
+
+// node_modules/@remix-run/ui/dist/lib/scroll-lock.js
+var scrollLocks = /* @__PURE__ */ new WeakMap();
+function lockScroll(targetDocument = globalThis.document) {
+  if (!targetDocument?.body || !targetDocument.defaultView) {
+    return () => {
+    };
+  }
+  let document2 = targetDocument;
+  let documentElement = document2.documentElement;
+  let view = document2.defaultView;
+  let state = scrollLocks.get(document2);
+  if (!state) {
+    let scrollX = view.scrollX;
+    let scrollY = view.scrollY;
+    let scrollbarWidth = documentElement.clientWidth > 0 ? Math.max(view.innerWidth - documentElement.clientWidth, 0) : 0;
+    let computedScrollbarGutter = view.getComputedStyle(documentElement).scrollbarGutter;
+    state = {
+      count: 0,
+      documentOverflow: documentElement.style.overflow,
+      documentScrollbarGutter: documentElement.style.scrollbarGutter,
+      scrollX,
+      scrollY
+    };
+    documentElement.style.overflow = "hidden";
+    if (scrollbarWidth > 0 && computedScrollbarGutter === "auto") {
+      documentElement.style.scrollbarGutter = "stable";
+    }
+    scrollLocks.set(document2, state);
+  }
+  state.count++;
+  let unlocked = false;
+  return () => {
+    if (unlocked) {
+      return;
+    }
+    unlocked = true;
+    let currentState = scrollLocks.get(document2);
+    if (!currentState) {
+      return;
+    }
+    currentState.count--;
+    if (currentState.count > 0) {
+      return;
+    }
+    scrollLocks.delete(document2);
+    documentElement.style.overflow = currentState.documentOverflow;
+    documentElement.style.scrollbarGutter = currentState.documentScrollbarGutter;
+    view.scrollTo(currentState.scrollX, currentState.scrollY);
+  };
+}
+
+// node_modules/@remix-run/ui/dist/popover.js
+function PopoverProvider(handle) {
+  handle.context.set({
+    hideFocusTarget: null,
+    showFocusTarget: null,
+    surface: null,
+    anchor: null
+  });
+  return () => handle.props.children;
+}
+var anchorMixin = createMixin((handle) => {
+  let context = handle.context.get(PopoverProvider);
+  return (options) => {
+    handle.queueTask((node) => {
+      context.anchor = { target: node, options };
+    });
+  };
+});
+function anchorContains(anchor2, target) {
+  return anchor2?.target instanceof HTMLElement && anchor2.target.contains(target);
+}
+var surfaceMixin = createMixin((handle) => {
+  let openProp = false;
+  let cleanupAnchor = () => {
+  };
+  let unlockScroll = () => {
+  };
+  let context = handle.context.get(PopoverProvider);
+  handle.queueTask((node, signal) => {
+    context.surface = node;
+    signal.addEventListener("abort", () => {
+      if (context.surface === node) {
+        context.surface = null;
+      }
+    });
+  });
+  return (options) => {
+    let wasOpen = openProp;
+    openProp = options.open;
+    handle.queueTask(async (node) => {
+      if (openProp && !wasOpen) {
+        node.showPopover();
+      } else if (!openProp && wasOpen) {
+        node.hidePopover();
+      }
+    });
+    return [
+      attrs({ popover: "manual" }),
+      on("beforetoggle", (event) => {
+        if (event.newState === "open") {
+          let anchor2 = context.anchor;
+          if (!anchor2) {
+            throw new Error("popover.surface() requires a registered anchor before opening");
+          }
+          cleanupAnchor = anchor(event.currentTarget, anchor2.target, anchor2.options);
+          unlockScroll = lockScroll();
+        } else if (event.newState === "closed") {
+          cleanupAnchor();
+          unlockScroll();
+        }
+      }),
+      on("toggle", async (event) => {
+        if (event.newState === "open") {
+          context.showFocusTarget?.focus();
+        } else if (event.newState === "closed" && options.restoreFocusOnHide !== false) {
+          context.hideFocusTarget?.focus();
+        }
+      }),
+      on("keydown", (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          options.onHide({ reason: "escape-key" });
+        }
+      }),
+      onOutsideClick(openProp, (target) => {
+        options.onHide({ reason: "outside-click", target });
+      }, (target) => options.closeOnAnchorClick === false && anchorContains(context.anchor, target), options.stopOutsideClickPropagation ?? true)
+    ];
+  };
+});
+var focusOnShowMixin = createMixin((handle) => {
+  handle.addEventListener("insert", (event) => {
+    let context = handle.context.get(PopoverProvider);
+    context.showFocusTarget = event.node;
+  });
+});
+var focusOnHideMixin = createMixin((handle) => {
+  handle.addEventListener("insert", (event) => {
+    let context = handle.context.get(PopoverProvider);
+    context.hideFocusTarget = event.node;
+  });
+});
+var Context = PopoverProvider;
+var surface = surfaceMixin;
+
+// app/features/challenge/player/ui/player-list.tsx
+var panelStyle2 = css({
+  position: "fixed",
+  top: 0,
+  right: 0,
+  bottom: 0,
+  width: "min(22rem, 90vw)",
+  overflowY: "auto",
+  background: "var(--color-bg-card)",
+  borderLeft: "1px solid var(--color-border)",
+  boxShadow: "var(--shadow-card)",
+  padding: "1rem",
+  zIndex: 60
+});
+var toolbarStyle = css({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "0.5rem",
+  marginBottom: "0.75rem",
+  "& h2": {
+    margin: 0,
+    fontSize: "1rem",
+    fontFamily: "var(--font-serif)",
+    color: "var(--color-primary)"
+  }
+});
+var listStyle2 = css({
+  listStyle: "none",
+  margin: 0,
+  padding: 0,
+  display: "grid",
+  gap: "0.25rem"
+});
+var itemStyle = css({
+  display: "grid",
+  gridTemplateColumns: "auto auto 1fr",
+  alignItems: "center",
+  gap: "0.5rem",
+  width: "100%",
+  padding: "0.5rem 0.625rem",
+  border: "1px solid var(--color-border)",
+  borderRadius: "var(--radius-control)",
+  background: "var(--color-bg-card)",
+  textAlign: "left",
+  font: "inherit",
+  cursor: "pointer",
+  "&:hover": { background: "var(--color-primary-soft)" }
+});
+var currentItemStyle = css({
+  borderColor: "var(--color-primary)",
+  background: "var(--color-primary-soft)"
+});
+var promptStyle = css({
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  color: "var(--color-text-muted)",
+  fontSize: "0.85rem"
+});
+function PlayerList(handle) {
+  return () => {
+    const { state, questions, mode, open, onSelect, onClose } = handle.props;
+    if (!open) {
+      return null;
+    }
+    const currentQuestionId = state.questionIds[state.currentIndex];
+    const listedQuestions = mode === "question" ? questions : state.questionIds.map((questionId) => questions.find((item) => item.id === questionId)).filter((question) => question !== void 0);
+    return /* @__PURE__ */ jsx(Context, { children: /* @__PURE__ */ jsx(
+      "aside",
+      {
+        "aria-label": "\u554F\u984C\u4E00\u89A7",
+        mix: [
+          panelStyle2,
+          animateEntrance({ opacity: 0, x: 24, ...spring("snappy") }),
+          animateExit({ opacity: 0, x: 24, ...spring("snappy") }),
+          surface({ open, onHide: onClose })
+        ],
+        children: [
+          /* @__PURE__ */ jsx("div", { mix: toolbarStyle, children: [
+            /* @__PURE__ */ jsx("h2", { children: "\u554F\u984C\u4E00\u89A7" }),
+            /* @__PURE__ */ jsx("button", { type: "button", mix: on("click", onClose), "aria-label": "\u554F\u984C\u4E00\u89A7\u3092\u9589\u3058\u308B", children: /* @__PURE__ */ jsx(CloseIcon, {}) })
+          ] }),
+          /* @__PURE__ */ jsx("ol", { mix: listStyle2, children: listedQuestions.map((question, index) => {
+            const judgment = state.judgments[question.id];
+            const isCurrent = question.id === currentQuestionId;
+            return /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(
+              "button",
+              {
+                type: "button",
+                mix: [
+                  itemStyle,
+                  isCurrent ? currentItemStyle : null,
+                  on("click", () => onSelect(index))
+                ],
+                "aria-current": isCurrent ? "true" : void 0,
+                children: [
+                  /* @__PURE__ */ jsx("span", { children: [
+                    "\u554F",
+                    question.number ?? index + 1
+                  ] }),
+                  mode === "exam" ? /* @__PURE__ */ jsx("span", { children: formatDuration(state.questionElapsedMs[question.id] ?? 0) }) : null,
+                  judgment ? /* @__PURE__ */ jsx("span", { children: judgment === "correct" ? "\u25CB" : "\xD7" }) : /* @__PURE__ */ jsx("span", {}),
+                  /* @__PURE__ */ jsx("span", { mix: promptStyle, children: question.text })
+                ]
+              }
+            ) }, question.id);
+          }) })
+        ]
+      }
+    ) });
   };
 }
 
@@ -10824,14 +11724,15 @@ function getEdgeLines(positions, nodeRadius) {
 }
 
 // app/ui/figures/BinaryTree.tsx
+var svgStyle = css({
+  maxWidth: "100%",
+  height: "auto",
+  border: "1px solid var(--color-border)",
+  borderRadius: "var(--radius-control)"
+});
 function BinaryTree(handle) {
   return () => {
-    const {
-      root,
-      width = 300,
-      height = 200,
-      nodeRadius = 20
-    } = handle.props;
+    const { root, width = 300, height = 200, nodeRadius = 20 } = handle.props;
     const positions = calculatePositions(root, width, height, nodeRadius);
     const edgeLines = getEdgeLines(positions, nodeRadius);
     return /* @__PURE__ */ jsx(
@@ -10841,7 +11742,7 @@ function BinaryTree(handle) {
         height: "auto",
         viewBox: `0 0 ${width} ${height}`,
         preserveAspectRatio: "xMidYMid meet",
-        class: "border border-gray-300 rounded max-w-full h-auto",
+        mix: svgStyle,
         style: `aspect-ratio: ${width}/${height}`,
         "aria-label": "\u4E8C\u5206\u6728",
         children: [
@@ -10971,6 +11872,7 @@ function buildEdgeRenderData(nodes, edges) {
 }
 
 // app/ui/figures/Flowchart.tsx
+var svgStyle2 = css({ maxWidth: "100%", height: "auto" });
 function Flowchart(handle) {
   return () => {
     const {
@@ -10988,7 +11890,7 @@ function Flowchart(handle) {
         height: "auto",
         viewBox: `0 0 ${width} ${height}`,
         preserveAspectRatio: "xMidYMid meet",
-        class: "max-w-full h-auto",
+        mix: svgStyle2,
         style: `aspect-ratio: ${width}/${height}`,
         "aria-label": "\u30D5\u30ED\u30FC\u30C1\u30E3\u30FC\u30C8",
         children: [
@@ -11017,7 +11919,17 @@ function Flowchart(handle) {
                 "marker-end": "url(#flowchart-arrow)"
               }
             ),
-            e.label && /* @__PURE__ */ jsx("text", { x: e.labelX + 8, y: e.labelY - 4, "font-size": "10", fill: "black", "font-weight": "bold", children: e.label })
+            e.label && /* @__PURE__ */ jsx(
+              "text",
+              {
+                x: e.labelX + 8,
+                y: e.labelY - 4,
+                "font-size": "10",
+                fill: "black",
+                "font-weight": "bold",
+                children: e.label
+              }
+            )
           ] })),
           nodeRenderData.map((n) => {
             if (n.type === "start" || n.type === "end") {
@@ -11210,6 +12122,12 @@ function getWirePath(wire, inputs, outputs, gates, gateWidth = LOGIC_DEFAULTS.GA
 }
 
 // app/ui/figures/LogicCircuit.tsx
+var svgResponsiveStyle = css({ display: "block", maxWidth: "100%" });
+var circuitFrameStyle = css({
+  overflow: "hidden",
+  border: "1px solid var(--color-border)",
+  borderRadius: "var(--radius-control)"
+});
 function LogicCircuit(handle) {
   return () => {
     const { circuit, mode = "responsive" } = handle.props;
@@ -11224,7 +12142,7 @@ function LogicCircuit(handle) {
         height: responsive ? "100%" : height,
         viewBox: `${viewport.x} ${viewport.y} ${viewport.width} ${viewport.height}`,
         preserveAspectRatio: "xMidYMid meet",
-        class: responsive ? "block max-w-full" : void 0,
+        mix: responsive ? svgResponsiveStyle : void 0,
         style: "background-color: #fff",
         "aria-label": "\u8AD6\u7406\u56DE\u8DEF\u56F3",
         children: [
@@ -11284,32 +12202,25 @@ function LogicCircuit(handle) {
     if (mode === "fixed") {
       return svg;
     }
-    const labelStyle = (x, y, fontSize) => {
+    const labelStyle2 = (x, y, fontSize) => {
       const left = responsive ? `${(x - viewport.x) / viewport.width * 100}%` : `${x}px`;
       const top = responsive ? `${(y - viewport.y) / viewport.height * 100}%` : `${y}px`;
       return `position:absolute;left:${left};top:${top};font-size:${fontSize}px;line-height:1;color:#000;transform:translate(-50%,-50%);white-space:nowrap`;
     };
     const wrapperStyle = responsive ? `position:relative;width:100%;max-width:${viewport.width}px;aspect-ratio:${viewport.width}/${viewport.height};background:#fff` : `position:relative;width:${width}px;height:${height}px;background:#fff`;
-    return /* @__PURE__ */ jsx(
-      "div",
-      {
-        class: responsive ? "overflow-hidden rounded border border-gray-300" : void 0,
-        style: wrapperStyle,
-        children: [
-          svg,
-          inputs.map((input) => /* @__PURE__ */ jsx("span", { "aria-hidden": "true", style: labelStyle(input.x - 17, input.y, 14), children: input.label })),
-          gates.map((gate) => /* @__PURE__ */ jsx(
-            "span",
-            {
-              "aria-hidden": "true",
-              style: `${labelStyle(gate.x, gate.y + LOGIC_DEFAULTS.GATE_HEIGHT / 2 + 15, 12)};font-weight:700`,
-              children: gate.type
-            }
-          )),
-          outputs.map((output) => /* @__PURE__ */ jsx("span", { "aria-hidden": "true", style: labelStyle(output.x + 17, output.y, 14), children: output.label }))
-        ]
-      }
-    );
+    return /* @__PURE__ */ jsx("div", { mix: responsive ? circuitFrameStyle : void 0, style: wrapperStyle, children: [
+      svg,
+      inputs.map((input) => /* @__PURE__ */ jsx("span", { "aria-hidden": "true", style: labelStyle2(input.x - 17, input.y, 14), children: input.label })),
+      gates.map((gate) => /* @__PURE__ */ jsx(
+        "span",
+        {
+          "aria-hidden": "true",
+          style: `${labelStyle2(gate.x, gate.y + LOGIC_DEFAULTS.GATE_HEIGHT / 2 + 15, 12)};font-weight:700`,
+          children: gate.type
+        }
+      )),
+      outputs.map((output) => /* @__PURE__ */ jsx("span", { "aria-hidden": "true", style: labelStyle2(output.x + 17, output.y, 14), children: output.label }))
+    ] });
   };
 }
 
@@ -11343,14 +12254,13 @@ function calculateParity(data, cellSize) {
 }
 
 // app/ui/figures/ParityCheck.tsx
+var svgStyle3 = css({
+  border: "1px solid var(--color-border)",
+  borderRadius: "var(--radius-control)"
+});
 function ParityCheck(handle) {
   return () => {
-    const {
-      data,
-      width = 300,
-      height = 300,
-      cellSize = 40
-    } = handle.props;
+    const { data, width = 300, height = 300, cellSize = 40 } = handle.props;
     const parity = calculateParity(data, cellSize);
     return /* @__PURE__ */ jsx(
       "svg",
@@ -11358,7 +12268,7 @@ function ParityCheck(handle) {
         width,
         height,
         viewBox: `0 0 ${parity.svgWidth} ${parity.svgHeight}`,
-        class: "border border-gray-300 rounded",
+        mix: svgStyle3,
         "aria-label": "\u30D1\u30EA\u30C6\u30A3\u691C\u67FB\u56F3",
         children: [
           /* @__PURE__ */ jsx("title", { children: "\u30D1\u30EA\u30C6\u30A3\u691C\u67FB\u56F3" }),
@@ -11579,20 +12489,20 @@ function getLabelPosition(from, to, curveOffset = 0) {
 }
 function buildTransitionData(nodes, transitions, nodeRadius = STATE_DEFAULTS.NODE_RADIUS, acceptingNodeRadius = STATE_DEFAULTS.ACCEPTING_NODE_RADIUS) {
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
-  return transitions.flatMap((transition) => {
-    const fromNode = nodeMap.get(transition.from);
-    const toNode = nodeMap.get(transition.to);
+  return transitions.flatMap((transition2) => {
+    const fromNode = nodeMap.get(transition2.from);
+    const toNode = nodeMap.get(transition2.to);
     if (!(fromNode && toNode)) {
       return [];
     }
-    if (transition.from === transition.to) {
+    if (transition2.from === transition2.to) {
       const radius = fromNode.isAccepting ? acceptingNodeRadius : nodeRadius;
       const cx = fromNode.x;
       const cy = fromNode.y - radius - STATE_DEFAULTS.SELF_LOOP_RADIUS;
       const r = STATE_DEFAULTS.SELF_LOOP_RADIUS;
       const renderData = {
         type: "selfLoop",
-        label: transition.label,
+        label: transition2.label,
         cx,
         cy,
         r,
@@ -11602,7 +12512,7 @@ function buildTransitionData(nodes, transitions, nodeRadius = STATE_DEFAULTS.NOD
       };
       return [renderData];
     }
-    const curveOffset = transition.curveOffset || 0;
+    const curveOffset = transition2.curveOffset || 0;
     const labelPos = getLabelPosition(
       { x: fromNode.x, y: fromNode.y },
       { x: toNode.x, y: toNode.y },
@@ -11620,7 +12530,7 @@ function buildTransitionData(nodes, transitions, nodeRadius = STATE_DEFAULTS.NOD
     return [
       {
         type: "normal",
-        label: transition.label,
+        label: transition2.label,
         pathD: getArrowPath(start, end, curveOffset),
         arrowHeadD: getArrowHead(start, end, curveOffset, nodeRadius),
         labelX: labelPos.x,
@@ -11631,14 +12541,15 @@ function buildTransitionData(nodes, transitions, nodeRadius = STATE_DEFAULTS.NOD
 }
 
 // app/ui/figures/StateDiagram.tsx
+var svgStyle4 = css({
+  maxWidth: "100%",
+  height: "auto",
+  border: "1px solid var(--color-border)",
+  borderRadius: "var(--radius-control)"
+});
 function StateDiagram(handle) {
   return () => {
-    const {
-      nodes,
-      transitions,
-      width = 400,
-      height = 150
-    } = handle.props;
+    const { nodes, transitions, width = 400, height = 150 } = handle.props;
     const nodeRadius = STATE_DEFAULTS.NODE_RADIUS;
     const acceptingNodeRadius = STATE_DEFAULTS.ACCEPTING_NODE_RADIUS;
     const transitionData = buildTransitionData(nodes, transitions, nodeRadius, acceptingNodeRadius);
@@ -11649,7 +12560,7 @@ function StateDiagram(handle) {
         height: "auto",
         viewBox: `0 0 ${width} ${height}`,
         preserveAspectRatio: "xMidYMid meet",
-        class: "border border-gray-300 rounded max-w-full h-auto",
+        mix: svgStyle4,
         style: `aspect-ratio: ${width}/${height}`,
         "aria-label": "\u72B6\u614B\u9077\u79FB\u56F3",
         children: [
@@ -11775,21 +12686,24 @@ function buildTableConfig(data) {
 }
 
 // app/ui/figures/TableRenderer.tsx
+var tableWrapStyle = css({ width: "100%", overflowX: "auto" });
+var figureTableStyle = css({
+  maxWidth: "42rem",
+  minWidth: "max-content",
+  borderCollapse: "collapse",
+  border: "2px solid #1f2937",
+  "& th, & td": { border: "1px solid #1f2937", padding: "0.5rem 0.75rem", textAlign: "center" },
+  "& th": { background: "#f3f4f6", fontWeight: 700 },
+  "& td": { fontFamily: "var(--font-mono)" }
+});
 function TableRenderer(handle) {
   return () => {
     const { figureData } = handle.props;
     const config2 = buildTableConfig(figureData);
-    return /* @__PURE__ */ jsx("div", { class: "w-full overflow-x-auto", children: /* @__PURE__ */ jsx(
-      "table",
-      {
-        "aria-label": config2.ariaLabel,
-        class: "max-w-2xl min-w-max border-2 border-gray-800 border-collapse",
-        children: [
-          /* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsx("tr", { children: config2.columns.map((column) => /* @__PURE__ */ jsx("th", { class: "border border-gray-800 bg-gray-100 text-black font-bold text-center px-3 py-2", children: column.label })) }) }),
-          /* @__PURE__ */ jsx("tbody", { children: config2.rows.map((row) => /* @__PURE__ */ jsx("tr", { children: config2.columns.map((column) => /* @__PURE__ */ jsx("td", { class: "border border-gray-800 text-black font-mono text-center px-3 py-2", children: String(row[column.key]) })) })) })
-        ]
-      }
-    ) });
+    return /* @__PURE__ */ jsx("div", { mix: tableWrapStyle, children: /* @__PURE__ */ jsx("table", { "aria-label": config2.ariaLabel, mix: figureTableStyle, children: [
+      /* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsx("tr", { children: config2.columns.map((column) => /* @__PURE__ */ jsx("th", { children: column.label })) }) }),
+      /* @__PURE__ */ jsx("tbody", { children: config2.rows.map((row) => /* @__PURE__ */ jsx("tr", { children: config2.columns.map((column) => /* @__PURE__ */ jsx("td", { children: String(row[column.key]) })) })) })
+    ] }) });
   };
 }
 
@@ -11810,7 +12724,15 @@ function Figure(handle) {
       case "logicCircuit":
         return /* @__PURE__ */ jsx(LogicCircuit, { circuit: data, mode });
       case "flowchart":
-        return /* @__PURE__ */ jsx(Flowchart, { nodes: data.nodes, edges: data.edges, width: data.width, height: data.height });
+        return /* @__PURE__ */ jsx(
+          Flowchart,
+          {
+            nodes: data.nodes,
+            edges: data.edges,
+            width: data.width,
+            height: data.height
+          }
+        );
       case "dataTable":
       case "truthTable":
       case "huffmanTable":
@@ -11824,8 +12746,14 @@ function Figure(handle) {
 }
 
 // app/features/challenge/player/ui/question-content.tsx
-var bodyStyle = css({
+var bodyStyle2 = css({
   "& p": { whiteSpace: "pre-wrap", lineHeight: 1.9 }
+});
+var headingStyle = css({
+  fontSize: "0.95rem",
+  letterSpacing: "0.06em",
+  color: "var(--color-text-muted)",
+  margin: "0 0 0.25rem"
 });
 var optionListStyle = css({
   listStyle: "none",
@@ -11842,8 +12770,8 @@ var optionStyle = css({
 function QuestionContent(handle) {
   return () => {
     const { question } = handle.props;
-    return /* @__PURE__ */ jsx("div", { class: "exam-question", mix: bodyStyle, children: [
-      /* @__PURE__ */ jsx("h3", { class: "exam-question__heading", children: [
+    return /* @__PURE__ */ jsx("div", { mix: bodyStyle2, children: [
+      /* @__PURE__ */ jsx("h3", { mix: headingStyle, children: [
         "\u554F",
         question.number
       ] }),
@@ -11859,325 +12787,41 @@ function QuestionContent(handle) {
   };
 }
 
-// app/features/challenge/player/ui/icons.tsx
-function icon(children) {
-  return function Icon(handle) {
-    void handle;
-    return () => /* @__PURE__ */ jsx(
-      "svg",
-      {
-        width: "16",
-        height: "16",
-        viewBox: "0 0 24 24",
-        fill: "none",
-        stroke: "currentColor",
-        "stroke-width": "2",
-        "stroke-linecap": "round",
-        "stroke-linejoin": "round",
-        "aria-hidden": "true",
-        children: children()
-      }
-    );
-  };
-}
-var MenuIcon = icon(() => /* @__PURE__ */ jsx("path", { d: "M4 6h16M4 12h16M4 18h16" }));
-var CloseIcon = icon(() => /* @__PURE__ */ jsx("path", { d: "m6 6 12 12M18 6 6 18" }));
-var ChevronLeftIcon = icon(() => /* @__PURE__ */ jsx("path", { d: "m15 18-6-6 6-6" }));
-var ChevronRightIcon = icon(() => /* @__PURE__ */ jsx("path", { d: "m9 18 6-6-6-6" }));
-var CheckIcon = icon(() => /* @__PURE__ */ jsx("polyline", { points: "20 6 9 17 4 12" }));
-var PauseIcon = icon(() => /* @__PURE__ */ jsx("path", { d: "M9 5v14M15 5v14" }));
-var TimerIcon = icon(() => /* @__PURE__ */ jsx(Fragment, { children: [
-  /* @__PURE__ */ jsx("circle", { cx: "12", cy: "13", r: "8" }),
-  /* @__PURE__ */ jsx("path", { d: "M12 9v4l2.5 1.5M10 2h4m-2 0v3M19 6l-1.5 1.5" })
-] }));
-var AnswerSheetIcon = icon(() => /* @__PURE__ */ jsx(Fragment, { children: [
-  /* @__PURE__ */ jsx("path", { d: "M7 3.5h7l4.5 4.5v12.5H7z" }),
-  /* @__PURE__ */ jsx("path", { d: "M14 3.5V8h4.5M9.5 14l2 2 4-4" })
-] }));
-
-// app/features/challenge/player/ui/player-controls.tsx
-function QuestionActions(handle) {
-  return () => {
-    const { copyText, answerOpen, onToggleAnswer, timerRunning, onToggleTimer } = handle.props;
-    return /* @__PURE__ */ jsx("fieldset", { class: "exam-player__actions", children: [
-      /* @__PURE__ */ jsx("legend", { class: "sr-only", children: "\u554F\u984C\u306E\u64CD\u4F5C" }),
-      /* @__PURE__ */ jsx(CopyButton, { text: copyText, label: "\u554F\u984C\u6587\u3092\u30B3\u30D4\u30FC" }),
-      /* @__PURE__ */ jsx(
-        "button",
-        {
-          type: "button",
-          class: "exam-action exam-action--answer",
-          "aria-label": answerOpen ? "\u89E3\u7B54\u3092\u96A0\u3059" : "\u89E3\u7B54\u3092\u8868\u793A",
-          title: answerOpen ? "\u89E3\u7B54\u3092\u96A0\u3059" : "\u89E3\u7B54\u3092\u8868\u793A",
-          "aria-expanded": answerOpen ? "true" : "false",
-          "aria-controls": answerOpen ? "exam-answer" : void 0,
-          mix: on("click", onToggleAnswer),
-          children: answerOpen ? /* @__PURE__ */ jsx(CloseIcon, {}) : /* @__PURE__ */ jsx(AnswerSheetIcon, {})
-        }
-      ),
-      /* @__PURE__ */ jsx(
-        "button",
-        {
-          type: "button",
-          class: `exam-action exam-action--timer ${timerRunning ? "exam-action--timer-running" : ""}`,
-          "aria-label": timerRunning ? "\u8A08\u6E2C\u3092\u4E00\u6642\u505C\u6B62" : "\u8A08\u6E2C\u3092\u518D\u958B",
-          title: timerRunning ? "\u8A08\u6E2C\u3092\u4E00\u6642\u505C\u6B62" : "\u8A08\u6E2C\u3092\u518D\u958B",
-          "aria-pressed": timerRunning ? "true" : "false",
-          mix: on("click", onToggleTimer),
-          children: timerRunning ? /* @__PURE__ */ jsx(PauseIcon, {}) : /* @__PURE__ */ jsx(TimerIcon, {})
-        }
-      )
-    ] });
-  };
-}
-function ChallengeTimerDisplay(handle) {
-  let now = 0;
-  let interval;
-  const stopTicking = () => {
-    if (interval !== void 0) {
-      clearInterval(interval);
-      interval = void 0;
-    }
-  };
-  const syncTicking = (running) => {
-    if (!running) {
-      stopTicking();
-      return;
-    }
-    if (interval === void 0) {
-      now = typeof performance === "undefined" ? 0 : performance.now();
-      interval = setInterval(() => {
-        now = performance.now();
-        void handle.update();
-      }, 1e3);
-    }
-  };
-  return () => {
-    const { mode, totalElapsedMs, questionElapsedMs, timerRunning, timerStartedAt } = handle.props;
-    const displayedTotalMs = projectElapsedTime(totalElapsedMs, timerRunning, timerStartedAt, now);
-    const displayedQuestionMs = projectElapsedTime(
-      questionElapsedMs,
-      timerRunning,
-      timerStartedAt,
-      now
-    );
-    return /* @__PURE__ */ jsx(
-      "fieldset",
-      {
-        mix: ref((node) => {
-          if (node) {
-            syncTicking(timerRunning);
-          } else {
-            stopTicking();
-          }
-        }),
-        class: `exam-player__timers ${mode === "question" ? "is-single" : ""}`,
-        children: [
-          /* @__PURE__ */ jsx("legend", { class: "sr-only", children: "\u7D4C\u904E\u6642\u9593" }),
-          mode === "exam" ? /* @__PURE__ */ jsx("div", { children: [
-            /* @__PURE__ */ jsx("span", { children: "\u5168\u4F53" }),
-            /* @__PURE__ */ jsx("strong", { "data-testid": "challenge-total-time", "aria-live": "off", children: formatDuration(displayedTotalMs) })
-          ] }) : null,
-          /* @__PURE__ */ jsx("div", { children: [
-            /* @__PURE__ */ jsx("span", { children: mode === "question" ? "\u8A08\u6E2C\u6642\u9593" : "\u3053\u306E\u554F\u984C" }),
-            /* @__PURE__ */ jsx("strong", { "data-testid": "challenge-question-time", "aria-live": "off", children: formatDuration(displayedQuestionMs) })
-          ] })
-        ]
-      }
-    );
-  };
-}
-function PlayerEdgeNavigation(handle) {
-  return () => {
-    const { showPrevious, isFirst, isLast, canFinish, onPrevious, onNext, onFinish } = handle.props;
-    if (!(showPrevious || isLast)) {
-      return null;
-    }
-    return /* @__PURE__ */ jsx("nav", { class: "exam-player__edge-nav", "aria-label": "\u554F\u984C\u79FB\u52D5", children: [
-      showPrevious ? /* @__PURE__ */ jsx(
-        "button",
-        {
-          type: "button",
-          class: "exam-action exam-player__edge-nav-button exam-player__edge-nav-button--previous",
-          "aria-label": "\u524D\u306E\u554F\u984C",
-          title: "\u524D\u306E\u554F\u984C",
-          disabled: isFirst,
-          mix: on("click", onPrevious),
-          children: /* @__PURE__ */ jsx(ChevronLeftIcon, {})
-        }
-      ) : null,
-      /* @__PURE__ */ jsx(
-        "button",
-        {
-          type: "button",
-          class: "exam-action exam-player__edge-nav-button exam-player__edge-nav-button--next",
-          "aria-label": isLast ? "\u7D50\u679C\u3092\u898B\u308B" : "\u6B21\u306E\u554F\u984C",
-          title: isLast ? "\u7D50\u679C\u3092\u898B\u308B" : "\u6B21\u306E\u554F\u984C",
-          disabled: isLast && !canFinish,
-          mix: on("click", isLast ? onFinish : onNext),
-          children: isLast ? /* @__PURE__ */ jsx(CheckIcon, {}) : /* @__PURE__ */ jsx(ChevronRightIcon, {})
-        }
-      )
-    ] });
-  };
-}
-
-// app/features/challenge/player/ui/player-header.tsx
-function PlayerHeader(handle) {
-  return () => {
-    const {
-      playerTitle,
-      questions,
-      currentQuestionIndex,
-      onOpenQuestionList,
-      onSelectQuestion,
-      disabled = false
-    } = handle.props;
-    return /* @__PURE__ */ jsx("header", { class: "exam-player__header", children: [
-      /* @__PURE__ */ jsx("div", { class: "exam-player__identity", children: [
-        questions.length > 1 ? /* @__PURE__ */ jsx(
-          "button",
-          {
-            type: "button",
-            class: "exam-action exam-player__list-toggle",
-            "aria-label": "\u554F\u984C\u4E00\u89A7\u3092\u958B\u304F",
-            title: "\u554F\u984C\u4E00\u89A7\u3092\u958B\u304F",
-            disabled,
-            mix: on("click", onOpenQuestionList),
-            children: /* @__PURE__ */ jsx(MenuIcon, {})
-          }
-        ) : null,
-        /* @__PURE__ */ jsx("h2", { children: playerTitle })
-      ] }),
-      /* @__PURE__ */ jsx("nav", { class: "exam-player__progress", "aria-label": "\u554F\u984C\u756A\u53F7", children: /* @__PURE__ */ jsx("div", { class: "exam-player__progress-steps", children: [
-        /* @__PURE__ */ jsx("ol", { children: questions.map((question, index) => /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(
-          "button",
-          {
-            type: "button",
-            "aria-label": `\u554F${index + 1}`,
-            "aria-current": index === currentQuestionIndex ? "step" : void 0,
-            class: index === currentQuestionIndex ? "is-current" : "",
-            disabled,
-            mix: on("click", () => onSelectQuestion(index)),
-            children: index + 1
-          }
-        ) }, question.id)) }),
-        /* @__PURE__ */ jsx(
-          "div",
-          {
-            class: "exam-player__progress-track",
-            role: "progressbar",
-            "aria-label": "\u554F\u984C\u306E\u9032\u6357",
-            "aria-valuemin": 0,
-            "aria-valuemax": questions.length,
-            "aria-valuenow": currentQuestionIndex + 1,
-            "aria-valuetext": `\u554F${currentQuestionIndex + 1} / ${questions.length}`,
-            children: /* @__PURE__ */ jsx(
-              "span",
-              {
-                style: {
-                  width: `${(currentQuestionIndex + 1) / questions.length * 100}%`
-                }
-              }
-            )
-          }
-        )
-      ] }) })
-    ] });
-  };
-}
-
-// app/features/challenge/player/ui/player-list.tsx
-function PlayerListItem(handle) {
-  return () => {
-    const { question, index, mode, state, currentQuestionId, onSelect } = handle.props;
-    const judgment = state.judgments[question.id];
-    const isCurrent = question.id === currentQuestionId;
-    return /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(
-      "button",
-      {
-        type: "button",
-        class: `exam-question-list__item ${mode === "question" ? "exam-question-list__item--focus" : ""} ${isCurrent ? "is-current" : ""}`,
-        "aria-label": `\u554F${question.number ?? index + 1} ${question.text}`,
-        "aria-current": isCurrent ? "true" : void 0,
-        mix: on("click", () => onSelect(index)),
-        children: [
-          /* @__PURE__ */ jsx("span", { children: [
-            "\u554F",
-            question.number ?? index + 1
-          ] }),
-          mode === "exam" ? /* @__PURE__ */ jsx("span", { class: "exam-question-list__time", children: formatDuration(state.questionElapsedMs[question.id] ?? 0) }) : null,
-          mode === "exam" && judgment ? /* @__PURE__ */ jsx("span", { class: `exam-question-list__judgment is-${judgment}`, children: judgment === "correct" ? "\u25CB" : "\xD7" }) : null,
-          /* @__PURE__ */ jsx("span", { class: "exam-question-list__prompt", children: question.text })
-        ]
-      }
-    ) });
-  };
-}
-function PlayerList(handle) {
-  return () => {
-    const { state, questions, mode, open, onSelect, onClose } = handle.props;
-    if (!open) {
-      return null;
-    }
-    const currentQuestionId = state.questionIds[state.currentIndex];
-    const listedQuestions = mode === "question" ? questions : state.questionIds.map((questionId) => questions.find((item) => item.id === questionId)).filter((question) => question !== void 0);
-    const totalElapsedMs = Object.values(state.questionElapsedMs).reduce(
-      (sum, value) => sum + (value ?? 0),
-      0
-    );
-    return /* @__PURE__ */ jsx(Fragment, { children: [
-      /* @__PURE__ */ jsx(
-        "button",
-        {
-          class: "exam-question-list__backdrop",
-          type: "button",
-          "aria-label": "\u554F\u984C\u4E00\u89A7\u3092\u9589\u3058\u308B",
-          mix: on("click", onClose)
-        }
-      ),
-      /* @__PURE__ */ jsx("aside", { class: "exam-question-list", "aria-label": "\u554F\u984C\u4E00\u89A7", children: [
-        /* @__PURE__ */ jsx("div", { class: "exam-question-list__toolbar", children: [
-          /* @__PURE__ */ jsx("div", { class: "exam-question-list__header", children: /* @__PURE__ */ jsx("h2", { children: "\u554F\u984C\u4E00\u89A7" }) }),
-          /* @__PURE__ */ jsx("div", { class: "exam-question-list__actions", children: [
-            mode === "exam" ? /* @__PURE__ */ jsx("p", { children: [
-              /* @__PURE__ */ jsx("span", { children: "\u5168\u4F53" }),
-              /* @__PURE__ */ jsx("strong", { children: formatDuration(totalElapsedMs) })
-            ] }) : null,
-            /* @__PURE__ */ jsx(
-              "button",
-              {
-                type: "button",
-                class: "exam-action",
-                "aria-label": "\u554F\u984C\u4E00\u89A7\u3092\u9589\u3058\u308B",
-                title: "\u554F\u984C\u4E00\u89A7\u3092\u9589\u3058\u308B",
-                mix: on("click", onClose),
-                children: /* @__PURE__ */ jsx(CloseIcon, {})
-              }
-            )
-          ] })
-        ] }),
-        /* @__PURE__ */ jsx("ol", { children: listedQuestions.map((question, index) => /* @__PURE__ */ jsx(
-          PlayerListItem,
-          {
-            question,
-            index,
-            mode,
-            state,
-            currentQuestionId,
-            onSelect
-          },
-          question.id
-        )) })
-      ] })
-    ] });
-  };
-}
-
 // app/features/challenge/player/exam-player.tsx
+var shellStyle = css({
+  position: "relative",
+  background: "var(--color-bg-card)",
+  border: "1px solid var(--color-border)",
+  borderRadius: "var(--radius-card)",
+  overflow: "hidden"
+});
+var messageStyle = css({ padding: "2rem 1rem", textAlign: "center" });
+var resumeStyle = css({
+  maxWidth: "32rem",
+  margin: "0 auto",
+  padding: "1.5rem",
+  background: "var(--color-bg-card)",
+  border: "1px solid var(--color-border)",
+  borderRadius: "var(--radius-card)"
+});
+var eyebrowStyle2 = css({
+  margin: "0 0 0.25rem",
+  fontSize: "0.8rem",
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  color: "var(--color-text-muted)"
+});
+var resumeActionsStyle = css({
+  display: "flex",
+  gap: "0.75rem",
+  flexWrap: "wrap",
+  marginTop: "1rem"
+});
+var workspaceStyle = css({ padding: "1.25rem" });
+var questionStyle = css({ display: "grid", gap: "0.25rem" });
 var ExamPlayer = clientEntry(
   "/assets/client.js#ExamPlayer",
-  function ExamPlayer2(handle) {
+  function ExamPlayerEntry(handle) {
     const props = handle.props;
     const questionById = new Map(props.questions.map((question) => [question.id, question]));
     const questionIndexById = new Map(
@@ -12190,8 +12834,7 @@ var ExamPlayer = clientEntry(
     let resultHistory = session.resultHistory;
     let solutionOpen = false;
     let questionListOpen = false;
-    let navigationDirection = "forward";
-    let syncMessage = null;
+    const syncMessage = null;
     const runtime = {
       running: false,
       lastSample: null,
@@ -12221,7 +12864,9 @@ var ExamPlayer = clientEntry(
       persist();
     };
     const sample = () => {
-      if (!state) return;
+      if (!state) {
+        return;
+      }
       const sampled = sampleChallengeTimer(state, runtime, now());
       state = sampled.state;
       persist();
@@ -12255,11 +12900,17 @@ var ExamPlayer = clientEntry(
       void handle.update();
     };
     const judge = (judgment) => {
-      if (!state) return;
+      if (!state) {
+        return;
+      }
       const id = currentQuestionId();
-      if (!id) return;
+      if (!id) {
+        return;
+      }
       sample();
-      if (!state) return;
+      if (!state) {
+        return;
+      }
       const judged = challengeReducer(state, {
         type: "JUDGE_QUESTION",
         questionId: id,
@@ -12271,14 +12922,18 @@ var ExamPlayer = clientEntry(
       void handle.update();
     };
     const selectIndex = (index, listed) => {
-      if (!state) return;
+      if (!state) {
+        return;
+      }
       sample();
-      if (!state) return;
+      if (!state) {
+        return;
+      }
       const targetId = listed ? state.questionIds[index] ?? currentQuestionId() : props.questions[index]?.id ?? currentQuestionId();
-      if (!targetId || !state) return;
+      if (!(targetId && state)) {
+        return;
+      }
       const moveIndex = listed ? index : questionIndexById.get(targetId) ?? 0;
-      const fromIndex = navigation().currentQuestionIndex;
-      navigationDirection = moveIndex >= fromIndex ? "forward" : "backward";
       state = challengeReducer(state, { type: "MOVE_TO", index: moveIndex });
       resetTimerRuntimeInPlace(runtime, currentQuestionId());
       runtime.running = true;
@@ -12294,18 +12949,26 @@ var ExamPlayer = clientEntry(
     const move = (offset) => {
       const { currentQuestionIndex, navigationLength } = navigation();
       const next = currentQuestionIndex + offset;
-      if (next < 0 || next >= navigationLength) return;
+      if (next < 0 || next >= navigationLength) {
+        return;
+      }
       selectIndex(next, props.mode === "question");
       void handle.update();
     };
     const finish = () => {
-      if (!state) return;
+      if (!state) {
+        return;
+      }
       sample();
-      if (!state) return;
+      if (!state) {
+        return;
+      }
       const updatedAt = now();
       const completed = challengeReducer(state, { type: "COMPLETE", updatedAt });
       const archived = archiveCompletedChallenge(completed, updatedAt);
-      if (!archived) return;
+      if (!archived) {
+        return;
+      }
       const payload = archived.payload;
       resultPayload = payload;
       resultHistory = filterChallengeHistory(
@@ -12322,7 +12985,9 @@ var ExamPlayer = clientEntry(
       void handle.update();
     };
     const retry = () => {
-      if (typeof window === "undefined") return;
+      if (typeof window === "undefined") {
+        return;
+      }
       replaceChallengeView("player");
       const reload = resolveInitialPlayerSession(props);
       state = reload.state;
@@ -12343,8 +13008,6 @@ var ExamPlayer = clientEntry(
       void handle.update();
     };
     return () => {
-      const syncMessageValue = syncMessage;
-      void syncMessageValue;
       if (!state && typeof window === "undefined") {
         return /* @__PURE__ */ jsx(ExamPlayerPreview, { props });
       }
@@ -12364,50 +13027,27 @@ var ExamPlayer = clientEntry(
         );
       }
       if (phase === "missing") {
-        return /* @__PURE__ */ jsx("div", { class: "exam-player-message", children: [
+        return /* @__PURE__ */ jsx("div", { mix: messageStyle, children: [
           /* @__PURE__ */ jsx("p", { children: "\u3053\u306E\u7D50\u679C\u306F\u7AEF\u672B\u5185\u306B\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3067\u3057\u305F\u3002" }),
-          /* @__PURE__ */ jsx(
-            "a",
-            {
-              class: "exam-footer-button exam-footer-button--primary",
-              href: `/${props.unitId}/${props.year}`,
-              children: "\u554F\u984C\u4E00\u89A7\u3078\u623B\u308B"
-            }
-          )
+          /* @__PURE__ */ jsx("a", { mix: primaryButtonStyle, href: `/${props.unitId}/${props.year}`, children: "\u554F\u984C\u4E00\u89A7\u3078\u623B\u308B" })
         ] });
       }
       if (!state) {
         return /* @__PURE__ */ jsx(ExamPlayerPreview, { props });
       }
       if (phase === "resume") {
-        return /* @__PURE__ */ jsx("section", { class: "exam-resume", "aria-labelledby": "exam-resume-title", children: [
-          /* @__PURE__ */ jsx("p", { class: "page-heading__eyebrow", children: "\u7D9A\u304D\u304C\u3042\u308A\u307E\u3059" }),
+        return /* @__PURE__ */ jsx("section", { mix: resumeStyle, "aria-labelledby": "exam-resume-title", children: [
+          /* @__PURE__ */ jsx("p", { mix: eyebrowStyle2, children: "\u7D9A\u304D\u304C\u3042\u308A\u307E\u3059" }),
           /* @__PURE__ */ jsx("h2", { id: "exam-resume-title", children: "\u524D\u56DE\u306E\u8A66\u884C\u3092\u3069\u3046\u3057\u307E\u3059\u304B\uFF1F" }),
-          /* @__PURE__ */ jsx("div", { class: "exam-resume__actions", children: [
-            /* @__PURE__ */ jsx(
-              "button",
-              {
-                type: "button",
-                class: "exam-footer-button exam-footer-button--primary",
-                mix: on("click", resume),
-                children: "\u7D9A\u304D\u304B\u3089"
-              }
-            ),
-            /* @__PURE__ */ jsx(
-              "button",
-              {
-                type: "button",
-                class: "exam-footer-button exam-footer-button--quiet",
-                mix: on("click", retry),
-                children: "\u6700\u521D\u304B\u3089"
-              }
-            )
+          /* @__PURE__ */ jsx("div", { mix: resumeActionsStyle, children: [
+            /* @__PURE__ */ jsx("button", { type: "button", mix: [primaryButtonStyle, on("click", resume)], children: "\u7D9A\u304D\u304B\u3089" }),
+            /* @__PURE__ */ jsx("button", { type: "button", mix: [quietButtonStyle, on("click", retry)], children: "\u6700\u521D\u304B\u3089" })
           ] })
         ] });
       }
       const question = currentQuestion();
       if (!question) {
-        return /* @__PURE__ */ jsx("div", { class: "exam-player-message", children: "\u554F\u984C\u3092\u8868\u793A\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002" });
+        return /* @__PURE__ */ jsx("div", { mix: messageStyle, children: "\u554F\u984C\u3092\u8868\u793A\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002" });
       }
       const { currentQuestionIndex, navigationLength } = navigation();
       const markdown = questionToMarkdown(question, { includeSolution: false });
@@ -12415,7 +13055,7 @@ var ExamPlayer = clientEntry(
       return /* @__PURE__ */ jsx(
         "section",
         {
-          class: "exam-player-shell",
+          mix: shellStyle,
           "aria-label": props.mode === "exam" ? "\u5C0F\u30C6\u30B9\u30C8\u30D7\u30EC\u30A4\u30E4\u30FC" : "\u30BF\u30A4\u30E0\u30A2\u30BF\u30C3\u30AF\u30D7\u30EC\u30A4\u30E4\u30FC",
           children: [
             /* @__PURE__ */ jsx(
@@ -12445,8 +13085,8 @@ var ExamPlayer = clientEntry(
                 onSelect: (index) => selectIndex(index, true)
               }
             ),
-            /* @__PURE__ */ jsx("div", { class: "exam-player__workspace", children: [
-              /* @__PURE__ */ jsx("div", { class: `exam-player__question exam-player__question--${navigationDirection}`, children: [
+            /* @__PURE__ */ jsx("div", { mix: workspaceStyle, children: [
+              /* @__PURE__ */ jsx("div", { mix: questionStyle, children: [
                 /* @__PURE__ */ jsx(QuestionContent, { question }),
                 /* @__PURE__ */ jsx(
                   ChallengeTimerDisplay,
@@ -12505,12 +13145,12 @@ function ExamPlayerPreview(handle) {
     const { props } = handle.props;
     const question = props.questions[0];
     if (!question) {
-      return /* @__PURE__ */ jsx("div", { class: "exam-player-shell", "aria-hidden": "true" });
+      return /* @__PURE__ */ jsx("div", { mix: shellStyle, "aria-hidden": "true" });
     }
     return /* @__PURE__ */ jsx(
       "section",
       {
-        class: "exam-player-shell",
+        mix: shellStyle,
         "aria-label": props.mode === "exam" ? "\u5C0F\u30C6\u30B9\u30C8\u30D7\u30EC\u30A4\u30E4\u30FC" : "\u30BF\u30A4\u30E0\u30A2\u30BF\u30C3\u30AF\u30D7\u30EC\u30A4\u30E4\u30FC",
         children: [
           /* @__PURE__ */ jsx(
@@ -12526,7 +13166,7 @@ function ExamPlayerPreview(handle) {
               }
             }
           ),
-          /* @__PURE__ */ jsx("div", { class: "exam-player__workspace", children: /* @__PURE__ */ jsx("div", { class: "exam-player__question", children: [
+          /* @__PURE__ */ jsx("div", { mix: workspaceStyle, children: /* @__PURE__ */ jsx("div", { mix: questionStyle, children: [
             /* @__PURE__ */ jsx(QuestionContent, { question }),
             /* @__PURE__ */ jsx(
               ChallengeTimerDisplay,
@@ -13224,9 +13864,25 @@ function mergeStoredProgress(entries) {
 }
 
 // app/features/progress/ui/records-view.tsx
+var recordsSectionStyle = css({
+  marginTop: "1.5rem",
+  padding: "1rem 1.25rem",
+  background: "var(--color-bg-card)",
+  border: "1px solid var(--color-border)",
+  borderRadius: "var(--radius-card)",
+  "& h2": { marginTop: 0, fontSize: "1.05rem", color: "var(--color-primary)" },
+  "& ul": { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: "0.25rem" },
+  "& li": { display: "flex", justifyContent: "space-between", gap: "0.75rem" }
+});
+var recordsActionsStyle = css({ display: "flex", gap: "0.5rem", flexWrap: "wrap" });
+var recordsStatusStyle = css({
+  marginTop: "0.5rem",
+  fontSize: "0.85rem",
+  color: "var(--color-text-muted)"
+});
 var RecordsView = clientEntry(
   "/assets/client.js#RecordsView",
-  function RecordsView2(handle) {
+  function RecordsViewEntry(handle) {
     const read = () => {
       const progress = Object.values(readProgress()).toSorted(
         (left, right) => right.updatedAt - left.updatedAt
@@ -13300,12 +13956,12 @@ var RecordsView = clientEntry(
     };
     return () => {
       const syncKey = readSyncKey();
-      return /* @__PURE__ */ jsx("section", { class: "records-view", children: [
-        /* @__PURE__ */ jsx("header", { class: "records-view__section", children: [
+      return /* @__PURE__ */ jsx("section", { children: [
+        /* @__PURE__ */ jsx("header", { mix: recordsSectionStyle, children: [
           /* @__PURE__ */ jsx("h2", { children: "\u540C\u671F" }),
           syncKey ? /* @__PURE__ */ jsx(Fragment, { children: [
             /* @__PURE__ */ jsx("p", { children: "\u3053\u306E\u7AEF\u672B\u306F\u540C\u671F\u30EA\u30F3\u30AF\u3067\u4FDD\u8B77\u3055\u308C\u3066\u3044\u307E\u3059\u3002\u30EA\u30F3\u30AF\u3092\u77E5\u3063\u3066\u3044\u308B\u7AEF\u672B\u3060\u3051\u304C\u8A18\u9332\u3092\u5171\u6709\u3067\u304D\u307E\u3059\u3002" }),
-            /* @__PURE__ */ jsx("div", { class: "records-view__actions", children: [
+            /* @__PURE__ */ jsx("div", { mix: recordsActionsStyle, children: [
               /* @__PURE__ */ jsx("button", { type: "button", mix: on("click", copyLink), children: "\u30EA\u30F3\u30AF\u3092\u30B3\u30D4\u30FC" }),
               /* @__PURE__ */ jsx("button", { type: "button", mix: on("click", runSync), children: "\u3044\u307E\u540C\u671F\u3059\u308B" }),
               /* @__PURE__ */ jsx("button", { type: "button", mix: on("click", removeLink), children: "\u540C\u671F\u3092\u89E3\u9664" })
@@ -13314,9 +13970,9 @@ var RecordsView = clientEntry(
             /* @__PURE__ */ jsx("p", { children: "\u540C\u671F\u3092\u4F7F\u3046\u3068\u3001\u5225\u306E\u7AEF\u672B\u3068\u540C\u3058\u5B66\u7FD2\u8A18\u9332\u3092\u5171\u6709\u3067\u304D\u307E\u3059\u3002" }),
             /* @__PURE__ */ jsx("button", { type: "button", mix: on("click", createLink), children: "\u540C\u671F\u30EA\u30F3\u30AF\u3092\u4F5C\u6210" })
           ] }),
-          status.message ? /* @__PURE__ */ jsx("p", { role: "status", class: `records-view__status is-${status.kind}`, children: status.message }) : null
+          status.message ? /* @__PURE__ */ jsx("p", { role: "status", mix: recordsStatusStyle, children: status.message }) : null
         ] }),
-        /* @__PURE__ */ jsx("section", { class: "records-view__section", children: [
+        /* @__PURE__ */ jsx("section", { mix: recordsSectionStyle, children: [
           /* @__PURE__ */ jsx("h2", { children: [
             "\u7B54\u3048\u3092\u78BA\u8A8D\u3057\u305F\u554F\u984C\uFF08",
             view.progress.length,
@@ -13327,7 +13983,7 @@ var RecordsView = clientEntry(
             /* @__PURE__ */ jsx("span", { children: formatDuration(entry.updatedAt - entry.createdAt) })
           ] }, entry.questionId)) })
         ] }),
-        /* @__PURE__ */ jsx("section", { class: "records-view__section", children: [
+        /* @__PURE__ */ jsx("section", { mix: recordsSectionStyle, children: [
           /* @__PURE__ */ jsx("h2", { children: [
             "\u5C0F\u30C6\u30B9\u30C8\u306E\u7D50\u679C\uFF08",
             view.challenges.length,
@@ -13365,7 +14021,9 @@ function snapshotToPayload(snapshot) {
     updatedAt: snapshot.updatedAt,
     answers: snapshot.questionIds.flatMap((questionId) => {
       const judgment = snapshot.judgments[questionId];
-      if (!judgment) return [];
+      if (!judgment) {
+        return [];
+      }
       return [
         {
           questionId,
@@ -13380,12 +14038,19 @@ function snapshotToPayload(snapshot) {
 }
 
 // app/features/answer/ui/continue-learning.tsx
-var sectionStyle = css({
+var sectionStyle2 = css({
   marginTop: "2rem",
   padding: "1rem 1.25rem",
   background: "var(--color-bg-card)",
   border: "1px solid var(--color-border)",
   borderRadius: "0.75rem"
+});
+var listStyle3 = css({
+  listStyle: "none",
+  margin: "0 0 0.5rem",
+  padding: 0,
+  display: "grid",
+  gap: "0.25rem"
 });
 var linkStyle = css({
   color: "var(--color-primary)",
@@ -13394,7 +14059,7 @@ var linkStyle = css({
 });
 var ContinueLearning = clientEntry(
   "/assets/client.js#ContinueLearning",
-  function ContinueLearning2(handle) {
+  function ContinueLearningEntry(handle) {
     let expanded = false;
     const recent = () => {
       const entries = Object.values(readProgress()).toSorted(
@@ -13422,9 +14087,9 @@ var ContinueLearning = clientEntry(
         return null;
       }
       const visible = expanded ? items : items.slice(0, 5);
-      return /* @__PURE__ */ jsx("section", { mix: sectionStyle, "aria-labelledby": "continue-learning-title", children: [
+      return /* @__PURE__ */ jsx("section", { mix: sectionStyle2, "aria-labelledby": "continue-learning-title", children: [
         /* @__PURE__ */ jsx("h2", { id: "continue-learning-title", children: "\u524D\u56DE\u306E\u7D9A\u304D" }),
-        /* @__PURE__ */ jsx("ul", { class: "continue-learning__list", children: visible.map((item) => /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { mix: linkStyle, href: item.href, children: [
+        /* @__PURE__ */ jsx("ul", { mix: listStyle3, children: visible.map((item) => /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { mix: linkStyle, href: item.href, children: [
           item.unitName,
           " ",
           item.year,
@@ -13435,11 +14100,13 @@ var ContinueLearning = clientEntry(
           "button",
           {
             type: "button",
-            class: "exam-footer-button exam-footer-button--quiet",
-            mix: on("click", () => {
-              expanded = !expanded;
-              void handle.update();
-            }),
+            mix: [
+              quietButtonStyle,
+              on("click", () => {
+                expanded = !expanded;
+                void handle.update();
+              })
+            ],
             children: expanded ? "\u9589\u3058\u308B" : "\u3082\u3063\u3068\u898B\u308B"
           }
         ) : null
