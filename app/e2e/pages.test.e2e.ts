@@ -47,6 +47,16 @@ describe("サイト導線", () => {
 		trace(page);
 
 		await page.goto("/unit-base-conversion/2017/exam/1");
+		const diag = await page.evaluate(async () => {
+			const response = await fetch("/assets/client.js");
+			return {
+				status: response.status,
+				contentType: response.headers.get("content-type"),
+				scripts: [...document.querySelectorAll("script[src]")].map((s) => s.getAttribute("src")),
+				markers: document.querySelectorAll("[class^='rmxc-']").length,
+			};
+		});
+		console.log("[diag]", JSON.stringify(diag));
 		const reveal = page.getByRole("button", { name: "解答を表示" });
 		await reveal.waitFor();
 		await reveal.click();
