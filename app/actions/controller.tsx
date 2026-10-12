@@ -2,6 +2,7 @@ import { createController } from 'remix/router'
 
 import { getExamByNumber } from '../data/exams/index.ts'
 import { loadHomeExamCatalog } from '../data/exams/homeCatalog.ts'
+import { generateLlmsFullTxt, generateLlmsTxt } from '../features/markdown/llms.ts'
 import { unitBasedTabs } from '../data/units.ts'
 import type { Year } from '../types/index.ts'
 import { routes } from '../routes.ts'
@@ -125,14 +126,20 @@ export default createController(routes, {
 		},
 
 		llms() {
-			return new Response('llms.txt placeholder', {
-				headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+			return new Response(generateLlmsTxt(), {
+				headers: {
+					'Content-Type': 'text/plain; charset=utf-8',
+					'Cache-Control': 'public, max-age=86400',
+				},
 			})
 		},
 
-		llmsFull() {
-			return new Response('llms-full.txt placeholder', {
-				headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+		async llmsFull() {
+			return new Response(await generateLlmsFullTxt(), {
+				headers: {
+					'Content-Type': 'text/plain; charset=utf-8',
+					'Cache-Control': 'public, max-age=86400',
+				},
 			})
 		},
 	},
