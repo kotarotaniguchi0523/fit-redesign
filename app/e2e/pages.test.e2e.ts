@@ -25,7 +25,7 @@ describe("サイト導線", () => {
 
 		await page.goto("/");
 		await page.getByRole("link", { name: "2017" }).first().click();
-		await page.getByRole("heading", { name: "基数変換" }).waitFor();
+		await page.getByRole("heading", { name: "基数変換", exact: true }).waitFor();
 
 		await page.getByRole("link", { name: "問1" }).first().click();
 		await page.locator("[data-player]").waitFor();
