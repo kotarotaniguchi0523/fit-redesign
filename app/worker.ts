@@ -1,3 +1,7 @@
+import { env } from 'cloudflare:workers'
+
+import { createD1Database } from './db/d1.ts'
+import { setDatabase } from './db/registry.ts'
 import { looksLikeAsset } from './middleware/assets.ts'
 import { router } from './router.ts'
 
@@ -8,10 +12,12 @@ import { router } from './router.ts'
  * Workers では `router.fetch(request)` をそのまま委譲するだけでよい
  * （公式ガイド "Alternate runtimes: Bun, Deno, Workers" の Workers 版）。
  *
- * 静的アセットは Workers Assets（`env.ASSETS`）へ委譲する。バインド（DB /
- * PROGRESS_RATE_LIMITER）は必要になった時点で `cloudflare:workers` の `env`
- * から取得する（Stage 4 以降）。
+ * D1 バインディングから data-table の Database を構築してレジストリへ登録し、
+ * ミドルウェアがリクエストコンテキストへ載せる。静的アセットは Workers Assets
+ * （`env.ASSETS`）へ委譲する。
  */
+setDatabase(createD1Database(env.DB))
+
 export default {
 	async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url)

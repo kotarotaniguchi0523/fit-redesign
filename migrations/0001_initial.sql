@@ -1,10 +1,5 @@
--- 小テストの完了結果と答え確認履歴を、責務ごとに分離した最終スキーマへ移行する。
--- 現行の sync_spaces / question_progress には保持すべき記録がない前提で作り直す。
-DROP TABLE IF EXISTS answers;
-DROP TABLE IF EXISTS challenges;
-DROP TABLE IF EXISTS question_progress;
-DROP TABLE IF EXISTS sync_links;
-DROP TABLE IF EXISTS sync_spaces;
+-- 初期スキーマ。過去の履歴は破棄し、現行の学習記録同期モデルを単一の初期マイグレーションとして定義する。
+-- 変更する場合は本ファイルを編集せず、新しい番号のマイグレーションを追加する。
 
 CREATE TABLE sync_links (
   id         TEXT    NOT NULL PRIMARY KEY,
@@ -37,6 +32,9 @@ CREATE TABLE challenges (
 
 CREATE INDEX idx_challenges_scope
   ON challenges(sync_link_id, exam_id, updated_at DESC);
+
+CREATE INDEX idx_challenges_recent
+  ON challenges(sync_link_id, updated_at);
 
 CREATE TABLE answers (
   challenge_id TEXT    NOT NULL,

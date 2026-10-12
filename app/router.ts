@@ -7,6 +7,7 @@ import type { RouterContext } from 'remix/router'
 import controller from './actions/controller.tsx'
 import markdownController from './actions/markdown/controller.ts'
 import progressController from './actions/progress/controller.ts'
+import { loadDatabase } from './middleware/database.ts'
 import { securityHeaders } from './middleware/security.ts'
 import { routes } from './routes.ts'
 
@@ -22,7 +23,7 @@ import { routes } from './routes.ts'
  * エントリ（app/worker.ts）が担い、ルーターは Node でもテストできる状態に保つ。
  */
 export const router = createRouter({
-	middleware: [logger(), securityHeaders(), formData(), render()],
+	middleware: [logger(), securityHeaders(), loadDatabase(), formData(), render()],
 })
 
 export type AppContext = RouterContext<typeof router>

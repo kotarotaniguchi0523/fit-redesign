@@ -74,13 +74,15 @@
 
 ## Stage 4: DB（data-table + D1）
 
-- [ ] `app/db/tables.ts`（sync_links, question_progress, challenges, answers）
-- [ ] `app/db/d1-driver.ts`（DatabaseDriver 実装）
-- [ ] `app/db/client.ts`（`env.DB` から Database 生成）
-- [ ] `db/migrations/<番号>_<名前>/{up,down}.sql`（現行 SQL の最終形）
+- [x] `app/db/tables.ts`（sync_links, question_progress, challenges, answers）
+- [x] `app/db/d1.ts`（`DatabaseDriver` 実装 + SQL コンパイラ + `createD1Database`）
+- [x] `app/db/registry.ts` / `app/middleware/database.ts`（`cloudflare:workers` をルーターから隔離）
+- [x] `migrations/0001_initial.sql`（履歴破棄、現行スキーマを初期マイグレーション化）
+- [x] D1 ドライバの実 SQLite テスト（node:sqlite シム、6/6 pass）
 - [ ] `app/server/*Repository` → data-table の query/CRUD へ移植
 - [ ] 同期キー（syncKey/syncLinkId）を Web Crypto ベースで移植
 - [ ] リポジトリテストを `remix test` へ移植
+- [ ] ローカル D1（`wrangler d1 migrations apply --local`）でエンドツーエンド確認
 
 ## Stage 5: ページ移植（SSR + Remix component）
 
