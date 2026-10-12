@@ -3,7 +3,7 @@ import type { SyncKey } from "../../types/index.ts";
 import { progressClient } from "./client.ts";
 import { mergeProgressEntries, type ProgressEntry } from "./model.ts";
 
-function assertNever(value: never): never {
+function _assertNever(value: never): never {
 	throw new Error(`Unexpected sync error: ${String(value)}`);
 }
 
@@ -42,17 +42,4 @@ export function syncProgress(
 			(cause): SyncProgressError => ({ kind: "InvalidResponse", cause }),
 		).map((body) => mergeProgressEntries(local, (body as { entries: ProgressEntry[] }).entries));
 	});
-}
-
-export function syncProgressErrorMessage(error: SyncProgressError): string {
-	switch (error.kind) {
-		case "InvalidSyncLink":
-			return "同期リンクが無効です";
-		case "InvalidResponse":
-			return "同期結果の形式が正しくありません";
-		case "RequestFailed":
-			return "同期できませんでした";
-		default:
-			return assertNever(error);
-	}
 }

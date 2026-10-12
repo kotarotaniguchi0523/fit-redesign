@@ -16,10 +16,3 @@ export function mergeProgressEntries(
 export function toProgressMap(entries: readonly ProgressEntry[]): ProgressMap {
 	return Object.fromEntries(entries.map((entry) => [entry.questionId, entry]));
 }
-
-export function latestProgress(entries: readonly ProgressEntry[]): ProgressEntry | undefined {
-	return entries.reduce<ProgressEntry | undefined>(
-		(latest, entry) => (!latest || entry.updatedAt > latest.updatedAt ? entry : latest),
-		undefined,
-	);
-}

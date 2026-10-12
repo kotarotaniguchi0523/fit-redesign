@@ -14,8 +14,6 @@ const mainStyle = css({
 	padding: "1rem 1rem 4rem",
 });
 
-export type UnitExamSection = ExamSection;
-
 /**
  * 単元・年度ページ。小テスト一覧は `/:unit/:year/region` を指す `<Frame>` として描画し、
  * 一覧を独立したルート所有の領域として扱う。

@@ -8915,15 +8915,6 @@ var ZodMiniObject = /* @__PURE__ */ $constructor("ZodMiniObject", (inst, def) =>
   installLazyProp(inst, "shape", (self) => self._zod.def.shape, false);
 });
 // @__NO_SIDE_EFFECTS__
-function object(shape, params) {
-  const def = {
-    type: "object",
-    shape: shape ?? {},
-    ...normalizeParams(params)
-  };
-  return new ZodMiniObject(def);
-}
-// @__NO_SIDE_EFFECTS__
 function strictObject(shape, params) {
   return new ZodMiniObject({
     type: "object",
@@ -9034,9 +9025,6 @@ var ProgressSyncRequestSchema = readonly(
     entries: readonly(array(ProgressEntrySchema).check(_maxLength(300)))
   })
 );
-var SyncHeaderSchema = object({
-  "x-sync-key": SyncKeySchema
-});
 var ProgressSnapshotSchema = record(string2(), unknown());
 
 // app/lib/progress.ts

@@ -1,5 +1,4 @@
 import { isRecord } from "../../lib/guards.ts";
-import { subscribeToStorageChanges } from "../../lib/storageSubscription.ts";
 import {
 	ChallengeIdSchema,
 	ExamIdSchema,
@@ -9,7 +8,6 @@ import {
 import type { Judgment, QuestionId } from "../../types/index.ts";
 import {
 	createChallengeSnapshot,
-	mergeCompletedChallenges,
 	restoreChallengeState,
 	toCompletedChallengePayload,
 } from "./model.ts";
@@ -108,14 +106,6 @@ function isSnapshot(value: unknown): value is ChallengeSnapshot {
 
 function notifyChallengeChange(): void {
 	window.dispatchEvent(new Event(CHALLENGE_CHANGE_EVENT));
-}
-
-export function subscribeToChallenges(onStoreChange: () => void): () => void {
-	return subscribeToStorageChanges(
-		[ACTIVE_CHALLENGES_STORAGE_KEY, CHALLENGE_HISTORY_STORAGE_KEY],
-		CHALLENGE_CHANGE_EVENT,
-		onStoreChange,
-	);
 }
 
 function readJson(key: string): unknown {
@@ -217,14 +207,6 @@ export function readChallengeHistory(): readonly ChallengeSnapshot[] {
 	return parsed.filter(isSnapshot).filter((snapshot) => snapshot.status !== "active");
 }
 
-export function readChallengeHistorySnapshot(): string | null {
-	try {
-		return localStorage.getItem(CHALLENGE_HISTORY_STORAGE_KEY);
-	} catch {
-		return null;
-	}
-}
-
 export function findActiveChallenge(scopeKey: string): ChallengeSnapshot | undefined {
 	return Object.values(readActiveChallenges()).find((snapshot) => snapshot.scopeKey === scopeKey);
 }
@@ -269,11 +251,7 @@ export function markActiveChallengeIncomplete(state: ChallengeState): boolean {
 	return state.status === "active" && archiveChallenge({ ...state, status: "incomplete" });
 }
 
-export function discardActiveChallenge(challengeId: string): boolean {
-	return writeJson(ACTIVE_CHALLENGES_STORAGE_KEY, removeActiveChallenge(challengeId));
-}
-
-function snapshotFromCompletedChallenge(payload: CompletedChallengePayload): ChallengeSnapshot {
+function _snapshotFromCompletedChallenge(payload: CompletedChallengePayload): ChallengeSnapshot {
 	const questionIds = payload.answers.map((answer) => answer.questionId);
 	return {
 		version: 1,
@@ -325,18 +303,6 @@ export function archiveCompletedChallenge(
 		return null;
 	}
 	return { payload, persisted: archiveChallenge(completed) };
-}
-
-export function mergeCompletedChallengeHistory(
-	remote: readonly CompletedChallengePayload[],
-): readonly CompletedChallengePayload[] {
-	const merged = mergeCompletedChallenges(readCompletedChallenges(), remote);
-	const incomplete = readChallengeHistory().filter((snapshot) => snapshot.status === "incomplete");
-	writeHistory([
-		...merged.map(snapshotFromCompletedChallenge).map((snapshot) => ({ ...snapshot })),
-		...incomplete,
-	]);
-	return merged;
 }
 
 export function createChallengeStateFromSnapshot(snapshot: ChallengeSnapshot): ChallengeState {

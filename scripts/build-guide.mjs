@@ -1,5 +1,5 @@
 /**
- * `legacy/content/guide.mdx` を素の HTML 断片へ変換し、
+ * `app/content/guide.mdx` を素の HTML 断片へ変換し、
  * `app/content/guide.generated.ts` として出力する。
  *
  * Remix へ移行後は MDX コンパイラを持たないため、ビルド時に Markdown ブロック
@@ -10,7 +10,7 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 
-const source = readFileSync('legacy/content/guide.mdx', 'utf8')
+const source = readFileSync('app/content/guide.mdx', 'utf8')
 
 function escapeHtml(value) {
 	return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')

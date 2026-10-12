@@ -1,5 +1,4 @@
 import { isRecord } from "../../lib/guards.ts";
-import { subscribeToStorageChanges } from "../../lib/storageSubscription.ts";
 import {
 	EpochMillisecondsSchema,
 	ProgressEntrySchema,
@@ -22,14 +21,6 @@ const SYNC_KEY_CHANGE_EVENT = "fit:sync-key-change";
 
 function notifyStorageChange(eventName: string): void {
 	window.dispatchEvent(new Event(eventName));
-}
-
-export function subscribeToProgress(onStoreChange: () => void): () => void {
-	return subscribeToStorageChanges([PROGRESS_STORAGE_KEY], PROGRESS_CHANGE_EVENT, onStoreChange);
-}
-
-export function subscribeToSyncKey(onStoreChange: () => void): () => void {
-	return subscribeToStorageChanges([SYNC_KEY_STORAGE_KEY], SYNC_KEY_CHANGE_EVENT, onStoreChange);
 }
 
 export function readProgressSnapshot(): string | null {

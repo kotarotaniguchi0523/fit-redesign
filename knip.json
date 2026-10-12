@@ -1,0 +1,15 @@
+{
+	"$schema": "https://unpkg.com/knip@5/schema.json",
+	"entry": [
+		"app/worker.ts",
+		"app/actions/public/entry.ts",
+		"app/e2e/*.test.e2e.ts",
+		"scripts/*.mjs"
+	],
+	"project": ["app/**/*.{ts,tsx}", "scripts/**/*.mjs"],
+	"ignoreExportsUsedInFile": true,
+	"ignoreDependencies": [
+		"wrangler",
+		"cloudflare"
+	]
+}

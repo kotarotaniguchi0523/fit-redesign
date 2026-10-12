@@ -58,19 +58,3 @@ export function syncChallenges(
 		});
 	});
 }
-
-export function challengeSyncErrorMessage(error: ChallengeSyncError): string {
-	switch (error.kind) {
-		case "InvalidSyncLink":
-			return "同期リンクが無効です";
-		case "Conflict":
-			return "同じ試行IDに別の結果があるため同期できませんでした";
-		case "InvalidResponse":
-			return "同期結果の形式が正しくありません";
-		case "RequestFailed":
-			return "小テスト結果を同期できませんでした";
-		default:
-			error satisfies never;
-			return "同期できませんでした";
-	}
-}

@@ -17,7 +17,7 @@ import { answers, challenges, questionProgress, syncLinks } from "./tables.ts";
 
 /**
  * 学習記録の同期リポジトリ。`remix/data-table` の query API で D1 を操作する。
- * 旧 Drizzle 実装（`legacy/server/*Repository.ts`）と同じ振る舞いを保つ。
+ * 旧 Drizzle 実装と同じ振る舞いを保つ（同期マージの意味論を維持する）。
  */
 
 export class SyncLinkNotFoundError extends Error {
