@@ -24,3 +24,11 @@ minimumReleaseAgeExclude:
   - '@cloudflare/unenv-preset@2.16.2'
   - miniflare@5.20260921.0-alpha
   - wrangler@4.136.1
+
+# virtiofs（symlink 禁止）環境向け。v12 では node_modules 構造に関わる設定は
+# pnpm-workspace.yaml に書く（.npmrc は auth/registry のみ読まれる）。
+# - nodeLinker: hoisted … 仮想ストアのパッケージ symlink を作らない
+# - preferSymlinkedExecutables: false … node_modules/.bin を symlink ではなく
+#   コマンドシム（通常ファイル）として作る
+nodeLinker: hoisted
+preferSymlinkedExecutables: false

@@ -1,25 +1,29 @@
-# サンドボックス（virtiofs / symlink 禁止）向けツール
+# symlink が作れない環境向けの pnpm 設定（公式解）
 
-このワークスペースは virtiofs で **symlink が作れない**。pnpm は `node_modules/.bin` に
-シンボリックリンクを張るため、導入の最後だけが `EPERM (os error 1)` で失敗する
-（パッケージ本体は導入済み）。
+pnpm v12 の公式設定で解決する。`node_modules` の構造に関わる設定は `.npmrc` ではなく
+**`pnpm-workspace.yaml`** に書く（v12 は `.npmrc` から auth/registry しか読まない）。
 
-## 対応
+```yaml
+# pnpm-workspace.yaml
+nodeLinker: hoisted
+preferSymlinkedExecutables: false
+```
 
-1. 通常のインストール
-   ```sh
-   pnpm install
-   node scripts/fix-bin-shims.mjs   # .bin をシム（通常ファイル）として張り直す
-   ```
-2. `cf` のように自分で `pnpm install` を呼ぶツールを使う場合
-   ```sh
-   export PATH="$PWD/scripts/sandbox:$PWD/node_modules/.bin:$PATH"
-   cf dev
-   ```
-   `scripts/sandbox/pnpm` は hoisted で導入し、`.bin` の失敗を無視してシムを張り直す。
+公式ドキュメント（pnpm.io/settings）の記述:
 
-## なぜ依存を変えないのか
+- `nodeLinker: hoisted` — 「a flat node_modules **without symlinks** is created. …
+  Legitimate reasons: 1. Your tooling doesn't work well with symlinks.
+  2. Your project is deployed to a serverless hosting provider（AWS Lambda 等は symlink 不可）」
+- `preferSymlinkedExecutables` — Default **true**（node-linker が hoisted かつ POSIX のとき）。
+  「Create symlinks to executables in `node_modules/.bin` instead of **command shims**」。
+  `false` にすると `.bin` がシム（通常ファイル）になる。
 
-失敗しているのは「bin のリンク」だけで、依存パッケージ自体は問題なく動く。
-pnpm に bin リンクを無効化する設定は無く（`bin-links` は npm 専用）、
-依存を差し替えても解決しない。
+## 補足
+
+- ストア（`storeDir`）は既定でホーム配下（Linux: `~/.local/share/pnpm/store`）。
+  プロジェクト内に置くと、このワークスペースのような特殊 FS では失敗することがある。
+  `pnpm install --store-dir <path>` で切り替えられる。
+- `nodeLinker: hoisted` は既存 `node_modules` を再構成するため、壊れた `node_modules` が
+  残っていると swap に失敗する。クリーンな状態でインストールすること。
+- `scripts/fix-bin-shims.mjs` は、上記設定を使えない場合のフォールバック（`.bin` を
+  通常ファイルとして張り直す）。設定が効いていれば不要。

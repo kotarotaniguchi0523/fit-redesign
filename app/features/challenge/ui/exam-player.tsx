@@ -71,6 +71,22 @@ const questionStyle = css({ display: "grid", gap: "0.25rem" });
 
 type Phase = "player" | "resume" | "result" | "missing" | "locked";
 
+/** JS 無効時のフォールバック先（問題ページ。Frame ではなくフルページ）。 */
+function questionPageHref(
+	props: ExamPlayerProps,
+	questionId: string | undefined,
+): string | undefined {
+	if (!questionId) {
+		return undefined;
+	}
+	return routes.question.href({
+		unit: props.unitId,
+		year: props.year,
+		exam: String(props.examNumber),
+		question: questionId,
+	});
+}
+
 /**
  * 小テストプレイヤー（clientEntry）。
  *
@@ -420,6 +436,11 @@ export const ExamPlayer = clientEntry(
 							isFirst={currentQuestionIndex === 0}
 							isLast={currentQuestionIndex === navigationLength - 1}
 							canFinish={isChallengeComplete(state)}
+							previousHref={questionPageHref(
+								props,
+								state.questionIds[currentQuestionIndex - 1],
+							)}
+							nextHref={questionPageHref(props, state.questionIds[currentQuestionIndex + 1])}
 							onPrevious={() => move(-1)}
 							onNext={() => move(1)}
 							onFinish={finish}
