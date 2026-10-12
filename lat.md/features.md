@@ -15,5 +15,5 @@
 
 - Progress domain and storage: [[app/features/progress/progress.ts]] [[app/features/progress/progressStorage.ts#readProgress]]
 - Challenge storage: [[app/features/challenge/challengeStorage.ts#archiveCompletedChallenge]]
-- API validation: [[app/routes/progress.ts#progress]]
-- D1 persistence: [[app/server/progressRepository.ts#syncProgress]]
+- API validation: [[app/actions/progress/controller.ts]]
+- D1 persistence: [[app/db/progress.ts]]

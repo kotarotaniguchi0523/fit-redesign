@@ -14,7 +14,7 @@ Cloudflare Web Analytics setup, `cfWorker` Server-Timing availability, and the d
 
 Quiz question updates emit a User Timing measure around synchronous UI work. It excludes paint and Worker CPU.
 
-- Implementation: [[app/features/performance/userTiming.ts#measureUserInteraction]]
+- Implementation: [[app/worker.ts]]
 - Measurement walkthrough: `docs/performance-observability.md`, section “Browser profiling”.
 
 ## Local SSR and build report
