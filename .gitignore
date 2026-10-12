@@ -35,6 +35,11 @@ playwright-report/
 .wrangler-home/
 .ab-home/
 
+# Cloudflare (CF CLI)
+.cloudflare/
+.dev.vars*
+!.dev.vars.example
+
 # Beads / Dolt files (added by bd init)
 .dolt/
 *.db
