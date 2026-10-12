@@ -32,7 +32,6 @@ export type {
 	Year,
 } from "./domain.ts";
 export {
-	ExamNumberSchema,
 	isYear,
 	MEIJI_FIT_BASE,
 	ProgressEntrySchema,

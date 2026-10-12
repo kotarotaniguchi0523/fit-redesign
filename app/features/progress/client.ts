@@ -1,5 +1,3 @@
-import type { SyncKey } from "../../types/index.ts";
-
 /**
  * 同期 API のブラウザークライアント。
  *
@@ -34,5 +32,3 @@ export const progressClient = {
 			}),
 	},
 } as const;
-
-export type { SyncKey };

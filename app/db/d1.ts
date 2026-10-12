@@ -8,7 +8,6 @@ import {
 	type DataManipulationResult,
 	getTableName,
 	type Predicate,
-	rawSql,
 	type SqlStatement,
 	type TableRef,
 	type TransactionOptions,
@@ -438,5 +437,3 @@ export function createD1Database(
 ): D1DataTableDatabase {
 	return new D1DataTableDatabase(client, options);
 }
-
-export { rawSql };

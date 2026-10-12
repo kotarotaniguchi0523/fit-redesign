@@ -44,7 +44,7 @@
 		"@types/node": "^24.0.0",
 		"cf": "^1.0.0-beta.14",
 		"esbuild": "^0.25.0",
-		"knip": "^5.88.1",
+		"knip": "^6.41.0",
 		"lat.md": "^0.12.2",
 		"playwright": "^1.63.0",
 		"typescript": "^7.0.2",

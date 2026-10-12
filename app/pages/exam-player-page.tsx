@@ -1,6 +1,6 @@
 import type { Handle } from "remix/component";
 import { css } from "remix/component";
-import type { ExamPlayerProps, PlayerQuestion } from "../features/challenge/player/types.ts";
+import type { ExamPlayerProps } from "../features/challenge/player/types.ts";
 import { ExamPlayer } from "../features/challenge/ui/exam-player.tsx";
 import { PageHeading } from "../ui/page-heading.tsx";
 import { Document } from "./document.tsx";
@@ -37,5 +37,3 @@ export function ExamPlayerPage(
 		);
 	};
 }
-
-export type { PlayerQuestion };

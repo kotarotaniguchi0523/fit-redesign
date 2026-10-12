@@ -11,7 +11,6 @@ export type {
 } from "./browser.ts";
 export {
 	ExamIdSchema,
-	ProgressEntryListSchema,
 	ProgressEntrySchema,
 	QuestionIdSchema,
 	SyncKeySchema,

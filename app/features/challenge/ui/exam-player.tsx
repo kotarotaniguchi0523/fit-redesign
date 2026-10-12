@@ -12,7 +12,7 @@ import {
 	resetTimerRuntimeInPlace,
 	sampleChallengeTimer,
 } from "../player/timer.ts";
-import type { ExamPlayerProps, PlayerMode, PlayerQuestion } from "../player/types.ts";
+import type { ExamPlayerProps, PlayerQuestion } from "../player/types.ts";
 import {
 	archiveCompletedChallenge,
 	readCompletedChallenges,
@@ -497,5 +497,3 @@ function ExamPlayerPreview(handle: Handle<{ props: ExamPlayerProps }>) {
 		);
 	};
 }
-
-export type { PlayerMode };
