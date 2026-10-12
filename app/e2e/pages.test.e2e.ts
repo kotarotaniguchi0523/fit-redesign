@@ -9,9 +9,28 @@ import { createAppServer } from "./server.ts";
  *
  * ホームの単元名はリンクではなく、リンクは年度（`/unit-.../<year>`）である点に注意。
  */
+
+/** 調査用: ブラウザーのコンソール・エラー・失敗リクエストを出力する。 */
+function trace(page: {
+	on(event: string, handler: (...args: never[]) => void): void;
+}): void {
+	page.on("console", (...args: never[]) => {
+		const message = args[0] as unknown as { type(): string; text(): string };
+		console.log("[browser]", message.type(), message.text().slice(0, 200));
+	});
+	page.on("pageerror", (...args: never[]) => {
+		console.log("[browser error]", String((args[0] as Error).message).slice(0, 300));
+	});
+	page.on("requestfailed", (...args: never[]) => {
+		const request = args[0] as unknown as { url(): string; failure(): { errorText: string } | null };
+		console.log("[request failed]", request.url(), request.failure()?.errorText);
+	});
+}
+
 describe("サイト導線", () => {
 	it("トップページに単元・年度リンク・ヘッダーが描画される", async (t) => {
 		const page = await t.serve(await createAppServer());
+		trace(page);
 
 		await page.goto("/");
 		await page.getByRole("heading", { name: "問題を選ぶ" }).waitFor();
@@ -22,6 +41,7 @@ describe("サイト導線", () => {
 
 	it("トップ → 単元 → 単問へリンクで移動できる（SSR 導線）", async (t) => {
 		const page = await t.serve(await createAppServer());
+		trace(page);
 
 		await page.goto("/");
 		await page.getByRole("link", { name: "2017" }).first().click();
@@ -33,6 +53,7 @@ describe("サイト導線", () => {
 
 	it("小テストプレイヤーで解答を開き、自己判定できる（島が hydrate する）", async (t) => {
 		const page = await t.serve(await createAppServer());
+		trace(page);
 
 		await page.goto("/unit-base-conversion/2017/exam/1");
 		const reveal = page.getByRole("button", { name: "解答を表示" });
@@ -46,6 +67,7 @@ describe("サイト導線", () => {
 
 	it("問題一覧ドロワが開く", async (t) => {
 		const page = await t.serve(await createAppServer());
+		trace(page);
 
 		await page.goto("/unit-base-conversion/2017/exam/1");
 		await page.getByRole("button", { name: "問題一覧を開く" }).click();
@@ -54,6 +76,7 @@ describe("サイト導線", () => {
 
 	it("狭い画面ではアコーディオンで年度を選べる", async (t) => {
 		const page = await t.serve(await createAppServer());
+		trace(page);
 		await page.setViewportSize({ width: 390, height: 800 });
 
 		await page.goto("/");
