@@ -40,6 +40,11 @@ Vite 8のRolldownベースのビルドを使用しています。現行のHonoX/
 
 ## セットアップ
 
+> 一部のサンドボックス（virtiofs で symlink 不可）では `.bin` のシンボリックリンク作成だけが
+> 失敗します。`node scripts/fix-bin-shims.mjs` でシムを張ってください。詳細は
+> [scripts/sandbox/README.md](scripts/sandbox/README.md)。
+
+
 ### 前提条件
 
 - Node.js 24
