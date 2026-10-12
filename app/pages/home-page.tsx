@@ -4,6 +4,7 @@ import { unitBasedTabs } from "../data/units.ts";
 import { ContinueLearning } from "../features/answer/ui/continue-learning.tsx";
 import { routes } from "../routes.ts";
 import { YEARS } from "../types/index.ts";
+import { UnitAccordion } from "../ui/unit-accordion.tsx";
 import { Document } from "./document.tsx";
 
 const mainStyle = css({
@@ -23,6 +24,16 @@ const titleStyle = css({
 const ledeStyle = css({
 	color: "var(--color-text-muted)",
 	margin: "0 0 1.5rem",
+});
+
+const accordionWrapStyle = css({
+	display: "none",
+	marginTop: "1rem",
+	"@media (max-width: 40rem)": { display: "block" },
+});
+
+const tableOnlyStyle = css({
+	"@media (max-width: 40rem)": { display: "none" },
 });
 
 const tableWrapStyle = css({
@@ -66,6 +77,12 @@ export function HomePage(
 ) {
 	return () => {
 		const { examCounts, locationGroups, currentPath = "/" } = handle.props;
+		const accordionUnits = unitBasedTabs.map((unit) => ({
+			id: unit.id,
+			icon: unit.icon,
+			name: unit.name,
+			years: unit.examMapping.map((mapping) => mapping.year),
+		}));
 
 		const jsonLd = {
 			"@context": "https://schema.org",
@@ -100,7 +117,7 @@ export function HomePage(
 						<p mix={ledeStyle}>単元を選び、確認したい年度を開いてください。</p>
 					</section>
 
-					<div mix={tableWrapStyle}>
+					<div mix={[tableWrapStyle, tableOnlyStyle]}>
 						<table mix={tableStyle}>
 							<thead>
 								<tr>

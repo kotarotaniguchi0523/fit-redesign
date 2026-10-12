@@ -29,8 +29,8 @@ function isNormalizedMix(mix) {
   if (!Array.isArray(mix) || mix.length === 0)
     return false;
   for (let i = 0; i < mix.length; i++) {
-    let item = mix[i];
-    if (!item || Array.isArray(item))
+    let item2 = mix[i];
+    if (!item2 || Array.isArray(item2))
       return false;
   }
   return true;
@@ -49,8 +49,8 @@ function flattenMixValue(mix, out) {
     out.push(mix);
     return;
   }
-  for (let item of mix) {
-    flattenMixValue(item, out);
+  for (let item2 of mix) {
+    flattenMixValue(item2, out);
   }
 }
 
@@ -411,9 +411,9 @@ async function unwrapFrameResolution(resolution) {
       redirectedTo: data.redirectedTo
     };
   }
-  let content = resolution.body ?? await resolution.text();
+  let content2 = resolution.body ?? await resolution.text();
   return {
-    content,
+    content: content2,
     redirectedTo: resolution.redirected && resolution.url ? resolution.url : void 0
   };
 }
@@ -1251,8 +1251,8 @@ function collectReturnedMixDescriptors(value, output) {
     return true;
   }
   if (Array.isArray(value)) {
-    for (let item of value) {
-      if (!collectReturnedMixDescriptors(item, output)) {
+    for (let item2 of value) {
+      if (!collectReturnedMixDescriptors(item2, output)) {
         return false;
       }
     }
@@ -2224,9 +2224,9 @@ function beginComponentNode(node, parent, svg, handle, context) {
   mounting._context = context;
   return mounting;
 }
-function commitComponentNode(node, content) {
+function commitComponentNode(node, content2) {
   let committed = node;
-  committed._content = content;
+  committed._content = content2;
   return committed;
 }
 function diffVNodes(curr, next, domParent, vParent, context, anchor3, cursor) {
@@ -2770,12 +2770,12 @@ function resolveClientFrame(node, runtime, serverFrameReload) {
   })).then(async (resolution) => {
     if (state.resolveToken !== token || resolveController.signal.aborted)
       return;
-    let { content } = await unwrapFrameResolution(resolution);
+    let { content: content2 } = await unwrapFrameResolution(resolution);
     if (state.resolveToken !== token || resolveController.signal.aborted)
       return;
     state.fallbackRoot?.dispose();
     state.fallbackRoot = void 0;
-    let nextContent = asAbortableFrameContent(content, resolveController.signal);
+    let nextContent = asAbortableFrameContent(content2, resolveController.signal);
     await instance.render(nextContent, {
       signal: resolveController.signal,
       reconciliationTracker: serverFrameReload?.reconciliationTracker,
@@ -2812,10 +2812,10 @@ function disposeFrameResources(node) {
   state.fallbackRoot = void 0;
   state.instance.dispose();
 }
-function asAbortableFrameContent(content, signal) {
-  if (!(content instanceof ReadableStream))
-    return content;
-  return createAbortableReadableStream(content, signal);
+function asAbortableFrameContent(content2, signal) {
+  if (!(content2 instanceof ReadableStream))
+    return content2;
+  return createAbortableReadableStream(content2, signal);
 }
 function createAbortableReadableStream(source, signal) {
   let reader = source.getReader();
@@ -2932,8 +2932,8 @@ function renderComponent(currContent, next, domParent, context, anchor3, cursor)
     return next;
   }
   let [element, tasks] = handle.render(next.props);
-  let content = diffVNodes(currContent, toVNode(element), domParent, next, context, anchor3, cursor);
-  let committed = commitComponentNode(next, content);
+  let content2 = diffVNodes(currContent, toVNode(element), domParent, next, context, anchor3, cursor);
+  let committed = commitComponentNode(next, content2);
   handle.setScheduleUpdate(scheduler, committed, domParent);
   scheduler.enqueueTasks(tasks);
   return committed;
@@ -5295,8 +5295,8 @@ function createFrame(root, init) {
     src: init.src,
     $runtime: runtime,
     reload: async () => (await reload()).signal,
-    replace: async (content) => {
-      await render(content);
+    replace: async (content2) => {
+      await render(content2);
     }
   });
   runtime.topFrame = runtime.topFrame ?? init.topFrame ?? frame;
@@ -5324,7 +5324,7 @@ function createFrame(root, init) {
     regionTailRef: container.regionTailRef,
     regionParent: container.regionParent
   };
-  async function render(content, options) {
+  async function render(content2, options) {
     if (disposed || lifecycleController.signal.aborted || options?.signal?.aborted)
       return;
     let ownsData = options?.data === void 0;
@@ -5333,19 +5333,19 @@ function createFrame(root, init) {
       data: options?.data ?? {}
     };
     try {
-      await renderContent(content, renderOptions);
+      await renderContent(content2, renderOptions);
     } finally {
       if (ownsData)
         clearRmxData(renderOptions.data);
     }
   }
-  async function renderContent(content, options) {
+  async function renderContent(content2, options) {
     if (isRenderAborted(options.signal))
       return;
-    if (content instanceof ReadableStream) {
+    if (content2 instanceof ReadableStream) {
       let linkedAbort = createLinkedAbortController(lifecycleController.signal, options.signal);
       try {
-        await renderFrameStream(content, container.doc, async (html, flushKind) => {
+        await renderFrameStream(content2, container.doc, async (html, flushKind) => {
           if (isRenderAborted(options.signal))
             return;
           await render(html, { ...options, flushKind });
@@ -5355,7 +5355,7 @@ function createFrame(root, init) {
       }
       return;
     }
-    if (isRemixNodeFrameContent(content)) {
+    if (isRemixNodeFrameContent(content2)) {
       if (!contentRoot) {
         let currentNodes = getContentNodes();
         removeVirtualRoots(currentNodes);
@@ -5374,7 +5374,7 @@ function createFrame(root, init) {
         };
       }
       try {
-        contentRoot.render(content);
+        contentRoot.render(content2);
         await new Promise((resolve) => context.scheduler.enqueueCommitPhase([resolve]));
         options.onCommit?.();
       } finally {
@@ -5389,8 +5389,8 @@ function createFrame(root, init) {
       contentRoot.dispose();
       contentRoot = void 0;
     }
-    if (typeof content === "string") {
-      let flushed = await consumeFlushBatches(content, async (html, flushKind) => {
+    if (typeof content2 === "string") {
+      let flushed = await consumeFlushBatches(content2, async (html, flushKind) => {
         await render(html, { ...options, flushKind });
       });
       if (flushed.applied) {
@@ -5400,7 +5400,7 @@ function createFrame(root, init) {
         return;
       }
     }
-    let rawHtml = typeof content === "string" ? content : void 0;
+    let rawHtml = typeof content2 === "string" ? content2 : void 0;
     let htmlContent = rawHtml === void 0 ? void 0 : stripDoctypeMarkup(rawHtml);
     let isFullDocumentReload = container.root instanceof Document && rawHtml !== void 0 && (options.flushKind ?? inferFlushKind(rawHtml)) === "document";
     if (isFullDocumentReload && htmlContent !== void 0) {
@@ -5443,7 +5443,7 @@ function createFrame(root, init) {
       displayedContentStatus = options.contentStatus ?? "resolved";
       return;
     }
-    let fragment = htmlContent !== void 0 ? createFragmentFromString(container.doc, htmlContent) : content;
+    let fragment = htmlContent !== void 0 ? createFragmentFromString(container.doc, htmlContent) : content2;
     if (!await consumeClientEntryResources(fragment, options.documentHref))
       return;
     if (isRenderAborted(options.signal))
@@ -5590,7 +5590,7 @@ function createFrame(root, init) {
       }
     }
   }
-  async function renderMarkerContent(marker, content, options) {
+  async function renderMarkerContent(marker, content2, options) {
     if (disposed || context.lifecycleSignal.aborted || options?.signal?.aborted)
       return;
     let previousMarker = currentMarker;
@@ -5600,7 +5600,7 @@ function createFrame(root, init) {
       startInheritedReload(options?.signal);
     }
     clearPendingFrameTemplateWatch();
-    await render(content, { ...options, contentStatus: "resolved" });
+    await render(content2, { ...options, contentStatus: "resolved" });
     if (isInheritedReload && !disposed && !context.lifecycleSignal.aborted && !options?.signal?.aborted) {
       completeInheritedReload();
     }
@@ -5679,14 +5679,14 @@ function createFrame(root, init) {
       if (reloadController !== controller || controller.signal.aborted) {
         return { signal: controller.signal };
       }
-      let { content, redirectedTo } = await unwrapFrameResolution(resolution);
+      let { content: content2, redirectedTo } = await unwrapFrameResolution(resolution);
       if (reloadController !== controller || controller.signal.aborted) {
         return { signal: controller.signal };
       }
       let reconciliationTracker = createReconciliationTracker();
       let blockingFrameTracker = createReconciliationTracker();
       let commitStarted = false;
-      await render(content, {
+      await render(content2, {
         documentHref: isDocumentNode(container.root) ? redirectedTo ?? frame.src : void 0,
         signal: controller.signal,
         reconciliationTracker,
@@ -6100,7 +6100,7 @@ function reviveSerializedValue(value) {
   if (typeof value !== "object")
     return value;
   if (Array.isArray(value)) {
-    return value.map((item) => reviveSerializedValue(item));
+    return value.map((item2) => reviveSerializedValue(item2));
   }
   if (!isRecord2(value))
     return value;
@@ -6511,13 +6511,13 @@ function createCommentContainer([start, end]) {
     regionParent: parent
   };
 }
-function createFragmentFromString(doc, content) {
+function createFragmentFromString(doc, content2) {
   let template = doc.createElement("template");
-  template.innerHTML = stripDoctypeMarkup(content).trim();
+  template.innerHTML = stripDoctypeMarkup(content2).trim();
   return template.content;
 }
-function isRemixNodeFrameContent(content) {
-  return !(content instanceof ReadableStream || isDocumentFragmentNode(content) || typeof content === "string");
+function isRemixNodeFrameContent(content2) {
+  return !(content2 instanceof ReadableStream || isDocumentFragmentNode(content2) || typeof content2 === "string");
 }
 function findHydrationMarkers(container, data) {
   let markers = [];
@@ -8082,8 +8082,8 @@ var hiddenTypeahead = createMixin((handle) => {
     })
   ];
 });
-function itemMatchesSearchText(item, text, getSearchValues) {
-  let values = getSearchValues(item);
+function itemMatchesSearchText(item2, text, getSearchValues) {
+  let values = getSearchValues(item2);
   let searchValues = Array.isArray(values) ? values : [values];
   let normalizedText = text.toLowerCase();
   return searchValues.some((value) => value.toLowerCase().startsWith(normalizedText));
@@ -8093,9 +8093,9 @@ function matchNextItemBySearchText(text, items, options) {
     return null;
   }
   for (let offset = 1; offset <= items.length; offset++) {
-    let item = items[(options.fromIndex + offset + items.length) % items.length];
-    if (itemMatchesSearchText(item, text, options.getSearchValues)) {
-      return item;
+    let item2 = items[(options.fromIndex + offset + items.length) % items.length];
+    if (itemMatchesSearchText(item2, text, options.getSearchValues)) {
+      return item2;
     }
   }
   return null;
@@ -8468,9 +8468,9 @@ var SUBMENU_OPEN_DELAY_MS = 300;
 var SUBMENU_ANCHOR_RELATIVE_TO = '[role="menu"] > [role^="menuitem"]';
 var MenuSelectEvent = class extends Event {
   item;
-  constructor(item) {
+  constructor(item2) {
     super(MENU_SELECT_EVENT, { bubbles: true });
-    this.item = item;
+    this.item = item2;
   }
 };
 function isPrintableKey(event) {
@@ -8540,13 +8540,13 @@ function MenuProvider(handle) {
   let triggerRef;
   let hoverAim = createHoverAim();
   function getItem(id) {
-    return items.find((item) => item.id === id);
+    return items.find((item2) => item2.id === id);
   }
-  function isVisibleItem(item) {
-    return !!item?.node?.isConnected && !item.hidden;
+  function isVisibleItem(item2) {
+    return !!item2?.node?.isConnected && !item2.hidden;
   }
-  function isInteractableItem(item) {
-    return isVisibleItem(item) && !item.disabled;
+  function isInteractableItem(item2) {
+    return isVisibleItem(item2) && !item2.disabled;
   }
   function getInteractableItems() {
     return items.filter(isInteractableItem);
@@ -8716,7 +8716,7 @@ function MenuProvider(handle) {
       return;
     }
     let interactableItems = getInteractableItems();
-    let activeIndex = interactableItems.findIndex((item) => item.id === activeId);
+    let activeIndex = interactableItems.findIndex((item2) => item2.id === activeId);
     let nextItem;
     switch (strategy) {
       case "next":
@@ -8741,11 +8741,11 @@ function MenuProvider(handle) {
       return;
     }
     let interactableItems = getInteractableItems();
-    let activeIndex = interactableItems.findIndex((item) => item.id === activeId);
+    let activeIndex = interactableItems.findIndex((item2) => item2.id === activeId);
     let nextItem = matchNextItemBySearchText(text, interactableItems, {
       fromIndex: activeIndex,
-      getSearchValues(item) {
-        return item.searchValue ?? item.label;
+      getSearchValues(item2) {
+        return item2.searchValue ?? item2.label;
       }
     });
     if (nextItem) {
@@ -8756,29 +8756,29 @@ function MenuProvider(handle) {
     if (state !== "idle") {
       return;
     }
-    let item = getItem(id);
-    if (!isInteractableItem(item)) {
+    let item2 = getItem(id);
+    if (!isInteractableItem(item2)) {
       return;
     }
-    if (item.submenu) {
-      await item.submenu.open({ strategy: "first" });
+    if (item2.submenu) {
+      await item2.submenu.open({ strategy: "first" });
       return;
     }
-    let committedChecked = item.type === "checkbox" ? !item.checked : item.type === "radio" ? true : void 0;
+    let committedChecked = item2.type === "checkbox" ? !item2.checked : item2.type === "radio" ? true : void 0;
     state = "selecting";
-    activeId = item.id;
-    flashState = item.type === "item" ? { id: item.id } : { checked: committedChecked, id: item.id };
+    activeId = item2.id;
+    flashState = item2.type === "item" ? { id: item2.id } : { checked: committedChecked, id: item2.id };
     let signal = await handle.update();
     if (signal.aborted) {
       return;
     }
-    item.node.dispatchEvent(new MenuSelectEvent({
+    item2.node.dispatchEvent(new MenuSelectEvent({
       checked: committedChecked,
-      id: item.id,
-      label: item.label,
-      name: item.name,
-      type: item.type,
-      value: item.value ?? null
+      id: item2.id,
+      label: item2.label,
+      name: item2.name,
+      type: item2.type,
+      value: item2.value ?? null
     }));
     await wait(MENU_FLASH_DURATION_MS);
     if (handle.signal.aborted) {
@@ -8809,11 +8809,11 @@ function MenuProvider(handle) {
     if (!activeId) {
       return;
     }
-    let item = getItem(activeId);
-    if (!isInteractableItem(item) || !item.submenu) {
+    let item2 = getItem(activeId);
+    if (!isInteractableItem(item2) || !item2.submenu) {
       return;
     }
-    await item.submenu.open({ strategy: "first" });
+    await item2.submenu.open({ strategy: "first" });
   }
   let context = {
     get activeId() {
@@ -8883,8 +8883,8 @@ function MenuProvider(handle) {
     registerChild(menu) {
       childMenus.push(menu);
     },
-    registerItem(item) {
-      items.push(item);
+    registerItem(item2) {
+      items.push(item2);
     },
     registerList(node) {
       listRef = node;
@@ -10366,6 +10366,357 @@ var Header = clientEntry(
   }
 );
 
+// node_modules/@remix-run/ui/dist/accordion.js
+var ACCORDION_CHANGE_EVENT = "rmx:accordion-change";
+var AccordionChangeEvent = class extends Event {
+  accordionType;
+  itemValue;
+  value;
+  constructor(value, init) {
+    super(ACCORDION_CHANGE_EVENT, {
+      bubbles: true
+    });
+    this.accordionType = init.accordionType;
+    this.itemValue = init.itemValue;
+    this.value = value;
+  }
+};
+function isMultipleProps(props) {
+  return props?.type === "multiple";
+}
+function getAccordionContext(handle) {
+  return handle.context.get(AccordionProvider);
+}
+function getAccordionItemContext(handle) {
+  return handle.context.get(AccordionItemProvider);
+}
+function AccordionProvider(handle) {
+  let rootNode = null;
+  let registeredItems = [];
+  let uncontrolledSingleValue = null;
+  let uncontrolledMultipleValue = [];
+  let hasInitializedSingle = false;
+  let hasInitializedMultiple = false;
+  function getType() {
+    return isMultipleProps(handle.props) ? "multiple" : "single";
+  }
+  function getSingleValue() {
+    if (isMultipleProps(handle.props)) {
+      return null;
+    }
+    if (handle.props.value !== void 0) {
+      return handle.props.value;
+    }
+    if (!hasInitializedSingle) {
+      uncontrolledSingleValue = handle.props.defaultValue ?? null;
+      hasInitializedSingle = true;
+    }
+    return uncontrolledSingleValue;
+  }
+  function getMultipleValue() {
+    if (!isMultipleProps(handle.props)) {
+      return [];
+    }
+    if (handle.props.value !== void 0) {
+      return handle.props.value;
+    }
+    if (!hasInitializedMultiple) {
+      uncontrolledMultipleValue = [...handle.props.defaultValue ?? []];
+      hasInitializedMultiple = true;
+    }
+    return uncontrolledMultipleValue;
+  }
+  function isOpen(value) {
+    if (getType() === "multiple") {
+      return getMultipleValue().includes(value);
+    }
+    return getSingleValue() === value;
+  }
+  function dispatchChange(itemValue, value) {
+    rootNode?.dispatchEvent(new AccordionChangeEvent(value, {
+      accordionType: getType(),
+      itemValue
+    }));
+  }
+  function toggleItem(itemValue) {
+    if (handle.props.disabled) {
+      return;
+    }
+    if (isMultipleProps(handle.props)) {
+      let currentValue = getMultipleValue();
+      let nextValue2 = currentValue.includes(itemValue) ? currentValue.filter((value) => value !== itemValue) : [...currentValue, itemValue];
+      if (handle.props.value === void 0) {
+        uncontrolledMultipleValue = nextValue2;
+        void handle.update();
+      }
+      handle.props.onValueChange?.(nextValue2);
+      dispatchChange(itemValue, nextValue2);
+      return;
+    }
+    let isCurrentItemOpen = getSingleValue() === itemValue;
+    if (isCurrentItemOpen && !(handle.props.collapsible ?? true)) {
+      return;
+    }
+    let nextValue = isCurrentItemOpen ? null : itemValue;
+    if (handle.props.value === void 0) {
+      uncontrolledSingleValue = nextValue;
+      void handle.update();
+    }
+    handle.props.onValueChange?.(nextValue);
+    dispatchChange(itemValue, nextValue);
+  }
+  function focusItem(itemValue, direction) {
+    let items = registeredItems.filter((item2) => !item2.disabled && item2.getTriggerNode() !== null);
+    if (items.length === 0) {
+      return;
+    }
+    let currentIndex = items.findIndex((item2) => item2.value === itemValue);
+    let targetIndex = 0;
+    switch (direction) {
+      case "first":
+        targetIndex = 0;
+        break;
+      case "last":
+        targetIndex = items.length - 1;
+        break;
+      case "previous":
+        targetIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+        break;
+      case "next":
+        targetIndex = currentIndex === -1 || currentIndex === items.length - 1 ? 0 : currentIndex + 1;
+        break;
+    }
+    items[targetIndex]?.getTriggerNode()?.focus();
+  }
+  function registerItem(item2) {
+    registeredItems.push(item2);
+  }
+  function getTriggerId(value) {
+    return registeredItems.find((item2) => item2.value === value)?.getTriggerNode()?.id;
+  }
+  function getPanelId(value) {
+    return `${handle.id}-${value}-panel`;
+  }
+  handle.context.set({
+    get collapsible() {
+      return getType() === "multiple" ? true : handle.props.collapsible ?? true;
+    },
+    get disabled() {
+      return handle.props.disabled ?? false;
+    },
+    focusItem,
+    getPanelId,
+    getTriggerId,
+    get headingLevel() {
+      return handle.props.headingLevel ?? 3;
+    },
+    isOpen,
+    registerItem,
+    registerRoot(node) {
+      rootNode = node;
+    },
+    toggleItem,
+    get type() {
+      return getType();
+    },
+    unregisterRoot(node) {
+      if (rootNode === node) {
+        rootNode = null;
+      }
+    }
+  });
+  return () => {
+    registeredItems = [];
+    return handle.props.children;
+  };
+}
+function AccordionItemProvider(handle) {
+  let triggerNode = null;
+  let triggerId = `${handle.id}-trigger`;
+  let panelId = `${handle.id}-panel`;
+  let disabled = false;
+  let headingLevel = 3;
+  let lockedOpen = false;
+  let open = false;
+  let value = handle.props.value;
+  handle.context.set({
+    get disabled() {
+      return disabled;
+    },
+    get headingLevel() {
+      return headingLevel;
+    },
+    get lockedOpen() {
+      return lockedOpen;
+    },
+    get open() {
+      return open;
+    },
+    get panelId() {
+      return panelId;
+    },
+    setTriggerNode(node) {
+      triggerNode = node;
+    },
+    get triggerId() {
+      return triggerId;
+    },
+    get value() {
+      return value;
+    }
+  });
+  return () => {
+    let accordion = getAccordionContext(handle);
+    value = handle.props.value;
+    disabled = accordion.disabled || handle.props.disabled === true;
+    headingLevel = accordion.headingLevel;
+    open = accordion.isOpen(handle.props.value);
+    lockedOpen = accordion.type === "single" && !accordion.collapsible && open;
+    accordion.registerItem({
+      disabled,
+      getTriggerNode: () => triggerNode,
+      value: handle.props.value
+    });
+    return handle.props.children;
+  };
+}
+var rootMixin = createMixin((handle) => {
+  let context = getAccordionContext(handle);
+  let rootNode = null;
+  handle.queueTask((node, signal) => {
+    rootNode = node;
+    context.registerRoot(node);
+    signal.addEventListener("abort", () => {
+      if (rootNode === node) {
+        rootNode = null;
+      }
+      context.unregisterRoot(node);
+    });
+  });
+  return () => attrs({
+    "data-disabled": context.disabled ? "" : void 0,
+    "data-type": context.type
+  });
+});
+var itemMixin2 = createMixin((handle) => {
+  let item2 = getAccordionItemContext(handle);
+  return () => attrs({
+    "data-disabled": item2.disabled ? "" : void 0,
+    "data-state": item2.open ? "open" : "closed"
+  });
+});
+var triggerMixin2 = createMixin((handle) => {
+  let accordion = getAccordionContext(handle);
+  let item2 = getAccordionItemContext(handle);
+  return (options, props = options) => {
+    options = props === options ? void 0 : options;
+    let disabled = item2.disabled || options?.disabled === true || props.disabled === true;
+    let toggleItem = () => {
+      if (disabled || item2.lockedOpen) {
+        return;
+      }
+      accordion.toggleItem(item2.value);
+    };
+    return [
+      attrs({
+        "aria-controls": item2.panelId,
+        "aria-disabled": item2.lockedOpen ? true : void 0,
+        "aria-expanded": item2.open,
+        "data-state": item2.open ? "open" : "closed",
+        disabled: disabled ? true : void 0,
+        id: item2.triggerId
+      }),
+      ref((node) => {
+        item2.setTriggerNode(node);
+      }),
+      on("click", toggleItem),
+      on("keydown", (event) => {
+        switch (event.key) {
+          case "ArrowDown":
+            event.preventDefault();
+            accordion.focusItem(item2.value, "next");
+            break;
+          case "ArrowUp":
+            event.preventDefault();
+            accordion.focusItem(item2.value, "previous");
+            break;
+          case "Home":
+            event.preventDefault();
+            accordion.focusItem(item2.value, "first");
+            break;
+          case "End":
+            event.preventDefault();
+            accordion.focusItem(item2.value, "last");
+            break;
+        }
+      })
+    ];
+  };
+});
+var contentMixin = createMixin((handle) => {
+  let item2 = getAccordionItemContext(handle);
+  return () => attrs({
+    "aria-hidden": item2.open ? void 0 : true,
+    "aria-labelledby": item2.triggerId,
+    "data-state": item2.open ? "open" : "closed",
+    id: item2.panelId,
+    inert: item2.open ? void 0 : true
+  });
+});
+var Context3 = AccordionProvider;
+var ItemContext = AccordionItemProvider;
+var content = contentMixin;
+var item = itemMixin2;
+var trigger2 = triggerMixin2;
+
+// app/ui/unit-accordion.tsx
+var rootStyle = css({
+  "& button": {
+    width: "100%",
+    padding: "0.625rem 0.75rem",
+    border: "1px solid var(--color-border)",
+    borderRadius: "var(--radius-control)",
+    background: "var(--color-bg-card)",
+    font: "inherit",
+    textAlign: "left",
+    cursor: "pointer"
+  }
+});
+var panelStyle = css({
+  display: "grid",
+  gap: "0.25rem",
+  padding: "0.5rem 0.75rem"
+});
+var linkStyle2 = css({
+  color: "var(--color-primary)",
+  textDecoration: "none",
+  "&:hover": { textDecoration: "underline" }
+});
+var UnitAccordion = clientEntry(
+  "/assets/client.js#UnitAccordion",
+  function UnitAccordionEntry(handle) {
+    return () => /* @__PURE__ */ jsx(Context3, { type: "multiple", children: /* @__PURE__ */ jsx("div", { mix: rootStyle, children: handle.props.units.map((unit) => /* @__PURE__ */ jsx(ItemContext, { value: unit.id, children: /* @__PURE__ */ jsx("div", { mix: item(), children: [
+      /* @__PURE__ */ jsx("button", { type: "button", mix: trigger2(), children: [
+        unit.icon,
+        " ",
+        unit.name
+      ] }),
+      /* @__PURE__ */ jsx("div", { mix: content(), children: /* @__PURE__ */ jsx("div", { mix: panelStyle, children: unit.years.map((year) => /* @__PURE__ */ jsx(
+        "a",
+        {
+          mix: linkStyle2,
+          href: routes.unitYear.href({ unit: unit.id, year }),
+          children: [
+            year,
+            "\u5E74\u5EA6"
+          ]
+        },
+        year
+      )) }) })
+    ] }) }, unit.id)) }) });
+  }
+);
+
 // app/lib/dateTime.ts
 var systemClock = {
   nowEpochMilliseconds: () => Date.now()
@@ -10779,7 +11130,7 @@ function createPlayerChallenge(props, questions, scopeKey, requestedIndex, activ
   if (!question) {
     return null;
   }
-  const questionIds = props.mode === "question" ? [question.id] : questions.map((item) => item.id);
+  const questionIds = props.mode === "question" ? [question.id] : questions.map((item2) => item2.id);
   const challengeScopeKey = props.mode === "question" ? questionScopeKey(props.examId, props.mode, question.id) : scopeKey;
   const state = createInitialChallengeState({
     challengeId,
@@ -10796,14 +11147,14 @@ function questionScopeKey(examId, mode, questionId) {
   return `${examId}/${mode === "question" ? `question/${questionId ?? ""}` : "exam"}`;
 }
 function filterChallengeHistory(history, examId, mode, requestedQuestionId) {
-  return history.filter((item) => {
-    if (item.examId !== examId) {
+  return history.filter((item2) => {
+    if (item2.examId !== examId) {
       return false;
     }
     if (mode === "exam") {
-      return item.answers.length > 1;
+      return item2.answers.length > 1;
     }
-    return item.answers.length === 1 && item.answers[0]?.questionId === requestedQuestionId;
+    return item2.answers.length === 1 && item2.answers[0]?.questionId === requestedQuestionId;
   });
 }
 function getNavigationPosition(mode, currentQuestionId, state, questions, getQuestionIndex) {
@@ -11749,9 +12100,9 @@ var $ZodArray = /* @__PURE__ */ $constructor("$ZodArray", (inst, def) => {
     const proms = [];
     const abortEarly = ctx?.abortEarly;
     for (let i = 0; i < input.length; i++) {
-      const item = input[i];
+      const item2 = input[i];
       const result = def.element._zod.run({
-        value: item,
+        value: item2,
         issues: []
       }, ctx);
       if (result instanceof Promise) {
@@ -12652,7 +13003,7 @@ function archiveChallenge(state) {
   const snapshot = createChallengeSnapshot(state);
   const history = [
     snapshot,
-    ...readChallengeHistory().filter((item) => item.challengeId !== state.challengeId)
+    ...readChallengeHistory().filter((item2) => item2.challengeId !== state.challengeId)
   ];
   const activeSaved = writeJson(
     ACTIVE_CHALLENGES_STORAGE_KEY,
@@ -13299,7 +13650,7 @@ function overlineToHtml(input) {
 }
 
 // app/features/challenge/ui/answer-panel.tsx
-var panelStyle = css({
+var panelStyle2 = css({
   marginTop: "1rem",
   padding: "1rem 1.25rem",
   background: "var(--color-bg-card)",
@@ -13356,7 +13707,7 @@ function AnswerPanel(handle) {
         id: "exam-answer",
         "aria-labelledby": "exam-answer-heading",
         "aria-live": "polite",
-        mix: [panelStyle, animateEntrance({ opacity: 0, ...spring("snappy") })],
+        mix: [panelStyle2, animateEntrance({ opacity: 0, ...spring("snappy") })],
         children: /* @__PURE__ */ jsx("div", { mix: bodyStyle, children: [
           /* @__PURE__ */ jsx("h3", { mix: labelStyle, id: "exam-answer-heading", children: "\u89E3\u7B54" }),
           /* @__PURE__ */ jsx("p", { innerHTML: unsafeHTML(overlineToHtml(question.answer)) }),
@@ -13878,7 +14229,7 @@ function TabsProvider(handle) {
     return handle.props.children;
   };
 }
-var rootMixin = createMixin((handle) => {
+var rootMixin2 = createMixin((handle) => {
   let context = getTabsContext(handle);
   handle.queueTask((node, signal) => {
     context.registerRoot(node);
@@ -13974,7 +14325,7 @@ var panelMixin = createMixin((handle) => {
     });
   };
 });
-var Context3 = TabsProvider;
+var Context4 = TabsProvider;
 var list = listMixin2;
 var tab = tabMixin;
 
@@ -14075,7 +14426,7 @@ function PlayerHeader(handle) {
         /* @__PURE__ */ jsx("h2", { children: playerTitle })
       ] }),
       /* @__PURE__ */ jsx("nav", { "aria-label": "\u554F\u984C\u756A\u53F7", mix: progressStyle, children: /* @__PURE__ */ jsx(
-        Context3,
+        Context4,
         {
           activeTab: activeId,
           onActiveTabChange: (nextId) => {
@@ -14115,7 +14466,7 @@ function PlayerHeader(handle) {
 }
 
 // app/features/challenge/ui/player-list.tsx
-var panelStyle2 = css({
+var panelStyle3 = css({
   position: "fixed",
   top: 0,
   right: 0,
@@ -14181,13 +14532,13 @@ function PlayerList(handle) {
       return null;
     }
     const currentQuestionId = state.questionIds[state.currentIndex];
-    const listedQuestions = mode === "question" ? questions : state.questionIds.map((questionId) => questions.find((item) => item.id === questionId)).filter((question) => question !== void 0);
+    const listedQuestions = mode === "question" ? questions : state.questionIds.map((questionId) => questions.find((item2) => item2.id === questionId)).filter((question) => question !== void 0);
     return /* @__PURE__ */ jsx(Context, { children: /* @__PURE__ */ jsx(
       "aside",
       {
         "aria-label": "\u554F\u984C\u4E00\u89A7",
         mix: [
-          panelStyle2,
+          panelStyle3,
           animateEntrance({ opacity: 0, x: 24, ...spring("snappy") }),
           animateExit({ opacity: 0, x: 24, ...spring("snappy") }),
           surface({ open, onHide: onClose })
@@ -16626,7 +16977,7 @@ var listStyle3 = css({
   display: "grid",
   gap: "0.25rem"
 });
-var linkStyle2 = css({
+var linkStyle3 = css({
   color: "var(--color-primary)",
   textDecoration: "none",
   "&:hover": { textDecoration: "underline" }
@@ -16663,13 +17014,13 @@ var ContinueLearning = clientEntry(
       const visible = expanded ? items : items.slice(0, 5);
       return /* @__PURE__ */ jsx("section", { mix: sectionStyle2, "aria-labelledby": "continue-learning-title", children: [
         /* @__PURE__ */ jsx("h2", { id: "continue-learning-title", children: "\u524D\u56DE\u306E\u7D9A\u304D" }),
-        /* @__PURE__ */ jsx("ul", { mix: listStyle3, children: visible.map((item) => /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { mix: linkStyle2, href: item.href, children: [
-          item.unitName,
+        /* @__PURE__ */ jsx("ul", { mix: listStyle3, children: visible.map((item2) => /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx("a", { mix: linkStyle3, href: item2.href, children: [
+          item2.unitName,
           " ",
-          item.year,
+          item2.year,
           "\u5E74\u5EA6 \u2014 ",
-          item.questionId
-        ] }) }, item.questionId)) }),
+          item2.questionId
+        ] }) }, item2.questionId)) }),
         items.length > visible.length || expanded ? /* @__PURE__ */ jsx(
           "button",
           {

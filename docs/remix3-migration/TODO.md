@@ -44,7 +44,7 @@
 - [x] ヘッダーのモバイルメニュー → `menu`（Header を clientEntry 化）
 - [x] 問題ナビゲーション → `tabs`（PlayerHeader）
 - [x] 解答開閉のアニメーション → `animation`
-- [ ] ホームの単元リスト → `accordion`
+- [x] ホームの狭い画面の単元リスト → `accordion`（UnitAccordion clientEntry）
 - [ ] アイコンは `app/ui/icons.tsx` に集約（`@remix-run/ui` に無いため自作を維持）
 
 ## P6: 検証とドキュメント
@@ -81,3 +81,4 @@
 | `popover` | `features/challenge/ui/player-list.tsx` | 同上 |
 | `toggle` | `features/challenge/ui/answer-panel.tsx` | 同上 |
 | `animation` | answer-panel / player-list | 同上 |
+| `accordion` | `app/ui/unit-accordion.tsx` | `clientEntry`（UnitAccordion） |
