@@ -41,3 +41,7 @@ playwright-report/
 .beads-credential-key
 .dev.vars
 .codex
+
+
+# APM dependencies
+apm_modules/
