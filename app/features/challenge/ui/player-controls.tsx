@@ -185,13 +185,25 @@ export function PlayerEdgeNavigation(
 		isFirst: boolean;
 		isLast: boolean;
 		canFinish: boolean;
+		previousHref?: string;
+		nextHref?: string;
 		onPrevious: () => void;
 		onNext: () => void;
 		onFinish: () => void;
 	}>,
 ) {
 	return () => {
-		const { showPrevious, isFirst, isLast, canFinish, onPrevious, onNext, onFinish } = handle.props;
+		const {
+			showPrevious,
+			isFirst,
+			isLast,
+			canFinish,
+			previousHref,
+			nextHref,
+			onPrevious,
+			onNext,
+			onFinish,
+		} = handle.props;
 
 		if (!(showPrevious || isLast)) {
 			return null;
@@ -200,27 +212,62 @@ export function PlayerEdgeNavigation(
 		return (
 			<nav aria-label="問題移動" mix={edgeNavStyle}>
 				{showPrevious ? (
-					<button
-						type="button"
-						mix={[actionStyle, on("click", onPrevious)]}
-						aria-label="前の問題"
-						title="前の問題"
-						disabled={isFirst}
-					>
-						<ChevronLeftIcon />
-					</button>
+					isFirst ? (
+						<span />
+					) : (
+						<a
+							href={previousHref}
+							mix={[
+								actionStyle,
+								// JS 無効時は href（問題ページ）へフルナビゲートし、JS 有効時は島の状態だけ進める。
+								on<HTMLAnchorElement>("click", (event) => {
+									const mouse = event as MouseEvent;
+									if (mouse.defaultPrevented || mouse.metaKey || mouse.ctrlKey) {
+										return;
+									}
+									mouse.preventDefault();
+									onPrevious();
+								}),
+							]}
+							aria-label="前の問題"
+							title="前の問題"
+						>
+							<ChevronLeftIcon />
+						</a>
+					)
 				) : (
 					<span />
 				)}
-				<button
-					type="button"
-					mix={[actionStyle, on("click", isLast ? onFinish : onNext)]}
-					aria-label={isLast ? "結果を見る" : "次の問題"}
-					title={isLast ? "結果を見る" : "次の問題"}
-					disabled={isLast && !canFinish}
-				>
-					{isLast ? <CheckIcon /> : <ChevronRightIcon />}
-				</button>
+				{isLast ? (
+					<button
+						type="button"
+						mix={[actionStyle, on("click", onFinish)]}
+						aria-label="結果を見る"
+						title="結果を見る"
+						disabled={!canFinish}
+					>
+						<CheckIcon />
+					</button>
+				) : (
+					<a
+						href={nextHref}
+						mix={[
+							actionStyle,
+							on<HTMLAnchorElement>("click", (event) => {
+								const mouse = event as MouseEvent;
+								if (mouse.defaultPrevented || mouse.metaKey || mouse.ctrlKey) {
+									return;
+								}
+								mouse.preventDefault();
+								onNext();
+							}),
+						]}
+						aria-label="次の問題"
+						title="次の問題"
+					>
+						<ChevronRightIcon />
+					</a>
+				)}
 			</nav>
 		);
 	};

@@ -436,10 +436,7 @@ export const ExamPlayer = clientEntry(
 							isFirst={currentQuestionIndex === 0}
 							isLast={currentQuestionIndex === navigationLength - 1}
 							canFinish={isChallengeComplete(state)}
-							previousHref={questionPageHref(
-								props,
-								state.questionIds[currentQuestionIndex - 1],
-							)}
+							previousHref={questionPageHref(props, state.questionIds[currentQuestionIndex - 1])}
 							nextHref={questionPageHref(props, state.questionIds[currentQuestionIndex + 1])}
 							onPrevious={() => move(-1)}
 							onNext={() => move(1)}

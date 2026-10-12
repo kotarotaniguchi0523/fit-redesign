@@ -14073,31 +14073,70 @@ function ChallengeTimerDisplay(handle) {
 }
 function PlayerEdgeNavigation(handle) {
   return () => {
-    const { showPrevious, isFirst, isLast, canFinish, onPrevious, onNext, onFinish } = handle.props;
+    const {
+      showPrevious,
+      isFirst,
+      isLast,
+      canFinish,
+      previousHref,
+      nextHref,
+      onPrevious,
+      onNext,
+      onFinish
+    } = handle.props;
     if (!(showPrevious || isLast)) {
       return null;
     }
     return /* @__PURE__ */ jsx("nav", { "aria-label": "\u554F\u984C\u79FB\u52D5", mix: edgeNavStyle, children: [
-      showPrevious ? /* @__PURE__ */ jsx(
-        "button",
+      showPrevious ? isFirst ? /* @__PURE__ */ jsx("span", {}) : /* @__PURE__ */ jsx(
+        "a",
         {
-          type: "button",
-          mix: [actionStyle, on("click", onPrevious)],
+          href: previousHref,
+          mix: [
+            actionStyle,
+            // JS 無効時は href（問題ページ）へフルナビゲートし、JS 有効時は島の状態だけ進める。
+            on("click", (event) => {
+              const mouse = event;
+              if (mouse.defaultPrevented || mouse.metaKey || mouse.ctrlKey) {
+                return;
+              }
+              mouse.preventDefault();
+              onPrevious();
+            })
+          ],
           "aria-label": "\u524D\u306E\u554F\u984C",
           title: "\u524D\u306E\u554F\u984C",
-          disabled: isFirst,
           children: /* @__PURE__ */ jsx(ChevronLeftIcon, {})
         }
       ) : /* @__PURE__ */ jsx("span", {}),
-      /* @__PURE__ */ jsx(
+      isLast ? /* @__PURE__ */ jsx(
         "button",
         {
           type: "button",
-          mix: [actionStyle, on("click", isLast ? onFinish : onNext)],
-          "aria-label": isLast ? "\u7D50\u679C\u3092\u898B\u308B" : "\u6B21\u306E\u554F\u984C",
-          title: isLast ? "\u7D50\u679C\u3092\u898B\u308B" : "\u6B21\u306E\u554F\u984C",
-          disabled: isLast && !canFinish,
-          children: isLast ? /* @__PURE__ */ jsx(CheckIcon, {}) : /* @__PURE__ */ jsx(ChevronRightIcon, {})
+          mix: [actionStyle, on("click", onFinish)],
+          "aria-label": "\u7D50\u679C\u3092\u898B\u308B",
+          title: "\u7D50\u679C\u3092\u898B\u308B",
+          disabled: !canFinish,
+          children: /* @__PURE__ */ jsx(CheckIcon, {})
+        }
+      ) : /* @__PURE__ */ jsx(
+        "a",
+        {
+          href: nextHref,
+          mix: [
+            actionStyle,
+            on("click", (event) => {
+              const mouse = event;
+              if (mouse.defaultPrevented || mouse.metaKey || mouse.ctrlKey) {
+                return;
+              }
+              mouse.preventDefault();
+              onNext();
+            })
+          ],
+          "aria-label": "\u6B21\u306E\u554F\u984C",
+          title: "\u6B21\u306E\u554F\u984C",
+          children: /* @__PURE__ */ jsx(ChevronRightIcon, {})
         }
       )
     ] });
@@ -15740,6 +15779,17 @@ var resumeActionsStyle = css({
 });
 var workspaceStyle = css({ padding: "1.25rem" });
 var questionStyle = css({ display: "grid", gap: "0.25rem" });
+function questionPageHref(props, questionId) {
+  if (!questionId) {
+    return void 0;
+  }
+  return routes.question.href({
+    unit: props.unitId,
+    year: props.year,
+    exam: String(props.examNumber),
+    question: questionId
+  });
+}
 var ExamPlayer = clientEntry(
   "/assets/client.js#ExamPlayer",
   function ExamPlayerEntry(handle) {
@@ -16061,6 +16111,8 @@ var ExamPlayer = clientEntry(
                   isFirst: currentQuestionIndex === 0,
                   isLast: currentQuestionIndex === navigationLength - 1,
                   canFinish: isChallengeComplete(state),
+                  previousHref: questionPageHref(props, state.questionIds[currentQuestionIndex - 1]),
+                  nextHref: questionPageHref(props, state.questionIds[currentQuestionIndex + 1]),
                   onPrevious: () => move(-1),
                   onNext: () => move(1),
                   onFinish: finish

@@ -27,3 +27,16 @@ preferSymlinkedExecutables: false
   残っていると swap に失敗する。クリーンな状態でインストールすること。
 - `scripts/fix-bin-shims.mjs` は、上記設定を使えない場合のフォールバック（`.bin` を
   通常ファイルとして張り直す）。設定が効いていれば不要。
+
+## node_modules が壊れた場合の復旧
+
+構造変更（hoisted 切り替え）の途中で失敗すると、一部パッケージが欠落することがある
+（このワークスペースで実際に発生）。その場合は該当パッケージをレジストリから取り直す:
+
+```sh
+npm pack @remix-run/<name>@1.0.0
+tar -xzf remix-run-<name>-1.0.0.tgz
+cp -r package/. node_modules/@remix-run/<name>/
+```
+
+参考: `remix` の `dependencies` にある `@remix-run/*` を照合すると欠落を検出できる。
