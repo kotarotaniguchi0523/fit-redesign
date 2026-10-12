@@ -94,10 +94,18 @@ const menuSurfaceStyle = css({
 type NavId = "quiz" | "records" | "slides" | "guide";
 
 function activeFor(currentPath: string): NavId | null {
-	if (currentPath.startsWith("/records")) return "records";
-	if (currentPath.startsWith("/slide-only")) return "slides";
-	if (currentPath.startsWith("/guide")) return "guide";
-	if (currentPath === "/" || QUIZ_PATH_PATTERN.test(currentPath)) return "quiz";
+	if (currentPath.startsWith("/records")) {
+		return "records";
+	}
+	if (currentPath.startsWith("/slide-only")) {
+		return "slides";
+	}
+	if (currentPath.startsWith("/guide")) {
+		return "guide";
+	}
+	if (currentPath === "/" || QUIZ_PATH_PATTERN.test(currentPath)) {
+		return "quiz";
+	}
 	return null;
 }
 

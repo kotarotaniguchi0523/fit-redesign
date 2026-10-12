@@ -49,10 +49,10 @@
 
 ## P6: 検証とドキュメント
 
-- [ ] `pnpm typecheck` / `pnpm test` / `pnpm check` / SSR スモークを各段階で実行
+- [x] `pnpm typecheck` / `pnpm test` / `pnpm check` / SSR スモークを各段階で実行
 - [ ] SSR スモークに Frame 領域の検証を追加
 - [ ] E2E に Frame の JS 有効/無効の分岐を追加
-- [ ] README / AGENTS.md / lat.md を新構造へ更新
+- [x] README / AGENTS.md / lat.md を新構造へ更新
 - [ ] `origin/remix3-migration` の履歴を整理（必要なら）
 
 ## 移行マップ（現状 → 目標）

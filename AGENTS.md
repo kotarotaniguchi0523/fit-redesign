@@ -10,15 +10,16 @@
 
 - `app/routes.ts` / `app/router.ts` — URL とメソッドの契約、ルーターとミドルウェア
 - `app/worker.ts` — Cloudflare Workers エントリ（`router.fetch` へ委譲）
-- `app/actions/` — ルートコントローラーとページ（`document.tsx` が共通シェル）
-  - `controller.tsx`（ページ/health/llms）、`markdown/`、`progress/`（API）
-- `app/features/` — 機能単位のドメインロジックと島（`clientEntry`）
-  - `challenge/` … 小テスト（純ロジック + `player/exam-player.tsx`）
-  - `progress/` … 学習記録と同期
-  - `answer/` … 続きの導線
+- `app/actions/` — ルートコントローラー（薄い: 検証 + データ取得 + `context.render`）
+  - `controller.tsx`（ページ/health/llms）、`markdown/`、`progress/`（API）、`public/entry.ts`（ブラウザーエントリ）
+- `app/pages/` — ページ組成（`document.tsx` が共通シェル、`question-region.tsx` は Frame ソース）
+- `app/features/<domain>/` — ドメイン単位で閉じる
+  - `model.ts`（純関数）/ `storage.ts`（localStorage）/ `api.ts`（サーバー同期）/ `wire.ts`（Zod）/ `ui/`（表示）
+  - `challenge/player/` はプレイヤー固有ロジック（session / timer / view / navigation / model / id）
 - `app/db/` — `d1.ts`（D1 ドライバ）、`tables.ts`、`progress.ts`（Repository）、`registry.ts`
 - `app/lib/` — 汎用ヘルパー・図表計算
-- `app/ui/` — 共有 Remix コンポーネント（Header, PageHeading, figures, copy-button）
+- `app/ui/` — 複数ドメインで共有する表示のみ（`header.tsx`、`page-heading.tsx`、`icons.tsx`、`copy-button.tsx`、`unit-accordion.tsx`、`figures/`）
+- `app/styles/global.css` — グローバルはトークンと最小の base のみ（それ以外は `css()` を併置）
 - `app/data/` — 単元・スライド・試験データ（`exams-json/` は生成インデックス経由で読む）
 - `migrations/` — D1 マイグレーション（`0001_initial.sql` が現行スキーマ）
 - `scripts/` — CSS/クライアント/guide の生成と、試験JSON索引の生成
@@ -31,10 +32,14 @@
   子コンポーネントは props だけの無状態 `Handle` コンポーネントにする。
 - イベントは `mix={on('click', ...)}`、生 HTML は `innerHTML={unsafeHTML(...)}` を使う。
 - 状態をサーバーへ送らない。DOM へ触る処理は島の中に閉じ込める。
-- ドメイン規則は副作用のない純関数にする（`challenge.ts` / `model.ts` / `timerRuntime.ts`）。
+- ドメイン規則は副作用のない純関数にする（`features/*/model.ts`）。
 - 信頼できない入力は Zod スキーマで検証する。同期キーはログや応答へ出さない。
 - スキーマ変更時は `migrations/`・`app/db/tables.ts`・テスト用 D1 を揃える。
-- Vite は使わない。クライアントは esbuild、CSS は `scripts/build-css.mjs` で生成する。
+- Vite は使わない。クライアントは esbuild、グローバル CSS は `app/styles/global.css` をコピーする。
+- `@remix-run/ui` のプリミティブは `mix={[ownStyle, primitive.xxx()]}` で使い、見た目は `css()` で当てる。
+  プリミティブは **hydrate されるコンポーネント内**でのみ動作する（`clientEntry` 境界に注意）。
+- ルート所有の領域（問題本体など）は `<Frame>` で扱い、frame 応答では `Document` を出さない。
+- 詳細な方針は `docs/remix3-migration/REARCHITECTURE.md`、作業計画は `docs/remix3-migration/TODO.md`。
 
 ## よく使うコマンド
 

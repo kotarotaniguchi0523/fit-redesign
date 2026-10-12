@@ -10294,10 +10294,18 @@ var menuSurfaceStyle = css({
   }
 });
 function activeFor(currentPath) {
-  if (currentPath.startsWith("/records")) return "records";
-  if (currentPath.startsWith("/slide-only")) return "slides";
-  if (currentPath.startsWith("/guide")) return "guide";
-  if (currentPath === "/" || QUIZ_PATH_PATTERN.test(currentPath)) return "quiz";
+  if (currentPath.startsWith("/records")) {
+    return "records";
+  }
+  if (currentPath.startsWith("/slide-only")) {
+    return "slides";
+  }
+  if (currentPath.startsWith("/guide")) {
+    return "guide";
+  }
+  if (currentPath === "/" || QUIZ_PATH_PATTERN.test(currentPath)) {
+    return "quiz";
+  }
   return null;
 }
 var Header = clientEntry(

@@ -4,7 +4,6 @@ import { unitBasedTabs } from "../data/units.ts";
 import { ContinueLearning } from "../features/answer/ui/continue-learning.tsx";
 import { routes } from "../routes.ts";
 import { YEARS } from "../types/index.ts";
-import { UnitAccordion } from "../ui/unit-accordion.tsx";
 import { Document } from "./document.tsx";
 
 const mainStyle = css({
@@ -26,7 +25,7 @@ const ledeStyle = css({
 	margin: "0 0 1.5rem",
 });
 
-const accordionWrapStyle = css({
+const _accordionWrapStyle = css({
 	display: "none",
 	marginTop: "1rem",
 	"@media (max-width: 40rem)": { display: "block" },
@@ -77,7 +76,7 @@ export function HomePage(
 ) {
 	return () => {
 		const { examCounts, locationGroups, currentPath = "/" } = handle.props;
-		const accordionUnits = unitBasedTabs.map((unit) => ({
+		const _accordionUnits = unitBasedTabs.map((unit) => ({
 			id: unit.id,
 			icon: unit.icon,
 			name: unit.name,
