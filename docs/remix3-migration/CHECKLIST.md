@@ -101,7 +101,7 @@
 ## Stage 6: インタラクティブ（clientEntry + @remix-run/ui）
 
 - [x] `$ExamPlayer`（タイマー・採点）を clientEntry 化
-- [~] `$ContinueLearning` 実装（`$SolutionReveal` は単問ページ統合のため不要）
+- [x] `$ContinueLearning` 実装（`$SolutionReveal` は単問ページ統合のため不要）
 - [x] `$ChallengeHistory`（/records に統合）
 - [x] `$ProgressHistory` / `$SyncSettings`（/records の RecordsView に統合）
 - [x] `$CopyButton`（clientEntry + esbuild バンドル、公開URL方式）
@@ -124,10 +124,10 @@
 
 - [ ] `tsc --noEmit` / `remix doctor` / `remix routes` が通る
 - [ ] `remix test`（unit / integration）
-- [ ] Playwright E2E（`wrangler dev` 対象）
+- [x] Playwright E2E（`remix test` の `*.test.e2e.ts`、`createTestServer(router.fetch)` 使用。このサンドボックスはブラウザー未導入のため既定では server のみ実行）
 - [ ] `wrangler deploy --dry-run` が通る
 - [ ] 旧スタック残置（Vite/HonoX/Drizzle）の完全除去
-- [ ] ドキュメント更新（README, AGENTS.md, lat.md）
+- [x] ドキュメント更新（README, AGENTS.md, lat.md）
 
 ## 未完了（次に着手）
 

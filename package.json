@@ -23,7 +23,9 @@
 		"db:query:local": "cf d1 query --local",
 		"e2e": "pnpm build && playwright test",
 		"build:css": "node scripts/build-css.mjs",
-		"build:client": "node scripts/build-client.mjs"
+		"build:client": "node scripts/build-client.mjs",
+		"test:e2e": "remix test \"**/*.test.e2e.ts\"",
+		"test:browser": "remix test \"**/*.test.browser.ts\""
 	},
 	"dependencies": {
 		"@remix-run/ui": "^0.12.1",
