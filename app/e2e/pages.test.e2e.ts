@@ -13,15 +13,9 @@ import { createAppServer } from "./server.ts";
 
 /** 調査用: ブラウザーのコンソール・エラー・失敗リクエストを出力する。 */
 function trace(page: Page): void {
-	page.on("console", (message) => {
-		console.log("[browser]", message.type(), message.text().slice(0, 200));
-	});
-	page.on("pageerror", (error) => {
-		console.log("[browser error]", String(error.message).slice(0, 300));
-	});
-	page.on("requestfailed", (request) => {
-		console.log("[request failed]", request.url(), request.failure()?.errorText);
-	});
+	page.on("console", (_message) => {});
+	page.on("pageerror", (_error) => {});
+	page.on("requestfailed", (_request) => {});
 }
 
 describe("サイト導線", () => {
