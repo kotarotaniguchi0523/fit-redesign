@@ -1,3 +1,4 @@
+import type { Page } from "playwright/test";
 import * as assert from "remix/assert";
 import { describe, it } from "remix/test";
 
@@ -11,18 +12,14 @@ import { createAppServer } from "./server.ts";
  */
 
 /** 調査用: ブラウザーのコンソール・エラー・失敗リクエストを出力する。 */
-function trace(page: {
-	on(event: string, handler: (...args: never[]) => void): void;
-}): void {
-	page.on("console", (...args: never[]) => {
-		const message = args[0] as unknown as { type(): string; text(): string };
+function trace(page: Page): void {
+	page.on("console", (message) => {
 		console.log("[browser]", message.type(), message.text().slice(0, 200));
 	});
-	page.on("pageerror", (...args: never[]) => {
-		console.log("[browser error]", String((args[0] as Error).message).slice(0, 300));
+	page.on("pageerror", (error) => {
+		console.log("[browser error]", String(error.message).slice(0, 300));
 	});
-	page.on("requestfailed", (...args: never[]) => {
-		const request = args[0] as unknown as { url(): string; failure(): { errorText: string } | null };
+	page.on("requestfailed", (request) => {
 		console.log("[request failed]", request.url(), request.failure()?.errorText);
 	});
 }
