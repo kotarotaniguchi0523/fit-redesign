@@ -8,6 +8,7 @@ import { unitBasedTabs } from '../data/units.ts'
 import type { ExamNumber, Year } from '../types/index.ts'
 import { routes } from '../routes.ts'
 import { GuidePage } from './guide-page.tsx'
+import { RecordsPage } from './records-page.tsx'
 import { HomePage } from './home-page.tsx'
 import { NotFoundPage } from './not-found-page.tsx'
 import { PlaceholderPage } from './placeholder-page.tsx'
@@ -38,9 +39,9 @@ export default createController(routes, {
 		},
 
 		records(context) {
-			return context.render(
-				<PlaceholderPage title="学習記録" currentPath={context.url.pathname} />,
-			)
+			return context.render(<RecordsPage currentPath={context.url.pathname} />, {
+				headers: { 'Cache-Control': 'no-store' },
+			})
 		},
 
 		slideOnly(context) {

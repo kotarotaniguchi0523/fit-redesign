@@ -1,6 +1,7 @@
 // clientEntry を解決するため、島モジュールをバンドルへ含める（副作用 import）。
 import '../../ui/copy-button.tsx'
 import '../../features/challenge/player/exam-player.tsx'
+import '../../features/progress/ui/records-view.tsx'
 
 import { run } from 'remix/component'
 

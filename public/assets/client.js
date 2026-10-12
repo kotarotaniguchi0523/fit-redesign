@@ -7571,10 +7571,10 @@ function defineLazyInternal(inst, key, compute) {
           Object.defineProperty(this, key, { configurable: true, writable: true, value });
         broke = broke || outer;
         return value;
-      } catch (err) {
+      } catch (err2) {
         delete this[key];
         broke = broke || outer;
-        throw err;
+        throw err2;
       }
     },
     set(value) {
@@ -7801,13 +7801,13 @@ var _safeParse = (_Err) => (schema, value, _ctx) => {
   return result.issues.length ? failure(_Err, result.issues, ctx) : { success: true, data: result.value };
 };
 var safeParse = /* @__PURE__ */ _safeParse($ZodRealError);
-function failure(Err, issues, ctx) {
+function failure(Err2, issues, ctx) {
   let error;
   return {
     success: false,
     get error() {
       if (!error) {
-        error = new Err(issues.map((iss) => finalizeIssue(iss, ctx, config())));
+        error = new Err2(issues.map((iss) => finalizeIssue(iss, ctx, config())));
         issues = void 0;
         ctx = void 0;
       }
@@ -9026,6 +9026,16 @@ var SyncHeaderSchema = object({
 });
 var ProgressSnapshotSchema = record(string2(), unknown());
 
+// app/lib/questionOrder.ts
+function sortByQuestionId(values) {
+  return values.toSorted((left, right) => left.questionId.localeCompare(right.questionId));
+}
+
+// app/lib/sort.ts
+function sortNewestFirst(values) {
+  return values.toSorted((left, right) => right.updatedAt - left.updatedAt);
+}
+
 // app/features/challenge/challenge.ts
 var MAX_REASONABLE_TIMER_DELTA_MS = 24 * 60 * 60 * 1e3;
 function calculateElapsedDelta(runtime, now) {
@@ -9269,6 +9279,39 @@ function aggregateChallengeResults(completed) {
     totalElapsedMs: answers.reduce((total, answer) => total + answer.elapsedMs, 0),
     byQuestion
   };
+}
+function canonicalChallenge(challenge) {
+  return {
+    ...challenge,
+    answers: sortByQuestionId(challenge.answers)
+  };
+}
+function mergeCompletedChallenges(local, remote) {
+  const grouped = Map.groupBy(
+    [...local, ...remote].map(canonicalChallenge),
+    (challenge) => challenge.challengeId
+  );
+  const merged = Array.from(
+    grouped.values(),
+    ([first, ...duplicates]) => duplicates.reduce(
+      (current, candidate) => JSON.stringify(current) === JSON.stringify(candidate) ? candidate : current,
+      first
+    )
+  );
+  return sortNewestFirst(merged);
+}
+function isCompletedChallengePayload(value) {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const challenge = value;
+  return typeof challenge.challengeId === "string" && typeof challenge.examId === "string" && typeof challenge.createdAt === "number" && typeof challenge.updatedAt === "number" && challenge.createdAt <= challenge.updatedAt && Array.isArray(challenge.answers) && challenge.answers.every((answer) => {
+    if (!answer || typeof answer !== "object") {
+      return false;
+    }
+    const candidate = answer;
+    return typeof candidate.questionId === "string" && typeof candidate.elapsedMs === "number" && candidate.elapsedMs >= 0 && (candidate.judgment === "correct" || candidate.judgment === "incorrect") && typeof candidate.createdAt === "number" && typeof candidate.updatedAt === "number" && candidate.createdAt <= candidate.updatedAt && candidate.updatedAt === challenge.updatedAt;
+  });
 }
 
 // app/features/challenge/challengeStorage.ts
@@ -12499,6 +12542,840 @@ function ExamPlayerPreview(handle) {
         ]
       }
     );
+  };
+}
+
+// node_modules/neverthrow/dist/index.es.js
+var defaultErrorConfig = {
+  withStackTrace: false
+};
+var createNeverThrowError = (message, result, config2 = defaultErrorConfig) => {
+  const data = result.isOk() ? { type: "Ok", value: result.value } : { type: "Err", value: result.error };
+  const maybeStack = config2.withStackTrace ? new Error().stack : void 0;
+  return {
+    data,
+    message,
+    stack: maybeStack
+  };
+};
+function __awaiter(thisArg, _arguments, P, generator) {
+  function adopt(value) {
+    return value instanceof P ? value : new P(function(resolve) {
+      resolve(value);
+    });
+  }
+  return new (P || (P = Promise))(function(resolve, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function step(result) {
+      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+    }
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+}
+function __values(o) {
+  var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+  if (m) return m.call(o);
+  if (o && typeof o.length === "number") return {
+    next: function() {
+      if (o && i >= o.length) o = void 0;
+      return { value: o && o[i++], done: !o };
+    }
+  };
+  throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+}
+function __await(v) {
+  return this instanceof __await ? (this.v = v, this) : new __await(v);
+}
+function __asyncGenerator(thisArg, _arguments, generator) {
+  if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+  var g = generator.apply(thisArg, _arguments || []), i, q = [];
+  return i = Object.create((typeof AsyncIterator === "function" ? AsyncIterator : Object).prototype), verb("next"), verb("throw"), verb("return", awaitReturn), i[Symbol.asyncIterator] = function() {
+    return this;
+  }, i;
+  function awaitReturn(f) {
+    return function(v) {
+      return Promise.resolve(v).then(f, reject);
+    };
+  }
+  function verb(n, f) {
+    if (g[n]) {
+      i[n] = function(v) {
+        return new Promise(function(a, b) {
+          q.push([n, v, a, b]) > 1 || resume(n, v);
+        });
+      };
+      if (f) i[n] = f(i[n]);
+    }
+  }
+  function resume(n, v) {
+    try {
+      step(g[n](v));
+    } catch (e) {
+      settle(q[0][3], e);
+    }
+  }
+  function step(r) {
+    r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r);
+  }
+  function fulfill(value) {
+    resume("next", value);
+  }
+  function reject(value) {
+    resume("throw", value);
+  }
+  function settle(f, v) {
+    if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]);
+  }
+}
+function __asyncDelegator(o) {
+  var i, p;
+  return i = {}, verb("next"), verb("throw", function(e) {
+    throw e;
+  }), verb("return"), i[Symbol.iterator] = function() {
+    return this;
+  }, i;
+  function verb(n, f) {
+    i[n] = o[n] ? function(v) {
+      return (p = !p) ? { value: __await(o[n](v)), done: false } : f ? f(v) : v;
+    } : f;
+  }
+}
+function __asyncValues(o) {
+  if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+  var m = o[Symbol.asyncIterator], i;
+  return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function() {
+    return this;
+  }, i);
+  function verb(n) {
+    i[n] = o[n] && function(v) {
+      return new Promise(function(resolve, reject) {
+        v = o[n](v), settle(resolve, reject, v.done, v.value);
+      });
+    };
+  }
+  function settle(resolve, reject, d, v) {
+    Promise.resolve(v).then(function(v2) {
+      resolve({ value: v2, done: d });
+    }, reject);
+  }
+}
+var ResultAsync = class _ResultAsync {
+  constructor(res) {
+    this._promise = res;
+  }
+  static fromSafePromise(promise) {
+    const newPromise = promise.then((value) => new Ok(value));
+    return new _ResultAsync(newPromise);
+  }
+  static fromPromise(promise, errorFn) {
+    const newPromise = promise.then((value) => new Ok(value)).catch((e) => new Err(errorFn(e)));
+    return new _ResultAsync(newPromise);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static fromThrowable(fn, errorFn) {
+    return (...args) => {
+      return new _ResultAsync((() => __awaiter(this, void 0, void 0, function* () {
+        try {
+          return new Ok(yield fn(...args));
+        } catch (error) {
+          return new Err(errorFn ? errorFn(error) : error);
+        }
+      }))());
+    };
+  }
+  static combine(asyncResultList) {
+    return combineResultAsyncList(asyncResultList);
+  }
+  static combineWithAllErrors(asyncResultList) {
+    return combineResultAsyncListWithAllErrors(asyncResultList);
+  }
+  map(f) {
+    return new _ResultAsync(this._promise.then((res) => __awaiter(this, void 0, void 0, function* () {
+      if (res.isErr()) {
+        return new Err(res.error);
+      }
+      return new Ok(yield f(res.value));
+    })));
+  }
+  andThrough(f) {
+    return new _ResultAsync(this._promise.then((res) => __awaiter(this, void 0, void 0, function* () {
+      if (res.isErr()) {
+        return new Err(res.error);
+      }
+      const newRes = yield f(res.value);
+      if (newRes.isErr()) {
+        return new Err(newRes.error);
+      }
+      return new Ok(res.value);
+    })));
+  }
+  andTee(f) {
+    return new _ResultAsync(this._promise.then((res) => __awaiter(this, void 0, void 0, function* () {
+      if (res.isErr()) {
+        return new Err(res.error);
+      }
+      try {
+        yield f(res.value);
+      } catch (e) {
+      }
+      return new Ok(res.value);
+    })));
+  }
+  orTee(f) {
+    return new _ResultAsync(this._promise.then((res) => __awaiter(this, void 0, void 0, function* () {
+      if (res.isOk()) {
+        return new Ok(res.value);
+      }
+      try {
+        yield f(res.error);
+      } catch (e) {
+      }
+      return new Err(res.error);
+    })));
+  }
+  mapErr(f) {
+    return new _ResultAsync(this._promise.then((res) => __awaiter(this, void 0, void 0, function* () {
+      if (res.isOk()) {
+        return new Ok(res.value);
+      }
+      return new Err(yield f(res.error));
+    })));
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+  andThen(f) {
+    return new _ResultAsync(this._promise.then((res) => {
+      if (res.isErr()) {
+        return new Err(res.error);
+      }
+      const newValue = f(res.value);
+      return newValue instanceof _ResultAsync ? newValue._promise : newValue;
+    }));
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+  orElse(f) {
+    return new _ResultAsync(this._promise.then((res) => __awaiter(this, void 0, void 0, function* () {
+      if (res.isErr()) {
+        return f(res.error);
+      }
+      return new Ok(res.value);
+    })));
+  }
+  match(ok2, _err) {
+    return this._promise.then((res) => res.match(ok2, _err));
+  }
+  unwrapOr(t) {
+    return this._promise.then((res) => res.unwrapOr(t));
+  }
+  /**
+   * @deprecated will be removed in 9.0.0.
+   *
+   * You can use `safeTry` without this method.
+   * @example
+   * ```typescript
+   * safeTry(async function* () {
+   *   const okValue = yield* yourResult
+   * })
+   * ```
+   * Emulates Rust's `?` operator in `safeTry`'s body. See also `safeTry`.
+   */
+  safeUnwrap() {
+    return __asyncGenerator(this, arguments, function* safeUnwrap_1() {
+      return yield __await(yield __await(yield* __asyncDelegator(__asyncValues(yield __await(this._promise.then((res) => res.safeUnwrap()))))));
+    });
+  }
+  // Makes ResultAsync implement PromiseLike<Result>
+  then(successCallback, failureCallback) {
+    return this._promise.then(successCallback, failureCallback);
+  }
+  [Symbol.asyncIterator]() {
+    return __asyncGenerator(this, arguments, function* _a2() {
+      const result = yield __await(this._promise);
+      if (result.isErr()) {
+        yield yield __await(errAsync(result.error));
+      }
+      return yield __await(result.value);
+    });
+  }
+};
+function okAsync(value) {
+  return new ResultAsync(Promise.resolve(new Ok(value)));
+}
+function errAsync(err2) {
+  return new ResultAsync(Promise.resolve(new Err(err2)));
+}
+var fromPromise = ResultAsync.fromPromise;
+var fromSafePromise = ResultAsync.fromSafePromise;
+var fromAsyncThrowable = ResultAsync.fromThrowable;
+var combineResultList = (resultList) => {
+  let acc = ok([]);
+  for (const result of resultList) {
+    if (result.isErr()) {
+      acc = err(result.error);
+      break;
+    } else {
+      acc.map((list) => list.push(result.value));
+    }
+  }
+  return acc;
+};
+var combineResultAsyncList = (asyncResultList) => ResultAsync.fromSafePromise(Promise.all(asyncResultList)).andThen(combineResultList);
+var combineResultListWithAllErrors = (resultList) => {
+  let acc = ok([]);
+  for (const result of resultList) {
+    if (result.isErr() && acc.isErr()) {
+      acc.error.push(result.error);
+    } else if (result.isErr() && acc.isOk()) {
+      acc = err([result.error]);
+    } else if (result.isOk() && acc.isOk()) {
+      acc.value.push(result.value);
+    }
+  }
+  return acc;
+};
+var combineResultAsyncListWithAllErrors = (asyncResultList) => ResultAsync.fromSafePromise(Promise.all(asyncResultList)).andThen(combineResultListWithAllErrors);
+var Result;
+(function(Result2) {
+  function fromThrowable2(fn, errorFn) {
+    return (...args) => {
+      try {
+        const result = fn(...args);
+        return ok(result);
+      } catch (e) {
+        return err(errorFn ? errorFn(e) : e);
+      }
+    };
+  }
+  Result2.fromThrowable = fromThrowable2;
+  function combine(resultList) {
+    return combineResultList(resultList);
+  }
+  Result2.combine = combine;
+  function combineWithAllErrors(resultList) {
+    return combineResultListWithAllErrors(resultList);
+  }
+  Result2.combineWithAllErrors = combineWithAllErrors;
+})(Result || (Result = {}));
+function ok(value) {
+  return new Ok(value);
+}
+function err(err2) {
+  return new Err(err2);
+}
+var Ok = class {
+  constructor(value) {
+    this.value = value;
+  }
+  isOk() {
+    return true;
+  }
+  isErr() {
+    return !this.isOk();
+  }
+  map(f) {
+    return ok(f(this.value));
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  mapErr(_f) {
+    return ok(this.value);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+  andThen(f) {
+    return f(this.value);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+  andThrough(f) {
+    return f(this.value).map((_value) => this.value);
+  }
+  andTee(f) {
+    try {
+      f(this.value);
+    } catch (e) {
+    }
+    return ok(this.value);
+  }
+  orTee(_f) {
+    return ok(this.value);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+  orElse(_f) {
+    return ok(this.value);
+  }
+  asyncAndThen(f) {
+    return f(this.value);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+  asyncAndThrough(f) {
+    return f(this.value).map(() => this.value);
+  }
+  asyncMap(f) {
+    return ResultAsync.fromSafePromise(f(this.value));
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  unwrapOr(_v) {
+    return this.value;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  match(ok2, _err) {
+    return ok2(this.value);
+  }
+  safeUnwrap() {
+    const value = this.value;
+    return (function* () {
+      return value;
+    })();
+  }
+  _unsafeUnwrap(_) {
+    return this.value;
+  }
+  _unsafeUnwrapErr(config2) {
+    throw createNeverThrowError("Called `_unsafeUnwrapErr` on an Ok", this, config2);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-this-alias, require-yield
+  *[Symbol.iterator]() {
+    return this.value;
+  }
+};
+var Err = class {
+  constructor(error) {
+    this.error = error;
+  }
+  isOk() {
+    return false;
+  }
+  isErr() {
+    return !this.isOk();
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  map(_f) {
+    return err(this.error);
+  }
+  mapErr(f) {
+    return err(f(this.error));
+  }
+  andThrough(_f) {
+    return err(this.error);
+  }
+  andTee(_f) {
+    return err(this.error);
+  }
+  orTee(f) {
+    try {
+      f(this.error);
+    } catch (e) {
+    }
+    return err(this.error);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+  andThen(_f) {
+    return err(this.error);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+  orElse(f) {
+    return f(this.error);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  asyncAndThen(_f) {
+    return errAsync(this.error);
+  }
+  asyncAndThrough(_f) {
+    return errAsync(this.error);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  asyncMap(_f) {
+    return errAsync(this.error);
+  }
+  unwrapOr(v) {
+    return v;
+  }
+  match(_ok, err2) {
+    return err2(this.error);
+  }
+  safeUnwrap() {
+    const error = this.error;
+    return (function* () {
+      yield err(error);
+      throw new Error("Do not use this generator out of `safeTry`");
+    })();
+  }
+  _unsafeUnwrap(config2) {
+    throw createNeverThrowError("Called `_unsafeUnwrap` on an Err", this, config2);
+  }
+  _unsafeUnwrapErr(_) {
+    return this.error;
+  }
+  *[Symbol.iterator]() {
+    const self = this;
+    yield self;
+    return self;
+  }
+};
+var fromThrowable = Result.fromThrowable;
+
+// app/features/progress/progressClient.ts
+var JSON_HEADERS = { "content-type": "application/json" };
+var progressClient = {
+  links: {
+    $post: () => fetch("/progress/links", { method: "POST" })
+  },
+  index: {
+    $delete: (init) => fetch("/progress", { method: "DELETE", headers: init.header })
+  },
+  sync: {
+    $post: (init) => fetch("/progress/sync", {
+      method: "POST",
+      headers: { ...JSON_HEADERS, ...init.header },
+      body: JSON.stringify(init.json)
+    })
+  },
+  challenges: {
+    $post: (init) => fetch("/progress/challenges", {
+      method: "POST",
+      headers: { ...JSON_HEADERS, ...init.header },
+      body: JSON.stringify(init.json)
+    })
+  }
+};
+
+// app/features/challenge/challengeApi.ts
+function parseResponse(body) {
+  if (!body || typeof body !== "object" || !("challenges" in body) || !Array.isArray(body.challenges)) {
+    return null;
+  }
+  return body.challenges.every(isCompletedChallengePayload) ? [...body.challenges] : null;
+}
+function syncChallenges(key, local) {
+  return ResultAsync.fromPromise(
+    progressClient.challenges.$post({
+      json: {
+        challenges: local.map((challenge) => ({
+          ...challenge,
+          answers: challenge.answers.map((answer) => ({ ...answer }))
+        }))
+      },
+      header: { "x-sync-key": key }
+    }),
+    (cause) => ({ kind: "RequestFailed", cause })
+  ).andThen((response) => {
+    if (!response.ok) {
+      if (response.status === 404) {
+        return err({ kind: "InvalidSyncLink" });
+      }
+      if (response.status === 409) {
+        return err({ kind: "Conflict" });
+      }
+      return err({ kind: "RequestFailed", cause: response });
+    }
+    return ResultAsync.fromPromise(
+      response.json(),
+      (cause) => ({ kind: "InvalidResponse", cause })
+    ).andThen((body) => {
+      const parsed = parseResponse(body);
+      return parsed ? okAsync([...mergeCompletedChallenges(local, parsed)]) : err({ kind: "InvalidResponse" });
+    });
+  });
+}
+
+// app/lib/progress.ts
+function mergeLatestProgressEntries(entries) {
+  return Array.from(Map.groupBy(entries, (entry) => entry.questionId).values(), (duplicates) => {
+    const first = duplicates[0];
+    if (!first) {
+      throw new Error("A grouped progress list cannot be empty");
+    }
+    const [latest, earliestCreatedAt] = duplicates.reduce(
+      ([currentLatest, currentCreatedAt], entry) => [
+        entry.updatedAt > currentLatest.updatedAt ? entry : currentLatest,
+        entry.createdAt < currentCreatedAt ? entry.createdAt : currentCreatedAt
+      ],
+      [first, first.createdAt]
+    );
+    return latest.createdAt === earliestCreatedAt ? latest : { ...latest, createdAt: earliestCreatedAt };
+  });
+}
+
+// app/features/progress/progress.ts
+function mergeProgressEntries(local, remote) {
+  return sortNewestFirst(mergeLatestProgressEntries([...local, ...remote]));
+}
+function toProgressMap(entries) {
+  return Object.fromEntries(entries.map((entry) => [entry.questionId, entry]));
+}
+
+// app/features/progress/progressApi.ts
+function createSyncLink() {
+  return progressClient.links.$post();
+}
+function deleteRemoteProgress(key) {
+  return progressClient.index.$delete({ header: { "x-sync-key": key } });
+}
+function syncProgress(key, local) {
+  return ResultAsync.fromPromise(
+    progressClient.sync.$post({ json: { entries: local }, header: { "x-sync-key": key } }),
+    (cause) => ({ kind: "RequestFailed", cause })
+  ).andThen((response) => {
+    if (!response.ok) {
+      return err(
+        response.status === 404 ? { kind: "InvalidSyncLink" } : { kind: "RequestFailed", cause: response }
+      );
+    }
+    return ResultAsync.fromPromise(
+      response.json(),
+      (cause) => ({ kind: "InvalidResponse", cause })
+    ).map((body) => mergeProgressEntries(local, body.entries));
+  });
+}
+
+// app/features/progress/progressStorage.ts
+var PROGRESS_STORAGE_KEY = "fit-question-progress-v2";
+var LEGACY_PROGRESS_STORAGE_KEY = "fit-question-progress-v1";
+var SYNC_KEY_STORAGE_KEY = "fit-sync-key-v1";
+var PROGRESS_CHANGE_EVENT = "fit:progress-change";
+var SYNC_KEY_CHANGE_EVENT = "fit:sync-key-change";
+function notifyStorageChange(eventName) {
+  window.dispatchEvent(new Event(eventName));
+}
+function readProgressSnapshot() {
+  try {
+    return localStorage.getItem(PROGRESS_STORAGE_KEY) ?? localStorage.getItem(LEGACY_PROGRESS_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+function readSyncKey() {
+  try {
+    const parsed = SyncKeySchema.safeParse(localStorage.getItem(SYNC_KEY_STORAGE_KEY));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+function saveSyncKey(key) {
+  try {
+    localStorage.setItem(SYNC_KEY_STORAGE_KEY, key);
+    notifyStorageChange(SYNC_KEY_CHANGE_EVENT);
+    return { kind: "StorageMutationSuccess" };
+  } catch (cause) {
+    return { kind: "StorageMutationError", operation: "SaveSyncKey", cause };
+  }
+}
+function removeSyncKey() {
+  try {
+    localStorage.removeItem(SYNC_KEY_STORAGE_KEY);
+    notifyStorageChange(SYNC_KEY_CHANGE_EVENT);
+    return { kind: "StorageMutationSuccess" };
+  } catch (cause) {
+    return { kind: "StorageMutationError", operation: "RemoveSyncKey", cause };
+  }
+}
+function parseProgressSnapshot(snapshot) {
+  try {
+    const parsed = ProgressSnapshotSchema.safeParse(JSON.parse(snapshot ?? "{}"));
+    if (!parsed.success) {
+      return {};
+    }
+    return Object.fromEntries(
+      Object.entries(parsed.data).flatMap(([key, value]) => {
+        const entry = ProgressEntrySchema.safeParse(value);
+        if (entry.success) {
+          return [[key, entry.data]];
+        }
+        if (!(isRecord3(value) && "revealedAt" in value)) {
+          return [];
+        }
+        const timestamp = EpochMillisecondsSchema.safeParse(value.revealedAt);
+        const migrated = ProgressEntrySchema.safeParse({
+          questionId: value.questionId ?? key,
+          unitId: value.unitId,
+          createdAt: timestamp.success ? timestamp.data : void 0,
+          updatedAt: timestamp.success ? timestamp.data : void 0
+        });
+        return migrated.success ? [[key, migrated.data]] : [];
+      })
+    );
+  } catch {
+    return {};
+  }
+}
+function readProgress() {
+  return parseProgressSnapshot(readProgressSnapshot());
+}
+function saveProgressEntries(entries) {
+  localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(toProgressMap(entries)));
+  notifyStorageChange(PROGRESS_CHANGE_EVENT);
+}
+function mergeStoredProgress(entries) {
+  try {
+    saveProgressEntries(mergeProgressEntries(Object.values(readProgress()), entries));
+  } catch {
+  }
+}
+
+// app/features/progress/ui/records-view.tsx
+var RecordsView = clientEntry(
+  "/assets/client.js#RecordsView",
+  function RecordsView2(handle) {
+    const read = () => {
+      const progress = Object.values(readProgress()).toSorted(
+        (left, right) => right.updatedAt - left.updatedAt
+      );
+      const challenges = readChallengeHistory();
+      return { progress, challenges };
+    };
+    let status = { kind: "idle", message: "" };
+    let view = read();
+    const refresh = () => {
+      view = read();
+    };
+    const runSync = async () => {
+      const key = readSyncKey();
+      if (!key) {
+        return;
+      }
+      status = { kind: "busy", message: "\u540C\u671F\u4E2D\u2026" };
+      await handle.update();
+      const progressResult = await syncProgress(key, view.progress);
+      if (progressResult.isErr()) {
+        status = { kind: "error", message: "\u9032\u6357\u3092\u540C\u671F\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F" };
+        await handle.update();
+        return;
+      }
+      mergeStoredProgress(progressResult.value);
+      const completed = view.challenges.filter((snapshot) => snapshot.status === "completed");
+      const challengeResult = await syncChallenges(
+        key,
+        completed.map((snapshot) => snapshotToPayload(snapshot)).filter((payload) => payload !== null)
+      );
+      status = challengeResult.isErr() ? { kind: "error", message: "\u5C0F\u30C6\u30B9\u30C8\u7D50\u679C\u3092\u540C\u671F\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F" } : { kind: "ok", message: "\u540C\u671F\u3057\u307E\u3057\u305F" };
+      refresh();
+      await handle.update();
+    };
+    const createLink = async () => {
+      status = { kind: "busy", message: "\u30EA\u30F3\u30AF\u3092\u4F5C\u6210\u4E2D\u2026" };
+      await handle.update();
+      const response = await createSyncLink();
+      if (!response.ok) {
+        status = { kind: "error", message: "\u30EA\u30F3\u30AF\u3092\u4F5C\u6210\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F" };
+        await handle.update();
+        return;
+      }
+      const body = await response.json();
+      if (typeof body.key !== "string") {
+        status = { kind: "error", message: "\u30EA\u30F3\u30AF\u306E\u5F62\u5F0F\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093" };
+        await handle.update();
+        return;
+      }
+      const result = saveSyncKey(body.key);
+      status = result.kind === "StorageMutationSuccess" ? { kind: "ok", message: "\u3053\u306E\u7AEF\u672B\u306B\u540C\u671F\u30EA\u30F3\u30AF\u3092\u4FDD\u5B58\u3057\u307E\u3057\u305F" } : { kind: "error", message: "\u4FDD\u5B58\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F" };
+      await handle.update();
+    };
+    const removeLink = async () => {
+      const key = readSyncKey();
+      if (key) {
+        await deleteRemoteProgress(key);
+      }
+      removeSyncKey();
+      status = { kind: "ok", message: "\u540C\u671F\u30EA\u30F3\u30AF\u3092\u524A\u9664\u3057\u307E\u3057\u305F" };
+      await handle.update();
+    };
+    const copyLink = async () => {
+      const key = readSyncKey();
+      if (key && typeof navigator !== "undefined") {
+        await navigator.clipboard.writeText(key);
+        status = { kind: "ok", message: "\u540C\u671F\u30EA\u30F3\u30AF\u3092\u30B3\u30D4\u30FC\u3057\u307E\u3057\u305F" };
+        await handle.update();
+      }
+    };
+    return () => {
+      const syncKey = readSyncKey();
+      return /* @__PURE__ */ jsx("section", { class: "records-view", children: [
+        /* @__PURE__ */ jsx("header", { class: "records-view__section", children: [
+          /* @__PURE__ */ jsx("h2", { children: "\u540C\u671F" }),
+          syncKey ? /* @__PURE__ */ jsx(Fragment, { children: [
+            /* @__PURE__ */ jsx("p", { children: "\u3053\u306E\u7AEF\u672B\u306F\u540C\u671F\u30EA\u30F3\u30AF\u3067\u4FDD\u8B77\u3055\u308C\u3066\u3044\u307E\u3059\u3002\u30EA\u30F3\u30AF\u3092\u77E5\u3063\u3066\u3044\u308B\u7AEF\u672B\u3060\u3051\u304C\u8A18\u9332\u3092\u5171\u6709\u3067\u304D\u307E\u3059\u3002" }),
+            /* @__PURE__ */ jsx("div", { class: "records-view__actions", children: [
+              /* @__PURE__ */ jsx("button", { type: "button", mix: on("click", copyLink), children: "\u30EA\u30F3\u30AF\u3092\u30B3\u30D4\u30FC" }),
+              /* @__PURE__ */ jsx("button", { type: "button", mix: on("click", runSync), children: "\u3044\u307E\u540C\u671F\u3059\u308B" }),
+              /* @__PURE__ */ jsx("button", { type: "button", mix: on("click", removeLink), children: "\u540C\u671F\u3092\u89E3\u9664" })
+            ] })
+          ] }) : /* @__PURE__ */ jsx(Fragment, { children: [
+            /* @__PURE__ */ jsx("p", { children: "\u540C\u671F\u3092\u4F7F\u3046\u3068\u3001\u5225\u306E\u7AEF\u672B\u3068\u540C\u3058\u5B66\u7FD2\u8A18\u9332\u3092\u5171\u6709\u3067\u304D\u307E\u3059\u3002" }),
+            /* @__PURE__ */ jsx("button", { type: "button", mix: on("click", createLink), children: "\u540C\u671F\u30EA\u30F3\u30AF\u3092\u4F5C\u6210" })
+          ] }),
+          status.message ? /* @__PURE__ */ jsx("p", { role: "status", class: `records-view__status is-${status.kind}`, children: status.message }) : null
+        ] }),
+        /* @__PURE__ */ jsx("section", { class: "records-view__section", children: [
+          /* @__PURE__ */ jsx("h2", { children: [
+            "\u7B54\u3048\u3092\u78BA\u8A8D\u3057\u305F\u554F\u984C\uFF08",
+            view.progress.length,
+            "\uFF09"
+          ] }),
+          view.progress.length === 0 ? /* @__PURE__ */ jsx("p", { children: "\u307E\u3060\u8A18\u9332\u306F\u3042\u308A\u307E\u305B\u3093\u3002" }) : /* @__PURE__ */ jsx("ul", { children: view.progress.slice(0, 50).map((entry) => /* @__PURE__ */ jsx("li", { children: [
+            /* @__PURE__ */ jsx("a", { href: `/records#${entry.questionId}`, children: entry.questionId }),
+            /* @__PURE__ */ jsx("span", { children: formatDuration(entry.updatedAt - entry.createdAt) })
+          ] }, entry.questionId)) })
+        ] }),
+        /* @__PURE__ */ jsx("section", { class: "records-view__section", children: [
+          /* @__PURE__ */ jsx("h2", { children: [
+            "\u5C0F\u30C6\u30B9\u30C8\u306E\u7D50\u679C\uFF08",
+            view.challenges.length,
+            "\uFF09"
+          ] }),
+          view.challenges.length === 0 ? /* @__PURE__ */ jsx("p", { children: "\u307E\u3060\u7D50\u679C\u306F\u3042\u308A\u307E\u305B\u3093\u3002" }) : /* @__PURE__ */ jsx("ul", { children: view.challenges.slice(0, 20).map((snapshot) => {
+            const payload = snapshotToPayload(snapshot);
+            if (!payload) {
+              return null;
+            }
+            const summary = summarizeChallenge(payload);
+            return /* @__PURE__ */ jsx("li", { children: [
+              /* @__PURE__ */ jsx("span", { children: payload.examId }),
+              /* @__PURE__ */ jsx("span", { children: formatAccuracy(summary.accuracy) }),
+              /* @__PURE__ */ jsx("span", { children: [
+                summary.correctCount,
+                " / ",
+                summary.correctCount + summary.incorrectCount
+              ] })
+            ] }, payload.challengeId);
+          }) })
+        ] })
+      ] });
+    };
+  }
+);
+function snapshotToPayload(snapshot) {
+  if (snapshot.status !== "completed" || snapshot.updatedAt === null) {
+    return null;
+  }
+  return {
+    challengeId: snapshot.challengeId,
+    examId: snapshot.examId,
+    createdAt: snapshot.createdAt,
+    updatedAt: snapshot.updatedAt,
+    answers: snapshot.questionIds.flatMap((questionId) => {
+      const judgment = snapshot.judgments[questionId];
+      if (!judgment) return [];
+      return [
+        {
+          questionId,
+          elapsedMs: snapshot.questionElapsedMs[questionId] ?? 0,
+          judgment,
+          createdAt: snapshot.answerCreatedAt[questionId] ?? snapshot.createdAt,
+          updatedAt: snapshot.updatedAt
+        }
+      ];
+    })
   };
 }
 
