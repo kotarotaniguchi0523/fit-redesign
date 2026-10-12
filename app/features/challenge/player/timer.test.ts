@@ -2,13 +2,13 @@ import * as assert from "remix/assert";
 import { describe, it } from "remix/test";
 
 import { ChallengeIdSchema, ExamIdSchema, QuestionIdSchema } from "../../../types/browser.ts";
-import { createInitialChallengeState } from "../challenge.ts";
+import { createInitialChallengeState } from "../model.ts";
 import {
 	type MutableTimerRuntime,
 	projectElapsedTime,
 	resetTimerRuntimeInPlace,
 	sampleChallengeTimer,
-} from "./timerRuntime.ts";
+} from "./timer.ts";
 
 const q1 = QuestionIdSchema.parse("exam1-2013-q1");
 const q2 = QuestionIdSchema.parse("exam1-2013-q2");

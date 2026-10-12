@@ -1,7 +1,7 @@
 import { sortNewestFirst } from "../../lib/sort.ts";
 import type { ProgressEntry, SyncKey } from "../../types/browser.ts";
-import { syncProgress, syncProgressErrorMessage } from "./progressApi.ts";
-import { readProgress, saveProgressEntries, saveSyncKey } from "./progressStorage.ts";
+import { syncProgress, syncProgressErrorMessage } from "./api.ts";
+import { readProgress, saveProgressEntries, saveSyncKey } from "./storage.ts";
 
 function localEntries(): readonly ProgressEntry[] {
 	return sortNewestFirst(Object.values(readProgress()));

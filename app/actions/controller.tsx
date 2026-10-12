@@ -3,15 +3,19 @@ import { loadHomeExamCatalog } from "../data/exams/homeCatalog.ts";
 import { getExamByNumber } from "../data/exams/index.ts";
 import { unitBasedTabs } from "../data/units.ts";
 import { generateLlmsFullTxt, generateLlmsTxt } from "../features/markdown/llms.ts";
+import { ExamPlayerPage } from "../pages/exam-player-page.tsx";
+import { GuidePage } from "../pages/guide-page.tsx";
+import { HomePage } from "../pages/home-page.tsx";
+import { NotFoundPage } from "../pages/not-found-page.tsx";
+import { RecordsPage } from "../pages/records-page.tsx";
+import { SlideOnlyPage } from "../pages/slide-only-page.tsx";
+import {
+	buildUnitExamSections,
+	getIntegratedTitle,
+	UnitYearPage,
+} from "../pages/unit-year-page.tsx";
 import { routes } from "../routes.ts";
 import type { ExamNumber, Year } from "../types/index.ts";
-import { ExamPlayerPage } from "./exam-player-page.tsx";
-import { GuidePage } from "./guide-page.tsx";
-import { HomePage } from "./home-page.tsx";
-import { NotFoundPage } from "./not-found-page.tsx";
-import { RecordsPage } from "./records-page.tsx";
-import { SlideOnlyPage } from "./slide-only-page.tsx";
-import { buildUnitExamSections, getIntegratedTitle, UnitYearPage } from "./unit-year-page.tsx";
 
 /**
  * ルートコントローラー。`routes.ts` の直下のルートリーフを担当する。

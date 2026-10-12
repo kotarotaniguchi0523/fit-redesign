@@ -1,8 +1,8 @@
 import type { Handle } from "remix/component";
 import { css } from "remix/component";
 
-import { Figure } from "../../../../ui/figures/Figure.tsx";
-import type { PlayerQuestion } from "../types.ts";
+import { Figure } from "../../../ui/figures/Figure.tsx";
+import type { PlayerQuestion } from "../player/types.ts";
 
 const bodyStyle = css({
 	"& p": { whiteSpace: "pre-wrap", lineHeight: 1.9 },

@@ -2,7 +2,7 @@ import type { Handle, RemixNode } from "remix/component";
 import { css } from "remix/component";
 
 import { SITE_URL } from "../data/site.ts";
-import { Header } from "../ui/Header.tsx";
+import { Header } from "../ui/header.tsx";
 
 const SITE_NAME = "基本情報技術 I - 明治大学";
 const DEFAULT_DESCRIPTION = "明治大学 基本情報技術 I 演習問題サイト";

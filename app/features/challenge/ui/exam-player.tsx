@@ -3,33 +3,33 @@ import { clientEntry, css, on } from "remix/component";
 
 import { systemClock } from "../../../lib/dateTime.ts";
 import { questionToMarkdown } from "../../markdown/questionToMarkdown.ts";
-import { challengeReducer, isChallengeComplete } from "../challenge.ts";
-import {
-	archiveCompletedChallenge,
-	readCompletedChallenges,
-	saveActiveChallenge,
-} from "../challengeStorage.ts";
-import type { ChallengeState, CompletedChallengePayload } from "../types.ts";
-import { resolveInitialPlayerSession } from "./initialPlayerSession.ts";
-import { filterChallengeHistory, getNavigationPosition } from "./model.ts";
-import { replaceChallengeView, replaceQuestionInUrl } from "./navigation.ts";
+import { challengeReducer, isChallengeComplete } from "../model.ts";
+import { filterChallengeHistory, getNavigationPosition } from "../player/model.ts";
+import { replaceChallengeView, replaceQuestionInUrl } from "../player/navigation.ts";
+import { resolveInitialPlayerSession } from "../player/session.ts";
 import {
 	type MutableTimerRuntime,
 	resetTimerRuntimeInPlace,
 	sampleChallengeTimer,
-} from "./timerRuntime.ts";
-import type { ExamPlayerProps, PlayerMode, PlayerQuestion } from "./types.ts";
-import { AnswerPanel } from "./ui/answer-panel.tsx";
-import { primaryButtonStyle, quietButtonStyle } from "./ui/buttons.ts";
-import { ChallengeResultView } from "./ui/challenge-result.tsx";
+} from "../player/timer.ts";
+import type { ExamPlayerProps, PlayerMode, PlayerQuestion } from "../player/types.ts";
+import {
+	archiveCompletedChallenge,
+	readCompletedChallenges,
+	saveActiveChallenge,
+} from "../storage.ts";
+import type { ChallengeState, CompletedChallengePayload } from "../types.ts";
+import { AnswerPanel } from "./answer-panel.tsx";
+import { primaryButtonStyle, quietButtonStyle } from "./buttons.ts";
+import { ChallengeResultView } from "./challenge-result.tsx";
 import {
 	ChallengeTimerDisplay,
 	PlayerEdgeNavigation,
 	QuestionActions,
-} from "./ui/player-controls.tsx";
-import { PlayerHeader } from "./ui/player-header.tsx";
-import { PlayerList } from "./ui/player-list.tsx";
-import { QuestionContent } from "./ui/question-content.tsx";
+} from "./player-controls.tsx";
+import { PlayerHeader } from "./player-header.tsx";
+import { PlayerList } from "./player-list.tsx";
+import { QuestionContent } from "./question-content.tsx";
 
 const shellStyle = css({
 	position: "relative",

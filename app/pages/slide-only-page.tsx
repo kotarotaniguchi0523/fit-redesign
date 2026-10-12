@@ -2,7 +2,7 @@ import type { Handle } from "remix/component";
 import { css } from "remix/component";
 
 import { slideOnlyUnits } from "../data/units.ts";
-import { PageHeading } from "../ui/PageHeading.tsx";
+import { PageHeading } from "../ui/page-heading.tsx";
 import { Document } from "./document.tsx";
 
 const mainStyle = css({ maxWidth: "52rem", margin: "0 auto", padding: "1rem 1rem 4rem" });

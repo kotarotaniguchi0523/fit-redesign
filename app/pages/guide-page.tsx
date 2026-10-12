@@ -2,7 +2,7 @@ import type { Handle } from "remix/component";
 import { css, unsafeHTML } from "remix/component";
 
 import { guideHtml } from "../content/guide.generated.ts";
-import { PageHeading } from "../ui/PageHeading.tsx";
+import { PageHeading } from "../ui/page-heading.tsx";
 import { Document } from "./document.tsx";
 
 const mainStyle = css({ maxWidth: "48rem", margin: "0 auto", padding: "1rem 1rem 4rem" });

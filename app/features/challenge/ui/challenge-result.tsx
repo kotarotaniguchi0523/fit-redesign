@@ -6,9 +6,9 @@ import {
 	formatAccuracy,
 	formatDuration,
 	summarizeChallenge,
-} from "../../challenge.ts";
-import type { CompletedChallengePayload } from "../../types.ts";
-import type { PlayerMode, PlayerQuestion } from "../types.ts";
+} from "../model.ts";
+import type { PlayerMode, PlayerQuestion } from "../player/types.ts";
+import type { CompletedChallengePayload } from "../types.ts";
 
 const SUCCESS_THRESHOLD = 0.8;
 

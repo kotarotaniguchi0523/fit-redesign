@@ -1,4 +1,4 @@
-import type { ProgressEntry } from "./progress.ts";
+import type { ProgressEntry } from "./model.ts";
 
 const QUESTION_ID_PATTERN = /^exam(\d+)-(\d{4})-q(\d+)$/;
 export function progressQuestionLink(

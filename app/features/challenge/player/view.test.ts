@@ -1,7 +1,7 @@
 import * as assert from "remix/assert";
 import { describe, it } from "remix/test";
 
-import { readInitialChallengeView } from "./initialView.ts";
+import { readInitialChallengeView } from "./view.ts";
 
 describe("readInitialChallengeView", () => {
 	it("uses the player view when no result query is present", () => {

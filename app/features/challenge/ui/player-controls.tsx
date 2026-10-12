@@ -1,10 +1,7 @@
 import type { Handle } from "remix/component";
 import { css, on, ref } from "remix/component";
 
-import { CopyButton } from "../../../../ui/copy-button.tsx";
-import { formatDuration } from "../../challenge.ts";
-import { projectElapsedTime } from "../timerRuntime.ts";
-import type { PlayerMode } from "../types.ts";
+import { CopyButton } from "../../../ui/copy-button.tsx";
 import {
 	AnswerSheetIcon,
 	CheckIcon,
@@ -13,7 +10,10 @@ import {
 	CloseIcon,
 	PauseIcon,
 	TimerIcon,
-} from "./icons.tsx";
+} from "../../../ui/icons.tsx";
+import { formatDuration } from "../model.ts";
+import { projectElapsedTime } from "../player/timer.ts";
+import type { PlayerMode } from "../player/types.ts";
 
 const actionStyle = css({
 	display: "inline-flex",

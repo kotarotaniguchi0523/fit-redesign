@@ -6,7 +6,7 @@ import { installBrowserShims } from "../../test/browser-shims.ts";
 installBrowserShims();
 
 import { ProgressEntrySchema, SyncKeySchema } from "../../types/index.ts";
-import { syncProgress } from "./progressApi.ts";
+import { syncProgress } from "./api.ts";
 import {
 	PROGRESS_STORAGE_KEY,
 	parseProgressSnapshot,
@@ -16,7 +16,7 @@ import {
 	SYNC_KEY_STORAGE_KEY,
 	saveProgressEntries,
 	saveSyncKey,
-} from "./progressStorage.ts";
+} from "./storage.ts";
 
 const entry = ProgressEntrySchema.parse({
 	questionId: "exam1-2013-q1",

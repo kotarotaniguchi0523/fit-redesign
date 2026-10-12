@@ -4,7 +4,7 @@ import { describe, it } from "remix/test";
 import { QuestionSchema } from "../../../data/exams/schema.ts";
 import { ChallengeIdSchema, ExamIdSchema, QuestionIdSchema } from "../../../types/browser.ts";
 import { ExamNumberSchema, UnitTabIdSchema, YearSchema } from "../../../types/domain.ts";
-import { createInitialChallengeState } from "../challenge.ts";
+import { createInitialChallengeState } from "../model.ts";
 import type { ChallengeState, CompletedChallengePayload } from "../types.ts";
 import {
 	countJudgments,

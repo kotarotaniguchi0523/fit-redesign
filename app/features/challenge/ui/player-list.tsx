@@ -2,11 +2,11 @@ import { animateEntrance, animateExit, spring } from "@remix-run/ui/animation";
 import * as popover from "@remix-run/ui/popover";
 import type { Handle } from "remix/component";
 import { css, on } from "remix/component";
-import type { QuestionId } from "../../../../types/index.ts";
-import { formatDuration } from "../../challenge.ts";
-import type { ChallengeState } from "../../types.ts";
-import type { PlayerMode, PlayerQuestion } from "../types.ts";
-import { CloseIcon } from "./icons.tsx";
+import type { QuestionId } from "../../../types/index.ts";
+import { CloseIcon } from "../../../ui/icons.tsx";
+import { formatDuration } from "../model.ts";
+import type { PlayerMode, PlayerQuestion } from "../player/types.ts";
+import type { ChallengeState } from "../types.ts";
 
 const panelStyle = css({
 	position: "fixed",

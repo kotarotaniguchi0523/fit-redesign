@@ -1,8 +1,8 @@
 import type { Handle } from "remix/component";
 import { clientEntry, css, on } from "remix/component";
-import { quietButtonStyle } from "../../challenge/player/ui/buttons.ts";
+import { quietButtonStyle } from "../../challenge/ui/buttons.ts";
 
-import { readProgress } from "../../progress/progressStorage.ts";
+import { readProgress } from "../../progress/storage.ts";
 
 type LocationGroup = Readonly<{
 	unitName: string;

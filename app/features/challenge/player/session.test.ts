@@ -4,13 +4,13 @@ import { beforeEach, describe, it } from "remix/test";
 import { QuestionSchema } from "../../../data/exams/schema.ts";
 import { ChallengeIdSchema, ExamIdSchema, QuestionIdSchema } from "../../../types/browser.ts";
 import { ExamNumberSchema, UnitTabIdSchema, YearSchema } from "../../../types/domain.ts";
-import { createInitialChallengeState } from "../challenge.ts";
+import { createInitialChallengeState } from "../model.ts";
 import {
 	ACTIVE_CHALLENGES_STORAGE_KEY,
 	CHALLENGE_LOCKS_STORAGE_KEY,
 	saveActiveChallenge,
-} from "../challengeStorage.ts";
-import { resolveInitialPlayerSession } from "./initialPlayerSession.ts";
+} from "../storage.ts";
+import { resolveInitialPlayerSession } from "./session.ts";
 import type { ExamPlayerProps, PlayerQuestion } from "./types.ts";
 
 const examId = ExamIdSchema.parse("exam1-2013");

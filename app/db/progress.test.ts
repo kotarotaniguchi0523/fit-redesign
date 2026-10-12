@@ -1,6 +1,6 @@
 import * as assert from "remix/assert";
 import { describe, it } from "remix/test";
-import { CompletedChallengeSchema } from "../features/challenge/challengeWire.ts";
+import { CompletedChallengeSchema } from "../features/challenge/wire.ts";
 import { syncLinkIdFromSyncKey } from "../lib/syncLinkId.ts";
 import { ProgressEntrySchema, type SyncKey } from "../types/index.ts";
 import {

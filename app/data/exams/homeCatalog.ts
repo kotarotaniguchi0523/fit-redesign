@@ -1,4 +1,4 @@
-import type { QuestionLocationGroup } from "../../features/answer/continueLearningTypes.ts";
+import type { QuestionLocationGroup } from "../../features/answer/types.ts";
 import { unitBasedTabs } from "../units.ts";
 import { getExamByNumber, selectVisibleExamNumbers } from "./index.ts";
 

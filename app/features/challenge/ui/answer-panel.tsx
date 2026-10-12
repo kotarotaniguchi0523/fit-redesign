@@ -3,9 +3,9 @@ import * as toggle from "@remix-run/ui/toggle";
 import type { Handle } from "remix/component";
 import { css, unsafeHTML } from "remix/component";
 
-import { overlineToHtml } from "../../../../lib/overline.ts";
-import type { Judgment } from "../../../../types/index.ts";
-import type { PlayerQuestion } from "../types.ts";
+import { overlineToHtml } from "../../../lib/overline.ts";
+import type { Judgment } from "../../../types/index.ts";
+import type { PlayerQuestion } from "../player/types.ts";
 
 const panelStyle = css({
 	marginTop: "1rem",

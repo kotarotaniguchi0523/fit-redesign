@@ -12,7 +12,7 @@ import {
 	mergeCompletedChallenges,
 	restoreChallengeState,
 	toCompletedChallengePayload,
-} from "./challenge.ts";
+} from "./model.ts";
 import type { ChallengeSnapshot, ChallengeState, CompletedChallengePayload } from "./types.ts";
 
 export const ACTIVE_CHALLENGES_STORAGE_KEY = "fit-challenge-active-v1";

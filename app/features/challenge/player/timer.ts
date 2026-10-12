@@ -1,10 +1,10 @@
 import type { QuestionId } from "../../../types/index.ts";
-import type { TimerRuntime } from "../challenge.ts";
+import type { TimerRuntime } from "../model.ts";
 import {
 	applyElapsedDelta,
 	calculateElapsedDelta,
 	MAX_REASONABLE_TIMER_DELTA_MS,
-} from "../challenge.ts";
+} from "../model.ts";
 import type { ChallengeState } from "../types.ts";
 
 export type MutableTimerRuntime = { -readonly [Key in keyof TimerRuntime]: TimerRuntime[Key] };

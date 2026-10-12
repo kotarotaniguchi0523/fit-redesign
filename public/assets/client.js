@@ -7475,7 +7475,7 @@ function sortNewestFirst(values) {
   return values.toSorted((left, right) => right.updatedAt - left.updatedAt);
 }
 
-// app/features/challenge/challenge.ts
+// app/features/challenge/model.ts
 var MAX_REASONABLE_TIMER_DELTA_MS = 24 * 60 * 60 * 1e3;
 function calculateElapsedDelta(runtime, now) {
   if (!runtime.running || runtime.lastSample === null) {
@@ -9465,7 +9465,7 @@ var SyncHeaderSchema = object({
 });
 var ProgressSnapshotSchema = record(string2(), unknown());
 
-// app/features/challenge/challengeStorage.ts
+// app/features/challenge/storage.ts
 var ACTIVE_CHALLENGES_STORAGE_KEY = "fit-challenge-active-v1";
 var CHALLENGE_HISTORY_STORAGE_KEY = "fit-challenge-history-v1";
 var CHALLENGE_CHANGE_EVENT = "fit:challenge-change";
@@ -10283,7 +10283,7 @@ function overlineToHtml(input) {
   return escapeHtml(input).replace(COMBINING_OVERLINE, '<span class="ovl">$1</span>');
 }
 
-// app/features/challenge/player/ui/answer-panel.tsx
+// app/features/challenge/ui/answer-panel.tsx
 var panelStyle = css({
   marginTop: "1rem",
   padding: "1rem 1.25rem",
@@ -10392,7 +10392,7 @@ function AnswerPanel(handle) {
   };
 }
 
-// app/features/challenge/player/ui/buttons.ts
+// app/features/challenge/ui/buttons.ts
 var primaryButtonStyle = css({
   display: "inline-flex",
   alignItems: "center",
@@ -10418,7 +10418,7 @@ var quietButtonStyle = css({
   cursor: "pointer"
 });
 
-// app/features/challenge/player/ui/challenge-result.tsx
+// app/features/challenge/ui/challenge-result.tsx
 var SUCCESS_THRESHOLD = 0.8;
 var sectionStyle = css({
   maxWidth: "36rem",
@@ -10531,7 +10531,7 @@ function ChallengeResultView(handle) {
   };
 }
 
-// app/features/challenge/player/ui/icons.tsx
+// app/ui/icons.tsx
 function icon(children) {
   return function Icon(handle) {
     void handle;
@@ -10567,7 +10567,7 @@ var AnswerSheetIcon = icon(() => /* @__PURE__ */ jsx(Fragment, { children: [
   /* @__PURE__ */ jsx("path", { d: "M14 3.5V8h4.5M9.5 14l2 2 4-4" })
 ] }));
 
-// app/features/challenge/player/ui/player-controls.tsx
+// app/features/challenge/ui/player-controls.tsx
 var actionStyle = css({
   display: "inline-flex",
   alignItems: "center",
@@ -10730,7 +10730,7 @@ function PlayerEdgeNavigation(handle) {
   };
 }
 
-// app/features/challenge/player/ui/player-header.tsx
+// app/features/challenge/ui/player-header.tsx
 var headerStyle = css({
   display: "flex",
   alignItems: "center",
@@ -11552,7 +11552,7 @@ var focusOnHideMixin = createMixin((handle) => {
 var Context = PopoverProvider;
 var surface = surfaceMixin;
 
-// app/features/challenge/player/ui/player-list.tsx
+// app/features/challenge/ui/player-list.tsx
 var panelStyle2 = css({
   position: "fixed",
   top: 0,
@@ -12745,7 +12745,7 @@ function Figure(handle) {
   };
 }
 
-// app/features/challenge/player/ui/question-content.tsx
+// app/features/challenge/ui/question-content.tsx
 var bodyStyle2 = css({
   "& p": { whiteSpace: "pre-wrap", lineHeight: 1.9 }
 });
@@ -12787,7 +12787,7 @@ function QuestionContent(handle) {
   };
 }
 
-// app/features/challenge/player/exam-player.tsx
+// app/features/challenge/ui/exam-player.tsx
 var shellStyle = css({
   position: "relative",
   background: "var(--color-bg-card)",
@@ -13664,7 +13664,7 @@ var Err = class {
 };
 var fromThrowable = Result.fromThrowable;
 
-// app/features/progress/progressClient.ts
+// app/features/progress/client.ts
 var JSON_HEADERS = { "content-type": "application/json" };
 var progressClient = {
   links: {
@@ -13689,7 +13689,7 @@ var progressClient = {
   }
 };
 
-// app/features/challenge/challengeApi.ts
+// app/features/challenge/api.ts
 function parseResponse(body) {
   if (!body || typeof body !== "object" || !("challenges" in body) || !Array.isArray(body.challenges)) {
     return null;
@@ -13746,7 +13746,7 @@ function mergeLatestProgressEntries(entries) {
   });
 }
 
-// app/features/progress/progress.ts
+// app/features/progress/model.ts
 function mergeProgressEntries(local, remote) {
   return sortNewestFirst(mergeLatestProgressEntries([...local, ...remote]));
 }
@@ -13754,7 +13754,7 @@ function toProgressMap(entries) {
   return Object.fromEntries(entries.map((entry) => [entry.questionId, entry]));
 }
 
-// app/features/progress/progressApi.ts
+// app/features/progress/api.ts
 function createSyncLink() {
   return progressClient.links.$post();
 }
@@ -13778,7 +13778,7 @@ function syncProgress(key, local) {
   });
 }
 
-// app/features/progress/progressStorage.ts
+// app/features/progress/storage.ts
 var PROGRESS_STORAGE_KEY = "fit-question-progress-v2";
 var LEGACY_PROGRESS_STORAGE_KEY = "fit-question-progress-v1";
 var SYNC_KEY_STORAGE_KEY = "fit-sync-key-v1";

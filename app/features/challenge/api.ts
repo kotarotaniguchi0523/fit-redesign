@@ -1,7 +1,7 @@
 import { err, okAsync, ResultAsync } from "neverthrow";
 import type { SyncKey } from "../../types/index.ts";
-import { progressClient } from "../progress/progressClient.ts";
-import { isCompletedChallengePayload, mergeCompletedChallenges } from "./challenge.ts";
+import { progressClient } from "../progress/client.ts";
+import { isCompletedChallengePayload, mergeCompletedChallenges } from "./model.ts";
 import type { CompletedChallengePayload } from "./types.ts";
 
 export type ChallengeSyncError =

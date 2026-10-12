@@ -12,7 +12,7 @@ import {
 	type ProgressEntry,
 	type ProgressMap,
 	toProgressMap,
-} from "./progress.ts";
+} from "./model.ts";
 
 export const PROGRESS_STORAGE_KEY = "fit-question-progress-v2";
 export const LEGACY_PROGRESS_STORAGE_KEY = "fit-question-progress-v1";

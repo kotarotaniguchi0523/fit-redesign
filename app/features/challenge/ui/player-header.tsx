@@ -1,7 +1,7 @@
 import type { Handle } from "remix/component";
 import { css, on } from "remix/component";
-import type { PlayerQuestion } from "../types.ts";
-import { MenuIcon } from "./icons.tsx";
+import { MenuIcon } from "../../../ui/icons.tsx";
+import type { PlayerQuestion } from "../player/types.ts";
 
 const headerStyle = css({
 	display: "flex",

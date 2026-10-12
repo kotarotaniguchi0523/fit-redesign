@@ -10,7 +10,7 @@ import {
 	challengeReducer,
 	createInitialChallengeState,
 	toCompletedChallengePayload,
-} from "./challenge.ts";
+} from "./model.ts";
 import type { ChallengeState, CompletedChallengePayload } from "./types.ts";
 
 const q1 = QuestionIdSchema.parse("exam1-2013-q1");

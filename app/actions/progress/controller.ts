@@ -12,8 +12,8 @@ import {
 	syncProgress,
 } from "../../db/progress.ts";
 import { getDatabase, getRateLimiter } from "../../db/registry.ts";
-import { CompletedChallengesRequestSchema } from "../../features/challenge/challengeWire.ts";
 import type { CompletedChallengePayload } from "../../features/challenge/types.ts";
+import { CompletedChallengesRequestSchema } from "../../features/challenge/wire.ts";
 import { systemClock } from "../../lib/dateTime.ts";
 import { generateSyncKey } from "../../lib/syncKey.ts";
 import { type SyncLinkId, syncLinkIdFromSyncKey } from "../../lib/syncLinkId.ts";

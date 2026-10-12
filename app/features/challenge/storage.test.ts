@@ -6,7 +6,7 @@ import { installBrowserShims } from "../../test/browser-shims.ts";
 installBrowserShims();
 
 import { ChallengeIdSchema, ExamIdSchema, QuestionIdSchema } from "../../types/browser.ts";
-import { challengeReducer, createInitialChallengeState } from "./challenge.ts";
+import { challengeReducer, createInitialChallengeState } from "./model.ts";
 import {
 	archiveCompletedChallenge,
 	CHALLENGE_HISTORY_STORAGE_KEY,
@@ -21,7 +21,7 @@ import {
 	renewChallengeLock,
 	saveActiveChallenge,
 	tryAcquireChallengeLock,
-} from "./challengeStorage.ts";
+} from "./storage.ts";
 import type { ChallengeState } from "./types.ts";
 
 const questionId = QuestionIdSchema.parse("exam1-2013-q1");

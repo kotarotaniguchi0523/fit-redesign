@@ -1,7 +1,7 @@
 import { err, ResultAsync } from "neverthrow";
 import type { SyncKey } from "../../types/index.ts";
-import { mergeProgressEntries, type ProgressEntry } from "./progress.ts";
-import { progressClient } from "./progressClient.ts";
+import { progressClient } from "./client.ts";
+import { mergeProgressEntries, type ProgressEntry } from "./model.ts";
 
 function assertNever(value: never): never {
 	throw new Error(`Unexpected sync error: ${String(value)}`);

@@ -1,16 +1,16 @@
 import { systemClock } from "../../../lib/dateTime.ts";
-import { restoreChallengeState, toCompletedChallengePayload } from "../challenge.ts";
+import { restoreChallengeState, toCompletedChallengePayload } from "../model.ts";
 import {
 	createChallengeStateFromSnapshot,
 	findActiveChallenge,
 	findChallenge,
 	readCompletedChallenges,
-} from "../challengeStorage.ts";
+} from "../storage.ts";
 import type { ChallengeState, CompletedChallengePayload } from "../types.ts";
 import { generateChallengeId } from "./id.ts";
-import { readInitialChallengeView } from "./initialView.ts";
 import { createPlayerChallenge, filterChallengeHistory, questionScopeKey } from "./model.ts";
 import type { ExamPlayerProps } from "./types.ts";
+import { readInitialChallengeView } from "./view.ts";
 
 export type InitialPlayerSession = Readonly<{
 	kind: "server" | "new" | "resume" | "result" | "missing";

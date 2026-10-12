@@ -1,18 +1,18 @@
 import type { Handle } from "remix/component";
 import { clientEntry, css, on } from "remix/component";
 import type { SyncKey } from "../../../types/index.ts";
-import { formatAccuracy, formatDuration, summarizeChallenge } from "../../challenge/challenge.ts";
-import { syncChallenges } from "../../challenge/challengeApi.ts";
-import { readChallengeHistory } from "../../challenge/challengeStorage.ts";
+import { syncChallenges } from "../../challenge/api.ts";
+import { formatAccuracy, formatDuration, summarizeChallenge } from "../../challenge/model.ts";
+import { readChallengeHistory } from "../../challenge/storage.ts";
 import type { ChallengeSnapshot, CompletedChallengePayload } from "../../challenge/types.ts";
-import { createSyncLink, deleteRemoteProgress, syncProgress } from "../progressApi.ts";
+import { createSyncLink, deleteRemoteProgress, syncProgress } from "../api.ts";
 import {
 	mergeStoredProgress,
 	readProgress,
 	readSyncKey,
 	removeSyncKey,
 	saveSyncKey,
-} from "../progressStorage.ts";
+} from "../storage.ts";
 
 const recordsSectionStyle = css({
 	marginTop: "1.5rem",

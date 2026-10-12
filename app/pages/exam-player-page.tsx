@@ -1,9 +1,8 @@
 import type { Handle } from "remix/component";
 import { css } from "remix/component";
-
-import { ExamPlayer } from "../features/challenge/player/exam-player.tsx";
 import type { ExamPlayerProps, PlayerQuestion } from "../features/challenge/player/types.ts";
-import { PageHeading } from "../ui/PageHeading.tsx";
+import { ExamPlayer } from "../features/challenge/ui/exam-player.tsx";
+import { PageHeading } from "../ui/page-heading.tsx";
 import { Document } from "./document.tsx";
 
 const mainStyle = css({

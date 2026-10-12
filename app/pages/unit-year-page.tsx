@@ -4,7 +4,7 @@ import { css } from "remix/component";
 import { getExamByNumber, selectVisibleExamNumbers } from "../data/exams/index.ts";
 import { routes } from "../routes.ts";
 import type { UnitBasedTab, Year } from "../types/index.ts";
-import { PageHeading } from "../ui/PageHeading.tsx";
+import { PageHeading } from "../ui/page-heading.tsx";
 import { Document } from "./document.tsx";
 
 const mainStyle = css({

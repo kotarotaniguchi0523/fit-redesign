@@ -1,5 +1,5 @@
 import type { ChallengeId, QuestionId } from "../../../types/index.ts";
-import { createInitialChallengeState } from "../challenge.ts";
+import { createInitialChallengeState } from "../model.ts";
 import type { ChallengeState, CompletedChallengePayload } from "../types.ts";
 import type { ExamPlayerProps, PlayerMode, PlayerQuestion } from "./types.ts";
 
