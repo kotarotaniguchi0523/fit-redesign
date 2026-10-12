@@ -5,13 +5,13 @@ import { loadHomeExamCatalog } from '../data/exams/homeCatalog.ts'
 import { generateLlmsFullTxt, generateLlmsTxt } from '../features/markdown/llms.ts'
 import { questionToMarkdown } from '../features/markdown/questionToMarkdown.ts'
 import { unitBasedTabs } from '../data/units.ts'
-import type { Year } from '../types/index.ts'
+import type { ExamNumber, Year } from '../types/index.ts'
 import { routes } from '../routes.ts'
 import { GuidePage } from './guide-page.tsx'
 import { HomePage } from './home-page.tsx'
 import { NotFoundPage } from './not-found-page.tsx'
 import { PlaceholderPage } from './placeholder-page.tsx'
-import { QuestionPage } from './question-page.tsx'
+import { ExamPlayerPage } from './exam-player-page.tsx'
 import { SlideOnlyPage } from './slide-only-page.tsx'
 import {
 	buildUnitExamSections,
@@ -77,21 +77,20 @@ export default createController(routes, {
 				return context.render(<NotFoundPage path={context.url.pathname} />, { status: 404 })
 			}
 			return context.render(
-				<UnitYearPage
-					unit={unit}
-					year={year}
-					sections={[
-						{
-							examNumber,
-							title: exam.title,
-							questions: exam.questions.map((question) => ({
-								id: question.id,
-								number: question.number,
-								text: question.text,
-							})),
-						},
-					]}
+				<ExamPlayerPage
+					heading={`${unit.name} ${year}年度 小テスト${examNumber}`}
+					description={exam.title}
+					playerTitle={unit.name}
 					currentPath={context.url.pathname}
+					player={{
+						examId: exam.id,
+						examNumber: examNumber as ExamNumber,
+						year: year as Year,
+						unitId: unit.id,
+						playerTitle: unit.name,
+						questions: exam.questions,
+						mode: 'exam',
+					}}
 				/>,
 			)
 		},
@@ -108,15 +107,21 @@ export default createController(routes, {
 				return context.render(<NotFoundPage path={context.url.pathname} />, { status: 404 })
 			}
 			return context.render(
-				<QuestionPage
-					unitName={unit.name}
-					unitId={unit.id}
-					year={year}
-					examNumber={examNumber}
-					examTitle={exam.title}
-					question={question}
-					copyText={questionToMarkdown(question, { headingLevel: 2 })}
+				<ExamPlayerPage
+					heading={`${unit.name} ${year}年度 問${question.number}`}
+					description={exam.title}
+					playerTitle={unit.name}
 					currentPath={context.url.pathname}
+					player={{
+						examId: exam.id,
+						examNumber: examNumber as ExamNumber,
+						year: year as Year,
+						unitId: unit.id,
+						playerTitle: unit.name,
+						questions: exam.questions,
+						mode: 'question',
+						requestedQuestionId: question.id,
+					}}
 				/>,
 			)
 		},

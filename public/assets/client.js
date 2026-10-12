@@ -64,8 +64,8 @@ var TypedEventTarget = class extends EventTarget {
 };
 
 // node_modules/@remix-run/component/dist/runtime/component.js
-function createComponent(config) {
-  return new ComponentRuntime(config);
+function createComponent(config2) {
+  return new ComponentRuntime(config2);
 }
 var ComponentRuntime = class {
   frame;
@@ -94,9 +94,9 @@ var ComponentRuntime = class {
     queue.enqueue(vnode, domParent);
   };
   #tasks = [];
-  constructor(config) {
-    this.#config = config;
-    this.frame = config.frame;
+  constructor(config2) {
+    this.#config = config2;
+    this.frame = config2.frame;
     this.#handle = this.#createHandle();
   }
   render = (nextProps) => {
@@ -422,17 +422,17 @@ async function unwrapFrameResolution(resolution) {
 var CAMEL_TO_KEBAB_CACHE_LIMIT = 256;
 var camelToKebabCache = /* @__PURE__ */ new Map();
 function camelToKebab(str) {
-  let cached = camelToKebabCache.get(str);
-  if (cached === void 0) {
-    cached = str.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+  let cached2 = camelToKebabCache.get(str);
+  if (cached2 === void 0) {
+    cached2 = str.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
     if (camelToKebabCache.size >= CAMEL_TO_KEBAB_CACHE_LIMIT) {
       let oldest = camelToKebabCache.keys().next();
       if (!oldest.done)
         camelToKebabCache.delete(oldest.value);
     }
-    camelToKebabCache.set(str, cached);
+    camelToKebabCache.set(str, cached2);
   }
-  return cached;
+  return cached2;
 }
 var NUMERIC_CSS_PROPS = /* @__PURE__ */ new Set([
   "aspect-ratio",
@@ -463,6 +463,219 @@ function normalizeCssValue(key, value) {
     }
   }
   return String(value);
+}
+function isComplexSelector(key) {
+  return key.startsWith("&") || key.startsWith("@") || key.startsWith(":") || key.startsWith("[") || key.startsWith(".");
+}
+function isKeyframesAtRule(key) {
+  if (!key.startsWith("@"))
+    return false;
+  let lower = key.toLowerCase();
+  return lower.startsWith("@keyframes") || lower.startsWith("@-webkit-keyframes") || lower.startsWith("@-moz-keyframes") || lower.startsWith("@-o-keyframes");
+}
+function hashStyle(obj) {
+  let sortedEntries = Object.entries(obj).sort(([a], [b]) => a.localeCompare(b));
+  let str = JSON.stringify(sortedEntries);
+  let h1 = 2166136261;
+  let h2 = 3421674724;
+  for (let i = 0; i < str.length; i++) {
+    let char = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ char, 16777619) >>> 0;
+    h2 = Math.imul(h2 ^ char, 16777619) >>> 0;
+  }
+  return h1.toString(36) + h2.toString(36);
+}
+function styleToCss(styles, selector = "") {
+  let baseDeclarations = [];
+  let nestedBlocks = [];
+  let atRules = [];
+  let preludeAtRules = [];
+  for (let [key, value] of Object.entries(styles)) {
+    if (isComplexSelector(key)) {
+      if (key.startsWith("@")) {
+        let record3 = toRecord(value);
+        if (!record3)
+          continue;
+        if (key.startsWith("@function")) {
+          let body = atRuleBodyToCss(record3);
+          if (body.trim().length > 0) {
+            preludeAtRules.push(`${key} {
+${indent(body, 2)}
+}`);
+          } else {
+            preludeAtRules.push(`${key} {
+}`);
+          }
+        } else if (isKeyframesAtRule(key)) {
+          let body = keyframesBodyToCss(record3);
+          if (body.trim().length > 0) {
+            preludeAtRules.push(`${key} {
+${indent(body, 2)}
+}`);
+          } else {
+            preludeAtRules.push(`${key} {
+}`);
+          }
+        } else {
+          let inner = styleToCss(record3, selector);
+          if (inner.trim().length > 0) {
+            atRules.push(`${key} {
+${indent(inner, 2)}
+}`);
+          } else {
+            atRules.push(`${key} {
+  ${selector} {
+  }
+}`);
+          }
+        }
+        continue;
+      }
+      let record2 = toRecord(value);
+      if (!record2)
+        continue;
+      let nestedContent = nestedStyleBodyToCss(record2, 4);
+      if (nestedContent.trim().length > 0) {
+        nestedBlocks.push(`  ${key} {
+${nestedContent}
+  }`);
+      }
+    } else {
+      if (value != null) {
+        let normalizedValue = normalizeCssValue(key, value);
+        baseDeclarations.push(`  ${camelToKebab(key)}: ${normalizedValue};`);
+      }
+    }
+  }
+  let css2 = "";
+  if (preludeAtRules.length > 0) {
+    css2 += preludeAtRules.join("\n");
+  }
+  if (selector && (baseDeclarations.length > 0 || nestedBlocks.length > 0)) {
+    css2 += (css2 ? "\n" : "") + `${selector} {
+`;
+    if (baseDeclarations.length > 0) {
+      css2 += baseDeclarations.join("\n") + "\n";
+    }
+    if (nestedBlocks.length > 0) {
+      css2 += nestedBlocks.join("\n") + "\n";
+    }
+    css2 += "}";
+  }
+  if (atRules.length > 0) {
+    css2 += (css2 ? "\n" : "") + atRules.join("\n");
+  }
+  return css2;
+}
+function nestedStyleBodyToCss(styles, spaces) {
+  let pad = " ".repeat(spaces);
+  let declarations = [];
+  let nestedBlocks = [];
+  for (let [key, value] of Object.entries(styles)) {
+    if (isComplexSelector(key)) {
+      let record2 = toRecord(value);
+      if (!record2)
+        continue;
+      let nestedContent = nestedStyleBodyToCss(record2, spaces + 2);
+      if (nestedContent.trim().length > 0) {
+        nestedBlocks.push(`${pad}${key} {
+${nestedContent}
+${pad}}`);
+      }
+    } else if (value != null) {
+      let normalizedValue = normalizeCssValue(key, value);
+      declarations.push(`${pad}${camelToKebab(key)}: ${normalizedValue};`);
+    }
+  }
+  return [...declarations, ...nestedBlocks].join("\n");
+}
+function indent(text, spaces) {
+  let pad = " ".repeat(spaces);
+  return text.split("\n").map((line) => line.length ? pad + line : line).join("\n");
+}
+function isRecord(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function toRecord(value) {
+  return isRecord(value) ? value : null;
+}
+function keyframesBodyToCss(frames) {
+  let blocks = [];
+  for (let [frameSelector, frameValue] of Object.entries(frames)) {
+    if (!isRecord(frameValue)) {
+      continue;
+    }
+    let declarations = [];
+    for (let [prop, propValue] of Object.entries(frameValue)) {
+      if (propValue == null)
+        continue;
+      if (isComplexSelector(prop))
+        continue;
+      let normalizedValue = normalizeCssValue(prop, propValue);
+      declarations.push(`  ${camelToKebab(prop)}: ${normalizedValue};`);
+    }
+    if (declarations.length > 0) {
+      blocks.push(`${frameSelector} {
+${declarations.join("\n")}
+}`);
+    } else {
+      blocks.push(`${frameSelector} {
+}`);
+    }
+  }
+  return blocks.join("\n");
+}
+function atRuleBodyToCss(styles) {
+  let declarations = [];
+  let nested = [];
+  for (let [key, value] of Object.entries(styles)) {
+    if (isComplexSelector(key)) {
+      if (key.startsWith("@")) {
+        let record2 = toRecord(value);
+        if (!record2)
+          continue;
+        let inner = atRuleBodyToCss(record2);
+        if (inner.trim().length > 0) {
+          nested.push(`${key} {
+${indent(inner, 2)}
+}`);
+        } else {
+          nested.push(`${key} {
+}`);
+        }
+      } else {
+        continue;
+      }
+    } else {
+      if (value != null) {
+        let normalizedValue = normalizeCssValue(key, value);
+        declarations.push(`  ${camelToKebab(key)}: ${normalizedValue};`);
+      }
+    }
+  }
+  let body = "";
+  if (declarations.length > 0) {
+    body += declarations.join("\n");
+  }
+  if (nested.length > 0) {
+    body += (body ? "\n" : "") + nested.join("\n");
+  }
+  return body;
+}
+function processStyleClass(styleObj, styleCache) {
+  if (Object.keys(styleObj).length === 0) {
+    return { selector: "", css: "" };
+  }
+  let hash = hashStyle(styleObj);
+  let selector = `rmxc-${hash}`;
+  let cached2 = styleCache.get(hash);
+  if (cached2) {
+    return cached2;
+  }
+  let css2 = styleToCss(styleObj, `.${selector}`);
+  let result = { selector, css: css2 };
+  styleCache.set(hash, result);
+  return result;
 }
 
 // node_modules/@remix-run/component/dist/runtime/svg-attributes.js
@@ -643,17 +856,17 @@ var htmlAttributeNameCache = /* @__PURE__ */ new Map();
 var svgAttributeNameCache = /* @__PURE__ */ new Map();
 function normalizeAttributeName(name, isSvg) {
   let cache = isSvg ? svgAttributeNameCache : htmlAttributeNameCache;
-  let cached = cache.get(name);
-  if (cached === void 0) {
-    cached = computeAttributeName(name, isSvg);
+  let cached2 = cache.get(name);
+  if (cached2 === void 0) {
+    cached2 = computeAttributeName(name, isSvg);
     if (cache.size >= NORMALIZATION_CACHE_LIMIT) {
       let oldest = cache.keys().next();
       if (!oldest.done)
         cache.delete(oldest.value);
     }
-    cache.set(name, cached);
+    cache.set(name, cached2);
   }
-  return cached;
+  return cached2;
 }
 function computeAttributeName(name, isSvg) {
   if (name.startsWith("aria-") || name.startsWith("data-"))
@@ -699,17 +912,17 @@ function getMergedClassName(props) {
 }
 var kebabCaseCache = /* @__PURE__ */ new Map();
 function toKebabCase(value) {
-  let cached = kebabCaseCache.get(value);
-  if (cached === void 0) {
-    cached = value.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
+  let cached2 = kebabCaseCache.get(value);
+  if (cached2 === void 0) {
+    cached2 = value.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
     if (kebabCaseCache.size >= NORMALIZATION_CACHE_LIMIT) {
       let oldest = kebabCaseCache.keys().next();
       if (!oldest.done)
         kebabCaseCache.delete(oldest.value);
     }
-    kebabCaseCache.set(value, cached);
+    kebabCaseCache.set(value, cached2);
   }
-  return cached;
+  return cached2;
 }
 
 // node_modules/@remix-run/component/dist/runtime/core/props.js
@@ -872,6 +1085,14 @@ function styleValueToCss(name, value) {
 }
 
 // node_modules/@remix-run/component/dist/runtime/client-entries.js
+function clientEntry(entryId, component) {
+  if (!entryId) {
+    throw new Error("clientEntry() requires an entry ID");
+  }
+  component.$entry = true;
+  component.$entryId = entryId;
+  return component;
+}
 function isEntry(component) {
   return Boolean(component && typeof component === "function" && component.$entry === true);
 }
@@ -1049,6 +1270,11 @@ var UnsafeHTMLValue = class {
     return value.#value;
   }
 };
+function unsafeHTML(value) {
+  let result = new UnsafeHTMLValue(value);
+  Object.freeze(result);
+  return result;
+}
 function readUnsafeHTML(value) {
   return value instanceof UnsafeHTMLValue ? UnsafeHTMLValue.read(value) : void 0;
 }
@@ -1154,6 +1380,10 @@ function isElementFunction2(value) {
 }
 
 // node_modules/@remix-run/component/dist/runtime/mixins/mixin.js
+function renderMixinElement(element, props) {
+  let { key, ...rest } = props ?? {};
+  return jsx(element, rest, key);
+}
 var mixinHandleId = 0;
 function createMixin(type) {
   return (...args) => ({
@@ -1639,6 +1869,9 @@ function isOnMixinDescriptor(descriptor) {
   let candidate = descriptor;
   return candidate.type === onMixinType && Array.isArray(candidate.args);
 }
+function on(type, handler, captureBoolean) {
+  return onMixin(type, handler, captureBoolean);
+}
 
 // node_modules/@remix-run/component/dist/runtime/refresh.js
 var componentStalenessCheck = null;
@@ -1783,11 +2016,11 @@ function shouldTrackControlledReflection(props) {
 function scheduleControlledRestore(node, state) {
   if (state.disposed)
     return;
-  let version = ++state.pendingRestoreVersion;
+  let version2 = ++state.pendingRestoreVersion;
   queueMicrotask(() => {
     if (state.disposed)
       return;
-    if (state.pendingRestoreVersion !== version)
+    if (state.pendingRestoreVersion !== version2)
       return;
     restoreControlledReflections(node, state);
   });
@@ -2581,9 +2814,9 @@ function asAbortableFrameContent(content, signal) {
 }
 function createAbortableReadableStream(source, signal) {
   let reader = source.getReader();
-  let aborted = false;
+  let aborted2 = false;
   let onAbort = () => {
-    aborted = true;
+    aborted2 = true;
     void reader.cancel(signal.reason);
   };
   if (signal.aborted)
@@ -2592,7 +2825,7 @@ function createAbortableReadableStream(source, signal) {
     signal.addEventListener("abort", onAbort, { once: true });
   return new ReadableStream({
     async pull(controller) {
-      if (aborted) {
+      if (aborted2) {
         controller.close();
         return;
       }
@@ -4185,12 +4418,12 @@ function diffSiblingUnits(currentNodes, nextNodes, parent, regionTailRef, contex
   for (let i = committed.length - 1; i >= 0; i--) {
     let unit = committed[i];
     let first = getSiblingUnitFirstNode(unit);
-    let ref = anchor?.parentNode === parent ? anchor : null;
+    let ref2 = anchor?.parentNode === parent ? anchor : null;
     if (unit.kind === "node" && isPreservedDomElement(unit.node) && unit.node.parentNode === parent) {
       anchor = unit.node;
       continue;
     }
-    placeSiblingUnitBefore(unit, parent, ref);
+    placeSiblingUnitBefore(unit, parent, ref2);
     if (first.parentNode === parent)
       anchor = first;
   }
@@ -4247,20 +4480,20 @@ function shouldPreserveBoundaryUnit(current, next, context) {
 function getSiblingUnitFirstNode(unit) {
   return unit.kind === "node" ? unit.node : unit.start;
 }
-function placeSiblingUnitBefore(unit, parent, ref) {
+function placeSiblingUnitBefore(unit, parent, ref2) {
   if (unit.kind === "node") {
-    if (unit.node.parentNode !== parent || unit.node.nextSibling !== ref) {
-      parent.insertBefore(unit.node, ref);
+    if (unit.node.parentNode !== parent || unit.node.nextSibling !== ref2) {
+      parent.insertBefore(unit.node, ref2);
     }
     return;
   }
   let nodes = collectNodeRange(unit.start, unit.end);
-  if (unit.start.parentNode === parent && unit.end.nextSibling === ref)
+  if (unit.start.parentNode === parent && unit.end.nextSibling === ref2)
     return;
   let fragment = unit.start.ownerDocument.createDocumentFragment();
   for (let node of nodes)
     fragment.appendChild(node);
-  parent.insertBefore(fragment, ref);
+  parent.insertBefore(fragment, ref2);
 }
 function removeSiblingUnit(unit, parent, context) {
   if (unit.kind === "node") {
@@ -4999,7 +5232,7 @@ function inferFlushKind(html) {
 }
 var FRAME_RUNTIME = /* @__PURE__ */ Symbol("FrameRuntime");
 function isFrameRuntime(value) {
-  return isRecord(value) && Reflect.get(value, FRAME_RUNTIME) === true;
+  return isRecord2(value) && Reflect.get(value, FRAME_RUNTIME) === true;
 }
 function reloadFrameForNavigation(frame, options) {
   let runtime = frame.$runtime;
@@ -5612,7 +5845,7 @@ function createReconciliationTracker() {
   let pending = 0;
   let finalized = false;
   let failed = false;
-  let failure;
+  let failure2;
   let resolveReady;
   let rejectReady;
   let readyPromise = new Promise((resolve, reject) => {
@@ -5623,7 +5856,7 @@ function createReconciliationTracker() {
     if (!finalized || pending !== 0)
       return;
     if (failed)
-      rejectReady?.(failure);
+      rejectReady?.(failure2);
     else
       resolveReady?.();
     resolveReady = void 0;
@@ -5647,7 +5880,7 @@ function createReconciliationTracker() {
       void task.then(complete, (error) => {
         if (!failed) {
           failed = true;
-          failure = error;
+          failure2 = error;
         }
         complete();
       });
@@ -5811,13 +6044,13 @@ function scheduleHydrationMarker(marker, entry, context, onComplete, reconciliat
     hydrateRegion(vElement, marker.start, marker.end, identity, context, signal);
   };
   let parentHydration = marker.parent && pendingClientEntryHydrations.get(marker.parent);
-  let cached = context.moduleCache.get(key);
-  if (cached && !parentHydration) {
-    hydrateWithComponent(cached);
+  let cached2 = context.moduleCache.get(key);
+  if (cached2 && !parentHydration) {
+    hydrateWithComponent(cached2);
     complete();
     return;
   }
-  let component = cached ?? getOrStartModuleLoad(key, identity, marker.id, context);
+  let component = cached2 ?? getOrStartModuleLoad(key, identity, marker.id, context);
   Promise.all([component, parentHydration]).then(([component2]) => {
     if (component2) {
       hydrateWithComponent(component2);
@@ -5850,7 +6083,7 @@ function getOrStartModuleLoad(key, identity, markerId, context) {
 }
 function createElement(component, props) {
   let revivedProps = reviveSerializedValue(props);
-  invariant(isRecord(revivedProps), "Expected revived component props to be an object");
+  invariant(isRecord2(revivedProps), "Expected revived component props to be an object");
   return jsx(component, revivedProps);
 }
 function isElementFunction3(value) {
@@ -5864,22 +6097,22 @@ function reviveSerializedValue(value) {
   if (Array.isArray(value)) {
     return value.map((item) => reviveSerializedValue(item));
   }
-  if (!isRecord(value))
+  if (!isRecord2(value))
     return value;
-  let record = value;
-  if (record.$rmxFrame === true) {
-    let props = reviveSerializedObject(record.props);
-    let key = reviveSerializedValue(record.key);
+  let record2 = value;
+  if (record2.$rmxFrame === true) {
+    let props = reviveSerializedObject(record2.props);
+    let key = reviveSerializedValue(record2.key);
     return jsx(Frame, props, key);
   }
-  if (record.$rmx === true && typeof record.type === "string") {
-    let props = reviveSerializedObject(record.props);
-    let key = reviveSerializedValue(record.key);
-    return jsx(record.type, props, key);
+  if (record2.$rmx === true && typeof record2.type === "string") {
+    let props = reviveSerializedObject(record2.props);
+    let key = reviveSerializedValue(record2.key);
+    return jsx(record2.type, props, key);
   }
   let revived = {};
-  for (let key in record) {
-    revived[key] = reviveSerializedValue(record[key]);
+  for (let key in record2) {
+    revived[key] = reviveSerializedValue(record2[key]);
   }
   return revived;
 }
@@ -5889,9 +6122,9 @@ function reviveSerializedObject(value) {
   let revived = reviveSerializedValue(value);
   if (!revived || typeof revived !== "object" || Array.isArray(revived))
     return {};
-  return isRecord(revived) ? revived : {};
+  return isRecord2(revived) ? revived : {};
 }
-function isRecord(value) {
+function isRecord2(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 function hydrateRegion(vElement, start, end, identity, context, signal) {
@@ -6097,9 +6330,9 @@ function publishFrameTemplate(id, fragment) {
     return;
   }
   for (let listener of listeners) {
-    let clone = fragment.cloneNode(true);
-    invariant(isDocumentFragmentNode(clone), "Expected cloned frame template fragment");
-    listener(clone);
+    let clone2 = fragment.cloneNode(true);
+    invariant(isDocumentFragmentNode(clone2), "Expected cloned frame template fragment");
+    listener(clone2);
   }
 }
 function consumeFrameTemplate(id) {
@@ -6956,6 +7189,5317 @@ function run(init) {
       styleManager.dispose();
     }
   });
+}
+
+// node_modules/@remix-run/component/dist/runtime/mixins/ref-mixin.js
+var ref = createMixin((handle) => {
+  let controller;
+  handle.addEventListener("insert", (event) => {
+    controller = new AbortController();
+    callback(event.node, controller.signal);
+  });
+  handle.addEventListener("remove", () => {
+    controller?.abort(new DOMException("", "AbortError"));
+    controller = void 0;
+  });
+  let callback = () => {
+  };
+  return (nextCallback) => {
+    callback = nextCallback;
+    return handle.element;
+  };
+});
+
+// node_modules/@remix-run/component/dist/style/css-mixin.js
+var clientStyleCache = /* @__PURE__ */ new Map();
+var css = createMixin((handle) => {
+  let activeSelector = "";
+  let activeGeneration = -1;
+  let currentStyles = {};
+  handle.addEventListener("remove", () => {
+    if (!activeSelector)
+      return;
+    let runtime = handle.frame.$runtime;
+    invariant(runtime, "css mixin requires frame runtime");
+    let styleTarget = resolveStyleTarget(runtime);
+    styleTarget.styleManager?.remove(activeSelector);
+    activeSelector = "";
+    activeGeneration = -1;
+  });
+  return (styles, props) => {
+    currentStyles = styles;
+    let runtime = handle.frame.$runtime;
+    invariant(runtime, "css mixin requires frame runtime");
+    let styleTarget = resolveStyleTarget(runtime);
+    let { selector, css: cssText } = processStyleClass(currentStyles, styleTarget.styleCache);
+    let styleGeneration = styleTarget.styleManager?.getGeneration?.() ?? 0;
+    if (styleTarget.styleManager) {
+      if (activeSelector && activeSelector !== selector) {
+        styleTarget.styleManager.remove(activeSelector);
+      }
+      if (selector && (activeSelector !== selector || activeGeneration !== styleGeneration)) {
+        styleTarget.styleManager.insert(selector, cssText);
+      }
+      activeSelector = selector;
+      activeGeneration = selector ? styleGeneration : -1;
+    }
+    if (!selector) {
+      return handle.element;
+    }
+    return renderMixinElement(handle.element, {
+      ...props ?? {},
+      className: props?.className ? `${props.className} ${selector}` : selector
+    });
+  };
+});
+function resolveStyleTarget(runtime) {
+  return {
+    styleCache: runtime.styleCache ?? clientStyleCache,
+    styleManager: runtime.styleManager
+  };
+}
+
+// app/ui/copy-button.tsx
+var FADE_MS = 160;
+var HOLD_MS = 1200;
+var buttonStyle = css({
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.375rem",
+  padding: "0.375rem 0.75rem",
+  border: "1px solid var(--color-border)",
+  borderRadius: "0.375rem",
+  background: "var(--color-bg-card)",
+  color: "var(--color-primary)",
+  font: "inherit",
+  fontSize: "0.85rem",
+  cursor: "pointer",
+  "&:hover": { background: "var(--color-primary-soft)" }
+});
+var CopyButton = clientEntry(
+  "/assets/client.js#CopyButton",
+  function CopyButton2(handle) {
+    let state = "idle";
+    return () => {
+      const label = state === "copied" ? "\u30B3\u30D4\u30FC\u3057\u307E\u3057\u305F" : state === "failed" ? "\u30B3\u30D4\u30FC\u5931\u6557" : handle.props.label ?? "Markdown\u3092\u30B3\u30D4\u30FC";
+      return /* @__PURE__ */ jsx(
+        "button",
+        {
+          type: "button",
+          mix: [
+            buttonStyle,
+            on("click", async () => {
+              try {
+                await navigator.clipboard.writeText(handle.props.text);
+                state = "copied";
+              } catch {
+                state = "failed";
+              }
+              await handle.update();
+              await new Promise((resolve) => setTimeout(resolve, HOLD_MS));
+              state = "idle";
+              await handle.update();
+            })
+          ],
+          style: { transition: `opacity ${FADE_MS}ms ease` },
+          children: label
+        }
+      );
+    };
+  }
+);
+
+// app/lib/dateTime.ts
+var systemClock = {
+  nowEpochMilliseconds: () => Date.now()
+};
+
+// app/lib/guards.ts
+function isRecord3(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+// node_modules/zod/v4/core/util.js
+function jsonStringifyReplacer(_, value) {
+  if (typeof value === "bigint")
+    return value.toString();
+  return value;
+}
+var Cached = class {
+  constructor(getter) {
+    this._getter = getter;
+    this._value = void 0;
+  }
+  get value() {
+    const getter = this._getter;
+    if (getter !== void 0) {
+      this._value = getter();
+      this._getter = void 0;
+    }
+    return this._value;
+  }
+};
+function cached(getter) {
+  return new Cached(getter);
+}
+function nullish(input) {
+  return input === null || input === void 0;
+}
+function cleanRegex(source) {
+  const start = source.startsWith("^") ? 1 : 0;
+  const end = source.endsWith("$") ? source.length - 1 : source.length;
+  return source.slice(start, end);
+}
+function assignProp(target, prop, value) {
+  Object.defineProperty(target, prop, {
+    value,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
+}
+var captureStackTrace = "captureStackTrace" in Error ? Error.captureStackTrace : (..._args) => {
+};
+function isObject(data) {
+  return typeof data === "object" && data !== null && !Array.isArray(data);
+}
+function isPlainObject(o) {
+  if (isObject(o) === false)
+    return false;
+  const ctor = o.constructor;
+  if (ctor === void 0)
+    return true;
+  if (typeof ctor !== "function")
+    return true;
+  const prot = ctor.prototype;
+  if (isObject(prot) === false)
+    return false;
+  if (Object.prototype.hasOwnProperty.call(prot, "isPrototypeOf") === false) {
+    return false;
+  }
+  return true;
+}
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function clone(inst, def, params) {
+  const cl = new inst._zod.constr(def ?? inst._zod.def);
+  if (!def || params?.parent)
+    cl._zod.parent = inst;
+  return cl;
+}
+function normalizeParams(_params) {
+  const params = _params;
+  if (!params)
+    return {};
+  if (typeof params === "string")
+    return { error: () => params };
+  if (params?.message !== void 0) {
+    if (params?.error !== void 0)
+      throw new Error("Cannot specify both `message` and `error` params");
+    params.error = params.message;
+  }
+  delete params.message;
+  if (typeof params.error === "string")
+    return { ...params, error: () => params.error };
+  return params;
+}
+function optionalKeys(shape) {
+  return Object.keys(shape).filter((k) => {
+    return shape[k]._zod.optin !== void 0 && shape[k]._zod.optout === "optional";
+  });
+}
+var NUMBER_FORMAT_RANGES = /* @__PURE__ */ (() => ({
+  safeint: [Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
+  int32: [-2147483648, 2147483647],
+  uint32: [0, 4294967295],
+  float32: [-34028234663852886e22, 34028234663852886e22],
+  float64: [-Number.MAX_VALUE, Number.MAX_VALUE]
+}))();
+function aborted(x, startIndex = 0) {
+  if (x.aborted === true)
+    return true;
+  for (let i = startIndex; i < x.issues.length; i++) {
+    if (x.issues[i]?.continue !== true) {
+      return true;
+    }
+  }
+  return false;
+}
+function explicitlyAborted(x, startIndex = 0) {
+  if (x.aborted === true)
+    return true;
+  for (let i = startIndex; i < x.issues.length; i++) {
+    if (x.issues[i]?.continue === false) {
+      return true;
+    }
+  }
+  return false;
+}
+function prefixIssues(path, issues) {
+  return issues.map((iss) => {
+    var _a2;
+    (_a2 = iss).path ?? (_a2.path = []);
+    iss.path.unshift(path);
+    return iss;
+  });
+}
+function unwrapMessage(message) {
+  return typeof message === "string" ? message : message?.message;
+}
+function attachSchema(issues, start, inst) {
+  var _a2;
+  for (let i = start; i < issues.length; i++) {
+    (_a2 = issues[i]).schema ?? (_a2.schema = inst);
+  }
+}
+function finalizeIssue(iss, ctx, config2) {
+  var _a2;
+  const traits = iss.inst?._zod?.traits;
+  if (traits?.has("$ZodType")) {
+    if (traits.has("$ZodCheck"))
+      (_a2 = iss).schema ?? (_a2.schema = iss.inst);
+    else
+      iss.schema = iss.inst;
+  }
+  const schemaError = iss.schema !== iss.inst ? iss.schema?._zod.def?.error : void 0;
+  const message = iss.message ? iss.message : unwrapMessage(iss.inst?._zod.def?.error?.(iss)) ?? unwrapMessage(schemaError?.(iss)) ?? unwrapMessage(ctx?.error?.(iss)) ?? unwrapMessage(config2.customError?.(iss)) ?? unwrapMessage(config2.localeError?.(iss)) ?? "Invalid input";
+  const full = {};
+  for (const k of Object.keys(iss)) {
+    if (k === "inst" || k === "schema" || k === "continue" || k === "input" || k === "__proto__")
+      continue;
+    full[k] = iss[k];
+  }
+  full.path ?? (full.path = []);
+  full.message = message;
+  if (ctx?.reportInput) {
+    full.input = iss.input;
+  }
+  return full;
+}
+var highSurrogate = /[\uD800-\uDBFF]/;
+function codePointLength(str) {
+  const units = str.length;
+  if (!highSurrogate.test(str))
+    return units;
+  let count = units;
+  for (let i = 0; i < units - 1; i++) {
+    if ((str.charCodeAt(i) & 64512) === 55296 && (str.charCodeAt(i + 1) & 64512) === 56320) {
+      count--;
+      i++;
+    }
+  }
+  return count;
+}
+function getLengthableOrigin(input) {
+  if (Array.isArray(input))
+    return "array";
+  if (typeof input === "string")
+    return "string";
+  return "unknown";
+}
+function issue(...args) {
+  const [iss, input, inst] = args;
+  if (typeof iss === "string") {
+    return {
+      message: iss,
+      code: "custom",
+      input,
+      inst
+    };
+  }
+  return { ...iss };
+}
+function members(proto, table) {
+  for (const key in table) {
+    const desc = Object.getOwnPropertyDescriptor(table, key);
+    if (desc.get)
+      Object.defineProperty(proto, key, { ...desc, enumerable: false });
+    else
+      defineBound(proto, key, desc.value);
+  }
+}
+function own(inst, key, value, enumerable = true) {
+  Object.defineProperty(inst, key, { configurable: true, writable: true, enumerable, value });
+  return value;
+}
+function hide(inst, key, value) {
+  return own(inst, key, value, false);
+}
+function defineBound(proto, key, fn) {
+  Object.defineProperty(proto, key, {
+    configurable: true,
+    get() {
+      return this == null ? fn : own(this, key, fn.bind(this));
+    },
+    set(value) {
+      own(this, key, value);
+    }
+  });
+}
+function claim(inst, sentinel) {
+  const proto = Object.getPrototypeOf(inst);
+  return sentinel in proto ? void 0 : proto;
+}
+var installing;
+var broke = false;
+var breaker = {
+  configurable: true,
+  get() {
+    broke = true;
+    return void 0;
+  }
+};
+function defineLazyInternal(inst, key, compute) {
+  const proto = Object.getPrototypeOf(inst._zod);
+  if (key in proto && installing !== inst._zod) {
+    installing = void 0;
+    return;
+  }
+  installing = inst._zod;
+  Object.defineProperty(proto, key, {
+    configurable: true,
+    get() {
+      Object.defineProperty(this, key, breaker);
+      const outer = broke;
+      broke = false;
+      try {
+        const value = compute(this);
+        if (broke)
+          delete this[key];
+        else
+          Object.defineProperty(this, key, { configurable: true, writable: true, value });
+        broke = broke || outer;
+        return value;
+      } catch (err) {
+        delete this[key];
+        broke = broke || outer;
+        throw err;
+      }
+    },
+    set(value) {
+      Object.defineProperty(this, key, { configurable: true, writable: true, value });
+    }
+  });
+}
+function installLazyProp(inst, key, make, enumerable) {
+  const proto = claim(inst, key);
+  if (!proto)
+    return;
+  Object.defineProperty(proto, key, {
+    configurable: true,
+    get() {
+      const desc = { configurable: true, writable: true, enumerable, value: void 0 };
+      Object.defineProperty(this, key, desc);
+      desc.value = make(this);
+      Object.defineProperty(this, key, desc);
+      return desc.value;
+    },
+    set(value) {
+      Object.defineProperty(this, key, { configurable: true, writable: true, enumerable, value });
+    }
+  });
+}
+
+// node_modules/zod/v4/core/core.js
+var _a;
+var _zodDesc = { value: void 0, enumerable: false };
+var _E = "captureStackTrace" in Error ? Error : null;
+function newError(Definition) {
+  const E = _E;
+  if (E) {
+    const saved = E.stackTraceLimit;
+    if (typeof saved === "number") {
+      try {
+        E.stackTraceLimit = 0;
+      } catch {
+        _E = null;
+        return new Definition();
+      }
+      try {
+        return new Definition();
+      } finally {
+        E.stackTraceLimit = saved;
+      }
+    }
+  }
+  return new Definition();
+}
+// @__NO_SIDE_EFFECTS__
+function $constructor(name, initializer2, proto, params) {
+  const zodProto = {};
+  function Internals(def) {
+    this.def = def;
+    this.constr = _;
+    this.traits = /* @__PURE__ */ new Set();
+  }
+  Internals.prototype = zodProto;
+  const protoMembers = proto;
+  const initialized = protoMembers && /* @__PURE__ */ new WeakSet();
+  function init(inst, def) {
+    if (!inst._zod) {
+      _zodDesc.value = new Internals(def);
+      try {
+        Object.defineProperty(inst, "_zod", _zodDesc);
+      } finally {
+        _zodDesc.value = void 0;
+      }
+    } else if (inst._zod.traits.has(name)) {
+      return;
+    }
+    inst._zod.traits.add(name);
+    initializer2(inst, def);
+    if (initialized) {
+      const own2 = Object.getPrototypeOf(inst);
+      const ctorProto = inst._zod.constr.prototype;
+      let up = own2;
+      while (up && up !== ctorProto)
+        up = Object.getPrototypeOf(up);
+      const target = up ?? own2;
+      if (!initialized.has(target)) {
+        initialized.add(target);
+        members(target, protoMembers);
+      }
+    }
+    const proto2 = _.prototype;
+    for (const k in proto2) {
+      if (!Object.prototype.hasOwnProperty.call(proto2, k))
+        continue;
+      if (!(k in inst)) {
+        inst[k] = proto2[k].bind(inst);
+      }
+    }
+  }
+  const Parent = params?.Parent ?? Object;
+  class Definition extends Parent {
+  }
+  Object.defineProperty(Definition, "name", { value: name });
+  function _(def) {
+    const inst = params?.Parent ? newError(Definition) : this;
+    init(inst, def);
+    const deferred = inst._zod.deferred;
+    if (deferred) {
+      for (const fn of deferred) {
+        fn();
+      }
+      inst._zod.deferred = void 0;
+    }
+    const pp = globalThis.__zod_globalConfig?.postProcessor;
+    if (pp)
+      pp(inst);
+    return inst;
+  }
+  Object.defineProperty(_, "init", { value: init });
+  Object.defineProperty(_, Symbol.hasInstance, {
+    value: (inst) => {
+      if (params?.Parent && inst instanceof params.Parent)
+        return true;
+      return inst?._zod?.traits?.has(name);
+    }
+  });
+  Object.defineProperty(_, "name", { value: name });
+  return _;
+}
+var $ZodAsyncError = class extends Error {
+  constructor() {
+    super(`Encountered Promise during synchronous parse. Use .parseAsync() instead.`);
+  }
+};
+(_a = globalThis).__zod_globalConfig ?? (_a.__zod_globalConfig = {});
+var globalConfig = globalThis.__zod_globalConfig;
+function config(newConfig) {
+  if (newConfig)
+    Object.assign(globalConfig, newConfig);
+  return globalConfig;
+}
+
+// node_modules/zod/v4/core/errors.js
+function _getMessage() {
+  const internals = this._zod;
+  internals.message ?? (internals.message = JSON.stringify(internals.def, jsonStringifyReplacer, 2));
+  return internals.message;
+}
+function _setMessage(value) {
+  this._zod.message = value;
+}
+var _messageDesc = {
+  get: _getMessage,
+  set: _setMessage,
+  enumerable: true,
+  configurable: true
+};
+var _issuesDesc = { value: void 0, enumerable: false };
+var _installedToString = /* @__PURE__ */ new WeakSet([Object.prototype, Error.prototype]);
+var initializer = (inst, def) => {
+  inst.name = "$ZodError";
+  _issuesDesc.value = def;
+  Object.defineProperty(inst, "issues", _issuesDesc);
+  _issuesDesc.value = void 0;
+  Object.defineProperty(inst, "message", _messageDesc);
+  const proto = Object.getPrototypeOf(inst);
+  if (!_installedToString.has(proto)) {
+    _installedToString.add(proto);
+    Object.defineProperty(proto, "toString", {
+      configurable: true,
+      enumerable: false,
+      get() {
+        const value = () => this.message;
+        Object.defineProperty(this, "toString", { value, configurable: true, writable: true });
+        return value;
+      },
+      set(value) {
+        Object.defineProperty(this, "toString", { value, configurable: true, writable: true });
+      }
+    });
+  }
+};
+var $ZodError = $constructor("$ZodError", initializer);
+var $ZodRealError = $constructor("$ZodError", initializer, void 0, {
+  Parent: Error
+});
+
+// node_modules/zod/v4/core/parse.js
+var _parse = (_Err) => {
+  const fn = (schema, value, _ctx, _params) => {
+    const ctx = _ctx ? { ..._ctx, async: false } : { async: false };
+    const result = schema._zod.run({ value, issues: [] }, ctx);
+    if (result instanceof Promise) {
+      throw new $ZodAsyncError();
+    }
+    if (result.issues.length) {
+      const e = new (_params?.Err ?? _Err)(result.issues.map((iss) => finalizeIssue(iss, ctx, config())));
+      captureStackTrace(e, _params?.callee ?? fn);
+      throw e;
+    }
+    return result.value;
+  };
+  return fn;
+};
+var parse = /* @__PURE__ */ _parse($ZodRealError);
+var _parseAsync = (_Err) => {
+  const fn = async (schema, value, _ctx, params) => {
+    const ctx = _ctx ? { ..._ctx, async: true } : { async: true };
+    let result = schema._zod.run({ value, issues: [] }, ctx);
+    if (result instanceof Promise)
+      result = await result;
+    if (result.issues.length) {
+      const e = new (params?.Err ?? _Err)(result.issues.map((iss) => finalizeIssue(iss, ctx, config())));
+      captureStackTrace(e, params?.callee ?? fn);
+      throw e;
+    }
+    return result.value;
+  };
+  return fn;
+};
+var parseAsync = /* @__PURE__ */ _parseAsync($ZodRealError);
+var _safeParse = (_Err) => (schema, value, _ctx) => {
+  const ctx = _ctx ? { ..._ctx, async: false } : { async: false };
+  const result = schema._zod.run({ value, issues: [] }, ctx);
+  if (result instanceof Promise) {
+    throw new $ZodAsyncError();
+  }
+  return result.issues.length ? failure(_Err, result.issues, ctx) : { success: true, data: result.value };
+};
+var safeParse = /* @__PURE__ */ _safeParse($ZodRealError);
+function failure(Err, issues, ctx) {
+  let error;
+  return {
+    success: false,
+    get error() {
+      if (!error) {
+        error = new Err(issues.map((iss) => finalizeIssue(iss, ctx, config())));
+        issues = void 0;
+        ctx = void 0;
+      }
+      return error;
+    },
+    set error(e) {
+      error = e;
+      issues = void 0;
+      ctx = void 0;
+    }
+  };
+}
+var _safeParseAsync = (_Err) => async (schema, value, _ctx) => {
+  const ctx = _ctx ? { ..._ctx, async: true } : { async: true };
+  let result = schema._zod.run({ value, issues: [] }, ctx);
+  if (result instanceof Promise)
+    result = await result;
+  return result.issues.length ? failure(_Err, result.issues, ctx) : { success: true, data: result.value };
+};
+var safeParseAsync = /* @__PURE__ */ _safeParseAsync($ZodRealError);
+
+// node_modules/zod/v4/core/regexes.js
+var anyString = /^[\s\S]{0,}$/;
+var number = /^-?\d+(?:\.\d+)?$/;
+
+// node_modules/zod/v4/core/checks.js
+var $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
+  var _a2;
+  inst._zod ?? (inst._zod = {});
+  inst._zod.def = def;
+  (_a2 = inst._zod).onattach ?? (_a2.onattach = []);
+});
+var _whenHasLength = (payload) => {
+  const val = payload.value;
+  return !nullish(val) && val.length !== void 0;
+};
+var numericOriginMap = {
+  number: "number",
+  bigint: "bigint",
+  object: "date"
+};
+var $ZodCheckGreaterThan = /* @__PURE__ */ $constructor("$ZodCheckGreaterThan", (inst, def) => {
+  $ZodCheck.init(inst, def);
+  const origin = numericOriginMap[typeof def.value];
+  inst._zod.check = (payload) => {
+    if (def.inclusive ? payload.value >= def.value : payload.value > def.value) {
+      return;
+    }
+    payload.issues.push({
+      origin: numericOriginMap[typeof payload.value] ?? origin,
+      code: "too_small",
+      minimum: typeof def.value === "object" ? def.value.getTime() : def.value,
+      input: payload.value,
+      inclusive: def.inclusive,
+      inst,
+      continue: !def.abort
+    });
+  };
+});
+var $ZodCheckNumberFormat = /* @__PURE__ */ $constructor("$ZodCheckNumberFormat", (inst, def) => {
+  $ZodCheck.init(inst, def);
+  def.format = def.format || "float64";
+  const isInt = def.format?.includes("int");
+  const origin = isInt ? "int" : "number";
+  const [minimum, maximum] = NUMBER_FORMAT_RANGES[def.format];
+  inst._zod.check = (payload) => {
+    const input = payload.value;
+    if (isInt) {
+      if (!Number.isInteger(input)) {
+        payload.issues.push({
+          expected: origin,
+          format: def.format,
+          code: "invalid_type",
+          continue: false,
+          input,
+          inst
+        });
+        return;
+      }
+      if (!Number.isSafeInteger(input)) {
+        if (input > 0) {
+          payload.issues.push({
+            input,
+            code: "too_big",
+            maximum: Number.MAX_SAFE_INTEGER,
+            note: "Integers must be within the safe integer range.",
+            inst,
+            origin,
+            inclusive: true,
+            continue: !def.abort
+          });
+        } else {
+          payload.issues.push({
+            input,
+            code: "too_small",
+            minimum: Number.MIN_SAFE_INTEGER,
+            note: "Integers must be within the safe integer range.",
+            inst,
+            origin,
+            inclusive: true,
+            continue: !def.abort
+          });
+        }
+        return;
+      }
+    }
+    if (input < minimum) {
+      payload.issues.push({
+        origin: "number",
+        input,
+        code: "too_small",
+        minimum,
+        inclusive: true,
+        inst,
+        continue: !def.abort
+      });
+    }
+    if (input > maximum) {
+      payload.issues.push({
+        origin: "number",
+        input,
+        code: "too_big",
+        maximum,
+        inclusive: true,
+        inst,
+        continue: !def.abort
+      });
+    }
+  };
+});
+var $ZodCheckMaxLength = /* @__PURE__ */ $constructor("$ZodCheckMaxLength", (inst, def) => {
+  var _a2;
+  $ZodCheck.init(inst, def);
+  (_a2 = inst._zod.def).when ?? (_a2.when = _whenHasLength);
+  inst._zod.check = (payload) => {
+    const input = payload.value;
+    const units = input.length;
+    const length = typeof input === "string" && units > def.maximum ? codePointLength(input) : units;
+    if (length <= def.maximum)
+      return;
+    const origin = getLengthableOrigin(input);
+    payload.issues.push({
+      origin,
+      code: "too_big",
+      maximum: def.maximum,
+      inclusive: true,
+      input,
+      inst,
+      continue: !def.abort
+    });
+  };
+});
+var $ZodCheckStringFormat = /* @__PURE__ */ $constructor("$ZodCheckStringFormat", (inst, def) => {
+  var _a2, _b;
+  $ZodCheck.init(inst, def);
+  if (def.pattern)
+    (_a2 = inst._zod).check ?? (_a2.check = (payload) => {
+      def.pattern.lastIndex = 0;
+      if (def.pattern.test(payload.value))
+        return;
+      payload.issues.push({
+        origin: "string",
+        code: "invalid_format",
+        format: def.format,
+        input: payload.value,
+        ...def.pattern ? { pattern: def.pattern.toString() } : {},
+        inst,
+        continue: !def.abort
+      });
+    });
+  else
+    (_b = inst._zod).check ?? (_b.check = () => {
+    });
+});
+var $ZodCheckRegex = /* @__PURE__ */ $constructor("$ZodCheckRegex", (inst, def) => {
+  $ZodCheckStringFormat.init(inst, def);
+  inst._zod.check = (payload) => {
+    def.pattern.lastIndex = 0;
+    if (def.pattern.test(payload.value))
+      return;
+    payload.issues.push({
+      origin: "string",
+      code: "invalid_format",
+      format: "regex",
+      input: payload.value,
+      pattern: def.pattern.toString(),
+      inst,
+      continue: !def.abort
+    });
+  };
+});
+
+// node_modules/zod/v4/core/versions.js
+var version = {
+  major: 4,
+  minor: 6,
+  patch: 5
+};
+
+// node_modules/zod/v4/core/schemas.js
+var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
+  var _a2;
+  inst ?? (inst = {});
+  inst._zod.def = def;
+  inst._zod.bag = inst._zod.bag || {};
+  inst._zod.version = version;
+  const defChecks = inst._zod.def.checks;
+  const checks = inst._zod.traits.has("$ZodCheck") ? [inst, ...defChecks ?? []] : defChecks?.length ? [...defChecks] : [];
+  for (const ch of checks) {
+    for (const fn of ch._zod.onattach) {
+      fn(inst);
+    }
+  }
+  if (checks.length === 0) {
+    (_a2 = inst._zod).deferred ?? (_a2.deferred = []);
+    inst._zod.deferred?.push(() => {
+      inst._zod.run = inst._zod.parse;
+    });
+  } else {
+    const runChecks = (payload, checks2, ctx) => {
+      if (payload.memo)
+        return payload;
+      let isAborted = aborted(payload);
+      let asyncResult;
+      for (const ch of checks2) {
+        if (ch._zod.def.when) {
+          if (explicitlyAborted(payload))
+            continue;
+          const shouldRun = ch._zod.def.when(payload);
+          if (!shouldRun)
+            continue;
+        } else if (isAborted) {
+          continue;
+        }
+        const currLen = payload.issues.length;
+        const _ = ch._zod.check(payload);
+        if (_ instanceof Promise && ctx?.async === false) {
+          throw new $ZodAsyncError();
+        }
+        if (asyncResult || _ instanceof Promise) {
+          asyncResult = (asyncResult ?? Promise.resolve()).then(async () => {
+            await _;
+            const nextLen = payload.issues.length;
+            if (nextLen === currLen)
+              return;
+            attachSchema(payload.issues, currLen, inst);
+            if (!isAborted)
+              isAborted = aborted(payload, currLen);
+          });
+        } else {
+          const nextLen = payload.issues.length;
+          if (nextLen === currLen)
+            continue;
+          attachSchema(payload.issues, currLen, inst);
+          if (!isAborted)
+            isAborted = aborted(payload, currLen);
+        }
+      }
+      if (asyncResult) {
+        return asyncResult.then(() => {
+          return payload;
+        });
+      }
+      return payload;
+    };
+    const handleCanaryResult = (canary, payload, ctx) => {
+      if (aborted(canary)) {
+        canary.aborted = true;
+        return canary;
+      }
+      const checkResult = runChecks(payload, checks, ctx);
+      if (checkResult instanceof Promise) {
+        if (ctx.async === false)
+          throw new $ZodAsyncError();
+        return checkResult.then((checkResult2) => inst._zod.parse(checkResult2, ctx));
+      }
+      return inst._zod.parse(checkResult, ctx);
+    };
+    inst._zod.run = (payload, ctx) => {
+      if (ctx.skipChecks) {
+        return inst._zod.parse(payload, ctx);
+      }
+      if (ctx.direction === "backward") {
+        const canary = inst._zod.parse({ value: payload.value, issues: [] }, { ...ctx, skipChecks: true });
+        if (canary instanceof Promise) {
+          return canary.then((canary2) => {
+            return handleCanaryResult(canary2, payload, ctx);
+          });
+        }
+        return handleCanaryResult(canary, payload, ctx);
+      }
+      const result = inst._zod.parse(payload, ctx);
+      if (result instanceof Promise) {
+        if (ctx.async === false)
+          throw new $ZodAsyncError();
+        return result.then((result2) => runChecks(result2, checks, ctx));
+      }
+      return runChecks(result, checks, ctx);
+    };
+  }
+}, {
+  // Wrappers extend this by installing a richer factory over it; reading it eagerly would defeat the laziness.
+  get "~standard"() {
+    return hide(this, "~standard", standardProps(this));
+  },
+  set "~standard"(value) {
+    own(this, "~standard", value);
+  }
+});
+var toStandardResult = (r, ctx) => r.issues.length ? { issues: r.issues.map((iss) => finalizeIssue(iss, ctx, config())) } : { value: r.value };
+async function validateAsync(inst, value) {
+  const ctx = { async: true };
+  return toStandardResult(await inst._zod.run({ value, issues: [] }, ctx), ctx);
+}
+function standardProps(inst) {
+  return {
+    validate: (value) => {
+      const ctx = { async: false };
+      try {
+        const r = inst._zod.run({ value, issues: [] }, ctx);
+        if (!(r instanceof Promise))
+          return toStandardResult(r, ctx);
+      } catch (_) {
+      }
+      return validateAsync(inst, value);
+    },
+    vendor: "zod",
+    version: 1
+  };
+}
+var $ZodString = /* @__PURE__ */ $constructor("$ZodString", (inst, def) => {
+  $ZodType.init(inst, def);
+  inst._zod.pattern = def.pattern ?? anyString;
+  inst._zod.parse = (payload, _) => {
+    if (def.coerce)
+      try {
+        payload.value = String(payload.value);
+      } catch (_2) {
+      }
+    if (typeof payload.value === "string")
+      return payload;
+    payload.issues.push({
+      expected: "string",
+      code: "invalid_type",
+      input: payload.value,
+      inst
+    });
+    return payload;
+  };
+});
+var $ZodNumber = /* @__PURE__ */ $constructor("$ZodNumber", (inst, def) => {
+  $ZodType.init(inst, def);
+  inst._zod.pattern = number;
+  inst._zod.parse = (payload, _ctx) => {
+    if (def.coerce)
+      try {
+        payload.value = Number(payload.value);
+      } catch (_) {
+      }
+    const input = payload.value;
+    if (typeof input === "number" && !Number.isNaN(input) && Number.isFinite(input)) {
+      return payload;
+    }
+    const received = typeof input === "number" ? Number.isNaN(input) ? "NaN" : !Number.isFinite(input) ? String(input) : void 0 : void 0;
+    payload.issues.push({
+      expected: "number",
+      code: "invalid_type",
+      input,
+      inst,
+      ...received ? { received } : {}
+    });
+    return payload;
+  };
+});
+var $ZodNumberFormat = /* @__PURE__ */ $constructor("$ZodNumberFormat", (inst, def) => {
+  $ZodCheckNumberFormat.init(inst, def);
+  $ZodNumber.init(inst, def);
+});
+var $ZodUnknown = /* @__PURE__ */ $constructor("$ZodUnknown", (inst, def) => {
+  $ZodType.init(inst, def);
+  inst._zod.parse = (payload) => payload;
+});
+var $ZodNever = /* @__PURE__ */ $constructor("$ZodNever", (inst, def) => {
+  $ZodType.init(inst, def);
+  inst._zod.parse = (payload, _ctx) => {
+    payload.issues.push({
+      expected: "never",
+      code: "invalid_type",
+      input: payload.value,
+      inst
+    });
+    return payload;
+  };
+});
+function handleArrayResult(result, final, index) {
+  if (result.issues.length) {
+    final.issues.push(...prefixIssues(index, result.issues));
+  }
+  final.value[index] = result.value;
+}
+var $ZodArray = /* @__PURE__ */ $constructor("$ZodArray", (inst, def) => {
+  $ZodType.init(inst, def);
+  const memo = globalConfig.memoizer;
+  memo?.attach(inst);
+  inst._zod.parse = (payload, ctx) => {
+    const input = payload.value;
+    if (!Array.isArray(input)) {
+      payload.issues.push({
+        expected: "array",
+        code: "invalid_type",
+        input,
+        inst
+      });
+      return payload;
+    }
+    payload.value = memo ? memo.alloc(inst, payload, Array(input.length), ctx) : Array(input.length);
+    const proms = [];
+    const abortEarly = ctx?.abortEarly;
+    for (let i = 0; i < input.length; i++) {
+      const item = input[i];
+      const result = def.element._zod.run({
+        value: item,
+        issues: []
+      }, ctx);
+      if (result instanceof Promise) {
+        proms.push(result.then((result2) => handleArrayResult(result2, payload, i)));
+      } else {
+        handleArrayResult(result, payload, i);
+        if (abortEarly && result.issues.length !== 0 && aborted(result))
+          break;
+      }
+    }
+    if (proms.length) {
+      return Promise.all(proms).then(() => payload);
+    }
+    return payload;
+  };
+});
+function handlePropertyResult(result, final, key, input, optin, optout) {
+  const isPresent = key in input;
+  const isOptionalOut = optout === "optional";
+  if (!isPresent && isOptionalOut && optin === "optional") {
+    return;
+  }
+  if (result.issues.length) {
+    if (optin !== void 0 && isOptionalOut && !isPresent) {
+      return;
+    }
+    final.issues.push(...prefixIssues(key, result.issues));
+  }
+  if (!isPresent && optin === void 0) {
+    if (!result.issues.length) {
+      final.issues.push({
+        code: "invalid_type",
+        expected: "nonoptional",
+        input: void 0,
+        path: [key]
+      });
+    }
+    return;
+  }
+  if (result.value === void 0) {
+    if (isPresent || optin === "defaulted" && !isOptionalOut) {
+      final.value[key] = void 0;
+    }
+  } else {
+    final.value[key] = result.value;
+  }
+}
+var NO_SYMBOL_KEYS = [];
+function normalizeDef(def) {
+  const keys = Object.keys(def.shape);
+  const ownSymbols = Object.getOwnPropertySymbols(def.shape);
+  const symbolKeys = ownSymbols.length ? ownSymbols : NO_SYMBOL_KEYS;
+  const allKeys = symbolKeys.length ? [...keys, ...symbolKeys] : keys;
+  for (const k of allKeys) {
+    if (!def.shape?.[k]?._zod?.traits?.has("$ZodType")) {
+      throw new Error(`Invalid element at key "${String(k)}": expected a Zod schema`);
+    }
+  }
+  const okeys = optionalKeys(def.shape);
+  return {
+    ...def,
+    allKeys,
+    symbolKeys,
+    // string-only: handleCatchall matches it against `for...in`, which never yields a symbol
+    keySet: new Set(keys),
+    numKeys: keys.length,
+    optionalKeys: new Set(okeys)
+  };
+}
+function handleCatchall(proms, input, payload, ctx, def, inst, abortEarly) {
+  const unrecognized = [];
+  const keySet = def.keySet;
+  const _catchall = def.catchall._zod;
+  const t = _catchall.def.type;
+  const optin = _catchall.optin;
+  const optout = _catchall.optout;
+  let seen = 0;
+  for (const key in input) {
+    if (abortEarly && payload.issues.length !== seen) {
+      if (aborted(payload, seen))
+        break;
+      seen = payload.issues.length;
+    }
+    if (keySet.has(key))
+      continue;
+    if (key === "__proto__") {
+      if (t === "never")
+        unrecognized.push(key);
+      continue;
+    }
+    if (t === "never") {
+      unrecognized.push(key);
+      continue;
+    }
+    const r = _catchall.run({ value: input[key], issues: [] }, ctx);
+    if (r instanceof Promise) {
+      proms.push(r.then((r2) => handlePropertyResult(r2, payload, key, input, optin, optout)));
+    } else {
+      handlePropertyResult(r, payload, key, input, optin, optout);
+    }
+  }
+  if (unrecognized.length) {
+    payload.issues.push({
+      code: "unrecognized_keys",
+      keys: unrecognized,
+      input,
+      inst,
+      // Describes the shape of the input, not the validity of the parsed value, so it never aborts. The parse still fails; the schema's own checks just get to run first, and an enclosing intersection can reconcile the key against a sibling operand.
+      continue: true
+    });
+  }
+  if (!proms.length)
+    return payload;
+  return Promise.all(proms).then(() => {
+    return payload;
+  });
+}
+var $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
+  $ZodType.init(inst, def);
+  const desc = Object.getOwnPropertyDescriptor(def, "shape");
+  const sh = desc?.get ? desc.get.raw : def.shape ?? {};
+  if (sh) {
+    const get = () => {
+      const newSh = { ...sh };
+      Object.defineProperty(def, "shape", { value: newSh });
+      get.raw = newSh;
+      return newSh;
+    };
+    get.raw = sh;
+    Object.defineProperty(def, "shape", { get });
+  }
+  const _normalized = cached(() => normalizeDef(def));
+  defineLazyInternal(inst, "propValues", (zod) => {
+    const shape = zod.def.shape;
+    const propValues = {};
+    for (const key in shape) {
+      const field = shape[key]._zod;
+      if (field.values) {
+        if (!Object.prototype.hasOwnProperty.call(propValues, key)) {
+          assignProp(propValues, key, /* @__PURE__ */ new Set());
+        }
+        for (const v of field.values)
+          propValues[key].add(v);
+        if (field.optin !== void 0)
+          propValues[key].add(void 0);
+      }
+    }
+    return propValues;
+  });
+  const isObject2 = isObject;
+  const catchall = def.catchall;
+  let value;
+  const memo = globalConfig.memoizer;
+  memo?.attach(inst);
+  inst._zod.parse = (payload, ctx) => {
+    value ?? (value = _normalized.value);
+    const input = payload.value;
+    if (!isObject2(input)) {
+      payload.issues.push({
+        expected: "object",
+        code: "invalid_type",
+        input,
+        inst
+      });
+      return payload;
+    }
+    payload.value = memo ? memo.alloc(inst, payload, {}, ctx) : {};
+    const proms = [];
+    const shape = value.shape;
+    const abortEarly = ctx?.abortEarly;
+    let seen = payload.issues.length;
+    for (const key of value.allKeys) {
+      if (abortEarly && payload.issues.length !== seen) {
+        if (aborted(payload, seen))
+          break;
+        seen = payload.issues.length;
+      }
+      if (key === "__proto__")
+        continue;
+      const el = shape[key];
+      const optin = el._zod.optin;
+      const optout = el._zod.optout;
+      const r = el._zod.run({ value: input[key], issues: [] }, ctx);
+      if (r instanceof Promise) {
+        proms.push(r.then((r2) => handlePropertyResult(r2, payload, key, input, optin, optout)));
+      } else {
+        handlePropertyResult(r, payload, key, input, optin, optout);
+      }
+    }
+    if (!catchall) {
+      return proms.length ? Promise.all(proms).then(() => payload) : payload;
+    }
+    return handleCatchall(proms, input, payload, ctx, _normalized.value, inst, abortEarly === true);
+  };
+});
+function handleUnionResults(results, final, inst, ctx) {
+  for (const result of results) {
+    if (result.issues.length === 0) {
+      final.value = result.value;
+      return final;
+    }
+  }
+  const nonaborted = results.filter((r) => !aborted(r));
+  if (nonaborted.length === 1) {
+    final.value = nonaborted[0].value;
+    return nonaborted[0];
+  }
+  final.issues.push({
+    code: "invalid_union",
+    input: final.value,
+    inst,
+    errors: results.map((result) => result.issues.map((iss) => finalizeIssue(iss, ctx, config())))
+  });
+  return final;
+}
+var $ZodUnion = /* @__PURE__ */ $constructor("$ZodUnion", (inst, def) => {
+  $ZodType.init(inst, def);
+  defineLazyInternal(inst, "optin", (zod) => zod.def.options.some((o) => o._zod.optin === "defaulted") ? "defaulted" : zod.def.options.some((o) => o._zod.optin !== void 0) ? "optional" : void 0);
+  defineLazyInternal(inst, "optout", (zod) => zod.def.options.some((o) => o._zod.optout === "optional") ? "optional" : void 0);
+  defineLazyInternal(inst, "values", (zod) => {
+    if (zod.def.options.every((o) => o._zod.values)) {
+      return new Set(zod.def.options.flatMap((option) => Array.from(option._zod.values)));
+    }
+    return void 0;
+  });
+  defineLazyInternal(inst, "pattern", (zod) => {
+    if (zod.def.options.every((o) => o._zod.pattern)) {
+      const patterns = zod.def.options.map((o) => o._zod.pattern);
+      return new RegExp(`^(${patterns.map((p) => cleanRegex(p.source)).join("|")})$`);
+    }
+    return void 0;
+  });
+  const first = def.options.length === 1 ? def.options[0]._zod.run : null;
+  inst._zod.parse = (payload, ctx) => {
+    if (first) {
+      return first(payload, ctx);
+    }
+    let async = false;
+    const results = [];
+    for (const option of def.options) {
+      const result = option._zod.run({
+        value: payload.value,
+        issues: []
+      }, ctx);
+      if (result instanceof Promise) {
+        results.push(result);
+        async = true;
+      } else {
+        if (result.issues.length === 0)
+          return result;
+        results.push(result);
+      }
+    }
+    if (!async)
+      return handleUnionResults(results, payload, inst, ctx);
+    return Promise.all(results).then((results2) => {
+      return handleUnionResults(results2, payload, inst, ctx);
+    });
+  };
+});
+var $ZodRecord = /* @__PURE__ */ $constructor("$ZodRecord", (inst, def) => {
+  $ZodType.init(inst, def);
+  const memo = globalConfig.memoizer;
+  memo?.attach(inst);
+  inst._zod.parse = (payload, ctx) => {
+    const input = payload.value;
+    if (!isPlainObject(input)) {
+      payload.issues.push({
+        expected: "record",
+        code: "invalid_type",
+        input,
+        inst
+      });
+      return payload;
+    }
+    const proms = [];
+    const values = def.keyType._zod.values;
+    if (values && !def.partial) {
+      payload.value = memo ? memo.alloc(inst, payload, {}, ctx) : {};
+      const recordKeys = /* @__PURE__ */ new Set();
+      for (const key of values) {
+        if (typeof key === "string" || typeof key === "number" || typeof key === "symbol") {
+          recordKeys.add(typeof key === "number" ? key.toString() : key);
+          if (key === "__proto__")
+            continue;
+          const keyResult = def.keyType._zod.run({ value: key, issues: [] }, ctx);
+          if (keyResult instanceof Promise) {
+            throw new Error("Async schemas not supported in object keys currently");
+          }
+          if (keyResult.issues.length) {
+            payload.issues.push({
+              code: "invalid_key",
+              origin: "record",
+              issues: keyResult.issues.map((iss) => finalizeIssue(iss, ctx, config())),
+              input: key,
+              path: [key],
+              inst
+            });
+            continue;
+          }
+          const outKey = keyResult.value;
+          if (outKey === "__proto__")
+            continue;
+          const result = def.valueType._zod.run({ value: input[key], issues: [] }, ctx);
+          if (result instanceof Promise) {
+            proms.push(result.then((result2) => {
+              if (result2.issues.length) {
+                payload.issues.push(...prefixIssues(key, result2.issues));
+              }
+              payload.value[outKey] = result2.value;
+            }));
+          } else {
+            if (result.issues.length) {
+              payload.issues.push(...prefixIssues(key, result.issues));
+            }
+            payload.value[outKey] = result.value;
+          }
+        }
+      }
+      let unrecognized;
+      for (const key in input) {
+        if (!recordKeys.has(key)) {
+          if (def.mode === "loose") {
+            if (key === "__proto__")
+              continue;
+            payload.value[key] = input[key];
+          } else {
+            unrecognized = unrecognized ?? [];
+            unrecognized.push(key);
+          }
+        }
+      }
+      if (unrecognized && unrecognized.length > 0) {
+        payload.issues.push({
+          code: "unrecognized_keys",
+          input,
+          inst,
+          keys: unrecognized,
+          continue: true
+        });
+      }
+    } else {
+      payload.value = memo ? memo.alloc(inst, payload, {}, ctx) : {};
+      let unrecognized;
+      for (const key of Reflect.ownKeys(input)) {
+        if (key === "__proto__")
+          continue;
+        if (!Object.prototype.propertyIsEnumerable.call(input, key))
+          continue;
+        let keyResult = def.keyType._zod.run({ value: key, issues: [] }, ctx);
+        if (keyResult instanceof Promise) {
+          throw new Error("Async schemas not supported in object keys currently");
+        }
+        const checkNumericKey = typeof key === "string" && number.test(key) && keyResult.issues.length;
+        if (checkNumericKey) {
+          const retryResult = def.keyType._zod.run({ value: Number(key), issues: [] }, ctx);
+          if (retryResult instanceof Promise) {
+            throw new Error("Async schemas not supported in object keys currently");
+          }
+          if (retryResult.issues.length === 0) {
+            keyResult = retryResult;
+          }
+        }
+        if (keyResult.issues.length) {
+          if (def.mode === "loose") {
+            payload.value[key] = input[key];
+          } else if (values) {
+            unrecognized = unrecognized ?? [];
+            unrecognized.push(key);
+          } else {
+            payload.issues.push({
+              code: "invalid_key",
+              origin: "record",
+              issues: keyResult.issues.map((iss) => finalizeIssue(iss, ctx, config())),
+              input: key,
+              path: [key],
+              inst
+            });
+          }
+          continue;
+        }
+        const outKey = keyResult.value;
+        if (outKey === "__proto__")
+          continue;
+        const result = def.valueType._zod.run({ value: input[key], issues: [] }, ctx);
+        if (result instanceof Promise) {
+          proms.push(result.then((result2) => {
+            if (result2.issues.length) {
+              payload.issues.push(...prefixIssues(key, result2.issues));
+            }
+            payload.value[outKey] = result2.value;
+          }));
+        } else {
+          if (result.issues.length) {
+            payload.issues.push(...prefixIssues(key, result.issues));
+          }
+          payload.value[outKey] = result.value;
+        }
+      }
+      if (unrecognized && unrecognized.length > 0) {
+        payload.issues.push({
+          code: "unrecognized_keys",
+          input,
+          inst,
+          keys: unrecognized,
+          continue: true
+        });
+      }
+    }
+    if (proms.length) {
+      return Promise.all(proms).then(() => payload);
+    }
+    return payload;
+  };
+});
+var $ZodLiteral = /* @__PURE__ */ $constructor("$ZodLiteral", (inst, def) => {
+  $ZodType.init(inst, def);
+  const values = new Set(def.values);
+  inst._zod.values = values;
+  defineLazyInternal(inst, "pattern", (zod) => {
+    const vals = zod.def.values;
+    return new RegExp(vals.length ? `^(${vals.map((o) => typeof o === "string" ? escapeRegex(o) : o ? escapeRegex(o.toString()) : String(o)).join("|")})$` : "^[^\\s\\S]$");
+  });
+  inst._zod.parse = (payload, _ctx) => {
+    const input = payload.value;
+    if (values.has(input)) {
+      return payload;
+    }
+    payload.issues.push({
+      code: "invalid_value",
+      values: def.values,
+      input,
+      inst
+    });
+    return payload;
+  };
+});
+var $ZodReadonly = /* @__PURE__ */ $constructor("$ZodReadonly", (inst, def) => {
+  $ZodType.init(inst, def);
+  defineLazyInternal(inst, "propValues", (zod) => zod.def.innerType._zod.propValues);
+  defineLazyInternal(inst, "values", (zod) => zod.def.innerType._zod.values);
+  defineLazyInternal(inst, "optin", (zod) => zod.def.innerType?._zod?.optin);
+  defineLazyInternal(inst, "optout", (zod) => zod.def.innerType?._zod?.optout);
+  inst._zod.parse = (payload, ctx) => {
+    if (ctx.direction === "backward") {
+      return def.innerType._zod.run(payload, ctx);
+    }
+    const result = def.innerType._zod.run(payload, ctx);
+    if (result instanceof Promise) {
+      return result.then(handleReadonlyResult);
+    }
+    return handleReadonlyResult(result);
+  };
+});
+function handleReadonlyResult(payload) {
+  if (!payload.memo)
+    payload.value = Object.freeze(payload.value);
+  return payload;
+}
+var $ZodCustom = /* @__PURE__ */ $constructor("$ZodCustom", (inst, def) => {
+  $ZodCheck.init(inst, def);
+  $ZodType.init(inst, def);
+  inst._zod.parse = (payload, _) => {
+    return payload;
+  };
+  inst._zod.check = (payload) => {
+    const input = payload.value;
+    const r = def.fn(input);
+    if (r instanceof Promise) {
+      return r.then((r2) => handleRefineResult(r2, payload, input, inst));
+    }
+    handleRefineResult(r, payload, input, inst);
+    return;
+  };
+});
+function handleRefineResult(result, payload, input, inst) {
+  if (!result) {
+    const _iss = {
+      code: "custom",
+      input,
+      inst,
+      // incorporates params.error into issue reporting
+      path: [...inst._zod.def.path ?? []],
+      // incorporates params.error into issue reporting
+      continue: !inst._zod.def.abort
+      // params: inst._zod.def.params,
+    };
+    if (inst._zod.def.params)
+      _iss.params = inst._zod.def.params;
+    payload.issues.push(issue(_iss));
+  }
+}
+
+// node_modules/zod/v4/core/api.js
+function snapshotChecks(def) {
+  if (def.checks)
+    def.checks = [...def.checks];
+  return def;
+}
+// @__NO_SIDE_EFFECTS__
+function _string(Class, params) {
+  return new Class(snapshotChecks({ type: "string", ...normalizeParams(params) }));
+}
+// @__NO_SIDE_EFFECTS__
+function _int(Class, params) {
+  return new Class({
+    type: "number",
+    check: "number_format",
+    abort: false,
+    format: "safeint",
+    ...normalizeParams(params)
+  });
+}
+// @__NO_SIDE_EFFECTS__
+function _unknown(Class) {
+  return new Class({
+    type: "unknown"
+  });
+}
+// @__NO_SIDE_EFFECTS__
+function _never(Class, params) {
+  return new Class({
+    type: "never",
+    ...normalizeParams(params)
+  });
+}
+// @__NO_SIDE_EFFECTS__
+function _gt(value, params) {
+  return new $ZodCheckGreaterThan({
+    check: "greater_than",
+    ...normalizeParams(params),
+    value,
+    inclusive: false
+  });
+}
+// @__NO_SIDE_EFFECTS__
+function _positive(params) {
+  return /* @__PURE__ */ _gt(0, params);
+}
+// @__NO_SIDE_EFFECTS__
+function _maxLength(maximum, params) {
+  const ch = new $ZodCheckMaxLength({
+    check: "max_length",
+    ...normalizeParams(params),
+    maximum
+  });
+  return ch;
+}
+// @__NO_SIDE_EFFECTS__
+function _regex(pattern, params) {
+  return new $ZodCheckRegex({
+    check: "string_format",
+    format: "regex",
+    ...normalizeParams(params),
+    pattern
+  });
+}
+// @__NO_SIDE_EFFECTS__
+function _refine(Class, fn, _params) {
+  const schema = new Class({
+    type: "custom",
+    check: "custom",
+    fn,
+    ...normalizeParams(_params)
+  });
+  return schema;
+}
+
+// node_modules/zod/v4/mini/schemas.js
+var ZodMiniType = /* @__PURE__ */ $constructor("ZodMiniType", (inst, def) => {
+  if (!inst._zod)
+    throw new Error("Uninitialized schema in ZodMiniType.");
+  $ZodType.init(inst, def);
+  inst.def = def;
+  inst.type = def.type;
+}, {
+  // `with` is an alias for `check`: the same function object, not a wrapper.
+  get with() {
+    return this.check;
+  },
+  set with(value) {
+    own(this, "with", value);
+  },
+  parse(data, params) {
+    return parse(this, data, params, { callee: this.parse });
+  },
+  parseAsync(data, params) {
+    return parseAsync(this, data, params, { callee: this.parseAsync });
+  },
+  safeParse(data, params) {
+    return safeParse(this, data, params);
+  },
+  safeParseAsync(data, params) {
+    return safeParseAsync(this, data, params);
+  },
+  check(...checks) {
+    const def = this.def;
+    return this.clone({
+      ...def,
+      checks: [
+        ...def.checks ?? [],
+        ...checks.map((ch) => typeof ch === "function" ? { _zod: { check: ch, def: { check: "custom" }, onattach: [] } } : ch)
+      ]
+    }, { parent: true });
+  },
+  clone(_def, params) {
+    return clone(this, _def, params);
+  },
+  brand() {
+    return this;
+  },
+  register(reg, meta2) {
+    reg.add(this, meta2);
+    return this;
+  },
+  apply(fn, ...args) {
+    return args.length === 0 ? fn(this) : fn(this, ...args);
+  }
+});
+var ZodMiniString = /* @__PURE__ */ $constructor("ZodMiniString", (inst, def) => {
+  $ZodString.init(inst, def);
+  ZodMiniType.init(inst, def);
+});
+// @__NO_SIDE_EFFECTS__
+function string2(params) {
+  return _string(ZodMiniString, params);
+}
+var ZodMiniNumber = /* @__PURE__ */ $constructor("ZodMiniNumber", (inst, def) => {
+  $ZodNumber.init(inst, def);
+  ZodMiniType.init(inst, def);
+});
+var ZodMiniNumberFormat = /* @__PURE__ */ $constructor("ZodMiniNumberFormat", (inst, def) => {
+  $ZodNumberFormat.init(inst, def);
+  ZodMiniNumber.init(inst, def);
+});
+function int(params) {
+  return _int(ZodMiniNumberFormat, params);
+}
+var ZodMiniUnknown = /* @__PURE__ */ $constructor("ZodMiniUnknown", (inst, def) => {
+  $ZodUnknown.init(inst, def);
+  ZodMiniType.init(inst, def);
+});
+// @__NO_SIDE_EFFECTS__
+function unknown() {
+  return _unknown(ZodMiniUnknown);
+}
+var ZodMiniNever = /* @__PURE__ */ $constructor("ZodMiniNever", (inst, def) => {
+  $ZodNever.init(inst, def);
+  ZodMiniType.init(inst, def);
+});
+// @__NO_SIDE_EFFECTS__
+function never(params) {
+  return _never(ZodMiniNever, params);
+}
+var ZodMiniArray = /* @__PURE__ */ $constructor("ZodMiniArray", (inst, def) => {
+  $ZodArray.init(inst, def);
+  ZodMiniType.init(inst, def);
+});
+// @__NO_SIDE_EFFECTS__
+function array(element, params) {
+  return new ZodMiniArray({
+    type: "array",
+    element,
+    ...normalizeParams(params)
+  });
+}
+var ZodMiniObject = /* @__PURE__ */ $constructor("ZodMiniObject", (inst, def) => {
+  $ZodObject.init(inst, def);
+  ZodMiniType.init(inst, def);
+  installLazyProp(inst, "shape", (self) => self._zod.def.shape, false);
+});
+// @__NO_SIDE_EFFECTS__
+function object(shape, params) {
+  const def = {
+    type: "object",
+    shape: shape ?? {},
+    ...normalizeParams(params)
+  };
+  return new ZodMiniObject(def);
+}
+// @__NO_SIDE_EFFECTS__
+function strictObject(shape, params) {
+  return new ZodMiniObject({
+    type: "object",
+    shape,
+    catchall: /* @__PURE__ */ never(),
+    ...normalizeParams(params)
+  });
+}
+var ZodMiniUnion = /* @__PURE__ */ $constructor("ZodMiniUnion", (inst, def) => {
+  $ZodUnion.init(inst, def);
+  ZodMiniType.init(inst, def);
+});
+// @__NO_SIDE_EFFECTS__
+function union(options, params) {
+  return new ZodMiniUnion({
+    type: "union",
+    options,
+    ...normalizeParams(params)
+  });
+}
+var ZodMiniRecord = /* @__PURE__ */ $constructor("ZodMiniRecord", (inst, def) => {
+  $ZodRecord.init(inst, def);
+  ZodMiniType.init(inst, def);
+});
+// @__NO_SIDE_EFFECTS__
+function record(keyType, valueType, params) {
+  if (!valueType || !valueType._zod) {
+    return new ZodMiniRecord({
+      type: "record",
+      keyType: /* @__PURE__ */ string2(),
+      valueType: keyType,
+      ...normalizeParams(valueType)
+    });
+  }
+  return new ZodMiniRecord({
+    type: "record",
+    keyType,
+    valueType,
+    ...normalizeParams(params)
+  });
+}
+var ZodMiniLiteral = /* @__PURE__ */ $constructor("ZodMiniLiteral", (inst, def) => {
+  $ZodLiteral.init(inst, def);
+  ZodMiniType.init(inst, def);
+});
+// @__NO_SIDE_EFFECTS__
+function literal(value, params) {
+  return new ZodMiniLiteral({
+    type: "literal",
+    values: Array.isArray(value) ? value : [value],
+    ...normalizeParams(params)
+  });
+}
+var ZodMiniReadonly = /* @__PURE__ */ $constructor("ZodMiniReadonly", (inst, def) => {
+  $ZodReadonly.init(inst, def);
+  ZodMiniType.init(inst, def);
+});
+// @__NO_SIDE_EFFECTS__
+function readonly(innerType) {
+  return new ZodMiniReadonly({
+    type: "readonly",
+    innerType
+  });
+}
+var ZodMiniCustom = /* @__PURE__ */ $constructor("ZodMiniCustom", (inst, def) => {
+  $ZodCustom.init(inst, def);
+  ZodMiniType.init(inst, def);
+});
+// @__NO_SIDE_EFFECTS__
+function refine(fn, _params = {}) {
+  return _refine(ZodMiniCustom, fn, _params);
+}
+
+// app/types/browser.ts
+var QuestionIdSchema = string2("questionId \u306F\u6587\u5B57\u5217\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059").check(
+  _regex(
+    /^exam[1-9]-(2013|2014|2015|2016|2017)-q[1-9]\d*$/,
+    "questionId \u306F exam{1-9}-{2013..2017}-q{positive} \u5F62\u5F0F\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059"
+  )
+).brand();
+var UnitTabIdSchema = string2("unit id \u306F\u6587\u5B57\u5217\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059").check(
+  _regex(
+    /^unit-[a-z0-9]+(?:-[a-z0-9]+)*$/,
+    "unit id \u306F unit-{kebab-case} \u5F62\u5F0F\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059"
+  )
+).brand();
+var EpochMillisecondsSchema = int().check(_positive()).brand();
+var ExamIdSchema = string2().check(_regex(/^exam[1-9]-(2013|2014|2015|2016|2017)$/)).brand();
+var ChallengeIdSchema = string2().check(_regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)).brand();
+var JudgmentSchema = union([literal("correct"), literal("incorrect")]);
+var SyncKeySchema = string2().check(_regex(/^[A-Za-z0-9_-]{43}$/, "\u540C\u671F\u30AD\u30FC\u306E\u5F62\u5F0F\u304C\u6B63\u3057\u304F\u3042\u308A\u307E\u305B\u3093")).brand();
+var ProgressEntrySchema = readonly(
+  strictObject({
+    questionId: QuestionIdSchema,
+    unitId: UnitTabIdSchema,
+    createdAt: EpochMillisecondsSchema,
+    updatedAt: EpochMillisecondsSchema
+  })
+).check(
+  refine(
+    (entry) => entry.createdAt <= entry.updatedAt,
+    "createdAt\u306FupdatedAt\u4EE5\u4E0B\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059"
+  )
+);
+var ProgressEntryListSchema = readonly(array(ProgressEntrySchema));
+var ProgressSyncRequestSchema = readonly(
+  strictObject({
+    entries: readonly(array(ProgressEntrySchema).check(_maxLength(300)))
+  })
+);
+var SyncHeaderSchema = object({
+  "x-sync-key": SyncKeySchema
+});
+var ProgressSnapshotSchema = record(string2(), unknown());
+
+// app/features/challenge/challenge.ts
+var MAX_REASONABLE_TIMER_DELTA_MS = 24 * 60 * 60 * 1e3;
+function calculateElapsedDelta(runtime, now) {
+  if (!runtime.running || runtime.lastSample === null) {
+    return 0;
+  }
+  const delta = now - runtime.lastSample;
+  if (!Number.isFinite(delta) || delta < 0 || delta > MAX_REASONABLE_TIMER_DELTA_MS) {
+    return 0;
+  }
+  return delta;
+}
+function createInitialChallengeState(input) {
+  const maxIndex = Math.max(input.questionIds.length - 1, 0);
+  return {
+    version: 1,
+    challengeId: input.challengeId,
+    scopeKey: input.scopeKey,
+    examId: input.examId,
+    mode: input.mode,
+    questionIds: [...input.questionIds],
+    createdAt: input.createdAt,
+    updatedAt: null,
+    currentIndex: Math.min(Math.max(input.initialIndex ?? 0, 0), maxIndex),
+    revealedQuestionIds: /* @__PURE__ */ new Set(),
+    judgments: {},
+    answerCreatedAt: {},
+    questionElapsedMs: {},
+    status: "active"
+  };
+}
+function revealQuestion(state, action) {
+  if (!state.questionIds.includes(action.questionId) || state.revealedQuestionIds.has(action.questionId)) {
+    return state;
+  }
+  return {
+    ...state,
+    revealedQuestionIds: /* @__PURE__ */ new Set([...state.revealedQuestionIds, action.questionId])
+  };
+}
+function judgeQuestion(state, action) {
+  if (!state.questionIds.includes(action.questionId)) {
+    return state;
+  }
+  if (state.revealedQuestionIds.has(action.questionId) === false) {
+    return state;
+  }
+  if (state.judgments[action.questionId]) {
+    return state;
+  }
+  return {
+    ...state,
+    judgments: { ...state.judgments, [action.questionId]: action.judgment },
+    answerCreatedAt: {
+      ...state.answerCreatedAt,
+      [action.questionId]: action.answerCreatedAt
+    }
+  };
+}
+function applyElapsed(state, action) {
+  if (!state.questionIds.includes(action.questionId)) {
+    return state;
+  }
+  if (!Number.isFinite(action.deltaMs) || action.deltaMs <= 0) {
+    return state;
+  }
+  const current = state.questionElapsedMs[action.questionId] ?? 0;
+  return {
+    ...state,
+    questionElapsedMs: {
+      ...state.questionElapsedMs,
+      [action.questionId]: current + action.deltaMs
+    }
+  };
+}
+function moveTo(state, action) {
+  if (!Number.isInteger(action.index)) {
+    return state;
+  }
+  if (action.index < 0 || action.index >= state.questionIds.length) {
+    return state;
+  }
+  if (action.index === state.currentIndex) {
+    return state;
+  }
+  return { ...state, currentIndex: action.index };
+}
+function completeChallenge(state, action) {
+  return state.status === "active" && isChallengeComplete(state) ? { ...state, status: "completed", updatedAt: action.updatedAt } : state;
+}
+function challengeReducer(state, action) {
+  if (state.status !== "active") {
+    return state;
+  }
+  switch (action.type) {
+    case "REVEAL_QUESTION":
+      return revealQuestion(state, action);
+    case "JUDGE_QUESTION":
+      return judgeQuestion(state, action);
+    case "APPLY_ELAPSED":
+      return applyElapsed(state, action);
+    case "MOVE_TO":
+      return moveTo(state, action);
+    case "COMPLETE":
+      return completeChallenge(state, action);
+    case "MARK_INCOMPLETE":
+      return state.status === "active" ? { ...state, status: "incomplete" } : state;
+    default:
+      action;
+      return state;
+  }
+}
+function applyElapsedDelta(state, questionId, deltaMs) {
+  return challengeReducer(state, { type: "APPLY_ELAPSED", questionId, deltaMs });
+}
+function isChallengeComplete(state) {
+  return state.questionIds.length > 0 && state.questionIds.every(
+    (id) => state.judgments[id] !== void 0 && state.answerCreatedAt[id] !== void 0
+  );
+}
+function createChallengeSnapshot(state) {
+  const snapshot = {
+    version: 1,
+    challengeId: state.challengeId,
+    scopeKey: state.scopeKey,
+    examId: state.examId,
+    mode: state.mode,
+    questionIds: [...state.questionIds],
+    createdAt: state.createdAt,
+    currentIndex: state.currentIndex,
+    revealedQuestionIds: [...state.revealedQuestionIds],
+    judgments: { ...state.judgments },
+    answerCreatedAt: { ...state.answerCreatedAt },
+    questionElapsedMs: { ...state.questionElapsedMs }
+  };
+  return state.status === "completed" ? { ...snapshot, status: "completed", updatedAt: state.updatedAt } : { ...snapshot, status: state.status, updatedAt: null };
+}
+function restoreChallengeState(snapshot) {
+  return {
+    ...snapshot,
+    questionIds: [...snapshot.questionIds],
+    revealedQuestionIds: new Set(snapshot.revealedQuestionIds),
+    judgments: { ...snapshot.judgments },
+    answerCreatedAt: { ...snapshot.answerCreatedAt },
+    questionElapsedMs: { ...snapshot.questionElapsedMs }
+  };
+}
+function toCompletedChallengePayload(state, updatedAt) {
+  if (!isChallengeComplete(state)) {
+    return null;
+  }
+  const answers = state.questionIds.flatMap((questionId) => {
+    const judgment = state.judgments[questionId];
+    const createdAt = state.answerCreatedAt[questionId];
+    if (judgment === void 0 || createdAt === void 0) {
+      return [];
+    }
+    return [
+      {
+        questionId,
+        elapsedMs: Math.max(0, Math.round(state.questionElapsedMs[questionId] ?? 0)),
+        judgment,
+        createdAt,
+        updatedAt
+      }
+    ];
+  });
+  if (answers.length !== state.questionIds.length) {
+    return null;
+  }
+  return {
+    challengeId: state.challengeId,
+    examId: state.examId,
+    createdAt: state.createdAt,
+    updatedAt,
+    answers
+  };
+}
+function formatDuration(elapsedMs) {
+  const totalSeconds = Math.max(0, Math.floor(elapsedMs / 1e3));
+  const seconds = totalSeconds % 60;
+  const minutes = Math.floor(totalSeconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return hours > 0 ? `${hours}:${String(remainingMinutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}` : `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+function formatAccuracy(accuracy) {
+  return accuracy === null ? "\u2014" : `${Math.round(accuracy * 100)}%`;
+}
+function countJudgments(answers) {
+  const correctCount = answers.filter((answer) => answer.judgment === "correct").length;
+  return { correctCount, incorrectCount: answers.length - correctCount };
+}
+function summarizeChallenge(challenge) {
+  const { correctCount, incorrectCount } = countJudgments(challenge.answers);
+  const judgedCount = correctCount + incorrectCount;
+  return {
+    challengeCount: 1,
+    judgedCount,
+    correctCount,
+    incorrectCount,
+    accuracy: judgedCount === 0 ? null : correctCount / judgedCount,
+    totalElapsedMs: challenge.answers.reduce((total, answer) => total + answer.elapsedMs, 0)
+  };
+}
+function aggregateChallengeResults(completed) {
+  const answers = completed.flatMap((challenge) => challenge.answers);
+  const { correctCount, incorrectCount } = countJudgments(answers);
+  const judgedCount = correctCount + incorrectCount;
+  const byQuestion = Object.fromEntries(
+    Array.from(
+      Map.groupBy(answers, (answer) => answer.questionId),
+      ([questionId, questionAnswers]) => {
+        const questionJudgments = countJudgments(questionAnswers);
+        const questionJudgedCount = questionJudgments.correctCount + questionJudgments.incorrectCount;
+        const totalElapsedMs = questionAnswers.reduce(
+          (total, answer) => total + answer.elapsedMs,
+          0
+        );
+        return [
+          questionId,
+          {
+            questionId,
+            challengeCount: questionAnswers.length,
+            judgedCount: questionJudgedCount,
+            correctCount: questionJudgments.correctCount,
+            incorrectCount: questionJudgments.incorrectCount,
+            totalElapsedMs,
+            averageElapsedMs: totalElapsedMs / questionJudgedCount
+          }
+        ];
+      }
+    )
+  );
+  return {
+    challengeCount: completed.length,
+    judgedCount,
+    correctCount,
+    incorrectCount,
+    accuracy: judgedCount === 0 ? null : correctCount / judgedCount,
+    totalElapsedMs: answers.reduce((total, answer) => total + answer.elapsedMs, 0),
+    byQuestion
+  };
+}
+
+// app/features/challenge/challengeStorage.ts
+var ACTIVE_CHALLENGES_STORAGE_KEY = "fit-challenge-active-v1";
+var CHALLENGE_HISTORY_STORAGE_KEY = "fit-challenge-history-v1";
+var CHALLENGE_CHANGE_EVENT = "fit:challenge-change";
+function isJudgment(value) {
+  return JudgmentSchema.safeParse(value).success;
+}
+function isQuestionId(value) {
+  return QuestionIdSchema.safeParse(value).success;
+}
+function isNumber(value) {
+  return typeof value === "number" && Number.isFinite(value);
+}
+function isEpochMilliseconds(value) {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
+}
+function isSnapshot(value) {
+  if (!isRecord3(value)) {
+    return false;
+  }
+  const raw = value;
+  const createdAt = raw.createdAt;
+  const updatedAt = raw.updatedAt;
+  const questionIds = raw.questionIds;
+  const revealedQuestionIds = raw.revealedQuestionIds;
+  const judgments = raw.judgments;
+  const answerCreatedAt = raw.answerCreatedAt;
+  const questionElapsedMs = raw.questionElapsedMs;
+  if (raw.version !== 1 || !ChallengeIdSchema.safeParse(raw.challengeId).success || typeof raw.scopeKey !== "string" || !ExamIdSchema.safeParse(raw.examId).success || raw.mode !== "exam" && raw.mode !== "question" || !Array.isArray(questionIds) || questionIds.length === 0 || !questionIds.every(isQuestionId) || !isEpochMilliseconds(createdAt) || updatedAt !== null && !isEpochMilliseconds(updatedAt) || typeof raw.currentIndex !== "number" || !Number.isInteger(raw.currentIndex) || raw.currentIndex < 0 || raw.currentIndex >= questionIds.length || !Array.isArray(revealedQuestionIds) || !revealedQuestionIds.every(isQuestionId) || raw.status !== "active" && raw.status !== "incomplete" && raw.status !== "completed" || !isRecord3(judgments) || !isRecord3(answerCreatedAt) || !isRecord3(questionElapsedMs)) {
+    return false;
+  }
+  const questionSet = new Set(questionIds);
+  return Object.entries(judgments).every(
+    ([questionId, judgment]) => questionSet.has(questionId) && isJudgment(judgment)
+  ) && Object.entries(answerCreatedAt).every(
+    ([questionId, timestamp]) => questionSet.has(questionId) && isEpochMilliseconds(timestamp) && timestamp >= createdAt
+  ) && Object.entries(questionElapsedMs).every(
+    ([questionId, elapsedMs]) => questionSet.has(questionId) && isNumber(elapsedMs) && elapsedMs >= 0
+  ) && Object.keys(judgments).length === Object.keys(answerCreatedAt).length && Object.keys(judgments).every((id) => Object.hasOwn(answerCreatedAt, id)) && Object.keys(judgments).every(
+    (id) => revealedQuestionIds.some((questionId) => questionId === id)
+  ) && new Set(questionIds).size === questionIds.length && new Set(revealedQuestionIds).size === revealedQuestionIds.length && revealedQuestionIds.every((id) => questionSet.has(id)) && raw.status === "completed" === (updatedAt !== null) && (updatedAt === null || updatedAt >= createdAt) && (raw.status !== "completed" || Object.keys(judgments).length === questionIds.length);
+}
+function notifyChallengeChange() {
+  window.dispatchEvent(new Event(CHALLENGE_CHANGE_EVENT));
+}
+function readJson(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key) ?? "null");
+  } catch {
+    return null;
+  }
+}
+function writeJson(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    notifyChallengeChange();
+    return true;
+  } catch {
+    return false;
+  }
+}
+function readActiveChallenges() {
+  const parsed = readJson(ACTIVE_CHALLENGES_STORAGE_KEY);
+  if (!isRecord3(parsed)) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(parsed).flatMap(([challengeId, snapshot]) => {
+      if (!isSnapshot(snapshot) || snapshot.challengeId !== challengeId || snapshot.status !== "active") {
+        return [];
+      }
+      return [[challengeId, snapshot]];
+    })
+  );
+}
+function readChallengeHistory() {
+  const parsed = readJson(CHALLENGE_HISTORY_STORAGE_KEY);
+  if (!Array.isArray(parsed)) {
+    return [];
+  }
+  return parsed.filter(isSnapshot).filter((snapshot) => snapshot.status !== "active");
+}
+function findActiveChallenge(scopeKey) {
+  return Object.values(readActiveChallenges()).find((snapshot) => snapshot.scopeKey === scopeKey);
+}
+function findChallenge(challengeId) {
+  return readActiveChallenges()[challengeId] ?? readChallengeHistory().find((snapshot) => snapshot.challengeId === challengeId);
+}
+function saveActiveChallenge(state) {
+  const active = { ...readActiveChallenges(), [state.challengeId]: createChallengeSnapshot(state) };
+  return writeJson(ACTIVE_CHALLENGES_STORAGE_KEY, active);
+}
+function writeHistory(history) {
+  return writeJson(CHALLENGE_HISTORY_STORAGE_KEY, history);
+}
+function removeActiveChallenge(challengeId) {
+  return Object.fromEntries(
+    Object.entries(readActiveChallenges()).filter(([id]) => id !== challengeId)
+  );
+}
+function archiveChallenge(state) {
+  const snapshot = createChallengeSnapshot(state);
+  const history = [
+    snapshot,
+    ...readChallengeHistory().filter((item) => item.challengeId !== state.challengeId)
+  ];
+  const activeSaved = writeJson(
+    ACTIVE_CHALLENGES_STORAGE_KEY,
+    removeActiveChallenge(state.challengeId)
+  );
+  const historySaved = writeHistory(history);
+  return activeSaved && historySaved;
+}
+function readCompletedChallenges() {
+  return readChallengeHistory().flatMap((snapshot) => {
+    if (snapshot.status !== "completed") {
+      return [];
+    }
+    const payload = toCompletedChallengePayload(
+      restoreChallengeState(snapshot),
+      snapshot.updatedAt
+    );
+    return payload ? [payload] : [];
+  });
+}
+function archiveCompletedChallenge(state, updatedAt) {
+  if (state.status !== "active") {
+    return null;
+  }
+  const completed = { ...state, status: "completed", updatedAt };
+  const payload = toCompletedChallengePayload(completed, updatedAt);
+  if (!payload) {
+    return null;
+  }
+  return { payload, persisted: archiveChallenge(completed) };
+}
+function createChallengeStateFromSnapshot(snapshot) {
+  return restoreChallengeState(snapshot);
+}
+
+// app/features/markdown/questionToMarkdown.ts
+function tableToMarkdown(columns, rows) {
+  const header = `| ${columns.map((c) => c.label).join(" | ")} |`;
+  const separator = `| ${columns.map(() => "---").join(" | ")} |`;
+  const dataRows = rows.map((row) => {
+    const cells = columns.map((c) => String(row[c.key] ?? ""));
+    return `| ${cells.join(" | ")} |`;
+  });
+  return [header, separator].concat(dataRows).join("\n");
+}
+function figureDataToMarkdown(figureData) {
+  switch (figureData.type) {
+    case "truthTable":
+    case "dataTable":
+      return tableToMarkdown(figureData.columns, figureData.rows);
+    case "huffmanTable": {
+      const { characters, probabilities } = figureData.data;
+      return ["| \u6587\u5B57 | \u78BA\u7387 |", "| --- | --- |"].concat(characters.map((c, i) => `| ${c} | ${probabilities[i]} |`)).join("\n");
+    }
+    case "linkedListTable":
+      return ["| \u30A2\u30C9\u30EC\u30B9 | \u30C7\u30FC\u30BF | \u30DD\u30A4\u30F3\u30BF |", "| --- | --- | --- |"].concat(figureData.entries.map((e) => `| ${e.address} | ${e.data} | ${e.pointer} |`)).join("\n");
+    case "normalDistributionTable":
+      return ["| u | \u78BA\u7387 |", "| --- | --- |"].concat(figureData.entries.map((e) => `| ${e.u} | ${e.probability} |`)).join("\n");
+    case "parityCheck":
+      return figureData.data.map((row) => `| ${row.join(" | ")} |`).join("\n");
+    case "stateDiagram": {
+      const { nodes, transitions } = figureData;
+      const nodeLines = nodes.map((node) => {
+        const markers = [
+          ...node.isInitial ? ["\u521D\u671F\u72B6\u614B"] : [],
+          ...node.isAccepting ? ["\u53D7\u7406\u72B6\u614B"] : []
+        ];
+        const markerStr = markers.length > 0 ? ` (${markers.join(", ")})` : "";
+        return `- ${node.label}${markerStr}`;
+      });
+      const nodeById = new Map(nodes.map((n) => [n.id, n]));
+      const transLines = transitions.map((t) => {
+        const fromNode = nodeById.get(t.from);
+        const toNode = nodeById.get(t.to);
+        return `- ${fromNode?.label ?? t.from} --[${t.label}]--> ${toNode?.label ?? t.to}`;
+      });
+      return ["**\u72B6\u614B\u9077\u79FB\u56F3**", "", "\u72B6\u614B:"].concat(nodeLines, ["", "\u9077\u79FB:"], transLines).join("\n");
+    }
+    case "binaryTree": {
+      const collectNodes = (node, depth) => {
+        if (!node) {
+          return [];
+        }
+        const indent2 = "  ".repeat(depth);
+        return [indent2.concat(`- ${node.value}`)].concat(
+          collectNodes(node.left, depth + 1),
+          collectNodes(node.right, depth + 1)
+        );
+      };
+      return ["**\u4E8C\u5206\u6728**", ""].concat(collectNodes(figureData.root, 0)).join("\n");
+    }
+    case "logicCircuit": {
+      const { inputs, outputs, gates } = figureData;
+      return [
+        "**\u8AD6\u7406\u56DE\u8DEF**",
+        "",
+        `\u5165\u529B: ${inputs.map((i) => i.label).join(", ")}`,
+        `\u51FA\u529B: ${outputs.map((o) => o.label).join(", ")}`,
+        `\u30B2\u30FC\u30C8: ${gates.map((g) => `${g.id}(${g.type})`).join(", ")}`
+      ].join("\n");
+    }
+    case "flowchart": {
+      const { nodes, edges } = figureData;
+      const nodeLines = nodes.map((node) => `- [${node.type}] ${node.label}`);
+      const nodeById = new Map(nodes.map((n) => [n.id, n]));
+      const edgeLines = edges.map((edge) => {
+        const fromNode = nodeById.get(edge.from);
+        const toNode = nodeById.get(edge.to);
+        const label = edge.label ? ` (${edge.label})` : "";
+        return `- ${fromNode?.label ?? edge.from} --> ${toNode?.label ?? edge.to}${label}`;
+      });
+      return ["**\u30D5\u30ED\u30FC\u30C1\u30E3\u30FC\u30C8**", "", "\u30CE\u30FC\u30C9:"].concat(nodeLines, ["", "\u30D5\u30ED\u30FC:"], edgeLines).join("\n");
+    }
+    default:
+      return "";
+  }
+}
+function buildFigureSection(question, sectionHeading) {
+  if (question.figureData) {
+    return [`${sectionHeading} \u56F3`, "", figureDataToMarkdown(question.figureData), ""];
+  }
+  if (question.figureDescription) {
+    return [`> **\u56F3**: ${question.figureDescription}`, ""];
+  }
+  return [];
+}
+function questionToMarkdown(question, {
+  includeSolution = true,
+  headingLevel = 2
+} = {}) {
+  const heading = "#".repeat(headingLevel);
+  const sectionHeading = `${heading}#`;
+  const base = [`${heading} \u554F\u984C ${question.number}`, "", question.text, ""];
+  const figure = buildFigureSection(question, sectionHeading);
+  const options = question.options && question.options.length > 0 ? [`${sectionHeading} \u9078\u629E\u80A2`].concat(
+    question.options.map(
+      (option) => `- **${option.label}**: ${option.value || "(\u672A\u5165\u529B)"}`
+    )
+  ).concat("") : [];
+  const answer = includeSolution ? [`${sectionHeading} \u89E3\u7B54`, question.answer, ""] : [];
+  const explanation = includeSolution && question.explanation ? [`${sectionHeading} \u89E3\u8AAC`, question.explanation] : [];
+  return base.concat(figure, options, answer, explanation).join("\n").trim();
+}
+
+// app/features/challenge/player/id.ts
+function generateChallengeId() {
+  if (typeof crypto.randomUUID === "function") {
+    return ChallengeIdSchema.parse(crypto.randomUUID());
+  }
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  bytes[6] = bytes[6] & 15 | 64;
+  bytes[8] = bytes[8] & 63 | 128;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return ChallengeIdSchema.parse(
+    `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+  );
+}
+
+// app/features/challenge/player/initialView.ts
+function readInitialChallengeView(search) {
+  const query = new URLSearchParams(search);
+  const challenge = ChallengeIdSchema.safeParse(query.get("challenge"));
+  return {
+    view: query.get("view") === "result" ? "result" : "player",
+    challengeId: challenge.success ? challenge.data : void 0
+  };
+}
+
+// app/features/challenge/player/model.ts
+function createPlayerChallenge(props, questions, scopeKey, requestedIndex, activeQuestionId, getQuestionIndex, challengeId, createdAt) {
+  const requestedQuestionIndex = requestedIndex ?? (props.mode === "question" ? getQuestionIndex(activeQuestionId ?? props.requestedQuestionId) : 0);
+  const initialIndex = Math.min(
+    Math.max(requestedQuestionIndex, 0),
+    Math.max(questions.length - 1, 0)
+  );
+  const question = questions[initialIndex] ?? questions[0];
+  if (!question) {
+    return null;
+  }
+  const questionIds = props.mode === "question" ? [question.id] : questions.map((item) => item.id);
+  const challengeScopeKey = props.mode === "question" ? questionScopeKey(props.examId, props.mode, question.id) : scopeKey;
+  const state = createInitialChallengeState({
+    challengeId,
+    scopeKey: challengeScopeKey,
+    examId: props.examId,
+    mode: props.mode,
+    questionIds,
+    createdAt,
+    initialIndex: props.mode === "question" ? 0 : initialIndex
+  });
+  return { state, question };
+}
+function questionScopeKey(examId, mode, questionId) {
+  return `${examId}/${mode === "question" ? `question/${questionId ?? ""}` : "exam"}`;
+}
+function filterChallengeHistory(history, examId, mode, requestedQuestionId) {
+  return history.filter((item) => {
+    if (item.examId !== examId) {
+      return false;
+    }
+    if (mode === "exam") {
+      return item.answers.length > 1;
+    }
+    return item.answers.length === 1 && item.answers[0]?.questionId === requestedQuestionId;
+  });
+}
+function getNavigationPosition(mode, currentQuestionId, state, questions, getQuestionIndex) {
+  return {
+    currentQuestionIndex: mode === "question" ? getQuestionIndex(currentQuestionId) : state.currentIndex,
+    navigationLength: mode === "question" ? questions.length : state.questionIds.length
+  };
+}
+
+// app/features/challenge/player/initialPlayerSession.ts
+var emptySession = {
+  kind: "server",
+  state: null,
+  phase: "player",
+  resultPayload: null,
+  resultHistory: []
+};
+function getHistoryForScope(props, payload) {
+  const questionId = props.mode === "question" ? payload.answers[0]?.questionId ?? props.requestedQuestionId : props.requestedQuestionId;
+  return filterChallengeHistory(readCompletedChallenges(), payload.examId, props.mode, questionId);
+}
+function resolveInitialResult(props) {
+  const { view, challengeId } = readInitialChallengeView(window.location.search);
+  if (view !== "result") {
+    return null;
+  }
+  if (!challengeId) {
+    return { ...emptySession, kind: "missing", phase: "missing" };
+  }
+  const snapshot = findChallenge(challengeId);
+  if (snapshot?.status !== "completed") {
+    return { ...emptySession, kind: "missing", phase: "missing" };
+  }
+  const payload = toCompletedChallengePayload(restoreChallengeState(snapshot), snapshot.updatedAt);
+  if (!payload) {
+    return { ...emptySession, kind: "missing", phase: "missing" };
+  }
+  return {
+    kind: "result",
+    state: null,
+    phase: "result",
+    resultPayload: payload,
+    resultHistory: getHistoryForScope(props, payload)
+  };
+}
+function resolveInitialPlayerSession(props) {
+  if (typeof window === "undefined") {
+    return emptySession;
+  }
+  const result = resolveInitialResult(props);
+  if (result) {
+    return result;
+  }
+  const scopeKey = questionScopeKey(props.examId, props.mode, props.requestedQuestionId);
+  const active = findActiveChallenge(scopeKey);
+  if (active) {
+    return {
+      kind: "resume",
+      state: createChallengeStateFromSnapshot(active),
+      phase: "resume",
+      resultPayload: null,
+      resultHistory: []
+    };
+  }
+  const challenge = createPlayerChallenge(
+    props,
+    props.questions,
+    scopeKey,
+    void 0,
+    props.requestedQuestionId,
+    (questionId) => props.questions.findIndex((question) => question.id === questionId),
+    generateChallengeId(),
+    systemClock.nowEpochMilliseconds()
+  );
+  if (!challenge) {
+    return { ...emptySession, kind: "missing", phase: "missing" };
+  }
+  return {
+    kind: "new",
+    state: challenge.state,
+    phase: "player",
+    resultPayload: null,
+    resultHistory: []
+  };
+}
+
+// app/features/challenge/player/navigation.ts
+function replaceChallengeView(view, challengeId) {
+  const url = new URL(window.location.href);
+  if (view === "result" && challengeId) {
+    url.searchParams.set("view", "result");
+    url.searchParams.set("challenge", challengeId);
+  } else {
+    url.searchParams.delete("view");
+    url.searchParams.delete("challenge");
+  }
+  window.history.replaceState(null, "", url);
+}
+function replaceQuestionInUrl(questionId) {
+  const url = new URL(window.location.href);
+  const path = url.pathname.split("/");
+  if (path.at(-2) === "question") {
+    path[path.length - 1] = questionId;
+    url.pathname = path.join("/");
+  }
+  url.searchParams.delete("question");
+  window.history.replaceState(null, "", url);
+}
+
+// app/features/challenge/player/timerRuntime.ts
+function projectElapsedTime(baseElapsedMs, running, startedAt, now) {
+  if (!running || startedAt === null) {
+    return baseElapsedMs;
+  }
+  const delta = now - startedAt;
+  if (!Number.isFinite(delta) || delta < 0 || delta > MAX_REASONABLE_TIMER_DELTA_MS) {
+    return baseElapsedMs;
+  }
+  return baseElapsedMs + delta;
+}
+function sampleChallengeTimer(state, runtime, now) {
+  const deltaMs = calculateElapsedDelta(runtime, now);
+  runtime.lastSample = now;
+  if (deltaMs <= 0) {
+    return { state, deltaMs: 0 };
+  }
+  return {
+    state: applyElapsedDelta(state, runtime.currentQuestionId, deltaMs),
+    deltaMs
+  };
+}
+function resetTimerRuntimeInPlace(runtime, questionId) {
+  if (questionId) {
+    runtime.currentQuestionId = questionId;
+  }
+  runtime.lastSample = null;
+  runtime.running = false;
+}
+
+// app/lib/overline.ts
+var COMBINING_OVERLINE = /(.)[̅̄]+/gu;
+function escapeHtml(input) {
+  return input.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function overlineToHtml(input) {
+  return escapeHtml(input).replace(COMBINING_OVERLINE, '<span class="ovl">$1</span>');
+}
+
+// app/features/challenge/player/ui/answer-panel.tsx
+function AnswerPanel(handle) {
+  return () => {
+    const { question, isOpen, judgment, onJudge } = handle.props;
+    if (!isOpen) {
+      return null;
+    }
+    return /* @__PURE__ */ jsx(
+      "section",
+      {
+        class: "exam-answer exam-answer--entered",
+        id: "exam-answer",
+        "aria-labelledby": "exam-answer-heading",
+        "aria-live": "polite",
+        children: /* @__PURE__ */ jsx("div", { class: "exam-answer__body", "aria-live": "polite", children: [
+          /* @__PURE__ */ jsx("h3", { class: "exam-answer__label", id: "exam-answer-heading", children: "\u89E3\u7B54" }),
+          /* @__PURE__ */ jsx("p", { innerHTML: unsafeHTML(overlineToHtml(question.answer)) }),
+          question.explanation ? /* @__PURE__ */ jsx(Fragment, { children: [
+            /* @__PURE__ */ jsx("p", { class: "exam-answer__label", children: "\u89E3\u8AAC" }),
+            /* @__PURE__ */ jsx("p", { innerHTML: unsafeHTML(overlineToHtml(question.explanation)) })
+          ] }) : null,
+          /* @__PURE__ */ jsx("fieldset", { class: "exam-judgment", children: [
+            /* @__PURE__ */ jsx("legend", { class: "sr-only", children: "\u81EA\u5DF1\u5224\u5B9A" }),
+            /* @__PURE__ */ jsx(
+              "button",
+              {
+                type: "button",
+                class: `judgment-button judgment-button--correct ${judgment === "correct" ? "is-selected" : ""}`,
+                "aria-label": "\u6B63\u89E3\u3068\u3057\u3066\u8A18\u9332",
+                "aria-pressed": judgment === "correct" ? "true" : "false",
+                disabled: judgment !== void 0,
+                mix: on("click", () => onJudge("correct")),
+                children: "\u25CB"
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              "button",
+              {
+                type: "button",
+                class: `judgment-button judgment-button--incorrect ${judgment === "incorrect" ? "is-selected" : ""}`,
+                "aria-label": "\u4E0D\u6B63\u89E3\u3068\u3057\u3066\u8A18\u9332",
+                "aria-pressed": judgment === "incorrect" ? "true" : "false",
+                disabled: judgment !== void 0,
+                mix: on("click", () => onJudge("incorrect")),
+                children: "\xD7"
+              }
+            )
+          ] })
+        ] })
+      }
+    );
+  };
+}
+
+// node_modules/@remix-run/route-pattern/dist/lib/route-pattern/split.js
+function split(source) {
+  let result = {
+    protocol: null,
+    hostname: null,
+    port: null,
+    pathname: null,
+    search: null
+  };
+  let questionMarkIndex = source.indexOf("?");
+  if (questionMarkIndex !== -1) {
+    result.search = span(questionMarkIndex + 1, source.length);
+    source = source.slice(0, questionMarkIndex);
+  }
+  let solidusIndex = source.indexOf("://");
+  if (solidusIndex === -1) {
+    result.pathname = pathnameSpan(source, 0, source.length);
+    return result;
+  }
+  let slashIndex = source.indexOf("/");
+  if (slashIndex === solidusIndex + 1) {
+    slashIndex = source.indexOf("/", solidusIndex + 3);
+  }
+  if (slashIndex === -1) {
+    result.protocol = span(0, solidusIndex);
+    let host2 = span(solidusIndex + 3, source.length);
+    if (host2) {
+      let { hostname, port } = hostSpans(source, host2);
+      result.hostname = hostname;
+      result.port = port;
+    }
+    return result;
+  }
+  if (slashIndex < solidusIndex) {
+    result.pathname = pathnameSpan(source, 0, source.length);
+    return result;
+  }
+  result.protocol = span(0, solidusIndex);
+  let host = span(solidusIndex + 3, slashIndex);
+  if (host) {
+    let { hostname, port } = hostSpans(source, host);
+    result.hostname = hostname;
+    result.port = port;
+  }
+  result.pathname = pathnameSpan(source, slashIndex, source.length);
+  return result;
+}
+function span(start, end) {
+  if (start === end)
+    return null;
+  return [start, end];
+}
+function hostSpans(source, host) {
+  let lastColonIndex = source.slice(0, host[1]).lastIndexOf(":");
+  if (lastColonIndex === -1 || lastColonIndex < host[0])
+    return { hostname: host, port: null };
+  if (source.slice(lastColonIndex + 1, host[1]).match(/^\d+$/)) {
+    return { hostname: span(host[0], lastColonIndex), port: span(lastColonIndex + 1, host[1]) };
+  }
+  return { hostname: host, port: null };
+}
+function pathnameSpan(source, begin, end) {
+  if (source[begin] === "/")
+    begin += 1;
+  return span(begin, end);
+}
+
+// node_modules/@remix-run/route-pattern/dist/lib/route-pattern/parse.js
+var IDENTIFIER_RE = /^[a-zA-Z_$][a-zA-Z_$0-9]*/;
+function parsePattern(source) {
+  let spans = split(source);
+  if (spans.port && !spans.hostname) {
+    throw new ParseError("missing hostname", source, spans.port[0] - 1);
+  }
+  return createRoutePattern({
+    protocol: parseProtocol(source, spans.protocol),
+    hostname: parseHostname(source, spans.hostname),
+    port: spans.port ? source.slice(...spans.port) : null,
+    pathname: spans.pathname ? parsePart(source, { span: spans.pathname, type: "pathname" }) : parsePart("", { span: [0, 0], type: "pathname" }),
+    search: spans.search ? parseSearch(source.slice(...spans.search)) : /* @__PURE__ */ new Map()
+  });
+}
+function parsePart(source, options) {
+  let span2 = options.span ?? [0, source.length];
+  let separator = options.type === "hostname" ? "." : "/";
+  let tokens = [];
+  let tokenIndices = [];
+  let optionals = /* @__PURE__ */ new Map();
+  let appendText = (text) => {
+    let currentToken = tokens.at(-1);
+    if (currentToken?.type === "text") {
+      currentToken.text += text;
+    } else {
+      tokens.push({ type: "text", text });
+      tokenIndices.push(i);
+    }
+  };
+  let i = span2[0];
+  let optionalStack = [];
+  let emptyOptionals = [];
+  while (i < span2[1]) {
+    let char = source[i];
+    if (char === "(") {
+      optionalStack.push({ tokenIndex: tokens.length, sourceIndex: i });
+      tokens.push({ type: char });
+      tokenIndices.push(i);
+      i += 1;
+      continue;
+    }
+    if (char === ")") {
+      let optional = optionalStack.pop();
+      if (optional === void 0) {
+        throw new ParseError("unmatched )", source, i);
+      }
+      if (optional.tokenIndex === tokens.length - 1) {
+        emptyOptionals.push(optional.sourceIndex);
+      }
+      optionals.set(optional.tokenIndex, tokens.length);
+      tokens.push({ type: char });
+      tokenIndices.push(i);
+      i += 1;
+      continue;
+    }
+    if (char === ":") {
+      i += 1;
+      let name = IDENTIFIER_RE.exec(source.slice(i, span2[1]))?.[0];
+      if (!name) {
+        throw new ParseError("missing variable name", source, i - 1);
+      }
+      tokens.push({ type: ":", name });
+      tokenIndices.push(i - 1);
+      i += name.length;
+      continue;
+    }
+    if (char === "*") {
+      i += 1;
+      let name = IDENTIFIER_RE.exec(source.slice(i, span2[1]))?.[0];
+      tokens.push({ type: "*", name: name ?? "*" });
+      tokenIndices.push(i - 1);
+      i += name?.length ?? 0;
+      continue;
+    }
+    if (char === separator) {
+      tokens.push({ type: "separator" });
+      tokenIndices.push(i);
+      i += 1;
+      continue;
+    }
+    if (char === "\\") {
+      if (i + 1 === span2[1]) {
+        throw new ParseError("dangling escape", source, i);
+      }
+      let text = source.slice(i + 1, i + 2);
+      appendText(text);
+      i += 2;
+      continue;
+    }
+    appendText(char);
+    i += 1;
+  }
+  let unmatchedOptional = optionalStack.at(-1);
+  if (unmatchedOptional !== void 0) {
+    throw new ParseError("unmatched (", source, unmatchedOptional.sourceIndex);
+  }
+  if (emptyOptionals.length > 0) {
+    throw new ParseError("empty optional", source, emptyOptionals[0]);
+  }
+  validateTokenGrammar(source, tokens, optionals, tokenIndices);
+  validateOptionalCaptureSchemas(source, tokens, optionals, tokenIndices);
+  return { tokens, optionals, type: options.type };
+}
+function validateTokenGrammar(source, tokens, optionals, tokenIndices) {
+  for (let [index, token] of tokens.entries()) {
+    if (token.type !== ":" && token.type !== "*")
+      continue;
+    for (let next of nextConsumingTokenIndices(tokens, optionals, index + 1)) {
+      if (next === tokens.length)
+        continue;
+      let nextToken = tokens[next];
+      if (token.type === "*") {
+        if (nextToken.type === "*") {
+          throw new ParseError("adjacent wildcards", source, tokenIndices[next]);
+        }
+        continue;
+      }
+      if (nextToken.type === "separator" || nextToken.type === "*" || nextToken.type === "text" && nextToken.text.startsWith(".")) {
+        continue;
+      }
+      throw new ParseError("invalid param delimiter", source, tokenIndices[next]);
+    }
+  }
+}
+function nextConsumingTokenIndices(tokens, optionals, start) {
+  let result = /* @__PURE__ */ new Set();
+  let pending = [start];
+  let visited = /* @__PURE__ */ new Set();
+  while (pending.length > 0) {
+    let index = pending.pop();
+    if (index === void 0)
+      break;
+    if (visited.has(index))
+      continue;
+    visited.add(index);
+    let token = tokens[index];
+    if (token === void 0) {
+      result.add(tokens.length);
+    } else if (token.type === "(") {
+      let end = optionals.get(index);
+      if (end === void 0)
+        throw new Error("missing optional end");
+      pending.push(index + 1, end + 1);
+    } else if (token.type === ")") {
+      pending.push(index + 1);
+    } else {
+      result.add(index);
+    }
+  }
+  return result;
+}
+function validateOptionalCaptureSchemas(source, tokens, optionals, tokenIndices) {
+  for (let [begin, end] of optionals) {
+    let nextBegin = end + 1;
+    if (tokens[nextBegin]?.type !== "(")
+      continue;
+    let nextEnd = optionals.get(nextBegin);
+    if (nextEnd === void 0)
+      continue;
+    let first = optionalStructure(tokens, begin + 1, end);
+    let second = optionalStructure(tokens, nextBegin + 1, nextEnd);
+    if (first.structure === second.structure && first.captures !== second.captures) {
+      throw new ParseError("ambiguous optional captures", source, tokenIndices[nextBegin]);
+    }
+  }
+}
+function optionalStructure(tokens, begin, end) {
+  let structure = "";
+  let captures = "";
+  for (let i = begin; i < end; i++) {
+    let token = tokens[i];
+    if (token.type === ":" || token.type === "*") {
+      structure += token.type;
+      captures += `${token.type}:${token.name}|`;
+    } else if (token.type === "text") {
+      structure += `t:${token.text}|`;
+    } else {
+      structure += `${token.type}|`;
+    }
+  }
+  return { structure, captures };
+}
+function parseProtocol(source, span2) {
+  if (!span2)
+    return null;
+  let protocol = source.slice(...span2);
+  if (protocol === "" || protocol === "http" || protocol === "https" || protocol === "http(s)") {
+    return protocol === "" ? null : protocol;
+  }
+  throw new ParseError("invalid protocol", source, span2[0]);
+}
+function parseHostname(source, span2) {
+  if (!span2)
+    return null;
+  let part = parsePart(source, { span: span2, type: "hostname" });
+  if (isNamelessWildcard(part))
+    return null;
+  return part;
+}
+function isNamelessWildcard(part) {
+  if (part.tokens.length !== 1)
+    return false;
+  let token = part.tokens[0];
+  if (token.type !== "*")
+    return false;
+  return token.name === "*";
+}
+function parseSearch(source) {
+  let constraints = /* @__PURE__ */ new Map();
+  let searchParams = new URLSearchParams(source);
+  for (let [key, value] of searchParams) {
+    let requiredValues = constraints.get(key);
+    if (!requiredValues) {
+      requiredValues = /* @__PURE__ */ new Set();
+      constraints.set(key, requiredValues);
+    }
+    if (value === "")
+      continue;
+    requiredValues.add(value);
+  }
+  return constraints;
+}
+var ParseError = class extends Error {
+  /** The parse failure category. */
+  type;
+  /** Original pattern source being parsed. */
+  source;
+  /** Character index where parsing failed. */
+  index;
+  constructor(type, source, index) {
+    let underline = " ".repeat(index) + "^";
+    let message = `${type}
+
+${source}
+${underline}`;
+    super(message);
+    this.name = "ParseError";
+    this.type = type;
+    this.source = source;
+    this.index = index;
+  }
+};
+
+// node_modules/@remix-run/route-pattern/dist/lib/unreachable.js
+function unreachable(value) {
+  let message = value === void 0 ? "Unreachable" : `Unreachable: ${value}`;
+  throw new Error(message);
+}
+
+// node_modules/@remix-run/route-pattern/dist/lib/route-pattern/serialize.js
+function serializePattern(pattern) {
+  let protocol = serializeProtocol(pattern);
+  let hostname = serializeHostname(pattern);
+  let port = serializePort(pattern);
+  let pathname = serializePathname(pattern);
+  let search = serializeSearch(pattern);
+  let result = "";
+  if (protocol || hostname || port) {
+    result += `${protocol}://${hostname}${port === "" ? "" : `:${port}`}`;
+  }
+  result += "/" + pathname;
+  if (search)
+    result += `?${search}`;
+  return result;
+}
+function serializePatternParts(pattern) {
+  return {
+    protocol: serializeProtocol(pattern),
+    hostname: serializeHostname(pattern),
+    port: serializePort(pattern),
+    pathname: serializePathname(pattern),
+    search: serializeSearch(pattern)
+  };
+}
+function serializeProtocol(pattern) {
+  return pattern.protocol ?? "";
+}
+function serializeHostname(pattern) {
+  return pattern.hostname ? serializePart(pattern.hostname) : "";
+}
+function serializePort(pattern) {
+  return pattern.port ?? "";
+}
+function serializePathname(pattern) {
+  return serializePart(pattern.pathname);
+}
+function serializeSearch(pattern) {
+  if (pattern.search.size === 0)
+    return "";
+  let searchParams = new URLSearchParams();
+  for (let [key, constraint] of pattern.search) {
+    if (constraint.size === 0) {
+      searchParams.append(key, "");
+    } else {
+      for (let value of constraint) {
+        searchParams.append(key, value);
+      }
+    }
+  }
+  return searchParams.toString();
+}
+function escapeText(text) {
+  return text.replaceAll(/[:*()\\]/g, "\\$&");
+}
+function serializePart(part) {
+  let separator = part.type === "hostname" ? "." : "/";
+  let result = "";
+  for (let token of part.tokens) {
+    if (token.type === "(" || token.type === ")") {
+      result += token.type;
+      continue;
+    }
+    if (token.type === "text") {
+      result += escapeText(token.text);
+      continue;
+    }
+    if (token.type === ":" || token.type === "*") {
+      let name = token.name === "*" ? "" : token.name;
+      result += `${token.type}${name}`;
+      continue;
+    }
+    if (token.type === "separator") {
+      result += separator;
+      continue;
+    }
+    unreachable(token.type);
+  }
+  return result;
+}
+
+// node_modules/@remix-run/route-pattern/dist/lib/route-pattern.js
+var RoutePattern = class {
+  /** Parsed parts of this pattern. Internal; not part of the public API. */
+  _parts;
+  /**
+   * Create a new `RoutePattern` from its parsed parts.
+   *
+   * The parts are not part of the public API. Use the {@link RoutePattern} `parse` method to create a pattern
+   * from a source string.
+   *
+   * @param parts The parsed parts of the pattern.
+   */
+  constructor(parts) {
+    this._parts = parts;
+  }
+  /**
+   * Create a new `RoutePattern` by parsing a source string.
+   *
+   * @param source The route pattern source string.
+   * @returns The parsed route pattern.
+   */
+  static parse(source) {
+    return parsePattern(source);
+  }
+  /** Normalized string representation of this pattern. */
+  get source() {
+    return serializePattern(this._parts);
+  }
+  /**
+   * Returns a string representing this route pattern.
+   *
+   * @returns The same normalized pattern string as `RoutePattern.source`.
+   */
+  toString() {
+    return this.source;
+  }
+  /**
+   * Returns a JSON-serializable object containing each serialized part of this route pattern.
+   *
+   * @returns The serialized protocol, hostname, port, pathname, and search.
+   */
+  toJSON() {
+    return serializePatternParts(this._parts);
+  }
+};
+function createRoutePattern(parts) {
+  return new RoutePattern(parts);
+}
+
+// node_modules/@remix-run/route-pattern/dist/lib/href.js
+function createHref(pattern, ...args) {
+  pattern = typeof pattern === "string" ? RoutePattern.parse(pattern) : pattern;
+  let patternParts = pattern._parts;
+  let [params, options] = args;
+  let hasOrigin = patternParts.protocol !== null || patternParts.hostname !== null || patternParts.port !== null;
+  let result = "";
+  let targetOrigin;
+  if (hasOrigin) {
+    let protocol = patternParts.protocol === null || patternParts.protocol === "http(s)" ? "https" : patternParts.protocol;
+    if (patternParts.hostname === null) {
+      throw new CreateHrefError({ type: "missing-hostname", pattern });
+    }
+    let hostname = hrefPart(pattern, patternParts.hostname, params ?? {});
+    let port = patternParts.port === null ? "" : `:${patternParts.port}`;
+    targetOrigin = `${protocol}://${hostname}${port}`;
+    result += targetOrigin;
+  }
+  let pathname = hrefPart(pattern, patternParts.pathname, params ?? {});
+  pathname = "/" + pathname.replace(/^\/+/, "");
+  result += pathname;
+  let search = hrefSearch(patternParts.search, options?.searchParams);
+  let searchSuffix = search === void 0 ? "" : `?${search}`;
+  result += searchSuffix;
+  if (options?.baseURL !== void 0) {
+    let baseURL = new URL(options.baseURL);
+    let baseOrigin = baseURL.origin;
+    let targetURLOrigin = targetOrigin === void 0 ? baseOrigin : new URL(targetOrigin).origin;
+    if (targetURLOrigin === baseOrigin) {
+      new URL("/", baseURL);
+      return relativeHref(pathname, searchSuffix, baseURL);
+    }
+  }
+  return result;
+}
+function relativeHref(pathname, search, baseURL) {
+  let baseSegments = pathnameSegments(baseURL.pathname);
+  if (!baseURL.pathname.endsWith("/"))
+    baseSegments.pop();
+  let targetSegments = pathnameSegments(pathname);
+  let targetIsDirectory = pathname.endsWith("/");
+  let targetFile = targetIsDirectory ? void 0 : targetSegments.pop();
+  let common = 0;
+  while (common < baseSegments.length && common < targetSegments.length && baseSegments[common] === targetSegments[common]) {
+    common += 1;
+  }
+  let relativeSegments = [
+    ...Array.from({ length: baseSegments.length - common }, () => ".."),
+    ...targetSegments.slice(common)
+  ];
+  if (targetFile !== void 0)
+    relativeSegments.push(targetFile);
+  let result = relativeSegments.join("/");
+  if (targetIsDirectory)
+    result = result === "" ? "./" : `${result}/`;
+  if (result === "")
+    result = "./";
+  if (/^[\\/]/.test(result) || /^[^/]*:/.test(result))
+    result = `./${result}`;
+  return result + search;
+}
+function pathnameSegments(pathname) {
+  let segments = pathname.slice(1).split("/");
+  if (pathname.endsWith("/"))
+    segments.pop();
+  return segments;
+}
+function hrefPart(pattern, part, params) {
+  let separator = part.type === "hostname" ? "." : "/";
+  let missingParams = [];
+  let stack = [{ href: "" }];
+  let i = 0;
+  while (i < part.tokens.length) {
+    let token = part.tokens[i];
+    if (token.type === "text") {
+      stack[stack.length - 1].href += token.text;
+      i += 1;
+      continue;
+    }
+    if (token.type === "separator") {
+      stack[stack.length - 1].href += separator;
+      i += 1;
+      continue;
+    }
+    if (token.type === "(") {
+      stack.push({ begin: i, href: "" });
+      i += 1;
+      continue;
+    }
+    if (token.type === ")") {
+      let frame = stack.pop();
+      stack[stack.length - 1].href += frame.href;
+      i += 1;
+      continue;
+    }
+    if (token.type === ":" || token.type === "*") {
+      let value = params[token.name];
+      if (value == null) {
+        if (stack.length <= 1) {
+          if (token.name === "*") {
+            throw new CreateHrefError({ type: "nameless-wildcard", pattern });
+          }
+          if (!missingParams.includes(token.name))
+            missingParams.push(token.name);
+          i += 1;
+          continue;
+        }
+        let frame = stack.pop();
+        i = part.optionals.get(frame.begin) + 1;
+        if (stack[stack.length - 1].href.endsWith(separator) && part.tokens[i]?.type === "separator") {
+          i += 1;
+        }
+        continue;
+      }
+      stack[stack.length - 1].href += part.type === "pathname" && token.type === ":" ? encodePathnameVariableParam(pattern, token.name, value) : part.type === "pathname" && token.type === "*" ? encodePathnameWildcard(value) : part.type === "hostname" && token.type === ":" ? validateHostnameVariable(value) : part.type === "hostname" && token.type === "*" ? validateHostnameWildcard(value) : unreachable();
+      i += 1;
+      continue;
+    }
+    unreachable(token.type);
+  }
+  if (missingParams.length > 0) {
+    throw new CreateHrefError({
+      type: "missing-params",
+      pattern,
+      missingParams,
+      params
+    });
+  }
+  if (stack.length !== 1)
+    unreachable();
+  return stack[0].href;
+}
+function hrefSearch(constraints, searchParams) {
+  let urlSearchParams = searchParams instanceof URLSearchParams ? new URLSearchParams(searchParams) : new URLSearchParams();
+  if (searchParams !== void 0 && !(searchParams instanceof URLSearchParams)) {
+    for (let [key, value] of Object.entries(searchParams)) {
+      if (Array.isArray(value)) {
+        for (let v of value) {
+          if (v != null)
+            urlSearchParams.append(key, String(v));
+        }
+      } else if (value != null) {
+        urlSearchParams.append(key, String(value));
+      }
+    }
+  }
+  for (let [key, requiredValues] of constraints) {
+    if (requiredValues.size === 0) {
+      if (urlSearchParams.has(key))
+        continue;
+      urlSearchParams.append(key, "");
+    } else {
+      for (let value of requiredValues) {
+        if (urlSearchParams.getAll(key).includes(value))
+          continue;
+        urlSearchParams.append(key, value);
+      }
+    }
+  }
+  let result = urlSearchParams.toString();
+  return result || void 0;
+}
+var CreateHrefError = class _CreateHrefError extends Error {
+  details;
+  constructor(details) {
+    super(_CreateHrefError.message(details));
+    this.name = "CreateHrefError";
+    this.details = details;
+  }
+  static message(details) {
+    if (details.type === "missing-hostname") {
+      return `pattern requires hostname
+
+Pattern: ${details.pattern}`;
+    }
+    if (details.type === "nameless-wildcard") {
+      return `pattern contains nameless wildcard
+
+Pattern: ${details.pattern}`;
+    }
+    if (details.type === "missing-params") {
+      let params = details.missingParams.map((p) => `'${p}'`).join(", ");
+      return `missing param(s): ${params}
+
+Pattern: ${details.pattern}
+Params: ${JSON.stringify(details.params)}`;
+    }
+    if (details.type === "invalid-hostname-variable") {
+      return `invalid hostname variable param: ${JSON.stringify(details.value)} contains ${JSON.stringify(details.char)}`;
+    }
+    if (details.type === "invalid-hostname-wildcard") {
+      return `invalid hostname wildcard param: ${JSON.stringify(details.value)} contains ${JSON.stringify(details.char)}`;
+    }
+    if (details.type === "invalid-pathname-variable") {
+      return `invalid pathname variable param: '${details.paramName}' cannot be empty
+
+Pattern: ${details.pattern}
+Value: ${JSON.stringify(details.value)}`;
+    }
+    if (details.type === "invalid-pathname-wildcard") {
+      return `invalid pathname wildcard param: ${JSON.stringify(details.value)} contains dot segment ${JSON.stringify(details.segment)}`;
+    }
+    unreachable(details);
+  }
+};
+function encodePathnameVariableParam(pattern, paramName, value) {
+  let serialized = String(value);
+  if (serialized.length === 0) {
+    throw new CreateHrefError({
+      type: "invalid-pathname-variable",
+      pattern,
+      paramName,
+      value: serialized
+    });
+  }
+  return encodePathnameVariableSegment(serialized);
+}
+function encodePathnameWildcard(value) {
+  let serialized = String(value);
+  return serialized.split("/").map((segment) => {
+    if (segment === "." || segment === "..") {
+      throw new CreateHrefError({ type: "invalid-pathname-wildcard", value: serialized, segment });
+    }
+    return encodePathnameSegment(segment);
+  }).join("/");
+}
+function encodePathnameSegment(value) {
+  return encodeURIComponent(value);
+}
+function encodePathnameVariableSegment(value) {
+  return encodePathnameSegment(value).replaceAll(".", "%2E");
+}
+var HOSTNAME_PARAM_STRUCTURAL_CHARS = ["@", ":", "/", "\\", "?", "#", "%"];
+function validateHostnameVariable(value) {
+  let serialized = String(value);
+  for (let char of serialized) {
+    if (char === "." || isInvalidHostnameParamChar(char)) {
+      throw new CreateHrefError({
+        type: "invalid-hostname-variable",
+        value: serialized,
+        char
+      });
+    }
+  }
+  return serialized;
+}
+function validateHostnameWildcard(value) {
+  let serialized = String(value);
+  for (let char of serialized) {
+    if (isInvalidHostnameParamChar(char)) {
+      throw new CreateHrefError({
+        type: "invalid-hostname-wildcard",
+        value: serialized,
+        char
+      });
+    }
+  }
+  return serialized;
+}
+function isInvalidHostnameParamChar(char) {
+  let code = char.charCodeAt(0);
+  return code <= 31 || code === 127 || HOSTNAME_PARAM_STRUCTURAL_CHARS.includes(char);
+}
+
+// node_modules/@remix-run/route-pattern/dist/lib/join.js
+function joinPatterns(base, next) {
+  let basePattern = typeof base === "string" ? RoutePattern.parse(base) : base;
+  let nextPattern = typeof next === "string" ? RoutePattern.parse(next) : next;
+  let baseParts = basePattern._parts;
+  let nextParts = nextPattern._parts;
+  return createRoutePattern({
+    protocol: nextParts.protocol ?? baseParts.protocol,
+    hostname: nextParts.hostname ?? baseParts.hostname,
+    port: nextParts.port ?? baseParts.port,
+    pathname: joinPathname(baseParts.pathname, nextParts.pathname),
+    search: joinSearch(baseParts.search, nextParts.search)
+  });
+}
+function joinPathname(base, next) {
+  if (base.tokens.length === 0)
+    return next;
+  if (next.tokens.length === 0)
+    return base;
+  let tokens = [];
+  let baseLastNonOptionalIndex = base.tokens.findLastIndex((token) => token.type !== "(" && token.type !== ")");
+  let baseLastNonOptional = base.tokens[baseLastNonOptionalIndex];
+  let baseHasTrailingSeparator = baseLastNonOptional?.type === "separator";
+  base.tokens.forEach((token, index) => {
+    if (index === baseLastNonOptionalIndex && token.type === "separator")
+      return;
+    tokens.push(token);
+  });
+  let nextFirstNonOptional = next.tokens.find((token) => token.type !== "(" && token.type !== ")");
+  let needsSeparator = nextFirstNonOptional === void 0 || nextFirstNonOptional.type !== "separator";
+  if (needsSeparator)
+    tokens.push({ type: "separator" });
+  let tokenOffset = tokens.length;
+  next.tokens.forEach((token) => tokens.push(token));
+  let optionals = /* @__PURE__ */ new Map();
+  for (let [begin, end] of base.optionals) {
+    if (baseHasTrailingSeparator) {
+      if (begin > baseLastNonOptionalIndex)
+        begin -= 1;
+      if (end > baseLastNonOptionalIndex)
+        end -= 1;
+    }
+    optionals.set(begin, end);
+  }
+  for (let [begin, end] of next.optionals) {
+    optionals.set(tokenOffset + begin, tokenOffset + end);
+  }
+  return { tokens, optionals, type: "pathname" };
+}
+function joinSearch(base, next) {
+  let result = /* @__PURE__ */ new Map();
+  for (let [name, values] of base) {
+    result.set(name, new Set(values));
+  }
+  for (let [name, values] of next) {
+    let current = result.get(name);
+    if (current === void 0) {
+      result.set(name, new Set(values));
+      continue;
+    }
+    for (let value of values) {
+      current.add(value);
+    }
+  }
+  return result;
+}
+
+// node_modules/@remix-run/fetch-router/dist/lib/route-map.js
+var Route = class {
+  /**
+   * The HTTP method this route matches.
+   */
+  method;
+  /**
+   * The parsed route-pattern AST. Useful for advanced consumers (e.g. matchers) that want to skip
+   * re-parsing the source string.
+   */
+  pattern;
+  /**
+   * @param method The HTTP method this route matches
+   * @param pattern The route-pattern source string or pre-parsed AST
+   */
+  constructor(method, pattern) {
+    this.method = method;
+    this.pattern = typeof pattern === "string" ? RoutePattern.parse(pattern) : pattern;
+  }
+  /**
+   * Build a URL href for this route using the given route params and href options.
+   *
+   * @param args Route params and href options
+   * @returns The built URL href
+   */
+  href(...args) {
+    return createHref(this.pattern, ...args);
+  }
+};
+function createRoutes(baseOrDefs, defs) {
+  let baseIsPattern = typeof baseOrDefs === "string" || baseOrDefs instanceof RoutePattern;
+  if (baseIsPattern) {
+    let baseAst = typeof baseOrDefs === "string" ? RoutePattern.parse(baseOrDefs) : baseOrDefs;
+    return buildRouteMap(baseAst, defs);
+  }
+  return buildRouteMap(RoutePattern.parse("/"), baseOrDefs);
+}
+function buildRouteMap(base, defs) {
+  let routes2 = {};
+  for (let key in defs) {
+    let def = defs[key];
+    if (def instanceof Route) {
+      routes2[key] = new Route(def.method, joinPatterns(base, def.pattern));
+    } else if (typeof def === "string") {
+      routes2[key] = new Route("ANY", joinPatterns(base, RoutePattern.parse(def)));
+    } else if (def instanceof RoutePattern) {
+      routes2[key] = new Route("ANY", joinPatterns(base, def));
+    } else if (typeof def === "object" && def != null && "pattern" in def) {
+      let defPattern = typeof def.pattern === "string" ? RoutePattern.parse(def.pattern) : def.pattern;
+      routes2[key] = new Route(def.method ?? "ANY", joinPatterns(base, defPattern));
+    } else {
+      routes2[key] = buildRouteMap(base, def);
+    }
+  }
+  return routes2;
+}
+
+// node_modules/@remix-run/fetch-router/dist/lib/route-helpers/method.js
+function createDeleteRoute(pattern) {
+  return new Route("DELETE", pattern);
+}
+function createGetRoute(pattern) {
+  return new Route("GET", pattern);
+}
+function createPostRoute(pattern) {
+  return new Route("POST", pattern);
+}
+
+// app/routes.ts
+var routes = createRoutes({
+  home: createGetRoute("/"),
+  guide: createGetRoute("/guide"),
+  records: createGetRoute("/records"),
+  slideOnly: createGetRoute("/slide-only"),
+  health: createGetRoute("/health"),
+  llms: createGetRoute("/llms.txt"),
+  llmsFull: createGetRoute("/llms-full.txt"),
+  markdown: {
+    index: createGetRoute("/markdown"),
+    unitYear: createGetRoute("/markdown/:unit/:year")
+  },
+  progress: {
+    links: createPostRoute("/progress/links"),
+    sync: createPostRoute("/progress/sync"),
+    challenges: createPostRoute("/progress/challenges"),
+    destroy: createDeleteRoute("/progress")
+  },
+  unitYear: createGetRoute("/:unit/:year"),
+  exam: createGetRoute("/:unit/:year/exam/:exam"),
+  question: createGetRoute("/:unit/:year/exam/:exam/question/:question")
+});
+
+// app/features/challenge/player/ui/challenge-result.tsx
+var SUCCESS_THRESHOLD = 0.8;
+function ChallengeResultView(handle) {
+  return () => {
+    const { payload, history, questions, mode, unitId, year, syncMessage, onRetry } = handle.props;
+    const summary = summarizeChallenge(payload);
+    const aggregate = aggregateChallengeResults(history);
+    const questionById = new Map(questions.map((question) => [question.id, question]));
+    const accuracy = mode === "exam" ? aggregate.accuracy : summary.accuracy;
+    const isSuccess = accuracy !== null && accuracy >= SUCCESS_THRESHOLD;
+    return /* @__PURE__ */ jsx("section", { class: "exam-result", "aria-labelledby": "exam-result-title", children: [
+      /* @__PURE__ */ jsx("p", { class: "page-heading__eyebrow", children: "\u7D50\u679C" }),
+      /* @__PURE__ */ jsx("h2", { id: "exam-result-title", children: isSuccess ? "\u3088\u304F\u3067\u304D\u307E\u3057\u305F" : "\u304A\u3064\u304B\u308C\u3055\u307E\u3067\u3057\u305F" }),
+      /* @__PURE__ */ jsx("dl", { class: "exam-result__stats", children: [
+        /* @__PURE__ */ jsx("div", { children: [
+          /* @__PURE__ */ jsx("dt", { children: "\u6B63\u7B54\u7387" }),
+          /* @__PURE__ */ jsx("dd", { children: formatAccuracy(accuracy) })
+        ] }),
+        /* @__PURE__ */ jsx("div", { children: [
+          /* @__PURE__ */ jsx("dt", { children: "\u6B63\u89E3" }),
+          /* @__PURE__ */ jsx("dd", { children: summary.correctCount })
+        ] }),
+        /* @__PURE__ */ jsx("div", { children: [
+          /* @__PURE__ */ jsx("dt", { children: "\u4E0D\u6B63\u89E3" }),
+          /* @__PURE__ */ jsx("dd", { children: summary.incorrectCount })
+        ] }),
+        /* @__PURE__ */ jsx("div", { children: [
+          /* @__PURE__ */ jsx("dt", { children: "\u5408\u8A08\u6642\u9593" }),
+          /* @__PURE__ */ jsx("dd", { children: formatDuration(summary.totalElapsedMs) })
+        ] }),
+        mode === "exam" && aggregate.challengeCount > 1 ? /* @__PURE__ */ jsx("div", { children: [
+          /* @__PURE__ */ jsx("dt", { children: "\u3053\u308C\u307E\u3067\u306E\u8A66\u884C" }),
+          /* @__PURE__ */ jsx("dd", { children: [
+            aggregate.challengeCount,
+            "\u56DE"
+          ] })
+        ] }) : null
+      ] }),
+      /* @__PURE__ */ jsx("ol", { class: "exam-result__list", children: payload.answers.map((answer) => {
+        const question = questionById.get(answer.questionId);
+        return /* @__PURE__ */ jsx("li", { class: `is-${answer.judgment}`, children: [
+          /* @__PURE__ */ jsx("span", { children: question ? `\u554F${question.number}` : answer.questionId }),
+          /* @__PURE__ */ jsx("span", { children: answer.judgment === "correct" ? "\u25CB" : "\xD7" }),
+          /* @__PURE__ */ jsx("span", { children: formatDuration(answer.elapsedMs) })
+        ] }, answer.questionId);
+      }) }),
+      syncMessage ? /* @__PURE__ */ jsx("p", { class: "exam-result__sync", children: syncMessage }) : null,
+      /* @__PURE__ */ jsx("div", { class: "exam-result__actions", children: [
+        /* @__PURE__ */ jsx(
+          "button",
+          {
+            type: "button",
+            class: "exam-footer-button exam-footer-button--primary",
+            mix: on("click", onRetry),
+            children: "\u3082\u3046\u4E00\u5EA6\u6311\u6226\u3059\u308B"
+          }
+        ),
+        /* @__PURE__ */ jsx(
+          "a",
+          {
+            class: "exam-footer-button exam-footer-button--quiet",
+            href: routes.unitYear.href({ unit: unitId, year }),
+            children: "\u554F\u984C\u4E00\u89A7\u3078\u623B\u308B"
+          }
+        )
+      ] })
+    ] });
+  };
+}
+
+// app/lib/figures/binary-tree.ts
+function getTreeDepth(node) {
+  if (!node) {
+    return 0;
+  }
+  return 1 + Math.max(getTreeDepth(node.left), getTreeDepth(node.right));
+}
+function calculatePositions(root, width, height, nodeRadius) {
+  const depth = getTreeDepth(root);
+  const walk = (node, level, left, right) => {
+    if (!node) {
+      return [];
+    }
+    const x = node.x === void 0 ? (left + right) / 2 : node.x;
+    const y = node.y === void 0 ? (level + 1) / (depth + 1) * height : node.y;
+    const current = { x, y, node };
+    const leftPositions = node.left ? walk(node.left, level + 1, left, x) : [];
+    const rightPositions = node.right ? walk(node.right, level + 1, x, right) : [];
+    return [current, ...leftPositions, ...rightPositions];
+  };
+  return walk(root, 0, nodeRadius * 2, width - nodeRadius * 2);
+}
+function getEdgeLines(positions, nodeRadius) {
+  const positionMap = new Map(positions.map((pos) => [pos.node, pos]));
+  const collectEdges = (node, parentPos) => {
+    if (!(node && parentPos)) {
+      return [];
+    }
+    const currentPos = positionMap.get(node);
+    if (!currentPos) {
+      return [];
+    }
+    const childEdges = [
+      ...node.left ? collectEdges(node.left, currentPos) : [],
+      ...node.right ? collectEdges(node.right, currentPos) : []
+    ];
+    return [{ from: parentPos, to: currentPos }, ...childEdges];
+  };
+  const root = positions[0]?.node;
+  const rootPos = root ? positionMap.get(root) : void 0;
+  const edges = root && rootPos ? [
+    ...root.left ? collectEdges(root.left, rootPos) : [],
+    ...root.right ? collectEdges(root.right, rootPos) : []
+  ] : [];
+  return edges.map((edge) => {
+    const dx = edge.to.x - edge.from.x;
+    const dy = edge.to.y - edge.from.y;
+    const angle = Math.atan2(dy, dx);
+    return {
+      x1: edge.from.x + nodeRadius * Math.cos(angle),
+      y1: edge.from.y + nodeRadius * Math.sin(angle),
+      x2: edge.to.x - nodeRadius * Math.cos(angle),
+      y2: edge.to.y - nodeRadius * Math.sin(angle)
+    };
+  });
+}
+
+// app/ui/figures/BinaryTree.tsx
+function BinaryTree(handle) {
+  return () => {
+    const {
+      root,
+      width = 300,
+      height = 200,
+      nodeRadius = 20
+    } = handle.props;
+    const positions = calculatePositions(root, width, height, nodeRadius);
+    const edgeLines = getEdgeLines(positions, nodeRadius);
+    return /* @__PURE__ */ jsx(
+      "svg",
+      {
+        width: "100%",
+        height: "auto",
+        viewBox: `0 0 ${width} ${height}`,
+        preserveAspectRatio: "xMidYMid meet",
+        class: "border border-gray-300 rounded max-w-full h-auto",
+        style: `aspect-ratio: ${width}/${height}`,
+        "aria-label": "\u4E8C\u5206\u6728",
+        children: [
+          /* @__PURE__ */ jsx("title", { children: "\u4E8C\u5206\u6728" }),
+          edgeLines.map((line) => /* @__PURE__ */ jsx(
+            "line",
+            {
+              x1: line.x1,
+              y1: line.y1,
+              x2: line.x2,
+              y2: line.y2,
+              stroke: "black",
+              "stroke-width": "1.5"
+            }
+          )),
+          positions.map((pos) => /* @__PURE__ */ jsx("g", { children: [
+            /* @__PURE__ */ jsx(
+              "circle",
+              {
+                cx: pos.x,
+                cy: pos.y,
+                r: nodeRadius,
+                fill: "white",
+                stroke: "black",
+                "stroke-width": "1.5"
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              "text",
+              {
+                x: pos.x,
+                y: pos.y,
+                "font-size": "14",
+                "text-anchor": "middle",
+                "dominant-baseline": "middle",
+                fill: "black",
+                children: pos.node.value
+              }
+            )
+          ] }))
+        ]
+      }
+    );
+  };
+}
+
+// app/lib/figures/svg-path.ts
+function pointsToPolyline(points) {
+  return points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+}
+
+// app/lib/figures/flowchart.ts
+var FLOWCHART_DEFAULTS = {
+  WIDTH: 300,
+  HEIGHT: 400,
+  NODE_WIDTH: 100,
+  NODE_WIDTH_DECISION: 80,
+  NODE_HEIGHT: 30,
+  NODE_HEIGHT_DECISION: 40
+};
+function getNodeDimensions(node) {
+  const defaultWidth = node.type === "decision" ? FLOWCHART_DEFAULTS.NODE_WIDTH_DECISION : FLOWCHART_DEFAULTS.NODE_WIDTH;
+  const defaultHeight = node.type === "decision" ? FLOWCHART_DEFAULTS.NODE_HEIGHT_DECISION : FLOWCHART_DEFAULTS.NODE_HEIGHT;
+  return {
+    w: node.width ?? defaultWidth,
+    h: node.height ?? defaultHeight
+  };
+}
+function getEdgePoint(node, side) {
+  const { w, h } = getNodeDimensions(node);
+  switch (side) {
+    case "top":
+      return { x: node.x, y: node.y - h / 2 };
+    case "bottom":
+      return { x: node.x, y: node.y + h / 2 };
+    case "left":
+      return { x: node.x - w / 2, y: node.y };
+    case "right":
+      return { x: node.x + w / 2, y: node.y };
+    default:
+      throw new Error(`unreachable: unknown edge side ${side}`);
+  }
+}
+function buildNodeRenderData(nodes) {
+  return nodes.map((node) => {
+    const { w, h } = getNodeDimensions(node);
+    const base = {
+      type: node.type,
+      id: node.id,
+      x: node.x,
+      y: node.y,
+      w,
+      h,
+      label: node.label
+    };
+    if (node.type === "decision") {
+      return {
+        ...base,
+        points: `${node.x},${node.y - h / 2} ${node.x + w / 2},${node.y} ${node.x},${node.y + h / 2} ${node.x - w / 2},${node.y}`
+      };
+    }
+    if (node.type === "start" || node.type === "end") {
+      return { ...base, rx: h / 2, ry: h / 2 };
+    }
+    return base;
+  });
+}
+function buildEdgeRenderData(nodes, edges) {
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+  return edges.flatMap((edge) => {
+    const fromNode = nodeMap.get(edge.from);
+    const toNode = nodeMap.get(edge.to);
+    if (!(fromNode && toNode)) {
+      return [];
+    }
+    const fromSide = edge.fromSide ?? "bottom";
+    const toSide = edge.toSide ?? "top";
+    const start = getEdgePoint(fromNode, fromSide);
+    const end = getEdgePoint(toNode, toSide);
+    const manualPoints = edge.points ?? [];
+    const hasManualPoints = manualPoints.length > 0;
+    const points = hasManualPoints ? [start, ...manualPoints, end] : [start, end];
+    const pathD = pointsToPolyline(points);
+    const labelPoint = hasManualPoints ? manualPoints[0] : { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+    return [{ pathD, label: edge.label, labelX: labelPoint.x, labelY: labelPoint.y }];
+  });
+}
+
+// app/ui/figures/Flowchart.tsx
+function Flowchart(handle) {
+  return () => {
+    const {
+      nodes,
+      edges,
+      width = FLOWCHART_DEFAULTS.WIDTH,
+      height = FLOWCHART_DEFAULTS.HEIGHT
+    } = handle.props;
+    const nodeRenderData = buildNodeRenderData(nodes);
+    const edgeRenderData = buildEdgeRenderData(nodes, edges);
+    return /* @__PURE__ */ jsx(
+      "svg",
+      {
+        width: "100%",
+        height: "auto",
+        viewBox: `0 0 ${width} ${height}`,
+        preserveAspectRatio: "xMidYMid meet",
+        class: "max-w-full h-auto",
+        style: `aspect-ratio: ${width}/${height}`,
+        "aria-label": "\u30D5\u30ED\u30FC\u30C1\u30E3\u30FC\u30C8",
+        children: [
+          /* @__PURE__ */ jsx("title", { children: "\u30D5\u30ED\u30FC\u30C1\u30E3\u30FC\u30C8" }),
+          /* @__PURE__ */ jsx("defs", { children: /* @__PURE__ */ jsx(
+            "marker",
+            {
+              id: "flowchart-arrow",
+              markerWidth: "10",
+              markerHeight: "10",
+              refX: "9",
+              refY: "3",
+              orient: "auto",
+              markerUnits: "strokeWidth",
+              children: /* @__PURE__ */ jsx("polygon", { points: "0 0, 10 3, 0 6", fill: "black" })
+            }
+          ) }),
+          edgeRenderData.map((e) => /* @__PURE__ */ jsx("g", { children: [
+            /* @__PURE__ */ jsx(
+              "path",
+              {
+                d: e.pathD,
+                fill: "none",
+                stroke: "black",
+                "stroke-width": "1.5",
+                "marker-end": "url(#flowchart-arrow)"
+              }
+            ),
+            e.label && /* @__PURE__ */ jsx("text", { x: e.labelX + 8, y: e.labelY - 4, "font-size": "10", fill: "black", "font-weight": "bold", children: e.label })
+          ] })),
+          nodeRenderData.map((n) => {
+            if (n.type === "start" || n.type === "end") {
+              return /* @__PURE__ */ jsx("g", { children: [
+                /* @__PURE__ */ jsx(
+                  "rect",
+                  {
+                    x: n.x - n.w / 2,
+                    y: n.y - n.h / 2,
+                    width: n.w,
+                    height: n.h,
+                    rx: n.rx,
+                    ry: n.ry,
+                    fill: "white",
+                    stroke: "black",
+                    "stroke-width": "1.5"
+                  }
+                ),
+                /* @__PURE__ */ jsx(
+                  "text",
+                  {
+                    x: n.x,
+                    y: n.y,
+                    "text-anchor": "middle",
+                    "dominant-baseline": "middle",
+                    "font-size": "12",
+                    fill: "black",
+                    children: n.label
+                  }
+                )
+              ] });
+            }
+            if (n.type === "process") {
+              return /* @__PURE__ */ jsx("g", { children: [
+                /* @__PURE__ */ jsx(
+                  "rect",
+                  {
+                    x: n.x - n.w / 2,
+                    y: n.y - n.h / 2,
+                    width: n.w,
+                    height: n.h,
+                    fill: "white",
+                    stroke: "black",
+                    "stroke-width": "1.5"
+                  }
+                ),
+                /* @__PURE__ */ jsx(
+                  "text",
+                  {
+                    x: n.x,
+                    y: n.y,
+                    "text-anchor": "middle",
+                    "dominant-baseline": "middle",
+                    "font-size": "11",
+                    fill: "black",
+                    children: n.label
+                  }
+                )
+              ] });
+            }
+            if (n.type === "decision") {
+              return /* @__PURE__ */ jsx("g", { children: [
+                /* @__PURE__ */ jsx("polygon", { points: n.points, fill: "white", stroke: "black", "stroke-width": "1.5" }),
+                /* @__PURE__ */ jsx(
+                  "text",
+                  {
+                    x: n.x,
+                    y: n.y,
+                    "text-anchor": "middle",
+                    "dominant-baseline": "middle",
+                    "font-size": "11",
+                    fill: "black",
+                    children: n.label
+                  }
+                )
+              ] });
+            }
+            if (n.type === "connector") {
+              return /* @__PURE__ */ jsx("g", { children: /* @__PURE__ */ jsx("circle", { cx: n.x, cy: n.y, r: 8, fill: "white", stroke: "black", "stroke-width": "1.5" }) });
+            }
+            return null;
+          })
+        ]
+      }
+    );
+  };
+}
+
+// app/lib/figures/logic-circuit.ts
+var LOGIC_DEFAULTS = {
+  GATE_WIDTH: 50,
+  GATE_HEIGHT: 40
+};
+function getLogicCircuitViewport(inputs, outputs, gates, wires) {
+  const points = [
+    ...inputs.flatMap((input) => [
+      { x: input.x - 34, y: input.y - 18 },
+      { x: input.x + 4, y: input.y + 18 }
+    ]),
+    ...outputs.flatMap((output) => [
+      { x: output.x - 4, y: output.y - 18 },
+      { x: output.x + 34, y: output.y + 18 }
+    ]),
+    ...gates.flatMap((gate) => [
+      {
+        x: gate.x - LOGIC_DEFAULTS.GATE_WIDTH / 2 - 8,
+        y: gate.y - LOGIC_DEFAULTS.GATE_HEIGHT / 2 - 8
+      },
+      {
+        x: gate.x + LOGIC_DEFAULTS.GATE_WIDTH / 2 + 12,
+        y: gate.y + LOGIC_DEFAULTS.GATE_HEIGHT / 2 + 30
+      }
+    ]),
+    ...wires.flatMap((wire) => wire.points ?? [])
+  ];
+  if (points.length === 0) {
+    return { x: 0, y: 0, width: 1, height: 1 };
+  }
+  const minX = Math.min(...points.map((point) => point.x));
+  const maxX = Math.max(...points.map((point) => point.x));
+  const minY = Math.min(...points.map((point) => point.y));
+  const maxY = Math.max(...points.map((point) => point.y));
+  return {
+    x: minX,
+    y: minY,
+    width: Math.max(1, maxX - minX),
+    height: Math.max(1, maxY - minY)
+  };
+}
+function getGateSymbolPath(gate, gateWidth = LOGIC_DEFAULTS.GATE_WIDTH, gateHeight = LOGIC_DEFAULTS.GATE_HEIGHT) {
+  const { x, y, type } = gate;
+  switch (type) {
+    case "AND":
+      return `<g>
+        <path d="M ${x - gateWidth / 2} ${y - gateHeight / 2} L ${x} ${y - gateHeight / 2} A ${gateWidth / 2} ${gateHeight / 2} 0 0 1 ${x} ${y + gateHeight / 2} L ${x - gateWidth / 2} ${y + gateHeight / 2} Z" fill="white" stroke="black" stroke-width="1.5" />
+      </g>`;
+    case "OR":
+      return `<g>
+        <path d="M ${x - gateWidth / 2} ${y - gateHeight / 2} Q ${x - gateWidth / 4} ${y - gateHeight / 2} ${x} ${y - gateHeight / 2} A ${gateWidth / 1.5} ${gateHeight / 2} 0 0 1 ${x} ${y + gateHeight / 2} Q ${x - gateWidth / 4} ${y + gateHeight / 2} ${x - gateWidth / 2} ${y + gateHeight / 2} Q ${x - gateWidth / 3} ${y} ${x - gateWidth / 2} ${y - gateHeight / 2} Z" fill="white" stroke="black" stroke-width="1.5" />
+      </g>`;
+    case "NOT":
+      return `<g>
+        <path d="M ${x - gateWidth / 2} ${y - gateHeight / 2} L ${x + gateWidth / 3} ${y} L ${x - gateWidth / 2} ${y + gateHeight / 2} Z" fill="white" stroke="black" stroke-width="1.5" />
+        <circle cx="${x + gateWidth / 3 + 5}" cy="${y}" r="5" fill="white" stroke="black" stroke-width="1.5" />
+      </g>`;
+    case "NAND":
+      return `<g>
+        <path d="M ${x - gateWidth / 2} ${y - gateHeight / 2} L ${x} ${y - gateHeight / 2} A ${gateWidth / 2} ${gateHeight / 2} 0 0 1 ${x} ${y + gateHeight / 2} L ${x - gateWidth / 2} ${y + gateHeight / 2} Z" fill="white" stroke="black" stroke-width="1.5" />
+        <circle cx="${x + 5}" cy="${y}" r="5" fill="white" stroke="black" stroke-width="1.5" />
+      </g>`;
+    case "NOR":
+      return `<g>
+        <path d="M ${x - gateWidth / 2} ${y - gateHeight / 2} Q ${x - gateWidth / 4} ${y - gateHeight / 2} ${x} ${y - gateHeight / 2} A ${gateWidth / 1.5} ${gateHeight / 2} 0 0 1 ${x} ${y + gateHeight / 2} Q ${x - gateWidth / 4} ${y + gateHeight / 2} ${x - gateWidth / 2} ${y + gateHeight / 2} Q ${x - gateWidth / 3} ${y} ${x - gateWidth / 2} ${y - gateHeight / 2} Z" fill="white" stroke="black" stroke-width="1.5" />
+        <circle cx="${x + 5}" cy="${y}" r="5" fill="white" stroke="black" stroke-width="1.5" />
+      </g>`;
+    case "XOR":
+      return `<g>
+        <path d="M ${x - gateWidth / 2 + 5} ${y - gateHeight / 2} Q ${x - gateWidth / 4 + 5} ${y - gateHeight / 2} ${x + 5} ${y - gateHeight / 2} A ${gateWidth / 1.5} ${gateHeight / 2} 0 0 1 ${x + 5} ${y + gateHeight / 2} Q ${x - gateWidth / 4 + 5} ${y + gateHeight / 2} ${x - gateWidth / 2 + 5} ${y + gateHeight / 2} Q ${x - gateWidth / 3 + 5} ${y} ${x - gateWidth / 2 + 5} ${y - gateHeight / 2} Z" fill="white" stroke="black" stroke-width="1.5" />
+        <path d="M ${x - gateWidth / 2} ${y - gateHeight / 2} Q ${x - gateWidth / 3} ${y} ${x - gateWidth / 2} ${y + gateHeight / 2}" fill="none" stroke="black" stroke-width="1.5" />
+      </g>`;
+    case "XNOR":
+      return `<g>
+        <path d="M ${x - gateWidth / 2 + 5} ${y - gateHeight / 2} Q ${x - gateWidth / 4 + 5} ${y - gateHeight / 2} ${x + 5} ${y - gateHeight / 2} A ${gateWidth / 1.5} ${gateHeight / 2} 0 0 1 ${x + 5} ${y + gateHeight / 2} Q ${x - gateWidth / 4 + 5} ${y + gateHeight / 2} ${x - gateWidth / 2 + 5} ${y + gateHeight / 2} Q ${x - gateWidth / 3 + 5} ${y} ${x - gateWidth / 2 + 5} ${y - gateHeight / 2} Z" fill="white" stroke="black" stroke-width="1.5" />
+        <path d="M ${x - gateWidth / 2} ${y - gateHeight / 2} Q ${x - gateWidth / 3} ${y} ${x - gateWidth / 2} ${y + gateHeight / 2}" fill="none" stroke="black" stroke-width="1.5" />
+        <circle cx="${x + 10}" cy="${y}" r="5" fill="white" stroke="black" stroke-width="1.5" />
+      </g>`;
+    default:
+      return "";
+  }
+}
+function getWirePath(wire, inputs, outputs, gates, gateWidth = LOGIC_DEFAULTS.GATE_WIDTH) {
+  const elementMap = new Map([...inputs, ...gates, ...outputs].map((el) => [el.id, el]));
+  const fromElement = elementMap.get(wire.from);
+  const toElement = elementMap.get(wire.to);
+  if (!(fromElement && toElement)) {
+    return null;
+  }
+  const inputIds = new Set(inputs.map((input) => input.id));
+  const outputIds = new Set(outputs.map((output) => output.id));
+  const gateIds = new Set(gates.map((gate) => gate.id));
+  const wirePoints = wire.points ?? [];
+  const lastPoint = wirePoints.at(-1);
+  const start = inputIds.has(fromElement.id) ? { x: fromElement.x + 20, y: fromElement.y } : { x: fromElement.x + gateWidth / 2, y: fromElement.y };
+  const end = outputIds.has(toElement.id) ? { x: toElement.x - 20, y: toElement.y } : {
+    x: toElement.x - gateWidth / 2,
+    y: gateIds.has(toElement.id) && lastPoint ? lastPoint.y : toElement.y
+  };
+  const points = wirePoints.length > 0 ? [start, ...wirePoints, end] : [start, end];
+  return pointsToPolyline(points);
+}
+
+// app/ui/figures/LogicCircuit.tsx
+function LogicCircuit(handle) {
+  return () => {
+    const { circuit, mode = "responsive" } = handle.props;
+    const { inputs, outputs, gates, wires, width = 500, height = 300 } = circuit;
+    const responsive = mode === "responsive";
+    const viewport = responsive ? getLogicCircuitViewport(inputs, outputs, gates, wires) : { x: 0, y: 0, width, height };
+    const showSvgLabels = mode === "fixed";
+    const svg = /* @__PURE__ */ jsx(
+      "svg",
+      {
+        width: responsive ? "100%" : width,
+        height: responsive ? "100%" : height,
+        viewBox: `${viewport.x} ${viewport.y} ${viewport.width} ${viewport.height}`,
+        preserveAspectRatio: "xMidYMid meet",
+        class: responsive ? "block max-w-full" : void 0,
+        style: "background-color: #fff",
+        "aria-label": "\u8AD6\u7406\u56DE\u8DEF\u56F3",
+        children: [
+          /* @__PURE__ */ jsx("title", { children: "\u8AD6\u7406\u56DE\u8DEF\u56F3" }),
+          wires.map((wire) => {
+            const pathData = getWirePath(wire, inputs, outputs, gates);
+            return pathData ? /* @__PURE__ */ jsx("g", { children: /* @__PURE__ */ jsx("path", { d: pathData, stroke: "black", "stroke-width": "1.5", fill: "none" }) }) : null;
+          }),
+          inputs.map((input) => /* @__PURE__ */ jsx("g", { children: [
+            /* @__PURE__ */ jsx("circle", { cx: input.x, cy: input.y, r: "4", fill: "black" }),
+            showSvgLabels ? /* @__PURE__ */ jsx(
+              "text",
+              {
+                x: input.x - 10,
+                y: input.y,
+                "font-size": "14",
+                "text-anchor": "end",
+                "dominant-baseline": "middle",
+                fill: "black",
+                children: input.label
+              }
+            ) : null
+          ] })),
+          gates.map((gate) => /* @__PURE__ */ jsx("g", { children: [
+            /* @__PURE__ */ jsx("g", { innerHTML: unsafeHTML(getGateSymbolPath(gate)) }),
+            showSvgLabels ? /* @__PURE__ */ jsx(
+              "text",
+              {
+                x: gate.x,
+                y: gate.y + LOGIC_DEFAULTS.GATE_HEIGHT / 2 + 15,
+                "font-size": "12",
+                "text-anchor": "middle",
+                fill: "black",
+                "font-weight": "bold",
+                children: gate.type
+              }
+            ) : null
+          ] })),
+          outputs.map((output) => /* @__PURE__ */ jsx("g", { children: [
+            /* @__PURE__ */ jsx("circle", { cx: output.x, cy: output.y, r: "4", fill: "black" }),
+            showSvgLabels ? /* @__PURE__ */ jsx(
+              "text",
+              {
+                x: output.x + 10,
+                y: output.y,
+                "font-size": "14",
+                "text-anchor": "start",
+                "dominant-baseline": "middle",
+                fill: "black",
+                children: output.label
+              }
+            ) : null
+          ] }))
+        ]
+      }
+    );
+    if (mode === "fixed") {
+      return svg;
+    }
+    const labelStyle = (x, y, fontSize) => {
+      const left = responsive ? `${(x - viewport.x) / viewport.width * 100}%` : `${x}px`;
+      const top = responsive ? `${(y - viewport.y) / viewport.height * 100}%` : `${y}px`;
+      return `position:absolute;left:${left};top:${top};font-size:${fontSize}px;line-height:1;color:#000;transform:translate(-50%,-50%);white-space:nowrap`;
+    };
+    const wrapperStyle = responsive ? `position:relative;width:100%;max-width:${viewport.width}px;aspect-ratio:${viewport.width}/${viewport.height};background:#fff` : `position:relative;width:${width}px;height:${height}px;background:#fff`;
+    return /* @__PURE__ */ jsx(
+      "div",
+      {
+        class: responsive ? "overflow-hidden rounded border border-gray-300" : void 0,
+        style: wrapperStyle,
+        children: [
+          svg,
+          inputs.map((input) => /* @__PURE__ */ jsx("span", { "aria-hidden": "true", style: labelStyle(input.x - 17, input.y, 14), children: input.label })),
+          gates.map((gate) => /* @__PURE__ */ jsx(
+            "span",
+            {
+              "aria-hidden": "true",
+              style: `${labelStyle(gate.x, gate.y + LOGIC_DEFAULTS.GATE_HEIGHT / 2 + 15, 12)};font-weight:700`,
+              children: gate.type
+            }
+          )),
+          outputs.map((output) => /* @__PURE__ */ jsx("span", { "aria-hidden": "true", style: labelStyle(output.x + 17, output.y, 14), children: output.label }))
+        ]
+      }
+    );
+  };
+}
+
+// app/lib/figures/parity-check.ts
+function calculateParity(data, cellSize) {
+  const rows = data.length;
+  const cols = data[0]?.length || 0;
+  const horizontalParity = data.map((row) => row.reduce((acc, bit) => acc ^ bit, 0));
+  const verticalParity = Array.from(
+    { length: cols },
+    (_, colIndex) => data.reduce((acc, row) => acc ^ row[colIndex], 0)
+  );
+  const dataCells = data.flatMap(
+    (row, rowIndex) => row.map((bit, colIndex) => ({
+      bit,
+      rowIndex,
+      colIndex
+    }))
+  );
+  const totalParity = horizontalParity.reduce((acc, bit) => acc ^ bit, 0);
+  return {
+    rows,
+    cols,
+    dataCells,
+    horizontalParity,
+    verticalParity,
+    totalParity,
+    svgWidth: (cols + 2) * cellSize,
+    svgHeight: (rows + 2) * cellSize
+  };
+}
+
+// app/ui/figures/ParityCheck.tsx
+function ParityCheck(handle) {
+  return () => {
+    const {
+      data,
+      width = 300,
+      height = 300,
+      cellSize = 40
+    } = handle.props;
+    const parity = calculateParity(data, cellSize);
+    return /* @__PURE__ */ jsx(
+      "svg",
+      {
+        width,
+        height,
+        viewBox: `0 0 ${parity.svgWidth} ${parity.svgHeight}`,
+        class: "border border-gray-300 rounded",
+        "aria-label": "\u30D1\u30EA\u30C6\u30A3\u691C\u67FB\u56F3",
+        children: [
+          /* @__PURE__ */ jsx("title", { children: "\u30D1\u30EA\u30C6\u30A3\u691C\u67FB\u56F3" }),
+          parity.dataCells.map((cell) => /* @__PURE__ */ jsx("g", { children: [
+            /* @__PURE__ */ jsx(
+              "rect",
+              {
+                x: (cell.colIndex + 1) * cellSize,
+                y: (cell.rowIndex + 1) * cellSize,
+                width: cellSize,
+                height: cellSize,
+                fill: "white",
+                stroke: "black",
+                "stroke-width": "1"
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              "text",
+              {
+                x: (cell.colIndex + 1.5) * cellSize,
+                y: (cell.rowIndex + 1.5) * cellSize,
+                "font-size": "16",
+                "text-anchor": "middle",
+                "dominant-baseline": "middle",
+                fill: "black",
+                children: cell.bit
+              }
+            )
+          ] })),
+          parity.horizontalParity.map((bit, rowIndex) => /* @__PURE__ */ jsx("g", { children: [
+            /* @__PURE__ */ jsx(
+              "rect",
+              {
+                x: (parity.cols + 1) * cellSize,
+                y: (rowIndex + 1) * cellSize,
+                width: cellSize,
+                height: cellSize,
+                fill: "#e0f2fe",
+                stroke: "black",
+                "stroke-width": "1"
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              "text",
+              {
+                x: (parity.cols + 1.5) * cellSize,
+                y: (rowIndex + 1.5) * cellSize,
+                "font-size": "16",
+                "text-anchor": "middle",
+                "dominant-baseline": "middle",
+                fill: "black",
+                children: bit
+              }
+            )
+          ] })),
+          parity.verticalParity.map((bit, colIndex) => /* @__PURE__ */ jsx("g", { children: [
+            /* @__PURE__ */ jsx(
+              "rect",
+              {
+                x: (colIndex + 1) * cellSize,
+                y: (parity.rows + 1) * cellSize,
+                width: cellSize,
+                height: cellSize,
+                fill: "#e0f2fe",
+                stroke: "black",
+                "stroke-width": "1"
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              "text",
+              {
+                x: (colIndex + 1.5) * cellSize,
+                y: (parity.rows + 1.5) * cellSize,
+                "font-size": "16",
+                "text-anchor": "middle",
+                "dominant-baseline": "middle",
+                fill: "black",
+                children: bit
+              }
+            )
+          ] })),
+          /* @__PURE__ */ jsx("g", { children: [
+            /* @__PURE__ */ jsx(
+              "rect",
+              {
+                x: (parity.cols + 1) * cellSize,
+                y: (parity.rows + 1) * cellSize,
+                width: cellSize,
+                height: cellSize,
+                fill: "#dbeafe",
+                stroke: "black",
+                "stroke-width": "1"
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              "text",
+              {
+                x: (parity.cols + 1.5) * cellSize,
+                y: (parity.rows + 1.5) * cellSize,
+                "font-size": "16",
+                "text-anchor": "middle",
+                "dominant-baseline": "middle",
+                fill: "black",
+                children: parity.totalParity
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsx(
+            "text",
+            {
+              x: 0.5 * cellSize,
+              y: 0.5 * cellSize,
+              "font-size": "12",
+              "text-anchor": "middle",
+              "dominant-baseline": "middle",
+              fill: "black",
+              children: "Data"
+            }
+          ),
+          /* @__PURE__ */ jsx(
+            "text",
+            {
+              x: (parity.cols + 1.5) * cellSize,
+              y: 0.5 * cellSize,
+              "font-size": "12",
+              "text-anchor": "middle",
+              "dominant-baseline": "middle",
+              fill: "black",
+              children: "H"
+            }
+          ),
+          /* @__PURE__ */ jsx(
+            "text",
+            {
+              x: 0.5 * cellSize,
+              y: (parity.rows + 1.5) * cellSize,
+              "font-size": "12",
+              "text-anchor": "middle",
+              "dominant-baseline": "middle",
+              fill: "black",
+              children: "V"
+            }
+          )
+        ]
+      }
+    );
+  };
+}
+
+// app/lib/figures/state-diagram.ts
+var STATE_DEFAULTS = {
+  NODE_RADIUS: 20,
+  ACCEPTING_NODE_RADIUS: 25,
+  ARROW_SIZE: 6,
+  SELF_LOOP_RADIUS: 15
+};
+function getArrowPath(from, to, curveOffset = 0) {
+  const { x: fromX, y: fromY } = from;
+  const { x: toX, y: toY } = to;
+  if (curveOffset === 0) {
+    return `M ${fromX} ${fromY} L ${toX} ${toY}`;
+  }
+  const midX = (fromX + toX) / 2;
+  const midY = (fromY + toY) / 2;
+  const dx = toX - fromX;
+  const dy = toY - fromY;
+  const perpX = -dy;
+  const perpY = dx;
+  const length = Math.sqrt(perpX * perpX + perpY * perpY);
+  const controlX = midX + perpX / length * curveOffset;
+  const controlY = midY + perpY / length * curveOffset;
+  return `M ${fromX} ${fromY} Q ${controlX} ${controlY} ${toX} ${toY}`;
+}
+function getArrowHead(from, to, curveOffset = 0, nodeRadius = STATE_DEFAULTS.NODE_RADIUS) {
+  const { x: fromX, y: fromY } = from;
+  const { x: toX, y: toY } = to;
+  const arrowSize = STATE_DEFAULTS.ARROW_SIZE;
+  const angle = curveOffset === 0 ? Math.atan2(toY - fromY, toX - fromX) : (() => {
+    const midX = (fromX + toX) / 2;
+    const midY = (fromY + toY) / 2;
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const perpX = -dy;
+    const perpY = dx;
+    const length = Math.sqrt(perpX * perpX + perpY * perpY);
+    const controlX = midX + perpX / length * curveOffset;
+    const controlY = midY + perpY / length * curveOffset;
+    return Math.atan2(toY - controlY, toX - controlX);
+  })();
+  const endX = toX - nodeRadius * Math.cos(angle);
+  const endY = toY - nodeRadius * Math.sin(angle);
+  const x1 = endX - arrowSize * Math.cos(angle - Math.PI / 6);
+  const y1 = endY - arrowSize * Math.sin(angle - Math.PI / 6);
+  const x2 = endX - arrowSize * Math.cos(angle + Math.PI / 6);
+  const y2 = endY - arrowSize * Math.sin(angle + Math.PI / 6);
+  return `M ${endX} ${endY} L ${x1} ${y1} M ${endX} ${endY} L ${x2} ${y2}`;
+}
+function getLabelPosition(from, to, curveOffset = 0) {
+  const { x: fromX, y: fromY } = from;
+  const { x: toX, y: toY } = to;
+  if (curveOffset === 0) {
+    return {
+      x: (fromX + toX) / 2,
+      y: (fromY + toY) / 2 - 5
+    };
+  }
+  const midX = (fromX + toX) / 2;
+  const midY = (fromY + toY) / 2;
+  const dx = toX - fromX;
+  const dy = toY - fromY;
+  const perpX = -dy;
+  const perpY = dx;
+  const length = Math.sqrt(perpX * perpX + perpY * perpY);
+  return {
+    x: midX + perpX / length * curveOffset,
+    y: midY + perpY / length * curveOffset - 5
+  };
+}
+function buildTransitionData(nodes, transitions, nodeRadius = STATE_DEFAULTS.NODE_RADIUS, acceptingNodeRadius = STATE_DEFAULTS.ACCEPTING_NODE_RADIUS) {
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+  return transitions.flatMap((transition) => {
+    const fromNode = nodeMap.get(transition.from);
+    const toNode = nodeMap.get(transition.to);
+    if (!(fromNode && toNode)) {
+      return [];
+    }
+    if (transition.from === transition.to) {
+      const radius = fromNode.isAccepting ? acceptingNodeRadius : nodeRadius;
+      const cx = fromNode.x;
+      const cy = fromNode.y - radius - STATE_DEFAULTS.SELF_LOOP_RADIUS;
+      const r = STATE_DEFAULTS.SELF_LOOP_RADIUS;
+      const renderData = {
+        type: "selfLoop",
+        label: transition.label,
+        cx,
+        cy,
+        r,
+        arrowD: `M ${cx + r * 0.7} ${cy - r * 0.7} l 3 -3 M ${cx + r * 0.7} ${cy - r * 0.7} l 3 3`,
+        labelX: cx,
+        labelY: cy - r - 5
+      };
+      return [renderData];
+    }
+    const curveOffset = transition.curveOffset || 0;
+    const labelPos = getLabelPosition(
+      { x: fromNode.x, y: fromNode.y },
+      { x: toNode.x, y: toNode.y },
+      curveOffset
+    );
+    const angle = Math.atan2(toNode.y - fromNode.y, toNode.x - fromNode.x);
+    const start = curveOffset === 0 ? {
+      x: fromNode.x + nodeRadius * Math.cos(angle),
+      y: fromNode.y + nodeRadius * Math.sin(angle)
+    } : { x: fromNode.x, y: fromNode.y };
+    const end = curveOffset === 0 ? {
+      x: toNode.x - nodeRadius * Math.cos(angle),
+      y: toNode.y - nodeRadius * Math.sin(angle)
+    } : { x: toNode.x, y: toNode.y };
+    return [
+      {
+        type: "normal",
+        label: transition.label,
+        pathD: getArrowPath(start, end, curveOffset),
+        arrowHeadD: getArrowHead(start, end, curveOffset, nodeRadius),
+        labelX: labelPos.x,
+        labelY: labelPos.y
+      }
+    ];
+  });
+}
+
+// app/ui/figures/StateDiagram.tsx
+function StateDiagram(handle) {
+  return () => {
+    const {
+      nodes,
+      transitions,
+      width = 400,
+      height = 150
+    } = handle.props;
+    const nodeRadius = STATE_DEFAULTS.NODE_RADIUS;
+    const acceptingNodeRadius = STATE_DEFAULTS.ACCEPTING_NODE_RADIUS;
+    const transitionData = buildTransitionData(nodes, transitions, nodeRadius, acceptingNodeRadius);
+    return /* @__PURE__ */ jsx(
+      "svg",
+      {
+        width: "100%",
+        height: "auto",
+        viewBox: `0 0 ${width} ${height}`,
+        preserveAspectRatio: "xMidYMid meet",
+        class: "border border-gray-300 rounded max-w-full h-auto",
+        style: `aspect-ratio: ${width}/${height}`,
+        "aria-label": "\u72B6\u614B\u9077\u79FB\u56F3",
+        children: [
+          /* @__PURE__ */ jsx("title", { children: "\u72B6\u614B\u9077\u79FB\u56F3" }),
+          transitionData.map(
+            (t) => t.type === "selfLoop" ? /* @__PURE__ */ jsx("g", { children: [
+              /* @__PURE__ */ jsx("circle", { cx: t.cx, cy: t.cy, r: t.r, fill: "none", stroke: "black", "stroke-width": "1.5" }),
+              /* @__PURE__ */ jsx("path", { d: t.arrowD, stroke: "black", "stroke-width": "1.5", fill: "none" }),
+              /* @__PURE__ */ jsx("text", { x: t.labelX, y: t.labelY, "font-size": "12", "text-anchor": "middle", fill: "black", children: t.label })
+            ] }) : /* @__PURE__ */ jsx("g", { children: [
+              /* @__PURE__ */ jsx("path", { d: t.pathD, stroke: "black", "stroke-width": "1.5", fill: "none" }),
+              /* @__PURE__ */ jsx("path", { d: t.arrowHeadD, stroke: "black", "stroke-width": "1.5", fill: "none" }),
+              /* @__PURE__ */ jsx("text", { x: t.labelX, y: t.labelY, "font-size": "12", "text-anchor": "middle", fill: "black", children: t.label })
+            ] })
+          ),
+          nodes.map((node) => /* @__PURE__ */ jsx("g", { children: [
+            node.isAccepting && /* @__PURE__ */ jsx(
+              "circle",
+              {
+                cx: node.x,
+                cy: node.y,
+                r: acceptingNodeRadius,
+                fill: "none",
+                stroke: "black",
+                "stroke-width": "1.5"
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              "circle",
+              {
+                cx: node.x,
+                cy: node.y,
+                r: nodeRadius,
+                fill: "white",
+                stroke: "black",
+                "stroke-width": "1.5"
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              "text",
+              {
+                x: node.x,
+                y: node.y,
+                "font-size": "14",
+                "text-anchor": "middle",
+                "dominant-baseline": "middle",
+                fill: "black",
+                children: node.label
+              }
+            ),
+            node.isInitial && /* @__PURE__ */ jsx(
+              "path",
+              {
+                d: `M ${node.x - nodeRadius - 20} ${node.y} L ${node.x - nodeRadius} ${node.y}`,
+                stroke: "black",
+                "stroke-width": "1.5",
+                fill: "none",
+                "marker-end": "url(#arrowhead)"
+              }
+            )
+          ] })),
+          /* @__PURE__ */ jsx("defs", { children: /* @__PURE__ */ jsx("marker", { id: "arrowhead", markerWidth: "10", markerHeight: "10", refX: "5", refY: "3", orient: "auto", children: /* @__PURE__ */ jsx("polygon", { points: "0 0, 6 3, 0 6", fill: "black" }) }) })
+        ]
+      }
+    );
+  };
+}
+
+// app/lib/figures/table-renderer.ts
+function assertNever(value) {
+  throw new Error(`unreachable table figure: ${JSON.stringify(value)}`);
+}
+function buildTableConfig(data) {
+  switch (data.type) {
+    case "truthTable":
+    case "dataTable":
+      return {
+        ariaLabel: data.type === "truthTable" ? "\u771F\u7406\u5024\u8868" : "Data table",
+        columns: data.columns,
+        rows: data.rows
+      };
+    case "huffmanTable":
+      return {
+        ariaLabel: "Huffman coding table",
+        columns: [
+          { key: "character", label: "\u6587\u5B57" },
+          { key: "probability", label: "\u78BA\u7387" }
+        ],
+        rows: data.data.characters.map((character, index) => ({
+          character,
+          probability: data.data.probabilities[index]
+        }))
+      };
+    case "linkedListTable":
+      return {
+        ariaLabel: "Linked list table",
+        columns: [
+          { key: "address", label: "\u30A2\u30C9\u30EC\u30B9" },
+          { key: "data", label: "\u30C7\u30FC\u30BF" },
+          { key: "pointer", label: "\u30DD\u30A4\u30F3\u30BF" }
+        ],
+        rows: data.entries.map((entry) => ({
+          address: String(entry.address),
+          data: entry.data,
+          pointer: String(entry.pointer)
+        }))
+      };
+    case "normalDistributionTable":
+      return {
+        ariaLabel: "Normal distribution table",
+        columns: [
+          { key: "u", label: "u" },
+          { key: "probability", label: "\u78BA\u7387" }
+        ],
+        rows: data.entries.map((entry) => ({
+          u: entry.u,
+          probability: entry.probability
+        }))
+      };
+    default:
+      return assertNever(data);
+  }
+}
+
+// app/ui/figures/TableRenderer.tsx
+function TableRenderer(handle) {
+  return () => {
+    const { figureData } = handle.props;
+    const config2 = buildTableConfig(figureData);
+    return /* @__PURE__ */ jsx("div", { class: "w-full overflow-x-auto", children: /* @__PURE__ */ jsx(
+      "table",
+      {
+        "aria-label": config2.ariaLabel,
+        class: "max-w-2xl min-w-max border-2 border-gray-800 border-collapse",
+        children: [
+          /* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsx("tr", { children: config2.columns.map((column) => /* @__PURE__ */ jsx("th", { class: "border border-gray-800 bg-gray-100 text-black font-bold text-center px-3 py-2", children: column.label })) }) }),
+          /* @__PURE__ */ jsx("tbody", { children: config2.rows.map((row) => /* @__PURE__ */ jsx("tr", { children: config2.columns.map((column) => /* @__PURE__ */ jsx("td", { class: "border border-gray-800 text-black font-mono text-center px-3 py-2", children: String(row[column.key]) })) })) })
+        ]
+      }
+    ) });
+  };
+}
+
+// app/ui/figures/Figure.tsx
+function assertNever2(value) {
+  throw new Error(`Unknown figure type: ${JSON.stringify(value)}`);
+}
+function Figure(handle) {
+  return () => {
+    const { data, mode = "responsive" } = handle.props;
+    switch (data.type) {
+      case "stateDiagram":
+        return /* @__PURE__ */ jsx(StateDiagram, { nodes: data.nodes, transitions: data.transitions });
+      case "binaryTree":
+        return /* @__PURE__ */ jsx(BinaryTree, { root: data.root, width: data.width, height: data.height });
+      case "parityCheck":
+        return /* @__PURE__ */ jsx(ParityCheck, { data: data.data });
+      case "logicCircuit":
+        return /* @__PURE__ */ jsx(LogicCircuit, { circuit: data, mode });
+      case "flowchart":
+        return /* @__PURE__ */ jsx(Flowchart, { nodes: data.nodes, edges: data.edges, width: data.width, height: data.height });
+      case "dataTable":
+      case "truthTable":
+      case "huffmanTable":
+      case "linkedListTable":
+      case "normalDistributionTable":
+        return /* @__PURE__ */ jsx(TableRenderer, { figureData: data });
+      default:
+        return assertNever2(data);
+    }
+  };
+}
+
+// app/features/challenge/player/ui/question-content.tsx
+var bodyStyle = css({
+  "& p": { whiteSpace: "pre-wrap", lineHeight: 1.9 }
+});
+var optionListStyle = css({
+  listStyle: "none",
+  margin: "1rem 0",
+  padding: 0,
+  display: "grid",
+  gap: "0.375rem"
+});
+var optionStyle = css({
+  border: "1px solid var(--color-border)",
+  borderRadius: "0.375rem",
+  padding: "0.5rem 0.75rem"
+});
+function QuestionContent(handle) {
+  return () => {
+    const { question } = handle.props;
+    return /* @__PURE__ */ jsx("div", { class: "exam-question", mix: bodyStyle, children: [
+      /* @__PURE__ */ jsx("h3", { class: "exam-question__heading", children: [
+        "\u554F",
+        question.number
+      ] }),
+      /* @__PURE__ */ jsx("p", { children: question.text }),
+      question.options ? /* @__PURE__ */ jsx("ul", { mix: optionListStyle, children: question.options.map((option) => /* @__PURE__ */ jsx("li", { mix: optionStyle, children: [
+        /* @__PURE__ */ jsx("strong", { children: option.label }),
+        ": ",
+        option.value
+      ] }, option.label)) }) : null,
+      question.figureDescription ? /* @__PURE__ */ jsx("p", { children: question.figureDescription }) : null,
+      question.figureData ? /* @__PURE__ */ jsx(Figure, { data: question.figureData }) : null
+    ] });
+  };
+}
+
+// app/features/challenge/player/ui/icons.tsx
+function icon(children) {
+  return function Icon(handle) {
+    void handle;
+    return () => /* @__PURE__ */ jsx(
+      "svg",
+      {
+        width: "16",
+        height: "16",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        "stroke-width": "2",
+        "stroke-linecap": "round",
+        "stroke-linejoin": "round",
+        "aria-hidden": "true",
+        children: children()
+      }
+    );
+  };
+}
+var MenuIcon = icon(() => /* @__PURE__ */ jsx("path", { d: "M4 6h16M4 12h16M4 18h16" }));
+var CloseIcon = icon(() => /* @__PURE__ */ jsx("path", { d: "m6 6 12 12M18 6 6 18" }));
+var ChevronLeftIcon = icon(() => /* @__PURE__ */ jsx("path", { d: "m15 18-6-6 6-6" }));
+var ChevronRightIcon = icon(() => /* @__PURE__ */ jsx("path", { d: "m9 18 6-6-6-6" }));
+var CheckIcon = icon(() => /* @__PURE__ */ jsx("polyline", { points: "20 6 9 17 4 12" }));
+var PauseIcon = icon(() => /* @__PURE__ */ jsx("path", { d: "M9 5v14M15 5v14" }));
+var TimerIcon = icon(() => /* @__PURE__ */ jsx(Fragment, { children: [
+  /* @__PURE__ */ jsx("circle", { cx: "12", cy: "13", r: "8" }),
+  /* @__PURE__ */ jsx("path", { d: "M12 9v4l2.5 1.5M10 2h4m-2 0v3M19 6l-1.5 1.5" })
+] }));
+var AnswerSheetIcon = icon(() => /* @__PURE__ */ jsx(Fragment, { children: [
+  /* @__PURE__ */ jsx("path", { d: "M7 3.5h7l4.5 4.5v12.5H7z" }),
+  /* @__PURE__ */ jsx("path", { d: "M14 3.5V8h4.5M9.5 14l2 2 4-4" })
+] }));
+
+// app/features/challenge/player/ui/player-controls.tsx
+function QuestionActions(handle) {
+  return () => {
+    const { copyText, answerOpen, onToggleAnswer, timerRunning, onToggleTimer } = handle.props;
+    return /* @__PURE__ */ jsx("fieldset", { class: "exam-player__actions", children: [
+      /* @__PURE__ */ jsx("legend", { class: "sr-only", children: "\u554F\u984C\u306E\u64CD\u4F5C" }),
+      /* @__PURE__ */ jsx(CopyButton, { text: copyText, label: "\u554F\u984C\u6587\u3092\u30B3\u30D4\u30FC" }),
+      /* @__PURE__ */ jsx(
+        "button",
+        {
+          type: "button",
+          class: "exam-action exam-action--answer",
+          "aria-label": answerOpen ? "\u89E3\u7B54\u3092\u96A0\u3059" : "\u89E3\u7B54\u3092\u8868\u793A",
+          title: answerOpen ? "\u89E3\u7B54\u3092\u96A0\u3059" : "\u89E3\u7B54\u3092\u8868\u793A",
+          "aria-expanded": answerOpen ? "true" : "false",
+          "aria-controls": answerOpen ? "exam-answer" : void 0,
+          mix: on("click", onToggleAnswer),
+          children: answerOpen ? /* @__PURE__ */ jsx(CloseIcon, {}) : /* @__PURE__ */ jsx(AnswerSheetIcon, {})
+        }
+      ),
+      /* @__PURE__ */ jsx(
+        "button",
+        {
+          type: "button",
+          class: `exam-action exam-action--timer ${timerRunning ? "exam-action--timer-running" : ""}`,
+          "aria-label": timerRunning ? "\u8A08\u6E2C\u3092\u4E00\u6642\u505C\u6B62" : "\u8A08\u6E2C\u3092\u518D\u958B",
+          title: timerRunning ? "\u8A08\u6E2C\u3092\u4E00\u6642\u505C\u6B62" : "\u8A08\u6E2C\u3092\u518D\u958B",
+          "aria-pressed": timerRunning ? "true" : "false",
+          mix: on("click", onToggleTimer),
+          children: timerRunning ? /* @__PURE__ */ jsx(PauseIcon, {}) : /* @__PURE__ */ jsx(TimerIcon, {})
+        }
+      )
+    ] });
+  };
+}
+function ChallengeTimerDisplay(handle) {
+  let now = 0;
+  let interval;
+  const stopTicking = () => {
+    if (interval !== void 0) {
+      clearInterval(interval);
+      interval = void 0;
+    }
+  };
+  const syncTicking = (running) => {
+    if (!running) {
+      stopTicking();
+      return;
+    }
+    if (interval === void 0) {
+      now = typeof performance === "undefined" ? 0 : performance.now();
+      interval = setInterval(() => {
+        now = performance.now();
+        void handle.update();
+      }, 1e3);
+    }
+  };
+  return () => {
+    const { mode, totalElapsedMs, questionElapsedMs, timerRunning, timerStartedAt } = handle.props;
+    const displayedTotalMs = projectElapsedTime(totalElapsedMs, timerRunning, timerStartedAt, now);
+    const displayedQuestionMs = projectElapsedTime(
+      questionElapsedMs,
+      timerRunning,
+      timerStartedAt,
+      now
+    );
+    return /* @__PURE__ */ jsx(
+      "fieldset",
+      {
+        mix: ref((node) => {
+          if (node) {
+            syncTicking(timerRunning);
+          } else {
+            stopTicking();
+          }
+        }),
+        class: `exam-player__timers ${mode === "question" ? "is-single" : ""}`,
+        children: [
+          /* @__PURE__ */ jsx("legend", { class: "sr-only", children: "\u7D4C\u904E\u6642\u9593" }),
+          mode === "exam" ? /* @__PURE__ */ jsx("div", { children: [
+            /* @__PURE__ */ jsx("span", { children: "\u5168\u4F53" }),
+            /* @__PURE__ */ jsx("strong", { "data-testid": "challenge-total-time", "aria-live": "off", children: formatDuration(displayedTotalMs) })
+          ] }) : null,
+          /* @__PURE__ */ jsx("div", { children: [
+            /* @__PURE__ */ jsx("span", { children: mode === "question" ? "\u8A08\u6E2C\u6642\u9593" : "\u3053\u306E\u554F\u984C" }),
+            /* @__PURE__ */ jsx("strong", { "data-testid": "challenge-question-time", "aria-live": "off", children: formatDuration(displayedQuestionMs) })
+          ] })
+        ]
+      }
+    );
+  };
+}
+function PlayerEdgeNavigation(handle) {
+  return () => {
+    const { showPrevious, isFirst, isLast, canFinish, onPrevious, onNext, onFinish } = handle.props;
+    if (!(showPrevious || isLast)) {
+      return null;
+    }
+    return /* @__PURE__ */ jsx("nav", { class: "exam-player__edge-nav", "aria-label": "\u554F\u984C\u79FB\u52D5", children: [
+      showPrevious ? /* @__PURE__ */ jsx(
+        "button",
+        {
+          type: "button",
+          class: "exam-action exam-player__edge-nav-button exam-player__edge-nav-button--previous",
+          "aria-label": "\u524D\u306E\u554F\u984C",
+          title: "\u524D\u306E\u554F\u984C",
+          disabled: isFirst,
+          mix: on("click", onPrevious),
+          children: /* @__PURE__ */ jsx(ChevronLeftIcon, {})
+        }
+      ) : null,
+      /* @__PURE__ */ jsx(
+        "button",
+        {
+          type: "button",
+          class: "exam-action exam-player__edge-nav-button exam-player__edge-nav-button--next",
+          "aria-label": isLast ? "\u7D50\u679C\u3092\u898B\u308B" : "\u6B21\u306E\u554F\u984C",
+          title: isLast ? "\u7D50\u679C\u3092\u898B\u308B" : "\u6B21\u306E\u554F\u984C",
+          disabled: isLast && !canFinish,
+          mix: on("click", isLast ? onFinish : onNext),
+          children: isLast ? /* @__PURE__ */ jsx(CheckIcon, {}) : /* @__PURE__ */ jsx(ChevronRightIcon, {})
+        }
+      )
+    ] });
+  };
+}
+
+// app/features/challenge/player/ui/player-header.tsx
+function PlayerHeader(handle) {
+  return () => {
+    const {
+      playerTitle,
+      questions,
+      currentQuestionIndex,
+      onOpenQuestionList,
+      onSelectQuestion,
+      disabled = false
+    } = handle.props;
+    return /* @__PURE__ */ jsx("header", { class: "exam-player__header", children: [
+      /* @__PURE__ */ jsx("div", { class: "exam-player__identity", children: [
+        questions.length > 1 ? /* @__PURE__ */ jsx(
+          "button",
+          {
+            type: "button",
+            class: "exam-action exam-player__list-toggle",
+            "aria-label": "\u554F\u984C\u4E00\u89A7\u3092\u958B\u304F",
+            title: "\u554F\u984C\u4E00\u89A7\u3092\u958B\u304F",
+            disabled,
+            mix: on("click", onOpenQuestionList),
+            children: /* @__PURE__ */ jsx(MenuIcon, {})
+          }
+        ) : null,
+        /* @__PURE__ */ jsx("h2", { children: playerTitle })
+      ] }),
+      /* @__PURE__ */ jsx("nav", { class: "exam-player__progress", "aria-label": "\u554F\u984C\u756A\u53F7", children: /* @__PURE__ */ jsx("div", { class: "exam-player__progress-steps", children: [
+        /* @__PURE__ */ jsx("ol", { children: questions.map((question, index) => /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(
+          "button",
+          {
+            type: "button",
+            "aria-label": `\u554F${index + 1}`,
+            "aria-current": index === currentQuestionIndex ? "step" : void 0,
+            class: index === currentQuestionIndex ? "is-current" : "",
+            disabled,
+            mix: on("click", () => onSelectQuestion(index)),
+            children: index + 1
+          }
+        ) }, question.id)) }),
+        /* @__PURE__ */ jsx(
+          "div",
+          {
+            class: "exam-player__progress-track",
+            role: "progressbar",
+            "aria-label": "\u554F\u984C\u306E\u9032\u6357",
+            "aria-valuemin": 0,
+            "aria-valuemax": questions.length,
+            "aria-valuenow": currentQuestionIndex + 1,
+            "aria-valuetext": `\u554F${currentQuestionIndex + 1} / ${questions.length}`,
+            children: /* @__PURE__ */ jsx(
+              "span",
+              {
+                style: {
+                  width: `${(currentQuestionIndex + 1) / questions.length * 100}%`
+                }
+              }
+            )
+          }
+        )
+      ] }) })
+    ] });
+  };
+}
+
+// app/features/challenge/player/ui/player-list.tsx
+function PlayerListItem(handle) {
+  return () => {
+    const { question, index, mode, state, currentQuestionId, onSelect } = handle.props;
+    const judgment = state.judgments[question.id];
+    const isCurrent = question.id === currentQuestionId;
+    return /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsx(
+      "button",
+      {
+        type: "button",
+        class: `exam-question-list__item ${mode === "question" ? "exam-question-list__item--focus" : ""} ${isCurrent ? "is-current" : ""}`,
+        "aria-label": `\u554F${question.number ?? index + 1} ${question.text}`,
+        "aria-current": isCurrent ? "true" : void 0,
+        mix: on("click", () => onSelect(index)),
+        children: [
+          /* @__PURE__ */ jsx("span", { children: [
+            "\u554F",
+            question.number ?? index + 1
+          ] }),
+          mode === "exam" ? /* @__PURE__ */ jsx("span", { class: "exam-question-list__time", children: formatDuration(state.questionElapsedMs[question.id] ?? 0) }) : null,
+          mode === "exam" && judgment ? /* @__PURE__ */ jsx("span", { class: `exam-question-list__judgment is-${judgment}`, children: judgment === "correct" ? "\u25CB" : "\xD7" }) : null,
+          /* @__PURE__ */ jsx("span", { class: "exam-question-list__prompt", children: question.text })
+        ]
+      }
+    ) });
+  };
+}
+function PlayerList(handle) {
+  return () => {
+    const { state, questions, mode, open, onSelect, onClose } = handle.props;
+    if (!open) {
+      return null;
+    }
+    const currentQuestionId = state.questionIds[state.currentIndex];
+    const listedQuestions = mode === "question" ? questions : state.questionIds.map((questionId) => questions.find((item) => item.id === questionId)).filter((question) => question !== void 0);
+    const totalElapsedMs = Object.values(state.questionElapsedMs).reduce(
+      (sum, value) => sum + (value ?? 0),
+      0
+    );
+    return /* @__PURE__ */ jsx(Fragment, { children: [
+      /* @__PURE__ */ jsx(
+        "button",
+        {
+          class: "exam-question-list__backdrop",
+          type: "button",
+          "aria-label": "\u554F\u984C\u4E00\u89A7\u3092\u9589\u3058\u308B",
+          mix: on("click", onClose)
+        }
+      ),
+      /* @__PURE__ */ jsx("aside", { class: "exam-question-list", "aria-label": "\u554F\u984C\u4E00\u89A7", children: [
+        /* @__PURE__ */ jsx("div", { class: "exam-question-list__toolbar", children: [
+          /* @__PURE__ */ jsx("div", { class: "exam-question-list__header", children: /* @__PURE__ */ jsx("h2", { children: "\u554F\u984C\u4E00\u89A7" }) }),
+          /* @__PURE__ */ jsx("div", { class: "exam-question-list__actions", children: [
+            mode === "exam" ? /* @__PURE__ */ jsx("p", { children: [
+              /* @__PURE__ */ jsx("span", { children: "\u5168\u4F53" }),
+              /* @__PURE__ */ jsx("strong", { children: formatDuration(totalElapsedMs) })
+            ] }) : null,
+            /* @__PURE__ */ jsx(
+              "button",
+              {
+                type: "button",
+                class: "exam-action",
+                "aria-label": "\u554F\u984C\u4E00\u89A7\u3092\u9589\u3058\u308B",
+                title: "\u554F\u984C\u4E00\u89A7\u3092\u9589\u3058\u308B",
+                mix: on("click", onClose),
+                children: /* @__PURE__ */ jsx(CloseIcon, {})
+              }
+            )
+          ] })
+        ] }),
+        /* @__PURE__ */ jsx("ol", { children: listedQuestions.map((question, index) => /* @__PURE__ */ jsx(
+          PlayerListItem,
+          {
+            question,
+            index,
+            mode,
+            state,
+            currentQuestionId,
+            onSelect
+          },
+          question.id
+        )) })
+      ] })
+    ] });
+  };
+}
+
+// app/features/challenge/player/exam-player.tsx
+var ExamPlayer = clientEntry(
+  "/assets/client.js#ExamPlayer",
+  function ExamPlayer2(handle) {
+    const props = handle.props;
+    const questionById = new Map(props.questions.map((question) => [question.id, question]));
+    const questionIndexById = new Map(
+      props.questions.map((question, index) => [question.id, index])
+    );
+    const session = resolveInitialPlayerSession(props);
+    let state = session.state;
+    let phase = session.phase;
+    let resultPayload = session.resultPayload;
+    let resultHistory = session.resultHistory;
+    let solutionOpen = false;
+    let questionListOpen = false;
+    let navigationDirection = "forward";
+    let syncMessage = null;
+    const runtime = {
+      running: false,
+      lastSample: null,
+      currentQuestionId: state ? state.questionIds[state.currentIndex] : void 0
+    };
+    const now = () => systemClock.nowEpochMilliseconds();
+    const currentQuestionId = () => state?.questionIds[state.currentIndex];
+    const currentQuestion = () => {
+      const id = currentQuestionId();
+      return id ? questionById.get(id) : void 0;
+    };
+    const navigation = () => state ? getNavigationPosition(
+      props.mode,
+      currentQuestionId(),
+      state,
+      props.questions,
+      (id) => id ? questionIndexById.get(id) ?? 0 : 0
+    ) : { currentQuestionIndex: 0, navigationLength: props.questions.length };
+    const persist = () => {
+      if (state) {
+        saveActiveChallenge(state);
+      }
+    };
+    const commit = (next) => {
+      const sampled = sampleChallengeTimer(next, runtime, now());
+      state = sampled.state;
+      persist();
+    };
+    const sample = () => {
+      if (!state) return;
+      const sampled = sampleChallengeTimer(state, runtime, now());
+      state = sampled.state;
+      persist();
+    };
+    const openAnswer = () => {
+      solutionOpen = true;
+      if (state) {
+        const id = currentQuestionId();
+        if (id) {
+          state = challengeReducer(state, { type: "REVEAL_QUESTION", questionId: id });
+          persist();
+        }
+      }
+    };
+    const toggleAnswer = () => {
+      if (solutionOpen) {
+        solutionOpen = false;
+      } else {
+        openAnswer();
+      }
+      void handle.update();
+    };
+    const toggleTimer = () => {
+      sample();
+      if (runtime.running) {
+        runtime.running = false;
+      } else {
+        runtime.running = true;
+        runtime.lastSample = now();
+      }
+      void handle.update();
+    };
+    const judge = (judgment) => {
+      if (!state) return;
+      const id = currentQuestionId();
+      if (!id) return;
+      sample();
+      if (!state) return;
+      const judged = challengeReducer(state, {
+        type: "JUDGE_QUESTION",
+        questionId: id,
+        judgment,
+        answerCreatedAt: now()
+      });
+      solutionOpen = false;
+      commit(judged);
+      void handle.update();
+    };
+    const selectIndex = (index, listed) => {
+      if (!state) return;
+      sample();
+      if (!state) return;
+      const targetId = listed ? state.questionIds[index] ?? currentQuestionId() : props.questions[index]?.id ?? currentQuestionId();
+      if (!targetId || !state) return;
+      const moveIndex = listed ? index : questionIndexById.get(targetId) ?? 0;
+      const fromIndex = navigation().currentQuestionIndex;
+      navigationDirection = moveIndex >= fromIndex ? "forward" : "backward";
+      state = challengeReducer(state, { type: "MOVE_TO", index: moveIndex });
+      resetTimerRuntimeInPlace(runtime, currentQuestionId());
+      runtime.running = true;
+      runtime.lastSample = now();
+      solutionOpen = false;
+      questionListOpen = false;
+      persist();
+      if (props.mode === "question") {
+        replaceQuestionInUrl(targetId);
+      }
+      void handle.update();
+    };
+    const move = (offset) => {
+      const { currentQuestionIndex, navigationLength } = navigation();
+      const next = currentQuestionIndex + offset;
+      if (next < 0 || next >= navigationLength) return;
+      selectIndex(next, props.mode === "question");
+      void handle.update();
+    };
+    const finish = () => {
+      if (!state) return;
+      sample();
+      if (!state) return;
+      const updatedAt = now();
+      const completed = challengeReducer(state, { type: "COMPLETE", updatedAt });
+      const archived = archiveCompletedChallenge(completed, updatedAt);
+      if (!archived) return;
+      const payload = archived.payload;
+      resultPayload = payload;
+      resultHistory = filterChallengeHistory(
+        readCompletedChallenges(),
+        props.examId,
+        props.mode,
+        props.mode === "question" ? payload.answers[0]?.questionId ?? props.requestedQuestionId : props.requestedQuestionId
+      );
+      phase = "result";
+      solutionOpen = false;
+      if (typeof window !== "undefined") {
+        replaceChallengeView("result", payload.challengeId);
+      }
+      void handle.update();
+    };
+    const retry = () => {
+      if (typeof window === "undefined") return;
+      replaceChallengeView("player");
+      const reload = resolveInitialPlayerSession(props);
+      state = reload.state;
+      phase = reload.phase;
+      resultPayload = null;
+      resultHistory = [];
+      solutionOpen = false;
+      resetTimerRuntimeInPlace(runtime, currentQuestionId());
+      runtime.running = true;
+      runtime.lastSample = now();
+      persist();
+      void handle.update();
+    };
+    const resume = () => {
+      phase = "player";
+      runtime.running = true;
+      runtime.lastSample = now();
+      void handle.update();
+    };
+    return () => {
+      const syncMessageValue = syncMessage;
+      void syncMessageValue;
+      if (!state && typeof window === "undefined") {
+        return /* @__PURE__ */ jsx(ExamPlayerPreview, { props });
+      }
+      if (phase === "result" && resultPayload) {
+        return /* @__PURE__ */ jsx(
+          ChallengeResultView,
+          {
+            payload: resultPayload,
+            history: resultHistory.length > 0 ? resultHistory : [resultPayload],
+            questions: props.questions,
+            mode: props.mode,
+            unitId: props.unitId,
+            year: props.year,
+            syncMessage,
+            onRetry: retry
+          }
+        );
+      }
+      if (phase === "missing") {
+        return /* @__PURE__ */ jsx("div", { class: "exam-player-message", children: [
+          /* @__PURE__ */ jsx("p", { children: "\u3053\u306E\u7D50\u679C\u306F\u7AEF\u672B\u5185\u306B\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3067\u3057\u305F\u3002" }),
+          /* @__PURE__ */ jsx(
+            "a",
+            {
+              class: "exam-footer-button exam-footer-button--primary",
+              href: `/${props.unitId}/${props.year}`,
+              children: "\u554F\u984C\u4E00\u89A7\u3078\u623B\u308B"
+            }
+          )
+        ] });
+      }
+      if (!state) {
+        return /* @__PURE__ */ jsx(ExamPlayerPreview, { props });
+      }
+      if (phase === "resume") {
+        return /* @__PURE__ */ jsx("section", { class: "exam-resume", "aria-labelledby": "exam-resume-title", children: [
+          /* @__PURE__ */ jsx("p", { class: "page-heading__eyebrow", children: "\u7D9A\u304D\u304C\u3042\u308A\u307E\u3059" }),
+          /* @__PURE__ */ jsx("h2", { id: "exam-resume-title", children: "\u524D\u56DE\u306E\u8A66\u884C\u3092\u3069\u3046\u3057\u307E\u3059\u304B\uFF1F" }),
+          /* @__PURE__ */ jsx("div", { class: "exam-resume__actions", children: [
+            /* @__PURE__ */ jsx(
+              "button",
+              {
+                type: "button",
+                class: "exam-footer-button exam-footer-button--primary",
+                mix: on("click", resume),
+                children: "\u7D9A\u304D\u304B\u3089"
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              "button",
+              {
+                type: "button",
+                class: "exam-footer-button exam-footer-button--quiet",
+                mix: on("click", retry),
+                children: "\u6700\u521D\u304B\u3089"
+              }
+            )
+          ] })
+        ] });
+      }
+      const question = currentQuestion();
+      if (!question) {
+        return /* @__PURE__ */ jsx("div", { class: "exam-player-message", children: "\u554F\u984C\u3092\u8868\u793A\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002" });
+      }
+      const { currentQuestionIndex, navigationLength } = navigation();
+      const markdown = questionToMarkdown(question, { includeSolution: false });
+      const currentJudgment = state.judgments[question.id];
+      return /* @__PURE__ */ jsx(
+        "section",
+        {
+          class: "exam-player-shell",
+          "aria-label": props.mode === "exam" ? "\u5C0F\u30C6\u30B9\u30C8\u30D7\u30EC\u30A4\u30E4\u30FC" : "\u30BF\u30A4\u30E0\u30A2\u30BF\u30C3\u30AF\u30D7\u30EC\u30A4\u30E4\u30FC",
+          children: [
+            /* @__PURE__ */ jsx(
+              PlayerHeader,
+              {
+                playerTitle: props.playerTitle,
+                questions: props.questions,
+                currentQuestionIndex,
+                onOpenQuestionList: () => {
+                  questionListOpen = true;
+                  void handle.update();
+                },
+                onSelectQuestion: (index) => selectIndex(index, false)
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              PlayerList,
+              {
+                state,
+                questions: props.questions,
+                mode: props.mode,
+                open: questionListOpen,
+                onClose: () => {
+                  questionListOpen = false;
+                  void handle.update();
+                },
+                onSelect: (index) => selectIndex(index, true)
+              }
+            ),
+            /* @__PURE__ */ jsx("div", { class: "exam-player__workspace", children: [
+              /* @__PURE__ */ jsx("div", { class: `exam-player__question exam-player__question--${navigationDirection}`, children: [
+                /* @__PURE__ */ jsx(QuestionContent, { question }),
+                /* @__PURE__ */ jsx(
+                  ChallengeTimerDisplay,
+                  {
+                    mode: props.mode,
+                    totalElapsedMs: Object.values(state.questionElapsedMs).reduce(
+                      (sum, value) => sum + (value ?? 0),
+                      0
+                    ),
+                    questionElapsedMs: state.questionElapsedMs[question.id] ?? 0,
+                    timerRunning: runtime.running,
+                    timerStartedAt: runtime.running ? runtime.lastSample : null
+                  }
+                ),
+                /* @__PURE__ */ jsx(
+                  QuestionActions,
+                  {
+                    copyText: markdown,
+                    answerOpen: solutionOpen,
+                    onToggleAnswer: toggleAnswer,
+                    timerRunning: runtime.running,
+                    onToggleTimer: toggleTimer
+                  }
+                ),
+                /* @__PURE__ */ jsx(
+                  AnswerPanel,
+                  {
+                    question,
+                    isOpen: solutionOpen,
+                    judgment: currentJudgment,
+                    onJudge: judge
+                  }
+                )
+              ] }),
+              /* @__PURE__ */ jsx(
+                PlayerEdgeNavigation,
+                {
+                  showPrevious: navigationLength > 1,
+                  isFirst: currentQuestionIndex === 0,
+                  isLast: currentQuestionIndex === navigationLength - 1,
+                  canFinish: isChallengeComplete(state),
+                  onPrevious: () => move(-1),
+                  onNext: () => move(1),
+                  onFinish: finish
+                }
+              )
+            ] })
+          ]
+        }
+      );
+    };
+  }
+);
+function ExamPlayerPreview(handle) {
+  return () => {
+    const { props } = handle.props;
+    const question = props.questions[0];
+    if (!question) {
+      return /* @__PURE__ */ jsx("div", { class: "exam-player-shell", "aria-hidden": "true" });
+    }
+    return /* @__PURE__ */ jsx(
+      "section",
+      {
+        class: "exam-player-shell",
+        "aria-label": props.mode === "exam" ? "\u5C0F\u30C6\u30B9\u30C8\u30D7\u30EC\u30A4\u30E4\u30FC" : "\u30BF\u30A4\u30E0\u30A2\u30BF\u30C3\u30AF\u30D7\u30EC\u30A4\u30E4\u30FC",
+        children: [
+          /* @__PURE__ */ jsx(
+            PlayerHeader,
+            {
+              playerTitle: props.playerTitle,
+              questions: props.questions,
+              currentQuestionIndex: 0,
+              disabled: true,
+              onOpenQuestionList: () => {
+              },
+              onSelectQuestion: () => {
+              }
+            }
+          ),
+          /* @__PURE__ */ jsx("div", { class: "exam-player__workspace", children: /* @__PURE__ */ jsx("div", { class: "exam-player__question", children: [
+            /* @__PURE__ */ jsx(QuestionContent, { question }),
+            /* @__PURE__ */ jsx(
+              ChallengeTimerDisplay,
+              {
+                mode: props.mode,
+                totalElapsedMs: 0,
+                questionElapsedMs: 0,
+                timerRunning: false,
+                timerStartedAt: null
+              }
+            )
+          ] }) })
+        ]
+      }
+    );
+  };
 }
 
 // app/actions/public/entry.ts
