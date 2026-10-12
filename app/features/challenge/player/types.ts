@@ -1,0 +1,16 @@
+import type { DeepReadonly } from "../../../lib/immutable.ts";
+import type { ExamId, ExamNumber, Question, QuestionId, UnitTabId, Year } from "../../../types/index.ts";
+
+export type PlayerQuestion = DeepReadonly<Question>;
+export type PlayerMode = "exam" | "question";
+
+export type ExamPlayerProps = Readonly<{
+	examId: ExamId;
+	examNumber: ExamNumber;
+	year: Year;
+	unitId: UnitTabId;
+	playerTitle: string;
+	questions: readonly PlayerQuestion[];
+	mode: PlayerMode;
+	requestedQuestionId?: QuestionId;
+}>;

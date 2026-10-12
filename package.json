@@ -27,6 +27,7 @@
 	},
 	"dependencies": {
 		"@remix-run/ui": "^0.12.1",
+		"neverthrow": "^8.2.0",
 		"remix": "^3.0.0",
 		"zod": "^4.6.5"
 	},
