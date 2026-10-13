@@ -91,7 +91,7 @@ export function Document(handle: Handle<DocumentProps>) {
 					/>
 					<link rel="stylesheet" href="/style.css" />
 					<ImportMap value={scriptEntry.importMap} />
-					{scriptEntry.preloads.map((preload) => (
+					{scriptEntry.preloads.slice(0, 1).map((preload) => (
 						<link key={preload} rel="modulepreload" href={preload} />
 					))}
 					<script type="module" src={CLIENT_ENTRY_HREF}></script>
