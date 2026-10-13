@@ -58,7 +58,10 @@ export class ExamPlayerPage {
 						clientJs: performance
 							.getEntriesByType("resource")
 							.filter((entry) => entry.name.includes("client.js"))
-							.map((entry) => ({ name: entry.name, size: entry.transferSize })),
+							.map((entry) => ({
+								name: entry.name,
+								size: (entry as PerformanceResourceTiming).transferSize,
+							})),
 						nav: (() => {
 							const nav = performance.getEntriesByType("navigation")[0] as
 								| PerformanceNavigationTiming
