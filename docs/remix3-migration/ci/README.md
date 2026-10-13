@@ -22,3 +22,23 @@ pushできない**ため、ホスト側で適用する（または `workflow` �
 ただし `db:migrate:local`（`cf d1 migrations apply … --local`）は CI 上で Cloudflare の
 アカウント文脈を要する可能性があり、`wrangler-action` を使う deploy は設定ファイルを
 `cloudflare.config.ts` に統一したため動かない。上記ワークフローの適用が本筋。
+
+## ブラウザー資産とテスト種別
+
+`remix/assets` の**実行時**アセットサーバーは Cloudflare Workers では動かない
+（oxc の `*-wasm32-wasi` バインディングが解決できず `cf dev` / `cf build` が失敗する）。
+代わりに `scripts/build-assets.mjs` が Node 上で `createAssetServer` を回し、
+アンバンドル ESM と `getScriptEntry()` の import map / modulepreload を
+`public/assets/**` へ出力する（Workers Assets が配信、`.ts`/`.tsx` は Worker が
+JavaScript の MIME を付与する）。
+
+テストは境界ごとに分ける:
+
+| 種別 | 実行 | 対象 |
+| --- | --- | --- |
+| server | `pnpm test` | ルーター・ドメイン（既定は `type: ["server"]`） |
+| browser | `pnpm test:browser` | 島の操作（`*.test.browser.tsx`、`render()`） |
+| e2e | `pnpm test:e2e` | SSR 導線（`*.test.e2e.ts`） |
+
+CI の e2e ワークフローは `pnpm e2e` を実行し、資産生成のうえ browser と e2e の
+両方を走らせる（Chromium を導入済みのため）。

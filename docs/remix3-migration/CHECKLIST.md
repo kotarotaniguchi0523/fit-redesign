@@ -104,7 +104,7 @@
 - [x] `$ContinueLearning` 実装（`$SolutionReveal` は単問ページ統合のため不要）
 - [x] `$ChallengeHistory`（/records に統合）
 - [x] `$ProgressHistory` / `$SyncSettings`（/records の RecordsView に統合）
-- [x] `$CopyButton`（clientEntry + esbuild バンドル、公開URL方式）
+- [x] `$CopyButton`（clientEntry。ブラウザー資産は Remix のアセットサーバーでアンバンドル配信）
 - [ ] `@remix-run/ui` の tabs / accordion / menu 等を適所で採用
 - [ ] JS 無効でも閲覧できること（progressive enhancement）を確認
 
