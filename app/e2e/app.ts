@@ -18,7 +18,6 @@ export interface Viewport {
 }
 
 export const DESKTOP: Viewport = { width: 1280, height: 900 };
-export const MOBILE: Viewport = { width: 390, height: 844 };
 
 /** 1 テストで使うページと Page Object 一式。 */
 export interface App {
@@ -61,24 +60,4 @@ export async function serveApp(t: ServeContext, viewport: Viewport = DESKTOP): P
 		unitYear: new UnitYearPage(page),
 		examPlayer: new ExamPlayerPage(page),
 	};
-}
-
-export interface ExamTarget {
-	readonly unitName: string;
-	readonly year: string;
-	readonly questionNumber: number;
-}
-
-/**
- * 実際の利用者と同じ導線で小テストプレイヤーまで進む。
- *
- * 直リンクではなく、トップ → 単元（年度）→ 単問のリンクを順にたどる。
- * 島のハイドレーション完了待ちは呼び出し側で `examPlayer.waitForInteractive()` を挟む。
- */
-export async function openExamPlayerViaUi(app: App, target: ExamTarget): Promise<void> {
-	await app.home.open();
-	await app.home.yearLink(target.unitName, target.year).click();
-	await app.unitYear.heading(target.unitName).waitFor();
-	await app.unitYear.questionLink(target.questionNumber).click();
-	await app.examPlayer.anyPlayer.waitFor();
 }

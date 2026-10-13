@@ -3,10 +3,14 @@
 	"entry": [
 		"app/worker.ts",
 		"app/actions/public/entry.ts",
+		"app/**/*.test.browser.tsx",
 		"app/e2e/*.test.e2e.ts",
 		"scripts/*.mjs"
 	],
-	"project": ["app/**/*.{ts,tsx}", "scripts/**/*.mjs"],
+	"project": [
+		"app/**/*.{ts,tsx}",
+		"scripts/**/*.mjs"
+	],
 	"ignoreExportsUsedInFile": true,
 	"ignoreDependencies": [
 		"wrangler",
