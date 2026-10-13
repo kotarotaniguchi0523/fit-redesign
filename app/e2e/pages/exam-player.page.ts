@@ -31,6 +31,9 @@ export class ExamPlayerPage {
 		} catch (error) {
 			// 失敗時にページ側の手掛かりを残す（ハイドレーションは DOM マーカーと
 			// 埋め込みデータ（script#rmx-data）が揃って初めて走る）。
+			await this.page.evaluate(() => {
+				console.error("[trace-probe] browser console tracing is active");
+			});
 			console.error(
 				"[player] hydration did not complete",
 				JSON.stringify(
