@@ -5,7 +5,7 @@ import { describe, it } from "remix/test";
 import { UnitAccordion } from "./unit-accordion.tsx";
 
 const UNITS = [
-	{ id: "base-conversion", icon: "🔢", name: "基数変換", years: ["2017", "2016"] },
+	{ id: "unit-base-conversion", icon: "🔢", name: "基数変換", years: ["2017", "2016"] },
 ] as const;
 
 /**
@@ -28,6 +28,6 @@ describe("UnitAccordion", () => {
 		await act(() => trigger.click());
 
 		assert.ok($('[data-state="open"]'), "パネルが開く");
-		assert.ok($('a[href="/base-conversion/2017"]'), "年度リンクが描画されている");
+		assert.ok($('a[href="/unit-base-conversion/2017"]'), "年度リンクが描画されている");
 	});
 });

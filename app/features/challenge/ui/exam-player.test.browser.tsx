@@ -11,7 +11,7 @@ const PLAYER_PROPS: ExamPlayerProps = {
 	examId: ExamIdSchema.parse("exam1-2017"),
 	examNumber: 1,
 	year: "2017",
-	unitId: UnitTabIdSchema.parse("base-conversion"),
+	unitId: UnitTabIdSchema.parse("unit-base-conversion"),
 	playerTitle: "小テスト1: 基数変換 (2017)",
 	questions: [
 		{
