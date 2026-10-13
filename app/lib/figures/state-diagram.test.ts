@@ -1,22 +1,23 @@
-import { describe, expect, it } from "vitest";
-import type { StateNode, Transition } from "../../types";
+import * as assert from "remix/assert";
+import { describe, it } from "remix/test";
+import type { StateNode, Transition } from "../../types/index.ts";
 import {
 	buildTransitionData,
 	getArrowHead,
 	getArrowPath,
 	getLabelPosition,
 	type Point,
-} from "./state-diagram";
+} from "./state-diagram.ts";
 
 describe("getArrowPath", () => {
 	it("returns a straight line path when curveOffset is 0", () => {
 		const path = getArrowPath({ x: 10, y: 20 }, { x: 100, y: 200 }, 0);
-		expect(path).toBe("M 10 20 L 100 200");
+		assert.equal(path, "M 10 20 L 100 200");
 	});
 
 	it("returns a straight line path when curveOffset is omitted", () => {
 		const path = getArrowPath({ x: 0, y: 0 }, { x: 50, y: 50 });
-		expect(path).toBe("M 0 0 L 50 50");
+		assert.equal(path, "M 0 0 L 50 50");
 	});
 
 	it("returns a quadratic bezier path with a perpendicular control point when curveOffset is non-zero", () => {
@@ -29,15 +30,15 @@ describe("getArrowPath", () => {
 		const path = getArrowPath(from, to, curveOffset);
 
 		// Assert: control point sits at (midX, midY + offset) = (50, 30) for a horizontal edge
-		expect(path).toBe("M 0 0 Q 50 30 100 0");
+		assert.equal(path, "M 0 0 Q 50 30 100 0");
 	});
 });
 
 describe("getLabelPosition", () => {
 	it("returns midpoint for a straight line (curveOffset=0)", () => {
 		const pos = getLabelPosition({ x: 0, y: 0 }, { x: 100, y: 200 }, 0);
-		expect(pos.x).toBe(50);
-		expect(pos.y).toBe(100 - 5); // midY - 5
+		assert.equal(pos.x, 50);
+		assert.equal(pos.y, 100 - 5); // midY - 5
 	});
 
 	it("returns the perpendicular-offset midpoint (minus 5) for a curved line", () => {
@@ -50,7 +51,7 @@ describe("getLabelPosition", () => {
 		const pos = getLabelPosition(from, to, curveOffset);
 
 		// Assert: midpoint (50, 0) shifted by +30 along the perpendicular, then -5 in y => (50, 25)
-		expect(pos).toEqual({ x: 50, y: 25 });
+		assert.deepEqual(pos, { x: 50, y: 25 });
 	});
 });
 
@@ -70,17 +71,17 @@ describe("getArrowHead", () => {
 		const nodeRadius = 20;
 
 		// Act
-		const path = getArrowHead(from, to, curveOffset, nodeRadius);
+		const path = getArrowHead(from, to, curveOffset, nodeRadius as never);
 
 		// Assert: tip pulled back by nodeRadius along the edge => (80, 0); wings symmetric in y
-		expect(path).toMatch(/^M 80 0 L /);
+		assert.match(path, /^M 80 0 L /);
 		const [tipA, wing1, tipB, wing2] = parsePoints(path);
-		expect(tipA).toEqual({ x: 80, y: 0 });
-		expect(tipB).toEqual({ x: 80, y: 0 });
-		expect(wing1.x).toBeCloseTo(74.803_847_577, 6);
-		expect(wing1.y).toBeCloseTo(3, 6);
-		expect(wing2.x).toBeCloseTo(74.803_847_577, 6);
-		expect(wing2.y).toBeCloseTo(-3, 6);
+		assert.deepEqual(tipA, { x: 80, y: 0 });
+		assert.deepEqual(tipB, { x: 80, y: 0 });
+		assert.ok(Math.abs(wing1.x - 74.803_847_577) < 1e-6);
+		assert.ok(Math.abs(wing1.y - 3) < 1e-6);
+		assert.ok(Math.abs(wing2.x - 74.803_847_577) < 1e-6);
+		assert.ok(Math.abs(wing2.y - -3) < 1e-6);
 	});
 
 	it("offsets the tip by the supplied nodeRadius", () => {
@@ -88,15 +89,15 @@ describe("getArrowHead", () => {
 		const from = { x: 0, y: 0 };
 		const to = { x: 100, y: 0 };
 		const curveOffset = 0;
-		const nodeRadius = 10;
+		const nodeRadius: number = 10;
 
 		// Act
-		const path = getArrowHead(from, to, curveOffset, nodeRadius);
+		const path = getArrowHead(from, to, curveOffset, nodeRadius as never);
 
 		// Assert: tip pulled back by 10 instead of 20 => (90, 0)
-		expect(path).toMatch(/^M 90 0 L /);
+		assert.match(path, /^M 90 0 L /);
 		const [tip] = parsePoints(path);
-		expect(tip).toEqual({ x: 90, y: 0 });
+		assert.deepEqual(tip, { x: 90, y: 0 });
 	});
 
 	it("takes the curved branch: the head angle follows the control point, not the straight edge", () => {
@@ -112,9 +113,9 @@ describe("getArrowHead", () => {
 		// Assert: straight tip is (80,0); curved tip is angled, so it differs in both axes
 		const [straightTip] = parsePoints(straight);
 		const [curvedTip] = parsePoints(curved);
-		expect(straightTip).toEqual({ x: 80, y: 0 });
-		expect(curvedTip.x).not.toBe(straightTip.x);
-		expect(curvedTip.y).not.toBe(straightTip.y);
+		assert.deepEqual(straightTip, { x: 80, y: 0 });
+		assert.notEqual(curvedTip.x, straightTip.x);
+		assert.notEqual(curvedTip.y, straightTip.y);
 	});
 });
 
@@ -128,32 +129,32 @@ describe("buildTransitionData", () => {
 		const transitions: Transition[] = [{ from: "q0", to: "q1", label: "a" }];
 		const result = buildTransitionData(nodes, transitions);
 
-		expect(result).toHaveLength(1);
-		expect(result[0].type).toBe("normal");
-		expect(result[0].label).toBe("a");
-		expect(result[0].pathD).toBeDefined();
-		expect(result[0].arrowHeadD).toBeDefined();
-		expect(result[0].labelX).toBeDefined();
-		expect(result[0].labelY).toBeDefined();
+		assert.equal(result.length, 1);
+		assert.equal(result[0].type, "normal");
+		assert.equal(result[0].label, "a");
+		assert.ok(result[0].pathD !== undefined);
+		assert.ok(result[0].arrowHeadD !== undefined);
+		assert.ok(result[0].labelX !== undefined);
+		assert.ok(result[0].labelY !== undefined);
 	});
 
 	it("handles self-loop transitions", () => {
 		const transitions: Transition[] = [{ from: "q0", to: "q0", label: "b" }];
 		const result = buildTransitionData(nodes, transitions);
 
-		expect(result).toHaveLength(1);
-		expect(result[0].type).toBe("selfLoop");
-		expect(result[0].label).toBe("b");
-		expect(result[0].cx).toBeDefined();
-		expect(result[0].cy).toBeDefined();
-		expect(result[0].r).toBeDefined();
-		expect(result[0].arrowD).toBeDefined();
+		assert.equal(result.length, 1);
+		assert.equal(result[0].type, "selfLoop");
+		assert.equal(result[0].label, "b");
+		assert.ok(result[0].cx !== undefined);
+		assert.ok(result[0].cy !== undefined);
+		assert.ok(result[0].r !== undefined);
+		assert.ok(result[0].arrowD !== undefined);
 	});
 
 	it("skips transitions with unknown node ids", () => {
 		const transitions: Transition[] = [{ from: "q0", to: "q99", label: "x" }];
 		const result = buildTransitionData(nodes, transitions);
-		expect(result).toHaveLength(0);
+		assert.equal(result.length, 0);
 	});
 
 	it("handles multiple transitions including mixed types", () => {
@@ -164,10 +165,10 @@ describe("buildTransitionData", () => {
 		];
 		const result = buildTransitionData(nodes, transitions);
 
-		expect(result).toHaveLength(3);
-		expect(result[0].type).toBe("normal");
-		expect(result[1].type).toBe("selfLoop");
-		expect(result[2].type).toBe("normal");
+		assert.equal(result.length, 3);
+		assert.equal(result[0].type, "normal");
+		assert.equal(result[1].type, "selfLoop");
+		assert.equal(result[2].type, "normal");
 	});
 
 	it("self-loop position accounts for accepting node radius", () => {
@@ -186,6 +187,6 @@ describe("buildTransitionData", () => {
 			throw new Error("self-loop transition は cy を定義しているはず");
 		}
 		// Accepting node self-loop should be positioned higher (further from node center).
-		expect(acceptingCy).toBeLessThan(normalCy);
+		assert.ok(acceptingCy < normalCy);
 	});
 });

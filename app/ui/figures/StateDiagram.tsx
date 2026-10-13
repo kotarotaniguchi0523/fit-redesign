@@ -1,0 +1,112 @@
+import type { Handle } from "remix/component";
+import { css } from "remix/component";
+
+import { buildTransitionData, STATE_DEFAULTS } from "../../lib/figures/state-diagram.ts";
+import type { StateNode, Transition } from "../../types/index.ts";
+
+const svgStyle = css({
+	maxWidth: "100%",
+	height: "auto",
+	border: "1px solid var(--color-border)",
+	borderRadius: "var(--radius-control)",
+});
+
+interface StateDiagramProps {
+	nodes: StateNode[];
+	transitions: Transition[];
+	width?: number;
+	height?: number;
+}
+
+export function StateDiagram(handle: Handle<StateDiagramProps>) {
+	return () => {
+		const { nodes, transitions, width = 400, height = 150 } = handle.props;
+
+		const nodeRadius = STATE_DEFAULTS.NODE_RADIUS;
+		const acceptingNodeRadius = STATE_DEFAULTS.ACCEPTING_NODE_RADIUS;
+
+		const transitionData = buildTransitionData(nodes, transitions, nodeRadius, acceptingNodeRadius);
+
+		return (
+			<svg
+				width="100%"
+				height="auto"
+				viewBox={`0 0 ${width} ${height}`}
+				preserveAspectRatio="xMidYMid meet"
+				mix={svgStyle}
+				style={`aspect-ratio: ${width}/${height}`}
+				aria-label="状態遷移図"
+			>
+				<title>状態遷移図</title>
+
+				{transitionData.map((t) =>
+					t.type === "selfLoop" ? (
+						<g>
+							<circle cx={t.cx} cy={t.cy} r={t.r} fill="none" stroke="black" stroke-width="1.5" />
+							<path d={t.arrowD} stroke="black" stroke-width="1.5" fill="none" />
+							<text x={t.labelX} y={t.labelY} font-size="12" text-anchor="middle" fill="black">
+								{t.label}
+							</text>
+						</g>
+					) : (
+						<g>
+							<path d={t.pathD} stroke="black" stroke-width="1.5" fill="none" />
+							<path d={t.arrowHeadD} stroke="black" stroke-width="1.5" fill="none" />
+							<text x={t.labelX} y={t.labelY} font-size="12" text-anchor="middle" fill="black">
+								{t.label}
+							</text>
+						</g>
+					),
+				)}
+
+				{nodes.map((node) => (
+					<g>
+						{node.isAccepting && (
+							<circle
+								cx={node.x}
+								cy={node.y}
+								r={acceptingNodeRadius}
+								fill="none"
+								stroke="black"
+								stroke-width="1.5"
+							/>
+						)}
+						<circle
+							cx={node.x}
+							cy={node.y}
+							r={nodeRadius}
+							fill="white"
+							stroke="black"
+							stroke-width="1.5"
+						/>
+						<text
+							x={node.x}
+							y={node.y}
+							font-size="14"
+							text-anchor="middle"
+							dominant-baseline="middle"
+							fill="black"
+						>
+							{node.label}
+						</text>
+						{node.isInitial && (
+							<path
+								d={`M ${node.x - nodeRadius - 20} ${node.y} L ${node.x - nodeRadius} ${node.y}`}
+								stroke="black"
+								stroke-width="1.5"
+								fill="none"
+								marker-end="url(#arrowhead)"
+							/>
+						)}
+					</g>
+				))}
+
+				<defs>
+					<marker id="arrowhead" markerWidth="10" markerHeight="10" refX="5" refY="3" orient="auto">
+						<polygon points="0 0, 6 3, 0 6" fill="black" />
+					</marker>
+				</defs>
+			</svg>
+		);
+	};
+}

@@ -1,0 +1,128 @@
+import { isRecord } from "../../lib/guards.ts";
+import {
+	EpochMillisecondsSchema,
+	ProgressEntrySchema,
+	ProgressSnapshotSchema,
+	type SyncKey,
+	SyncKeySchema,
+} from "../../types/browser.ts";
+import {
+	mergeProgressEntries,
+	type ProgressEntry,
+	type ProgressMap,
+	toProgressMap,
+} from "./model.ts";
+
+export const PROGRESS_STORAGE_KEY = "fit-question-progress-v2";
+export const LEGACY_PROGRESS_STORAGE_KEY = "fit-question-progress-v1";
+export const SYNC_KEY_STORAGE_KEY = "fit-sync-key-v1";
+const PROGRESS_CHANGE_EVENT = "fit:progress-change";
+const SYNC_KEY_CHANGE_EVENT = "fit:sync-key-change";
+
+function notifyStorageChange(eventName: string): void {
+	window.dispatchEvent(new Event(eventName));
+}
+
+export function readProgressSnapshot(): string | null {
+	try {
+		return (
+			localStorage.getItem(PROGRESS_STORAGE_KEY) ??
+			localStorage.getItem(LEGACY_PROGRESS_STORAGE_KEY)
+		);
+	} catch {
+		return null;
+	}
+}
+
+export function readSyncKey(): SyncKey | null {
+	try {
+		const parsed = SyncKeySchema.safeParse(localStorage.getItem(SYNC_KEY_STORAGE_KEY));
+		return parsed.success ? parsed.data : null;
+	} catch {
+		return null;
+	}
+}
+
+export type StorageMutationError = Readonly<{
+	kind: "StorageMutationError";
+	operation: "SaveSyncKey" | "RemoveSyncKey";
+	cause: unknown;
+}>;
+export type StorageMutationResult =
+	| Readonly<{ kind: "StorageMutationSuccess" }>
+	| StorageMutationError;
+
+export function saveSyncKey(key: SyncKey): StorageMutationResult {
+	try {
+		localStorage.setItem(SYNC_KEY_STORAGE_KEY, key);
+		notifyStorageChange(SYNC_KEY_CHANGE_EVENT);
+		return { kind: "StorageMutationSuccess" };
+	} catch (cause) {
+		return { kind: "StorageMutationError", operation: "SaveSyncKey", cause };
+	}
+}
+
+export function removeSyncKey(): StorageMutationResult {
+	try {
+		localStorage.removeItem(SYNC_KEY_STORAGE_KEY);
+		notifyStorageChange(SYNC_KEY_CHANGE_EVENT);
+		return { kind: "StorageMutationSuccess" };
+	} catch (cause) {
+		return { kind: "StorageMutationError", operation: "RemoveSyncKey", cause };
+	}
+}
+
+export function parseProgressSnapshot(snapshot: string | null): ProgressMap {
+	try {
+		const parsed = ProgressSnapshotSchema.safeParse(JSON.parse(snapshot ?? "{}"));
+		if (!parsed.success) {
+			return {};
+		}
+		return Object.fromEntries(
+			Object.entries(parsed.data).flatMap(([key, value]) => {
+				const entry = ProgressEntrySchema.safeParse(value);
+				if (entry.success) {
+					return [[key, entry.data] as const];
+				}
+				if (!(isRecord(value) && "revealedAt" in value)) {
+					return [];
+				}
+				const timestamp = EpochMillisecondsSchema.safeParse(value.revealedAt);
+				const migrated = ProgressEntrySchema.safeParse({
+					questionId: value.questionId ?? key,
+					unitId: value.unitId,
+					createdAt: timestamp.success ? timestamp.data : undefined,
+					updatedAt: timestamp.success ? timestamp.data : undefined,
+				});
+				return migrated.success ? [[key, migrated.data] as const] : [];
+			}),
+		);
+	} catch {
+		return {};
+	}
+}
+
+export function readProgress(): ProgressMap {
+	return parseProgressSnapshot(readProgressSnapshot());
+}
+
+export function saveProgressEntries(entries: readonly ProgressEntry[]): void {
+	localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(toProgressMap(entries)));
+	notifyStorageChange(PROGRESS_CHANGE_EVENT);
+}
+
+export function recordReveal(entry: ProgressEntry): void {
+	try {
+		saveProgressEntries(mergeProgressEntries(Object.values(readProgress()), [entry]));
+	} catch {
+		// 記録は補助機能。保存できなくても答えの表示を妨げない。
+	}
+}
+
+export function mergeStoredProgress(entries: readonly ProgressEntry[]): void {
+	try {
+		saveProgressEntries(mergeProgressEntries(Object.values(readProgress()), entries));
+	} catch {
+		// 同期結果を保存できなくても、答えの表示と既存のローカル記録は維持する。
+	}
+}

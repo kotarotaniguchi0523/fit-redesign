@@ -1,0 +1,77 @@
+/*
+ * グローバルスタイル。ここに置くのはデザイントークンと最小の base のみ。
+ * コンポーネントの見た目は各コンポーネントの `css()` に併置する（REARCHITECTURE.md §4）。
+ */
+
+:root {
+	/* カラー */
+	--color-primary: #1e3a5f;
+	--color-primary-light: #2d4a6f;
+	--color-primary-soft: #e8eef5;
+	--color-accent: #c9a227;
+	--color-accent-light: #dbb84a;
+	--color-accent-soft: #f7eed1;
+	--color-bg: #faf9f7;
+	--color-bg-card: #ffffff;
+	--color-text: #1a1a1a;
+	--color-text-muted: #64748b;
+	--color-border: #e2e0dc;
+
+	/* タイポグラフィ */
+	/* Web フォント（Google Fonts）→ システムの CJK/等幅へフォールバック。
+	   外部フォントが読めない環境でも和文が読めるようにする。 */
+	--font-serif: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif CJK JP", serif;
+	--font-sans:
+		"Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", Meiryo,
+		"Noto Sans CJK JP", system-ui, sans-serif;
+	--font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+
+	/* 余白・角丸（コンポーネントで共有する最小セット） */
+	--radius-card: 0.75rem;
+	--radius-control: 0.375rem;
+	--shadow-card: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	margin: 0;
+	font-family: var(--font-sans);
+	background-color: var(--color-bg);
+	color: var(--color-text);
+	line-height: 1.7;
+}
+
+::selection {
+	background: var(--color-accent-soft);
+	color: var(--color-primary);
+}
+
+:focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--color-accent) 72%, white);
+	outline-offset: 3px;
+}
+
+/* details/summary の既定マーカーを消す（アコーディオンを自作しない前提の下地） */
+details summary::-webkit-details-marker {
+	display: none;
+}
+details summary::marker {
+	display: none;
+	content: "";
+}
+
+/* スクリーンリーダー専用。アクセシビリティ用途でグローバルに残す。 */
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border-width: 0;
+}

@@ -1,4 +1,4 @@
-import type { ProgressEntry } from "../types/domain";
+import type { ProgressEntry } from "../types/domain.ts";
 
 /**
  * Keep the latest entry for each question while retaining its earliest creation time.

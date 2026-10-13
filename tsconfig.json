@@ -1,34 +1,21 @@
 {
 	"compilerOptions": {
-		"target": "ESNext",
-		"module": "ESNext",
-		"moduleResolution": "Bundler",
 		"strict": true,
+		"lib": ["ES2024", "DOM", "DOM.Iterable"],
+		"types": ["node", "remix/assets/types/hmr"],
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"target": "ESNext",
+		"allowImportingTsExtensions": true,
+		"rewriteRelativeImportExtensions": true,
+		"verbatimModuleSyntax": true,
+		"isolatedModules": true,
+		"resolveJsonModule": true,
 		"skipLibCheck": true,
-		"esModuleInterop": true,
-		"allowImportingTsExtensions": false,
-		"verbatimModuleSyntax": false,
 		"jsx": "react-jsx",
-		"jsxImportSource": "hono/jsx",
-		"types": [
-			"@cloudflare/workers-types",
-			"vite/client"
-		],
-		"noEmit": true,
-		"lib": [
-			"ESNext",
-			"DOM",
-			"DOM.Iterable"
-		]
+		"jsxImportSource": "remix/component",
+		"noEmit": true
 	},
-	"include": [
-		"app",
-		"e2e",
-		"playwright.config.ts"
-	],
-	"exclude": [
-		"app/**/*.test.ts",
-		"app/**/*.test.tsx",
-		"app/types/test/**"
-	]
+	"include": [".cloudflare/types", "app", "scripts"],
+	"exclude": ["dist", "node_modules", "legacy"]
 }

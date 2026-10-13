@@ -84,9 +84,6 @@ export const ProgressSyncRequestSchema = z.readonly(
 
 // Hono's validator inspects the object shape, so keep this as a direct object.
 // It is intentionally not strict because real requests include other headers.
-export const SyncHeaderSchema = z.object({
-	"x-sync-key": SyncKeySchema,
-});
 
 export const ProgressSnapshotSchema = z.record(z.string(), z.unknown());
 

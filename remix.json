@@ -1,0 +1,10 @@
+{
+	"$schema": "./node_modules/remix/schema/remix.json",
+	"test": {
+		"exclude": ["node_modules/**", "dist/**"],
+		"type": ["server"],
+		"playwright": {
+			"configFile": "./playwright.config.ts"
+		}
+	}
+}

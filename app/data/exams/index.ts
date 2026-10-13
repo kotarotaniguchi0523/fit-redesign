@@ -1,6 +1,6 @@
-import type { DeepReadonly } from "../../lib/immutable";
-import type { ExamByYear, ExamNumber } from "../../types";
-import { loadExams } from "./loader";
+import type { DeepReadonly } from "../../lib/immutable.ts";
+import type { ExamByYear, ExamNumber } from "../../types/index.ts";
+import { loadExams } from "./loader.ts";
 
 type FrozenExamByYear = DeepReadonly<ExamByYear>;
 

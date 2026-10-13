@@ -1,12 +1,19 @@
 {
-	"$schema": "https://unpkg.com/knip@6/schema.json",
-	"entry": ["app/server.ts", "app/client.ts", "app/routes/**/*.{ts,tsx}", "app/style.css", "scripts/**/*.mjs"],
-	"project": ["app/**/*.{ts,tsx,mdx,css}", "scripts/**/*.mjs"],
-	"ignoreBinaries": ["lat"],
-	"ignoreDependencies": ["@hono/cli", "workerd", "lat.md"],
+	"$schema": "https://unpkg.com/knip@5/schema.json",
+	"entry": [
+		"app/worker.ts",
+		"app/actions/public/entry.ts",
+		"app/**/*.test.browser.tsx",
+		"app/e2e/*.test.e2e.ts",
+		"scripts/*.mjs"
+	],
+	"project": [
+		"app/**/*.{ts,tsx}",
+		"scripts/**/*.mjs"
+	],
 	"ignoreExportsUsedInFile": true,
-	"rules": {
-		"exports": "warn",
-		"types": "warn"
-	}
+	"ignoreDependencies": [
+		"wrangler",
+		"cloudflare"
+	]
 }

@@ -1,5 +1,5 @@
-import type { ChallengeId } from "../../../types";
-import { ChallengeIdSchema } from "../../../types/browser";
+import { ChallengeIdSchema } from "../../../types/browser.ts";
+import type { ChallengeId } from "../../../types/index.ts";
 
 export function generateChallengeId(): ChallengeId {
 	if (typeof crypto.randomUUID === "function") {

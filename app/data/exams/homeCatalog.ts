@@ -1,6 +1,6 @@
-import type { QuestionLocationGroup } from "../../features/answer/continueLearningTypes";
-import { unitBasedTabs } from "../units";
-import { getExamByNumber, selectVisibleExamNumbers } from "./index";
+import type { QuestionLocationGroup } from "../../features/answer/types.ts";
+import { unitBasedTabs } from "../units.ts";
+import { getExamByNumber, selectVisibleExamNumbers } from "./index.ts";
 
 export type HomeExamCatalog = Readonly<{
 	examCounts: ReadonlyMap<string, number>;

@@ -8,15 +8,14 @@ export type {
 	QuestionId,
 	SyncKey,
 	UnitTabId,
-} from "./browser";
+} from "./browser.ts";
 export {
 	ExamIdSchema,
-	ProgressEntryListSchema,
 	ProgressEntrySchema,
 	QuestionIdSchema,
 	SyncKeySchema,
 	UnitTabIdSchema,
-} from "./browser";
+} from "./browser.ts";
 
 export const YEARS = ["2013", "2014", "2015", "2016", "2017"] as const;
 export const EXAM_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;

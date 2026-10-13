@@ -3,13 +3,24 @@ export type {
 	ExamMeta,
 	FigureData,
 	Question,
-} from "../data/exams/schema";
-export type { ExamByYear, Slide, Unit, UnitBasedTab } from "./content";
+} from "../data/exams/schema.ts";
+export type { ProgressEntry } from "./browser.ts";
+// 同期 API が直接使う検証スキーマ（browser 信頼境界）
+export {
+	ChallengeIdSchema,
+	EpochMillisecondsSchema,
+	ExamIdSchema,
+	JudgmentSchema,
+	ProgressEntryListSchema,
+	ProgressSyncRequestSchema,
+	QuestionIdSchema,
+} from "./browser.ts";
+export type { ExamByYear, Slide, Unit, UnitBasedTab } from "./content.ts";
 export {
 	SlideSchema,
 	UnitBasedTabsSchema,
 	UnitSchema,
-} from "./content";
+} from "./content.ts";
 export type {
 	ChallengeId,
 	ExamId,
@@ -19,17 +30,15 @@ export type {
 	SyncKey,
 	UnitTabId,
 	Year,
-} from "./domain";
+} from "./domain.ts";
 export {
-	ExamNumberSchema,
 	isYear,
 	MEIJI_FIT_BASE,
 	ProgressEntrySchema,
 	SlideIdSchema,
 	SyncKeySchema,
 	YEARS,
-} from "./domain";
-
+} from "./domain.ts";
 // 図コンポーネントの型をre-export
 export type {
 	FlowchartEdge,
@@ -43,4 +52,4 @@ export type {
 	StateNode,
 	Transition,
 	TreeNode,
-} from "./figures";
+} from "./figures.ts";

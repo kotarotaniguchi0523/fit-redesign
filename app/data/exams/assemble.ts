@@ -1,4 +1,4 @@
-import type { Exam, ExamByYear, ExamMeta, ExamNumber, Year } from "../../types";
+import type { Exam, ExamByYear, ExamMeta, ExamNumber, Year } from "../../types/index.ts";
 
 export type ExamMetaEntry = ExamMeta["exams"][number];
 

@@ -1,0 +1,76 @@
+import type { Handle } from "remix/component";
+import { css } from "remix/component";
+
+import { calculatePositions, getEdgeLines } from "../../lib/figures/binary-tree.ts";
+import type { TreeNode } from "../../types/index.ts";
+
+const svgStyle = css({
+	maxWidth: "100%",
+	height: "auto",
+	border: "1px solid var(--color-border)",
+	borderRadius: "var(--radius-control)",
+});
+
+interface BinaryTreeProps {
+	root: TreeNode;
+	width?: number;
+	height?: number;
+	nodeRadius?: number;
+}
+
+export function BinaryTree(handle: Handle<BinaryTreeProps>) {
+	return () => {
+		const { root, width = 300, height = 200, nodeRadius = 20 } = handle.props;
+
+		const positions = calculatePositions(root, width, height, nodeRadius);
+		const edgeLines = getEdgeLines(positions, nodeRadius);
+
+		return (
+			<svg
+				width="100%"
+				height="auto"
+				viewBox={`0 0 ${width} ${height}`}
+				preserveAspectRatio="xMidYMid meet"
+				mix={svgStyle}
+				style={`aspect-ratio: ${width}/${height}`}
+				aria-label="二分木"
+			>
+				<title>二分木</title>
+
+				{edgeLines.map((line) => (
+					<line
+						x1={line.x1}
+						y1={line.y1}
+						x2={line.x2}
+						y2={line.y2}
+						stroke="black"
+						stroke-width="1.5"
+					/>
+				))}
+
+				{positions.map((pos) => (
+					<g>
+						<circle
+							cx={pos.x}
+							cy={pos.y}
+							r={nodeRadius}
+							fill="white"
+							stroke="black"
+							stroke-width="1.5"
+						/>
+						<text
+							x={pos.x}
+							y={pos.y}
+							font-size="14"
+							text-anchor="middle"
+							dominant-baseline="middle"
+							fill="black"
+						>
+							{pos.node.value}
+						</text>
+					</g>
+				))}
+			</svg>
+		);
+	};
+}

@@ -1,8 +1,8 @@
-import { getExamByNumber } from "../../data/exams";
-import { unitBasedTabs } from "../../data/units";
-import type { DeepReadonly } from "../../lib/immutable";
-import { type ExamNumber, isYear, type Question, type Year } from "../../types";
-import { questionToMarkdown } from "./questionToMarkdown";
+import { getExamByNumber } from "../../data/exams/index.ts";
+import { unitBasedTabs } from "../../data/units.ts";
+import type { DeepReadonly } from "../../lib/immutable.ts";
+import { type ExamNumber, isYear, type Question, type Year } from "../../types/index.ts";
+import { questionToMarkdown } from "./questionToMarkdown.ts";
 
 /**
  * AI エージェント向け Markdown コンテンツ生成（純粋ロジック）。

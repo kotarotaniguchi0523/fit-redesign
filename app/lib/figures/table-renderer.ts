@@ -1,4 +1,4 @@
-import type { FigureData, LinkedListEntry, NormalDistributionEntry } from "../../types";
+import type { FigureData, LinkedListEntry, NormalDistributionEntry } from "../../types/index.ts";
 
 export type TableFigureData = Extract<
 	FigureData,

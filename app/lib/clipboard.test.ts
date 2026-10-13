@@ -1,25 +1,35 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { writeClipboardText } from "./clipboard";
+import * as assert from "remix/assert";
+import { describe, it, mock } from "remix/test";
+
+import { writeClipboardText } from "./clipboard.ts";
+
+/**
+ * `writeClipboardText` のテスト。`remix test` は Node 上で動くため
+ * `navigator.clipboard` をテストごとに差し替える。
+ */
+function setClipboard(writeText: (text: string) => Promise<void>): void {
+	Object.defineProperty(globalThis, "navigator", {
+		configurable: true,
+		value: { clipboard: { writeText } },
+	});
+}
 
 describe("writeClipboardText", () => {
-	afterEach(() => {
-		vi.restoreAllMocks();
-	});
-
 	it("writes text and reports success", async () => {
-		const writeText = vi.fn().mockResolvedValue(undefined);
-		Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+		const writeText = mock.fn(async (_text: string) => undefined);
+		setClipboard(writeText);
 
-		await expect(writeClipboardText("共有する文字列")).resolves.toBe(true);
-		expect(writeText).toHaveBeenCalledWith("共有する文字列");
+		assert.equal(await writeClipboardText("共有する文字列"), true);
+		assert.deepEqual(writeText.mock.calls[0]?.arguments, ["共有する文字列"]);
 	});
 
 	it("reports denied clipboard access without throwing", async () => {
-		Object.defineProperty(navigator, "clipboard", {
-			configurable: true,
-			value: { writeText: vi.fn().mockRejectedValue(new Error("denied")) },
-		});
+		setClipboard(
+			mock.fn(async () => {
+				throw new Error("denied");
+			}),
+		);
 
-		await expect(writeClipboardText("共有する文字列")).resolves.toBe(false);
+		assert.equal(await writeClipboardText("共有する文字列"), false);
 	});
 });

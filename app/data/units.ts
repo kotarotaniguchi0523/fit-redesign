@@ -1,7 +1,7 @@
-import { deepFreezeInPlace } from "../lib/immutable";
-import { safeParseOrThrow } from "../lib/zod";
-import { type Unit, UnitBasedTabsSchema, UnitSchema } from "../types";
-import { getSlide } from "./slides";
+import { deepFreezeInPlace } from "../lib/immutable.ts";
+import { safeParseOrThrow } from "../lib/zod.ts";
+import { type Unit, UnitBasedTabsSchema, UnitSchema } from "../types/index.ts";
+import { getSlide } from "./slides.ts";
 
 const SlideOnlyUnitsSchema = UnitSchema.array();
 

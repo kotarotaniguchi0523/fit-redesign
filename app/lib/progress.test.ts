@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { type ProgressEntry, ProgressEntrySchema } from "../types/browser";
-import { mergeLatestProgressEntries } from "./progress";
+import * as assert from "remix/assert";
+import { describe, it } from "remix/test";
+
+import { type ProgressEntry, ProgressEntrySchema } from "../types/browser.ts";
+import { mergeLatestProgressEntries } from "./progress.ts";
 
 const q1 = "exam1-2013-q1";
 const q2 = "exam1-2013-q2";
@@ -23,15 +25,15 @@ describe("progress domain helpers", () => {
 
 		const merged = mergeLatestProgressEntries(input);
 
-		expect(merged).toEqual([{ ...latest, createdAt: 100 }, other]);
-		expect(mergeLatestProgressEntries([latest, older])).toEqual([{ ...latest, createdAt: 100 }]);
-		expect(input).toEqual([older, latest, other]);
+		assert.deepEqual(merged, [{ ...latest, createdAt: 100 }, other]);
+		assert.deepEqual(mergeLatestProgressEntries([latest, older]), [{ ...latest, createdAt: 100 }]);
+		assert.deepEqual(input, [older, latest, other]);
 	});
 
 	it("同じ更新時刻では作成時刻を最小化し、他の値は先の項目から保つ", () => {
 		const first = entry(q1, "unit-base-conversion", 200, 300);
 		const tied = entry(q1, "unit-data", 100, 300);
 
-		expect(mergeLatestProgressEntries([first, tied])).toEqual([{ ...first, createdAt: 100 }]);
+		assert.deepEqual(mergeLatestProgressEntries([first, tied]), [{ ...first, createdAt: 100 }]);
 	});
 });

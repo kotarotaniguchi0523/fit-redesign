@@ -1,0 +1,45 @@
+import { err, ResultAsync } from "neverthrow";
+import type { SyncKey } from "../../types/index.ts";
+import { progressClient } from "./client.ts";
+import { mergeProgressEntries, type ProgressEntry } from "./model.ts";
+
+function _assertNever(value: never): never {
+	throw new Error(`Unexpected sync error: ${String(value)}`);
+}
+
+export type SyncProgressError =
+	| Readonly<{ kind: "InvalidSyncLink" }>
+	| Readonly<{ kind: "RequestFailed"; cause: unknown }>
+	| Readonly<{ kind: "InvalidResponse"; cause?: unknown }>;
+
+export function createSyncLink(): ReturnType<typeof progressClient.links.$post> {
+	return progressClient.links.$post();
+}
+
+export function deleteRemoteProgress(
+	key: SyncKey,
+): ReturnType<typeof progressClient.index.$delete> {
+	return progressClient.index.$delete({ header: { "x-sync-key": key } });
+}
+
+export function syncProgress(
+	key: SyncKey,
+	local: readonly ProgressEntry[],
+): ResultAsync<ProgressEntry[], SyncProgressError> {
+	return ResultAsync.fromPromise(
+		progressClient.sync.$post({ json: { entries: local }, header: { "x-sync-key": key } }),
+		(cause): SyncProgressError => ({ kind: "RequestFailed", cause }),
+	).andThen((response) => {
+		if (!response.ok) {
+			return err<never, SyncProgressError>(
+				response.status === 404
+					? { kind: "InvalidSyncLink" }
+					: { kind: "RequestFailed", cause: response },
+			);
+		}
+		return ResultAsync.fromPromise(
+			response.json(),
+			(cause): SyncProgressError => ({ kind: "InvalidResponse", cause }),
+		).map((body) => mergeProgressEntries(local, (body as { entries: ProgressEntry[] }).entries));
+	});
+}

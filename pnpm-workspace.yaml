@@ -10,7 +10,7 @@ minimumReleaseAgeExclude:
   - '@cloudflare/workerd-linux-arm64@1.20260601.1 || 1.20260922.1'
   - '@cloudflare/workerd-windows-64@1.20260601.1 || 1.20260922.1'
   - workerd@1.20260601.1 || 1.20260922.1
-  - '@cloudflare/workers-types@4.20260601.1 || 5.20260922.1'
+  - '@cloudflare/workers-types@4.20260601.1 || 5.20260922.1 || 5.20261012.1'
   - '@vitest/coverage-v8@4.1.8'
   - '@vitest/expect@4.1.8'
   - '@vitest/mocker@4.1.8'
@@ -24,3 +24,11 @@ minimumReleaseAgeExclude:
   - '@cloudflare/unenv-preset@2.16.2'
   - miniflare@5.20260921.0-alpha
   - wrangler@4.136.1
+
+# virtiofs（symlink 禁止）環境向け。v12 では node_modules 構造に関わる設定は
+# pnpm-workspace.yaml に書く（.npmrc は auth/registry のみ読まれる）。
+# - nodeLinker: hoisted … 仮想ストアのパッケージ symlink を作らない
+# - preferSymlinkedExecutables: false … node_modules/.bin を symlink ではなく
+#   コマンドシム（通常ファイル）として作る
+nodeLinker: hoisted
+preferSymlinkedExecutables: false
