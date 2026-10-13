@@ -19,6 +19,29 @@ import { router } from "./router.ts";
 setDatabase(createD1Database(env.DB));
 setRateLimiter(env.PROGRESS_RATE_LIMITER);
 
+/** ブラウザーモジュールの拡張子（アセットサーバーの出力はアンバンドル ESM）。 */
+const MODULE_EXTENSIONS = new Set([".js", ".mjs", ".ts", ".tsx"]);
+const MODULE_CONTENT_TYPE = "text/javascript; charset=utf-8";
+
+/**
+ * アセットサーバーの出力（`.ts` / `.tsx` のままの URL）は実行可能な MIME で返す。
+ * Workers Assets は拡張子から MIME を決めるため、そのままではモジュールとして
+ * 読み込まれない（Chrome は `application/octet-stream` を拒否する）。
+ */
+function asModuleResponse(response: Response, pathname: string): Response {
+	const dot = pathname.lastIndexOf(".");
+	if (dot === -1 || !MODULE_EXTENSIONS.has(pathname.slice(dot))) {
+		return response;
+	}
+	const headers = new Headers(response.headers);
+	headers.set("Content-Type", MODULE_CONTENT_TYPE);
+	return new Response(response.body, {
+		status: response.status,
+		statusText: response.statusText,
+		headers,
+	});
+}
+
 export default {
 	async fetch(request: Request, _env: Env, _ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
@@ -26,7 +49,7 @@ export default {
 		if (looksLikeAsset(url.pathname)) {
 			const assetResponse = await env.ASSETS.fetch(request);
 			if (assetResponse.status !== 404) {
-				return assetResponse;
+				return asModuleResponse(assetResponse, url.pathname);
 			}
 		}
 

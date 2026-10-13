@@ -22,6 +22,9 @@ const PUBLIC_DIR = resolve("public");
 const CONTENT_TYPES: Readonly<Record<string, string>> = {
 	".js": "text/javascript; charset=utf-8",
 	".mjs": "text/javascript; charset=utf-8",
+	// アセットサーバーの出力はソース拡張子のまま配信される（アンバンドル ESM）
+	".ts": "text/javascript; charset=utf-8",
+	".tsx": "text/javascript; charset=utf-8",
 	".css": "text/css; charset=utf-8",
 	".svg": "image/svg+xml",
 	".png": "image/png",
