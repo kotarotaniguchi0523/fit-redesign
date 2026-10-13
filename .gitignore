@@ -55,3 +55,6 @@ apm_modules/
 
 .env*
 !.env.example
+
+# ブラウザー資産（scripts/build-assets.mjs が生成）
+public/assets/

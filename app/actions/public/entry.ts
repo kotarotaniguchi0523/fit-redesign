@@ -1,6 +1,7 @@
-// clientEntry を hydrate するため、島モジュールを「再エクスポート」してバンドルへ含める。
+// clientEntry を hydrate するため、島モジュールを「再エクスポート」して
+// ブラウザー入口のモジュールグラフに含める。
 //
-// 副作用 import だけだと esbuild はコンポーネントの export を残さず、
+// 副作用 import だけだとコンパイラはコンポーネントの export を残さず、
 // 実行時の loadModule が `mod[exportName]` を見つけられない（Unknown component）。
 
 export { ContinueLearning } from "../../features/answer/ui/continue-learning.tsx";
@@ -15,10 +16,11 @@ import { run } from "remix/component";
 /**
  * ブラウザーエントリ。`run()` が clientEntry を hydrate する。
  *
- * Workers では Remix のアセットサーバー（Node 前提）を実行時に使えないため、
- * このモジュールを esbuild で `public/assets/client.js` へバンドルし、
- * Workers Assets が配信する。clientEntry の entryId は公開 URL
- * （`/assets/client.js#ExportName`）を使う。
+ * Cloudflare Workers では `remix/assets` の実行時アセットサーバー（oxc の
+ * ネイティブバインディング・fs・chokidar 前提）が動かないため、
+ * `scripts/build-assets.mjs` が同じアセットサーバーを Node 上で回し、
+ * コンパイル済みモジュールを `public/assets/**` へ出力する。Workers Assets が
+ * それを配信し、Document が import map と modulepreload を描画する。
  */
 const app = run({
 	async loadModule(moduleUrl, exportName) {
@@ -31,24 +33,4 @@ const app = run({
 	},
 });
 
-// TODO(diagnostic): 本番のハイドレーション不全を切り分けるための一時的な記録。
-const diagnostics: Record<string, unknown> = {
-	readyStateAtStart: document.readyState,
-	rmxDataAtStart: document.getElementById("rmx-data") !== null,
-};
-try {
-	await app.ready();
-	diagnostics.ready = true;
-} catch (error) {
-	diagnostics.ready = false;
-	diagnostics.error = String(error);
-}
-let remainingMarkers = 0;
-const walker = document.createTreeWalker(document, NodeFilter.SHOW_COMMENT);
-while (walker.nextNode()) {
-	if ((walker.currentNode as Comment).data.includes("rmx:h:")) {
-		remainingMarkers += 1;
-	}
-}
-diagnostics.remainingMarkers = remainingMarkers;
-(globalThis as unknown as Record<string, unknown>).__rmxDiagnostics = diagnostics;
+await app.ready();

@@ -1,5 +1,9 @@
 import type { Handle, RemixNode } from "remix/component";
 import { css } from "remix/component";
+import { ImportMap } from "remix/component/server";
+
+import { CLIENT_ENTRY_HREF } from "../client-entry.ts";
+import { scriptEntry } from "../content/assets.generated.ts";
 
 import { SITE_URL } from "../data/site.ts";
 import { Header } from "../ui/header.tsx";
@@ -86,7 +90,11 @@ export function Document(handle: Handle<DocumentProps>) {
 						rel="stylesheet"
 					/>
 					<link rel="stylesheet" href="/style.css" />
-					<script type="module" src="/assets/client.js"></script>
+					<ImportMap value={scriptEntry.importMap} />
+					{scriptEntry.preloads.map((preload) => (
+						<link key={preload} rel="modulepreload" href={preload} />
+					))}
+					<script type="module" src={CLIENT_ENTRY_HREF}></script>
 					{jsonLd ? <script type="application/ld+json">{JSON.stringify(jsonLd)}</script> : null}
 					{head}
 					<title>{title}</title>

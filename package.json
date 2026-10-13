@@ -7,7 +7,7 @@
 		"node": ">=24.3.0"
 	},
 	"scripts": {
-		"build": "node scripts/build-css.mjs && node scripts/build-guide.mjs && node scripts/build-client.mjs && cf build",
+		"build": "node scripts/build-css.mjs && node scripts/build-guide.mjs && node scripts/build-assets.mjs && cf build",
 		"build:client": "node scripts/build-client.mjs",
 		"build:css": "node scripts/build-css.mjs",
 		"check": "biome ci .",
@@ -26,7 +26,7 @@
 		"routes": "remix routes",
 		"test": "NODE_ENV=test remix test",
 		"test:browser": "remix test -t browser",
-		"test:e2e": "remix test -t e2e --browser.echo",
+		"test:e2e": "node scripts/build-css.mjs && node scripts/build-assets.mjs && remix test -t e2e",
 		"test:run": "NODE_ENV=test remix test",
 		"typecheck": "cf workers types && tsc --noEmit",
 		"typecheck:full": "cf workers types && tsc --noEmit",
@@ -43,7 +43,7 @@
 		"@playwright/test": "^1.63.0",
 		"@types/node": "^24.0.0",
 		"cf": "^1.0.0-beta.14",
-		"esbuild": "^0.25.0",
+		"es-module-lexer": "^1.5.4",
 		"knip": "^6.41.0",
 		"lat.md": "^0.12.2",
 		"playwright": "^1.63.0",

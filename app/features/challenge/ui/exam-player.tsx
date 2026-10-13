@@ -1,5 +1,6 @@
 import type { Handle } from "remix/component";
 import { clientEntry, css, Frame, on } from "remix/component";
+import { CLIENT_ENTRY_HREF } from "../../../client-entry.ts";
 import { systemClock } from "../../../lib/dateTime.ts";
 import { routes } from "../../../routes.ts";
 import { questionToMarkdown } from "../../markdown/questionToMarkdown.ts";
@@ -95,7 +96,7 @@ function questionPageHref(
  * 永続化は localStorage（challengeStorage）、ドメイン規則は純関数（challenge/model/timerRuntime）。
  */
 export const ExamPlayer = clientEntry(
-	"/assets/client.js#ExamPlayer",
+	`${CLIENT_ENTRY_HREF}#ExamPlayer`,
 	function ExamPlayerEntry(handle: Handle<ExamPlayerProps>) {
 		const props = handle.props;
 		const questionById = new Map(props.questions.map((question) => [question.id, question]));

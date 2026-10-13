@@ -1,6 +1,7 @@
 import * as menu from "@remix-run/ui/menu";
 import type { Handle } from "remix/component";
 import { clientEntry, css, on } from "remix/component";
+import { CLIENT_ENTRY_HREF } from "../client-entry.ts";
 
 import { routes } from "../routes.ts";
 
@@ -114,7 +115,7 @@ function activeFor(currentPath: string): NavId | null {
  * ナビゲーションを畳む。プリミティブはハイドレーション後に動作する。
  */
 export const Header = clientEntry(
-	"/assets/client.js#Header",
+	`${CLIENT_ENTRY_HREF}#Header`,
 	function HeaderEntry(handle: Handle<{ currentPath: string }>) {
 		let menuOpen = false;
 

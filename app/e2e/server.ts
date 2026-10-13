@@ -43,7 +43,10 @@ const CONTENT_TYPES: Readonly<Record<string, string>> = {
 };
 
 /** Workers Assets の代わりに `public/` から読む（見つからなければ null → ルーターへ）。 */
-async function respondWithAsset(pathname: string): Promise<Response | null> {
+async function respondWithAsset(urlPathname: string): Promise<Response | null> {
+	// Workers Assets と同じく URL パスをデコードしてファイルへ解決する
+	// （npm のスコープ package は `/assets/npm/%40remix-run/...` で参照される）。
+	const pathname = decodeURIComponent(urlPathname);
 	const path = normalize(join(PUBLIC_DIR, pathname));
 	if (!path.startsWith(PUBLIC_DIR + sep)) {
 		return null;

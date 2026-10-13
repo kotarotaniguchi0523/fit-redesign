@@ -26,75 +26,7 @@ export class ExamPlayerPage {
 
 	/** ハイドレーション完了を待つ（これが通れば島は動作している）。 */
 	async waitForInteractive(): Promise<void> {
-		try {
-			await this.interactive.waitFor();
-		} catch (error) {
-			// 失敗時にページ側の手掛かりを残す（ハイドレーションは DOM マーカーと
-			// 埋め込みデータ（script#rmx-data）が揃って初めて走る）。
-			await this.page.evaluate(() => {
-				console.error("[trace-probe] browser console tracing is active");
-			});
-			console.error(
-				"[player] hydration did not complete",
-				JSON.stringify(
-					await this.page.evaluate(() => ({
-						scripts: [...document.scripts].map((script) => ({
-							id: script.id,
-							type: script.type,
-							src: script.getAttribute("src"),
-							text: script.textContent.length,
-						})),
-						markers: document.querySelectorAll("[class^='rmxc-']").length,
-						hydrationMarkers: (() => {
-							let count = 0;
-							const walker = document.createTreeWalker(document, NodeFilter.SHOW_COMMENT);
-							while (walker.nextNode()) {
-								if ((walker.currentNode as Comment).data.includes("rmx:h:")) {
-									count += 1;
-								}
-							}
-							return count;
-						})(),
-						player: document.querySelector("[data-player]")?.getAttribute("data-player"),
-						rmx: (globalThis as unknown as Record<string, unknown>).__rmxDiagnostics ?? null,
-						readyState: document.readyState,
-						clientJs: performance
-							.getEntriesByType("resource")
-							.filter((entry) => entry.name.includes("client.js"))
-							.map((entry) => ({
-								name: entry.name,
-								size: (entry as PerformanceResourceTiming).transferSize,
-							})),
-						nav: (() => {
-							const nav = performance.getEntriesByType("navigation")[0] as
-								| PerformanceNavigationTiming
-								| undefined;
-							return nav
-								? {
-										duration: Math.round(nav.duration),
-										domComplete: Math.round(nav.domComplete),
-										responseEnd: Math.round(nav.responseEnd),
-									}
-								: null;
-						})(),
-					})),
-				),
-			);
-			const response = await this.page.request.get(this.page.url());
-			const html = await response.text();
-			const dataScript = /<script type="application\/json" id="rmx-data">([\s\S]*?)<\/script>/.exec(
-				html,
-			);
-			console.error(
-				"[player] ssr html",
-				JSON.stringify({
-					status: response.status(),
-					length: html.length,
-					rmxDataLength: dataScript ? dataScript[1].length : null,
-				}),
-			);
-			throw error;
-		}
+		await this.interactive.waitFor();
 	}
 
 	get revealAnswerButton(): Locator {

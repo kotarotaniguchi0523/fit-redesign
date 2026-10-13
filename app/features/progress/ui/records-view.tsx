@@ -1,5 +1,6 @@
 import type { Handle } from "remix/component";
 import { clientEntry, css, on } from "remix/component";
+import { CLIENT_ENTRY_HREF } from "../../../client-entry.ts";
 import type { SyncKey } from "../../../types/index.ts";
 import { syncChallenges } from "../../challenge/api.ts";
 import { formatAccuracy, formatDuration, summarizeChallenge } from "../../challenge/model.ts";
@@ -40,7 +41,7 @@ type Status = Readonly<{ kind: "idle" | "busy" | "ok" | "error"; message: string
  * 端末内の進捗・小テスト履歴の表示と、秘密リンクによる同期の管理を担当する。
  */
 export const RecordsView = clientEntry(
-	"/assets/client.js#RecordsView",
+	`${CLIENT_ENTRY_HREF}#RecordsView`,
 	function RecordsViewEntry(handle: Handle<{ currentPath: string }>) {
 		const read = () => {
 			const progress = Object.values(readProgress()).toSorted(
