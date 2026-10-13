@@ -46,6 +46,19 @@ export class ExamPlayerPage {
 					})),
 				),
 			);
+			const response = await this.page.request.get(this.page.url());
+			const html = await response.text();
+			const dataScript = /<script type="application\/json" id="rmx-data">([\s\S]*?)<\/script>/.exec(
+				html,
+			);
+			console.error(
+				"[player] ssr html",
+				JSON.stringify({
+					status: response.status(),
+					length: html.length,
+					rmxDataLength: dataScript ? dataScript[1].length : null,
+				}),
+			);
 			throw error;
 		}
 	}
