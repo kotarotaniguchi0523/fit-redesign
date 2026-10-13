@@ -26,7 +26,28 @@ export class ExamPlayerPage {
 
 	/** ハイドレーション完了を待つ（これが通れば島は動作している）。 */
 	async waitForInteractive(): Promise<void> {
-		await this.interactive.waitFor();
+		try {
+			await this.interactive.waitFor();
+		} catch (error) {
+			// 失敗時にページ側の手掛かりを残す（ハイドレーションは DOM マーカーと
+			// 埋め込みデータ（script#rmx-data）が揃って初めて走る）。
+			console.error(
+				"[player] hydration did not complete",
+				JSON.stringify(
+					await this.page.evaluate(() => ({
+						scripts: [...document.scripts].map((script) => ({
+							id: script.id,
+							type: script.type,
+							src: script.getAttribute("src"),
+							text: script.textContent.length,
+						})),
+						markers: document.querySelectorAll("[class^='rmxc-']").length,
+						player: document.querySelector("[data-player]")?.getAttribute("data-player"),
+					})),
+				),
+			);
+			throw error;
+		}
 	}
 
 	get revealAnswerButton(): Locator {
