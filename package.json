@@ -12,7 +12,7 @@
 		"build:css": "node scripts/build-css.mjs",
 		"check": "biome ci .",
 		"db:check": "node scripts/check-migrations.mjs",
-		"db:migrate:local": "cf d1 migrations apply 57532062-e9cf-4a86-a89f-fc6fdb1e3ba5 --local --persist-to .wrangler/state --dir migrations",
+		"db:migrate:local": "node scripts/migrate-local.mjs",
 		"db:query:local": "cf d1 query 57532062-e9cf-4a86-a89f-fc6fdb1e3ba5 --local --persist-to .wrangler/state",
 		"deploy": "cf deploy",
 		"dev": "node scripts/build-css.mjs && node scripts/build-client.mjs && cf dev",
