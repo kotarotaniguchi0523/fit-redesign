@@ -42,6 +42,16 @@ export class ExamPlayerPage {
 							text: script.textContent.length,
 						})),
 						markers: document.querySelectorAll("[class^='rmxc-']").length,
+						hydrationMarkers: (() => {
+							let count = 0;
+							const walker = document.createTreeWalker(document, NodeFilter.SHOW_COMMENT);
+							while (walker.nextNode()) {
+								if ((walker.currentNode as Comment).data.includes("rmx:h:")) {
+									count += 1;
+								}
+							}
+							return count;
+						})(),
 						player: document.querySelector("[data-player]")?.getAttribute("data-player"),
 					})),
 				),
