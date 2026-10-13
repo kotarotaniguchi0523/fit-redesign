@@ -39,11 +39,11 @@ const PLAYER_PROPS: ExamPlayerProps = {
  */
 describe("ExamPlayer", () => {
 	it("解答を開いて自己判定できる", async (t) => {
-		const { $, act, cleanup } = render(<ExamPlayer {...PLAYER_PROPS} />);
+		const { $, act, cleanup, container } = render(<ExamPlayer {...PLAYER_PROPS} />);
 		t.after(cleanup);
 
 		const reveal = $('button[aria-label="解答を表示"]');
-		assert.ok(reveal instanceof HTMLButtonElement);
+		assert.ok(reveal instanceof HTMLButtonElement, container.innerHTML.slice(0, 500));
 
 		await act(() => reveal.click());
 		assert.ok($("#exam-answer-heading"), "解答パネルが開く");
@@ -56,9 +56,10 @@ describe("ExamPlayer", () => {
 	});
 
 	it("問題一覧ドロワを開ける", async (t) => {
-		const { $, act, cleanup } = render(<ExamPlayer {...PLAYER_PROPS} />);
+		const { $, act, cleanup, container } = render(<ExamPlayer {...PLAYER_PROPS} />);
 		t.after(cleanup);
 
+		assert.ok($("[data-player]"), container.innerHTML.slice(0, 500));
 		assert.equal($('aside[aria-label="問題一覧"]'), null, "初期状態は閉じている");
 
 		const open = $('button[aria-label="問題一覧を開く"]');
