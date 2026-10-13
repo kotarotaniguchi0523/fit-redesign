@@ -16780,7 +16780,26 @@ var app = run({
     return component;
   }
 });
-await app.ready();
+var diagnostics = {
+  readyStateAtStart: document.readyState,
+  rmxDataAtStart: document.getElementById("rmx-data") !== null
+};
+try {
+  await app.ready();
+  diagnostics.ready = true;
+} catch (error) {
+  diagnostics.ready = false;
+  diagnostics.error = String(error);
+}
+var remainingMarkers = 0;
+var walker = document.createTreeWalker(document, NodeFilter.SHOW_COMMENT);
+while (walker.nextNode()) {
+  if (walker.currentNode.data.includes("rmx:h:")) {
+    remainingMarkers += 1;
+  }
+}
+diagnostics.remainingMarkers = remainingMarkers;
+globalThis.__rmxDiagnostics = diagnostics;
 export {
   ContinueLearning,
   CopyButton,

@@ -53,6 +53,7 @@ export class ExamPlayerPage {
 							return count;
 						})(),
 						player: document.querySelector("[data-player]")?.getAttribute("data-player"),
+						rmx: (globalThis as unknown as Record<string, unknown>).__rmxDiagnostics ?? null,
 					})),
 				),
 			);

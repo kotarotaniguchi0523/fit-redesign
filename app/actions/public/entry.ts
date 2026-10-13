@@ -31,4 +31,24 @@ const app = run({
 	},
 });
 
-await app.ready();
+// TODO(diagnostic): 本番のハイドレーション不全を切り分けるための一時的な記録。
+const diagnostics: Record<string, unknown> = {
+	readyStateAtStart: document.readyState,
+	rmxDataAtStart: document.getElementById("rmx-data") !== null,
+};
+try {
+	await app.ready();
+	diagnostics.ready = true;
+} catch (error) {
+	diagnostics.ready = false;
+	diagnostics.error = String(error);
+}
+let remainingMarkers = 0;
+const walker = document.createTreeWalker(document, NodeFilter.SHOW_COMMENT);
+while (walker.nextNode()) {
+	if ((walker.currentNode as Comment).data.includes("rmx:h:")) {
+		remainingMarkers += 1;
+	}
+}
+diagnostics.remainingMarkers = remainingMarkers;
+(globalThis as unknown as Record<string, unknown>).__rmxDiagnostics = diagnostics;
