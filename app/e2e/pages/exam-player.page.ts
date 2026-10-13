@@ -54,6 +54,23 @@ export class ExamPlayerPage {
 						})(),
 						player: document.querySelector("[data-player]")?.getAttribute("data-player"),
 						rmx: (globalThis as unknown as Record<string, unknown>).__rmxDiagnostics ?? null,
+						readyState: document.readyState,
+						clientJs: performance
+							.getEntriesByType("resource")
+							.filter((entry) => entry.name.includes("client.js"))
+							.map((entry) => ({ name: entry.name, size: entry.transferSize })),
+						nav: (() => {
+							const nav = performance.getEntriesByType("navigation")[0] as
+								| PerformanceNavigationTiming
+								| undefined;
+							return nav
+								? {
+										duration: Math.round(nav.duration),
+										domComplete: Math.round(nav.domComplete),
+										responseEnd: Math.round(nav.responseEnd),
+									}
+								: null;
+						})(),
 					})),
 				),
 			);
