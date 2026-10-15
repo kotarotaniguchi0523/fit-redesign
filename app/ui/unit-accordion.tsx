@@ -1,7 +1,6 @@
 import * as accordion from "@remix-run/ui/accordion";
 import type { Handle } from "remix/component";
 import { clientEntry, css } from "remix/component";
-import { CLIENT_ENTRY_HREF } from "../client-entry.ts";
 
 import { routes } from "../routes.ts";
 
@@ -45,8 +44,11 @@ const linkStyle = css({
  * ホームの単元リスト（狭い画面用のアコーディオン）。
  * `@remix-run/ui/accordion` の開閉を `mix` で借り、`clientEntry` で hydrate する。
  */
+/** この島のブラウザー入口（アセットサーバーの公開URL = /assets + ファイルパス）。 */
+const ENTRY_HREF = "/assets/app/ui/unit-accordion.tsx";
+
 export const UnitAccordion = clientEntry(
-	`${CLIENT_ENTRY_HREF}#UnitAccordion`,
+	`${ENTRY_HREF}#UnitAccordion`,
 	function UnitAccordionEntry(handle: Handle<{ units: readonly AccordionUnit[] }>) {
 		return () => (
 			<accordion.Context type="multiple" defaultValue={[]}>
