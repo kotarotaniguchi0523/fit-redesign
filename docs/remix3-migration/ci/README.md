@@ -7,7 +7,7 @@ pushできない**ため、ホスト側で適用する（または `workflow` �
 | ファイル | 変更点 |
 | --- | --- |
 | `ci.yml` | 除去された `typecheck:full`/`test:run`/`db:check` への依存をやめ、`pnpm check` / `pnpm typecheck` / `pnpm knip` / `pnpm test` / `pnpm build` を使う |
-| `deploy.yml` | `cloudflare/wrangler-action` をやめ、CF CLI（`cf d1 migrations apply <id> --remote` → `cf deploy`）で配信する |
+| `deploy.yml` | `cloudflare/wrangler-action` をやめ、CF CLI（`cf d1 migrations apply <id>` → `cf deploy`（このCLIは `--local` が任意フラグで、無指定がリモート））で配信する |
 | `e2e.yml` | `remix test -t e2e` を実行（テスト自身がサーバーを起動）。ブラウザーは chromium のみ |
 
 ## 現状の互換性
@@ -17,11 +17,12 @@ pushできない**ため、ホスト側で適用する（または `workflow` �
 - `typecheck:full` → `cf workers types && tsc --noEmit`
 - `test:run` → `NODE_ENV=test remix test`
 - `db:check` → `node scripts/check-migrations.mjs`
+- `db:migrate:local` → `node scripts/migrate-local.mjs`（CIでは `node:sqlite` で
+  オフライン検証。`cf d1` はネットワーク初期化を要するためCIでは実行しない）
 - `knip` → `knip`
 
-ただし `db:migrate:local`（`cf d1 migrations apply … --local`）は CI 上で Cloudflare の
-アカウント文脈を要する可能性があり、`wrangler-action` を使う deploy は設定ファイルを
-`cloudflare.config.ts` に統一したため動かない。上記ワークフローの適用が本筋。
+`wrangler-action` を使う deploy は設定ファイルを `cloudflare.config.ts` に統一したため
+動かない。上記ワークフローの適用が本筋。
 
 ## ブラウザー資産とテスト種別
 

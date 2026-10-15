@@ -1,6 +1,5 @@
 import type { Handle } from "remix/component";
 import { clientEntry, css, on } from "remix/component";
-import { CLIENT_ENTRY_HREF } from "../../../client-entry.ts";
 import { quietButtonStyle } from "../../challenge/ui/buttons.ts";
 
 import { readProgress } from "../../progress/storage.ts";
@@ -38,8 +37,11 @@ const linkStyle = css({
  * 「前回の続き」導線（clientEntry）。
  * 端末内の進捗から、直近で確認した問題をその単元・年度へのリンクとして提示する。
  */
+/** この島のブラウザー入口（アセットサーバーの公開URL = /assets + ファイルパス）。 */
+const ENTRY_HREF = "/assets/app/features/answer/ui/continue-learning.tsx";
+
 export const ContinueLearning = clientEntry(
-	`${CLIENT_ENTRY_HREF}#ContinueLearning`,
+	`${ENTRY_HREF}#ContinueLearning`,
 	function ContinueLearningEntry(handle: Handle<{ groups: readonly LocationGroup[] }>) {
 		let expanded = false;
 
