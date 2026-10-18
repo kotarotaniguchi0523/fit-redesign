@@ -9,7 +9,6 @@
  *
  * 使い方: node scripts/build-assets.mjs
  */
-import { readdirSync, readFileSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
@@ -18,7 +17,7 @@ import { createAssetServer } from "remix/assets";
 
 import { CLIENT_ENTRY_HREF } from "../app/client-entry.ts";
 
-/** ブラウザー入口（`run()` を呼ぶ薄いモジュール）。 */
+/** ブラウザー入口（`app/**` の中でクライアントが読み込む唯一のモジュール）。 */
 const ENTRY_FILE = "app/actions/public/entry.ts";
 const OUTPUT_DIR = "public";
 const GENERATED_MODULE = "app/content/assets.generated.ts";
@@ -63,39 +62,6 @@ function collectImports(source, ownUrlPath) {
 	return urls;
 }
 
-/** 複数の `getScriptEntry()` 結果の import map をマージする。 */
-function mergeImportMaps(entries) {
-	const imports = {};
-	const scopes = {};
-	for (const item of entries) {
-		const map = item.importMap ?? {};
-		Object.assign(imports, map.imports ?? {});
-		for (const [prefix, specifiers] of Object.entries(map.scopes ?? {})) {
-			scopes[prefix] = { ...(scopes[prefix] ?? {}), ...specifiers };
-		}
-	}
-	return { imports, scopes };
-}
-
-/** `clientEntry(` を含むファイルを島の入口として拾う。 */
-function findClientEntryFiles() {
-	const files = [];
-	const walk = (directory) => {
-		for (const entry of readdirSync(directory, { withFileTypes: true })) {
-			const path = `${directory}/${entry.name}`;
-			if (entry.isDirectory()) {
-				walk(path);
-			} else if (entry.name.endsWith(".tsx") && !entry.name.includes(".test.")) {
-				if (readFileSync(path, "utf8").includes("clientEntry(")) {
-					files.push(path);
-				}
-			}
-		}
-	};
-	walk("app");
-	return files.sort();
-}
-
 async function main() {
 	await init;
 
@@ -107,22 +73,8 @@ async function main() {
 		);
 	}
 
-	// 島（clientEntry）はそれぞれ自分のモジュールを入口にするため、
-	// ルート入口からは到達しない。ソースから島を拾って探索と import map の対象にする。
-	const islandEntries = await Promise.all(
-		findClientEntryFiles().map((file) => assetServer.getScriptEntry(file)),
-	);
-	const rootHrefs = [
-		entry.href,
-		...entry.preloads,
-		...islandEntries.flatMap((island) => [island.href, ...island.preloads]),
-	];
-
-	// 島はそれぞれ別の入口なので、ルート入口の import map だけでは足りない。
-	// 全入口の import map をマージして、どの島の bare specifier も解決できるようにする。
-	const importMap = mergeImportMaps([entry, ...islandEntries]);
 	const manifest = {
-		importMap,
+		importMap: entry.importMap ?? { imports: {}, scopes: {} },
 		preloads: entry.preloads,
 	};
 	await writeFile(
@@ -133,7 +85,7 @@ async function main() {
 	);
 
 	const seen = new Set();
-	const queue = rootHrefs;
+	const queue = [entry.href, ...entry.preloads];
 
 	while (queue.length > 0) {
 		const urlPath = queue.shift();

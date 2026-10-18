@@ -1,5 +1,6 @@
 import type { Handle } from "remix/component";
 import { clientEntry, css, on } from "remix/component";
+import { CLIENT_ENTRY_HREF } from "../client-entry.ts";
 
 const FADE_MS = 160;
 const HOLD_MS = 1200;
@@ -22,11 +23,8 @@ const buttonStyle = css({
 });
 
 /** Markdown テキストをクリップボードへコピーする clientEntry。 */
-/** この島のブラウザー入口（アセットサーバーの公開URL = /assets + ファイルパス）。 */
-const ENTRY_HREF = "/assets/app/ui/copy-button.tsx";
-
 export const CopyButton = clientEntry(
-	`${ENTRY_HREF}#CopyButton`,
+	`${CLIENT_ENTRY_HREF}#CopyButton`,
 	function CopyButtonEntry(handle: Handle<{ text: string; label?: string }>) {
 		let state: CopyState = "idle";
 
