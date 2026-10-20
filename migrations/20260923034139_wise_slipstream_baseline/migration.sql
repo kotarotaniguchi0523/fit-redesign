@@ -1,0 +1,1 @@
+-- Snapshot baseline captured from local D1 after Wrangler applied the existing migration chain.

@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { ExamJsonSchema } from "../data/exams/schema.ts";
+import { ExamJsonSchema } from "../data/exams/schema";
 import {
 	ExamNumberSchema,
 	PdfPathSchema,
 	SlideIdSchema,
 	UnitTabIdSchema,
 	YearSchema,
-} from "./domain.ts";
+} from "./domain";
 
 export const SlideSchema = z
 	.object({

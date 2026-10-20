@@ -1,0 +1,1 @@
+CREATE INDEX `idx_challenges_recent` ON `challenges` (`sync_link_id`,`updated_at`);

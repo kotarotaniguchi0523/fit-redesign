@@ -14,8 +14,7 @@
 			"!!**/.idea",
 			"!!**/screenshots",
 			"!!**/dist",
-			"!!**/dist-ssr",
-			"!!**/*.generated.ts"
+			"!!**/dist-ssr"
 		]
 	},
 	"assist": {
@@ -41,9 +40,7 @@
 				"useDateNow": "error",
 				"noExcessiveCognitiveComplexity": {
 					"level": "error",
-					"options": {
-						"maxAllowedComplexity": 15
-					}
+					"options": { "maxAllowedComplexity": 15 }
 				}
 			},
 			"correctness": {
@@ -61,9 +58,7 @@
 				"noExplicitAny": "error",
 				"noConsole": {
 					"level": "error",
-					"options": {
-						"allow": ["error", "warn", "info"]
-					}
+					"options": { "allow": ["error", "warn", "info"] }
 				},
 				"noEmptyBlockStatements": "error",
 				"useAwait": "error",
@@ -87,12 +82,7 @@
 				"useNumberNamespace": "error",
 				"noUselessElse": "error",
 				"useCollapsedElseIf": "error",
-				"useConsistentArrayType": {
-					"level": "error",
-					"options": {
-						"syntax": "shorthand"
-					}
-				},
+				"useConsistentArrayType": { "level": "error", "options": { "syntax": "shorthand" } },
 				"noEnum": "error",
 				"useBlockStatements": "error",
 				"noNegationElse": "error",
@@ -108,18 +98,8 @@
 						"strictCase": false,
 						"requireAscii": true,
 						"conventions": [
-							{
-								"selector": {
-									"kind": "objectLiteralProperty"
-								},
-								"match": ".*"
-							},
-							{
-								"selector": {
-									"kind": "typeProperty"
-								},
-								"match": ".*"
-							}
+							{ "selector": { "kind": "objectLiteralProperty" }, "match": ".*" },
+							{ "selector": { "kind": "typeProperty" }, "match": ".*" }
 						]
 					}
 				},
@@ -159,50 +139,9 @@
 			"includes": ["**/*.test.ts", "**/*.test.tsx"],
 			"linter": {
 				"rules": {
-					"performance": {
-						"useTopLevelRegex": "off"
-					},
-					"complexity": {
-						"noExcessiveCognitiveComplexity": "off"
-					},
-					"suspicious": {
-						"noEmptyBlockStatements": "off"
-					}
-				}
-			}
-		},
-		{
-			"includes": ["app/**"],
-			"linter": {
-				"rules": {
-					"nursery": {
-						"useExplicitReturnType": "off"
-					},
-					"complexity": {
-						"noVoid": "off",
-						"noExcessiveCognitiveComplexity": "off"
-					},
-					"suspicious": {
-						"useAwait": "off",
-						"noEmptyBlockStatements": "off"
-					},
-					"style": {
-						"noNestedTernary": "off",
-						"useDefaultSwitchClause": "off"
-					},
-					"performance": {
-						"useTopLevelRegex": "off"
-					}
-				}
-			}
-		},
-		{
-			"includes": ["app/e2e/**"],
-			"linter": {
-				"rules": {
-					"correctness": {
-						"noNodejsModules": "off"
-					}
+					"performance": { "useTopLevelRegex": "off" },
+					"complexity": { "noExcessiveCognitiveComplexity": "off" },
+					"suspicious": { "noEmptyBlockStatements": "off" }
 				}
 			}
 		}

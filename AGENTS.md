@@ -2,60 +2,43 @@
 
 ## プロジェクト
 
-情報処理技術者試験（明治大学「基本情報技術 I」）の問題・解答・学習記録を提供する Web アプリ。
-**Remix 3**（`remix/router` + `remix/component` + `remix/data-table`）で実装し、Cloudflare Workers
-（Workers Assets + D1）で配信する。ビルド/配信は **CF CLI**（`cf`）を使う（Wrangler は直接呼ばない）。
+情報処理技術者試験の問題・解答・学習記録を提供するWebアプリ。Cloudflare Workers上でHonoX/Honoを動かし、パッケージ管理にはpnpmを使う。
 
 ## 主な配置
 
-- `app/routes.ts` / `app/router.ts` — URL とメソッドの契約、ルーターとミドルウェア
-- `app/worker.ts` — Cloudflare Workers エントリ（`router.fetch` へ委譲）
-- `app/actions/` — ルートコントローラー（薄い: 検証 + データ取得 + `context.render`）
-  - `controller.tsx`（ページ/health/llms）、`markdown/`、`progress/`（API）、`public/entry.ts`（ブラウザーエントリ）
-- `app/pages/` — ページ組成（`document.tsx` が共通シェル、`question-region.tsx` は Frame ソース）
-- `app/features/<domain>/` — ドメイン単位で閉じる
-  - `model.ts`（純関数）/ `storage.ts`（localStorage）/ `api.ts`（サーバー同期）/ `wire.ts`（Zod）/ `ui/`（表示）
-  - `challenge/player/` はプレイヤー固有ロジック（session / timer / view / navigation / model / id）
-- `app/db/` — `d1.ts`（D1 ドライバ）、`tables.ts`、`progress.ts`（Repository）、`registry.ts`
-- `app/lib/` — 汎用ヘルパー・図表計算
-- `app/ui/` — 複数ドメインで共有する表示のみ（`header.tsx`、`page-heading.tsx`、`icons.tsx`、`copy-button.tsx`、`unit-accordion.tsx`、`figures/`）
-- `app/styles/global.css` — グローバルはトークンと最小の base のみ（それ以外は `css()` を併置）
-- `app/data/` — 単元・スライド・試験データ（`exams-json/` は生成インデックス経由で読む）
-- `migrations/` — D1 マイグレーション（`0001_initial.sql` が現行スキーマ）
-- `scripts/` — CSS/クライアント/guide の生成と、試験JSON索引の生成
-- `legacy/` — 旧 HonoX 実装（参照用。tsconfig から除外）
+- `app/routes/`: HonoXのページ/APIルート
+- `app/features/`: 機能単位のUI・ドメインロジック・状態管理
+- `app/components/`: 複数機能で使う共有Hono JSX
+- `app/server/`: Worker側のDBアクセスなどサーバー処理
+- `app/data/`: 単元・試験データ。試験問題JSONは`app/data/exams-json/`、検証スキーマは`app/data/exams/schema.ts`
+- `app/lib/`: 機能に依存しない共有処理
+- `migrations/`: Cloudflare D1のSQLマイグレーション
 
-## 実装時の方針（Remix Way）
+## 実装時の方針
 
-- ルートは URL とデータ読込のみを担い、UI は `remix/component` の関数コンポーネントで描く。
-- 状態は島（`clientEntry`）の setup スコープに置き、変更時に `handle.update()` を呼ぶ。
-  子コンポーネントは props だけの無状態 `Handle` コンポーネントにする。
-- イベントは `mix={on('click', ...)}`、生 HTML は `innerHTML={unsafeHTML(...)}` を使う。
-- 状態をサーバーへ送らない。DOM へ触る処理は島の中に閉じ込める。
-- ドメイン規則は副作用のない純関数にする（`features/*/model.ts`）。
-- 信頼できない入力は Zod スキーマで検証する。同期キーはログや応答へ出さない。
-- スキーマ変更時は `migrations/`・`app/db/tables.ts`・テスト用 D1 を揃える。
-- Vite は使わない。クライアントは esbuild、グローバル CSS は `app/styles/global.css` をコピーする。
-- `@remix-run/ui` のプリミティブは `mix={[ownStyle, primitive.xxx()]}` で使い、見た目は `css()` で当てる。
-  プリミティブは **hydrate されるコンポーネント内**でのみ動作する（`clientEntry` 境界に注意）。
-- ルート所有の領域（問題本体など）は `<Frame>` で扱い、frame 応答では `Document` を出さない。
-- 詳細な方針は `docs/remix3-migration/REARCHITECTURE.md`、作業計画は `docs/remix3-migration/TODO.md`。
+- 変更前に関係する実装とテストを確認し、既存の構成・命名に合わせて必要な範囲だけ変更する。
+- 機能固有の処理はその機能内に置く。複数箇所で実際に共有される処理だけを共有領域へ移す。
+- ドメイン処理は可能な限り副作用のない関数にし、I/O・DB・ブラウザーAPIなどの副作用は境界に寄せる。
+- API入力や保存済みデータなど、信頼できない値は既存のスキーマ・検証方法で検証する。
+- DBスキーマを変更するときはDrizzle定義とマイグレーションを揃え、生成SQLを確認する。同期キーなどの秘密値をログやエラー応答へ出さない。
+- 画面はサーバー描画を基本とし、ブラウザーでの操作が必要な箇所に既存のHonoX islandパターンを使う。
+- アーキテクチャやドメイン上の不変条件は`lat.md/`へ記録し、実装を変えたら該当する知識とテスト仕様も更新する。実装を丸ごと複製せず、参照で結ぶ。
 
 ## よく使うコマンド
 
-- `pnpm dev` — CSS/クライアントを生成して `cf dev`
-- `pnpm build` — 生成物を作成して `cf build`
-- `pnpm deploy` — `cf deploy`
-- `pnpm typecheck` — `tsc --noEmit`
-- `pnpm test` — `remix test`
-- `pnpm routes` — ルートツリー
-- `pnpm check` — Biome 検査
-- `pnpm db:migrate:local` — ローカル D1 にマイグレーション適用（`cf d1`）
+- `pnpm dev`: 開発サーバー
+- `pnpm build`: クライアントとWorkerをビルド
+- `pnpm check`: Biomeの検査
+- `pnpm lat:lint`: lat.mdのリンクとコード参照を検査
+- `pnpm lint`: Biomeとlat.mdの検査
+- `pnpm typecheck:full`: TypeScript型検査
+- `pnpm test:run`: Vitestを一度実行
+- `pnpm e2e`: ビルド後にPlaywrightを実行
+- `pnpm db:check`: Drizzleマイグレーションの整合性を検査
 
 ## 検証
 
-変更に近いテストを実行し、必要に応じて型検査・ビルド・SSR スモークを追加する。
-コードやスキーマを変更したら `pnpm typecheck` と `pnpm test` を実行する。
+変更に近いテストを実行し、変更内容に応じて型検査・ビルド・E2Eを追加する。広い変更では関連する全体チェックも行う。コードや知識グラフを変更したら`pnpm lint`を実行する。ドキュメントだけの変更では、他のコード用チェックを一律に実行する必要はない。
 
 %% lat:begin %%
 # Before starting work
@@ -70,4 +53,97 @@ After EVERY task, before responding to the user:
 - [ ] Update `lat.md/` if you added or changed any functionality, architecture, tests, or behavior
 - [ ] Run `pnpm lat:lint` — all wiki links and code refs must pass
 - [ ] Do not skip these steps. Do not consider your task done until both are complete.
+
+---
+
+# What is lat.md?
+
+This project uses [lat.md](https://www.npmjs.com/package/lat.md) to maintain a structured knowledge graph of its architecture, design decisions, and test specs in the `lat.md/` directory. It is a set of cross-linked markdown files that describe **what** this project does and **why** — the domain concepts, key design decisions, business logic, and test specifications. Use it to ground your work in the actual architecture rather than guessing.
+
+# Commands
+
+```bash
+pnpm exec lat locate "Section Name"      # find a section by name (exact, fuzzy)
+pnpm exec lat refs "file#Section"        # find what references a section
+pnpm exec lat search "natural language"  # semantic search across all sections
+pnpm exec lat expand "user prompt text"  # expand [[refs]] to resolved locations
+pnpm lat:lint                              # run lat check and validate links/code refs
+```
+
+Run `pnpm exec lat --help` when in doubt about available commands or options.
+
+Semantic search uses the bundled local model and works without an API key. Use `pnpm exec lat locate` for exact section-name lookup.
+
+# Syntax primer
+
+- **Section ids**: `lat.md/path/to/file#Heading#SubHeading` — full form uses project-root-relative path (e.g. `lat.md/tests/search#RAG Replay Tests`). Short form uses bare file name when unique (e.g. `search#RAG Replay Tests`, `cli#search#Indexing`).
+- **Wiki links**: `[[target]]` or `[[target|alias]]` — cross-references between sections. Can also reference source code: `[[src/foo.ts#myFunction]]`.
+- **Source code links**: Wiki links in `lat.md/` files can reference functions, classes, constants, and methods in TypeScript/JavaScript/Python/Rust/Go/C files. Use the full path: `[[src/config.ts#getConfigDir]]`, `[[src/server.ts#App#listen]]` (class method), `[[lib/utils.py#parse_args]]`, `[[src/lib.rs#Greeter#greet]]` (Rust impl method), `[[src/app.go#Greeter#Greet]]` (Go method), `[[src/app.h#Greeter]]` (C struct). `pnpm lat:lint` validates these targets.
+- **Code refs**: `// @lat: [[section-id]]` (JS/TS/Rust/Go/C) or `# @lat: [[section-id]]` (Python) — ties source code to concepts
+
+# Test specs
+
+Key tests can be described as sections in `lat.md/` files (e.g. `tests.md`). Add frontmatter to require that every leaf section is referenced by a `// @lat:` or `# @lat:` comment in test code:
+
+```markdown
+---
+lat:
+  require-code-mention: true
+---
+# Tests
+
+Authentication and authorization test specifications.
+
+## User login
+
+Verify credential validation and error handling for the login endpoint.
+
+### Rejects expired tokens
+Tokens past their expiry timestamp are rejected with 401, even if otherwise valid.
+
+### Handles missing password
+Login request without a password field returns 400 with a descriptive error.
+```
+
+Every section MUST have a description — at least one sentence explaining what the test verifies and why. Empty sections with just a heading are not acceptable. (This is a specific case of the general leading paragraph rule below.)
+
+Each test in code should reference its spec with exactly one comment placed next to the relevant test — not at the top of the file:
+
+```python
+# @lat: [[tests#User login#Rejects expired tokens]]
+def test_rejects_expired_tokens():
+    ...
+
+# @lat: [[tests#User login#Handles missing password]]
+def test_handles_missing_password():
+    ...
+```
+
+Do not duplicate refs. One `@lat:` comment per spec section, placed at the test that covers it. `lat check` will flag any spec section not covered by a code reference, and any code reference pointing to a nonexistent section.
+
+# Section structure
+
+Every section in `lat.md/` **must** have a leading paragraph — at least one sentence immediately after the heading, before any child headings or other block content. The first paragraph must be ≤250 characters (excluding `[[wiki link]]` content). This paragraph serves as the section's overview and is used in search results, command output, and RAG context — keeping it concise guarantees the section's essence is always captured.
+
+```markdown
+# Good Section
+
+Brief overview of what this section documents and why it matters.
+
+More detail can go in subsequent paragraphs, code blocks, or lists.
+
+## Child heading
+
+Details about this child topic.
+```
+
+```markdown
+# Bad Section
+
+## Child heading
+
+Details about this child topic.
+```
+
+The second example is invalid because `Bad Section` has no leading paragraph. `pnpm lat:lint` validates this rule and reports errors for missing or overly long leading paragraphs.
 %% lat:end %%

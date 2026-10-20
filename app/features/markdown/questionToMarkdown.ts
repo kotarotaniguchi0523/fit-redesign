@@ -1,5 +1,5 @@
-import type { DeepReadonly } from "../../lib/immutable.ts";
-import type { FigureData, Question } from "../../types/index.ts";
+import type { DeepReadonly } from "../../lib/immutable";
+import type { FigureData, Question } from "../../types";
 
 /**
  * テーブルデータを Markdown 文字列に変換するヘルパー関数

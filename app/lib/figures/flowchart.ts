@@ -1,5 +1,5 @@
-import type { FlowchartEdge, FlowchartNode } from "../../types/index.ts";
-import { pointsToPolyline } from "./svg-path.ts";
+import type { FlowchartEdge, FlowchartNode } from "../../types";
+import { pointsToPolyline } from "./svg-path";
 
 export const FLOWCHART_DEFAULTS = {
 	WIDTH: 300,

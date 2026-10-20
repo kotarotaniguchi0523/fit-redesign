@@ -1,16 +1,15 @@
-import * as assert from "remix/assert";
-import { describe, it } from "remix/test";
-import type { TreeNode } from "../../types/index.ts";
-import { calculatePositions, getEdgeLines, getTreeDepth } from "./binary-tree.ts";
+import { describe, expect, it } from "vitest";
+import type { TreeNode } from "../../types";
+import { calculatePositions, getEdgeLines, getTreeDepth } from "./binary-tree";
 
 describe("getTreeDepth", () => {
 	it("returns 0 for an empty tree (undefined)", () => {
-		assert.equal(getTreeDepth(undefined), 0);
+		expect(getTreeDepth(undefined)).toBe(0);
 	});
 
 	it("returns 1 for a single node", () => {
 		const node: TreeNode = { value: "A" };
-		assert.equal(getTreeDepth(node), 1);
+		expect(getTreeDepth(node)).toBe(1);
 	});
 
 	it("returns correct depth for a balanced tree", () => {
@@ -27,7 +26,7 @@ describe("getTreeDepth", () => {
 				right: { value: "G" },
 			},
 		};
-		assert.equal(getTreeDepth(tree), 3);
+		expect(getTreeDepth(tree)).toBe(3);
 	});
 
 	it("returns correct depth for a left-skewed tree", () => {
@@ -38,7 +37,7 @@ describe("getTreeDepth", () => {
 				left: { value: "C" },
 			},
 		};
-		assert.equal(getTreeDepth(tree), 3);
+		expect(getTreeDepth(tree)).toBe(3);
 	});
 });
 
@@ -46,7 +45,7 @@ describe("calculatePositions", () => {
 	it("produces a single position for a single-node tree", () => {
 		const root: TreeNode = { value: "A" };
 		const positions = calculatePositions(root, 400, 200, 20);
-		assert.equal(positions.length, 1);
+		expect(positions).toHaveLength(1);
 	});
 
 	it("centers the single node horizontally", () => {
@@ -56,7 +55,7 @@ describe("calculatePositions", () => {
 		const positions = calculatePositions(root, width, 200, nodeRadius);
 		// Single node: midpoint between (nodeRadius*2) and (width - nodeRadius*2)
 		const expectedX = (nodeRadius * 2 + (width - nodeRadius * 2)) / 2;
-		assert.equal(positions[0].x, expectedX);
+		expect(positions[0].x).toBe(expectedX);
 	});
 
 	it("produces correct number of positions for a tree with children", () => {
@@ -66,14 +65,14 @@ describe("calculatePositions", () => {
 			right: { value: "C" },
 		};
 		const positions = calculatePositions(root, 400, 200, 20);
-		assert.equal(positions.length, 3);
+		expect(positions).toHaveLength(3);
 	});
 
 	it("uses explicit x/y coordinates when provided on nodes", () => {
 		const root: TreeNode = { value: "A", x: 100, y: 50 };
 		const positions = calculatePositions(root, 400, 200, 20);
-		assert.equal(positions[0].x, 100);
-		assert.equal(positions[0].y, 50);
+		expect(positions[0].x).toBe(100);
+		expect(positions[0].y).toBe(50);
 	});
 });
 
@@ -82,7 +81,7 @@ describe("getEdgeLines", () => {
 		const root: TreeNode = { value: "A" };
 		const positions = calculatePositions(root, 400, 200, 20);
 		const edges = getEdgeLines(positions, 20);
-		assert.equal(edges.length, 0);
+		expect(edges).toHaveLength(0);
 	});
 
 	it("returns correct number of edges for a tree with children", () => {
@@ -93,7 +92,7 @@ describe("getEdgeLines", () => {
 		};
 		const positions = calculatePositions(root, 400, 200, 20);
 		const edges = getEdgeLines(positions, 20);
-		assert.equal(edges.length, 2);
+		expect(edges).toHaveLength(2);
 	});
 
 	it("shortens edge lines by nodeRadius on both ends", () => {
@@ -118,6 +117,6 @@ describe("getEdgeLines", () => {
 		const edgeDist = Math.sqrt(edgeDx * edgeDx + edgeDy * edgeDy);
 
 		// Edge length should be approximately fullDist - 2 * nodeRadius
-		assert.ok(Math.abs(edgeDist - (fullDist - 2 * nodeRadius)) < 1e-6);
+		expect(edgeDist).toBeCloseTo(fullDist - 2 * nodeRadius, 5);
 	});
 });

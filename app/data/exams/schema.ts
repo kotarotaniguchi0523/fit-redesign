@@ -5,7 +5,7 @@ import {
 	PdfPathSchema,
 	QuestionIdSchema,
 	YearSchema,
-} from "../../types/domain.ts";
+} from "../../types/domain";
 
 const EXAM_FILE_RE = /exam(\d+)-(\d{4})\.json$/;
 

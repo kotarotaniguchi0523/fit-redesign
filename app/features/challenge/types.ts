@@ -1,7 +1,7 @@
-import type { ChallengeId, ExamId, QuestionId } from "../../types/browser.ts";
-import type { Judgment } from "../../types/index.ts";
+import type { Judgment } from "../../types";
+import type { ChallengeId, ExamId, QuestionId } from "../../types/browser";
 
-export type { ChallengeId } from "../../types/browser.ts";
+export type { ChallengeId } from "../../types/browser";
 
 export type ChallengeMode = "exam" | "question";
 type ChallengeStateData = Readonly<{

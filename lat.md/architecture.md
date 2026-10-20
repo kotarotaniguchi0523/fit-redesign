@@ -6,15 +6,15 @@
 
 Cloudflare Workers上でHonoXがページとファイルベースのAPIルートを提供する。`app/server.ts`がHonoアプリへ共通Middlewareを登録し、HonoXのサーバーへ渡す。APIごとの入力検証・レート制限は各ルートに置く。
 
-- Worker entry: [[app/router.ts#router]]
-- Progress API route: [[app/actions/progress/controller.ts]]
+- Worker entry: [[app/server.ts#app]]
+- Progress API route: [[app/routes/progress.ts#progress]]
 
 ## Request pipeline
 
 共通リクエストログMiddlewareは最外周に置き、末尾スラッシュのリダイレクトも最終statusとして記録する。Cloudflare invocation logと重複する時間・statusを計算せず、HonoX route templateだけを構造化ログへ加える。
 
-- Middleware: [[app/router.ts#router]]
-- Log entry construction: [[app/router.ts#router]]
+- Middleware: [[app/server/requestLogging.ts#requestLoggingMiddleware]]
+- Log entry construction: [[app/server/requestLogging.ts#requestLogEntry]]
 - Enforced test contract: [[testing#Route template logging and query redaction]]
 
 Workersとブラウザーの性能計測は[[performance-observability#Measurement boundaries]]を参照。
@@ -26,7 +26,7 @@ Workersとブラウザーの性能計測は[[performance-observability#Measureme
 - Static asset generation and URL rewrites: [scripts/generate-static-pages.mjs](../scripts/generate-static-pages.mjs)
 - SSG output validation and indexable sitemap: [scripts/static-site-integrity.mjs](../scripts/static-site-integrity.mjs)
 - HTML parameter enumeration: [[app/routes/[unit]/[year]/index.tsx]]
-- Markdown parameter enumeration: [[app/actions/markdown/controller.ts]]
+- Markdown parameter enumeration: [[app/routes/markdown.ts]]
 - Deployment and routing notes: [docs/cloudflare-deploy.md](../docs/cloudflare-deploy.md#静的HTMLとWorker配信)
 
 ホーム、ガイド、スライド専用ページ、登録済み単元・年度ページ、クイズ実行ページ、Markdown概要と登録済み単元・年度Markdownを静的生成する。記録ページ、同期API、ヘルスチェックはWorkerで処理する。Wrangler Assetsは`404-page`と`auto-trailing-slash`を使い、Worker処理が必要な`/records`、`/progress`、`/health`のみ先にWorkerへ送る。未生成URLやカタログ外のMarkdownパスには静的404を返す。生成対象を変えるときはURL依存値の固定化を確認し、成果物とWranglerプレビューで配信先を検証する。

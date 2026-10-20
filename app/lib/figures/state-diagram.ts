@@ -1,4 +1,4 @@
-import type { StateNode, Transition } from "../../types/index.ts";
+import type { StateNode, Transition } from "../../types";
 
 export interface Point {
 	x: number;

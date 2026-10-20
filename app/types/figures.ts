@@ -1,4 +1,4 @@
-import type { FigureData } from "../data/exams/schema.ts";
+import type { FigureData } from "../data/exams/schema";
 
 type FigureOf<Type extends FigureData["type"]> = Extract<FigureData, { type: Type }>;
 
