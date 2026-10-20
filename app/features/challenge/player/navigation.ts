@@ -1,4 +1,4 @@
-import type { QuestionId } from "../../../types/index.ts";
+import type { QuestionId, UnitTabId, Year } from "../../../types";
 
 export function replaceChallengeView(view: "player" | "result", challengeId?: string): void {
 	const url = new URL(window.location.href);
@@ -21,4 +21,8 @@ export function replaceQuestionInUrl(questionId: QuestionId): void {
 	}
 	url.searchParams.delete("question");
 	window.history.replaceState(null, "", url);
+}
+
+export function navigateToExam(unitId: UnitTabId, year: Year): void {
+	window.location.href = `/${unitId}/${year}`;
 }

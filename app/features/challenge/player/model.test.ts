@@ -1,11 +1,9 @@
-import * as assert from "remix/assert";
-import { describe, it } from "remix/test";
-
-import { QuestionSchema } from "../../../data/exams/schema.ts";
-import { ChallengeIdSchema, ExamIdSchema, QuestionIdSchema } from "../../../types/browser.ts";
-import { ExamNumberSchema, UnitTabIdSchema, YearSchema } from "../../../types/domain.ts";
-import { createInitialChallengeState } from "../model.ts";
-import type { ChallengeState, CompletedChallengePayload } from "../types.ts";
+import { describe, expect, it } from "vitest";
+import { QuestionSchema } from "../../../data/exams/schema";
+import { ChallengeIdSchema, ExamIdSchema, QuestionIdSchema } from "../../../types/browser";
+import { ExamNumberSchema, UnitTabIdSchema, YearSchema } from "../../../types/domain";
+import { createInitialChallengeState } from "../challenge";
+import type { ChallengeState, CompletedChallengePayload } from "../types";
 import {
 	countJudgments,
 	createPlayerChallenge,
@@ -13,8 +11,8 @@ import {
 	getNavigationPosition,
 	isModeEntryTarget,
 	questionScopeKey,
-} from "./model.ts";
-import type { ExamPlayerProps, PlayerQuestion } from "./types.ts";
+} from "./model";
+import type { ExamPlayerProps, PlayerQuestion } from "./types";
 
 const examId = ExamIdSchema.parse("exam1-2013");
 const q1 = QuestionIdSchema.parse("exam1-2013-q1");
@@ -58,7 +56,7 @@ function payload(
 	answers: CompletedChallengePayload["answers"],
 ): CompletedChallengePayload {
 	return {
-		challengeId: challenge as CompletedChallengePayload["challengeId"],
+		challengeId: challenge,
 		examId,
 		createdAt: 1_700_000_000_000,
 		updatedAt: 1_700_000_000_100,
@@ -80,10 +78,10 @@ describe("player model", () => {
 			1_700_000_000_000,
 		);
 
-		assert.equal(result?.question.id, q3);
-		assert.deepEqual(result?.state.questionIds, [q1, q2, q3]);
-		assert.equal(result?.state.currentIndex, 2);
-		assert.equal(result?.state.scopeKey, "exam1-2013/exam");
+		expect(result?.question.id).toBe(q3);
+		expect(result?.state.questionIds).toEqual([q1, q2, q3]);
+		expect(result?.state.currentIndex).toBe(2);
+		expect(result?.state.scopeKey).toBe("exam1-2013/exam");
 	});
 
 	it("question mode starts at its requested question with a question-specific scope", () => {
@@ -98,10 +96,10 @@ describe("player model", () => {
 			1_700_000_000_000,
 		);
 
-		assert.equal(result?.question.id, q2);
-		assert.deepEqual(result?.state.questionIds, [q2]);
-		assert.equal(result?.state.currentIndex, 0);
-		assert.equal(result?.state.scopeKey, "exam1-2013/question/exam1-2013-q2");
+		expect(result?.question.id).toBe(q2);
+		expect(result?.state.questionIds).toEqual([q2]);
+		expect(result?.state.currentIndex).toBe(0);
+		expect(result?.state.scopeKey).toBe("exam1-2013/question/exam1-2013-q2");
 	});
 
 	it("returns no player challenge when the exam has no questions", () => {
@@ -116,7 +114,7 @@ describe("player model", () => {
 			1_700_000_000_000,
 		);
 
-		assert.equal(result, null);
+		expect(result).toBeNull();
 	});
 
 	it("counts recorded judgments and distinguishes entry targets by mode", () => {
@@ -125,12 +123,12 @@ describe("player model", () => {
 			judgments: { [q1]: "correct", [q2]: "incorrect" },
 		};
 
-		assert.equal(countJudgments(judged), 2);
-		assert.equal(isModeEntryTarget("exam", q2, undefined, 0), true);
-		assert.equal(isModeEntryTarget("exam", q2, undefined, 1), false);
-		assert.equal(isModeEntryTarget("question", q2, q2, 1), true);
-		assert.equal(isModeEntryTarget("question", q1, q2, 0), false);
-		assert.equal(questionScopeKey(examId, "question"), "exam1-2013/question/");
+		expect(countJudgments(judged)).toBe(2);
+		expect(isModeEntryTarget("exam", q2, undefined, 0)).toBe(true);
+		expect(isModeEntryTarget("exam", q2, undefined, 1)).toBe(false);
+		expect(isModeEntryTarget("question", q2, q2, 1)).toBe(true);
+		expect(isModeEntryTarget("question", q1, q2, 0)).toBe(false);
+		expect(questionScopeKey(examId, "question")).toBe("exam1-2013/question/");
 	});
 
 	it("filters exam history from one-question history without mixing scopes", () => {
@@ -150,13 +148,12 @@ describe("player model", () => {
 			{ ...answer, questionId: q2 },
 		]);
 
-		assert.deepEqual(filterChallengeHistory([examAttempt, q1Attempt, q2Attempt], examId, "exam"), [
+		expect(filterChallengeHistory([examAttempt, q1Attempt, q2Attempt], examId, "exam")).toEqual([
 			examAttempt,
 		]);
-		assert.deepEqual(
+		expect(
 			filterChallengeHistory([examAttempt, q1Attempt, q2Attempt], examId, "question", q1),
-			[q1Attempt],
-		);
+		).toEqual([q1Attempt]);
 	});
 
 	it("uses attempt position for exam navigation and catalog position for question navigation", () => {
@@ -164,11 +161,11 @@ describe("player model", () => {
 		const getQuestionIndex = (questionId?: string): number =>
 			questions.findIndex((question) => question.id === questionId);
 
-		assert.deepEqual(getNavigationPosition("exam", q2, attempt, questions, getQuestionIndex), {
+		expect(getNavigationPosition("exam", q2, attempt, questions, getQuestionIndex)).toEqual({
 			currentQuestionIndex: 1,
 			navigationLength: 2,
 		});
-		assert.deepEqual(getNavigationPosition("question", q2, attempt, questions, getQuestionIndex), {
+		expect(getNavigationPosition("question", q2, attempt, questions, getQuestionIndex)).toEqual({
 			currentQuestionIndex: 1,
 			navigationLength: 3,
 		});

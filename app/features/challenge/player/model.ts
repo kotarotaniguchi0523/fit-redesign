@@ -1,7 +1,7 @@
-import type { ChallengeId, QuestionId } from "../../../types/index.ts";
-import { createInitialChallengeState } from "../model.ts";
-import type { ChallengeState, CompletedChallengePayload } from "../types.ts";
-import type { ExamPlayerProps, PlayerMode, PlayerQuestion } from "./types.ts";
+import type { ChallengeId, QuestionId } from "../../../types";
+import { createInitialChallengeState } from "../challenge";
+import type { ChallengeState, CompletedChallengePayload } from "../types";
+import type { ExamPlayerProps, PlayerMode, PlayerQuestion } from "./types";
 
 export function createPlayerChallenge(
 	props: ExamPlayerProps,

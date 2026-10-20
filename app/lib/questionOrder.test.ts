@@ -1,13 +1,11 @@
-import * as assert from "remix/assert";
-import { describe, it } from "remix/test";
-
-import { sortByQuestionId } from "./questionOrder.ts";
+import { describe, expect, it } from "vitest";
+import { sortByQuestionId } from "./questionOrder";
 
 describe("sortByQuestionId", () => {
 	it("returns a sorted copy and leaves the original list unchanged", () => {
 		const questions = [{ questionId: "q2" }, { questionId: "q1" }];
 
-		assert.deepEqual(sortByQuestionId(questions), [{ questionId: "q1" }, { questionId: "q2" }]);
-		assert.deepEqual(questions, [{ questionId: "q2" }, { questionId: "q1" }]);
+		expect(sortByQuestionId(questions)).toEqual([{ questionId: "q1" }, { questionId: "q2" }]);
+		expect(questions).toEqual([{ questionId: "q2" }, { questionId: "q1" }]);
 	});
 });

@@ -1,5 +1,5 @@
-import type { LogicGate, LogicInput, LogicOutput, LogicWire } from "../../types/index.ts";
-import { pointsToPolyline } from "./svg-path.ts";
+import type { LogicGate, LogicInput, LogicOutput, LogicWire } from "../../types";
+import { pointsToPolyline } from "./svg-path";
 
 export const LOGIC_DEFAULTS = {
 	GATE_WIDTH: 50,

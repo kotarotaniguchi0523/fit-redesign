@@ -13,7 +13,7 @@
 
 進捗と小テスト状態はブラウザー内に保存され、サーバー同期は明示的な同期キーを持つ利用者だけが使う。同期APIは保存前にスキーマ、時間範囲、試験カタログとの整合性を検証する。ドメイン上のmerge処理はブラウザーAPIやDB I/Oから分ける。
 
-- Progress domain and storage: [[app/features/progress/model.ts]] [[app/features/progress/storage.ts#readProgress]]
-- Challenge storage: [[app/features/challenge/storage.ts#archiveCompletedChallenge]]
-- API validation: [[app/actions/progress/controller.ts]]
-- D1 persistence: [[app/db/progress.ts]]
+- Progress domain and storage: [[app/features/progress/progress.ts]] [[app/features/progress/progressStorage.ts#readProgress]]
+- Challenge storage: [[app/features/challenge/challengeStorage.ts#archiveCompletedChallenge]]
+- API validation: [[app/routes/progress.ts#progress]]
+- D1 persistence: [[app/server/progressRepository.ts#syncProgress]]

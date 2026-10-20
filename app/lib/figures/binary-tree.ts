@@ -1,4 +1,4 @@
-import type { TreeNode } from "../../types/index.ts";
+import type { TreeNode } from "../../types";
 
 export interface NodePosition {
 	x: number;

@@ -1,7 +1,6 @@
-import * as assert from "remix/assert";
-import { describe, it } from "remix/test";
-import type { LogicGate, LogicInput, LogicOutput, LogicWire } from "../../types/index.ts";
-import { getGateSymbolPath, getLogicCircuitViewport, getWirePath } from "./logic-circuit.ts";
+import { describe, expect, it } from "vitest";
+import type { LogicGate, LogicInput, LogicOutput, LogicWire } from "../../types";
+import { getGateSymbolPath, getLogicCircuitViewport, getWirePath } from "./logic-circuit";
 
 describe("getGateSymbolPath", () => {
 	const gateTypes = ["AND", "OR", "NOT", "NAND", "NOR", "XOR", "XNOR"] as const;
@@ -10,8 +9,8 @@ describe("getGateSymbolPath", () => {
 		it(`returns a non-empty SVG string for gate type "${type}"`, () => {
 			const gate: LogicGate = { id: "g1", type, x: 100, y: 100 };
 			const result = getGateSymbolPath(gate);
-			assert.ok(result.length > 0);
-			assert.ok(result.includes("<g>"));
+			expect(result.length).toBeGreaterThan(0);
+			expect(result).toContain("<g>");
 		});
 	}
 });
@@ -24,28 +23,28 @@ describe("getWirePath", () => {
 	it("returns a path string for a valid wire from input to gate", () => {
 		const wire: LogicWire = { from: "i1", to: "g1" };
 		const result = getWirePath(wire, inputs, outputs, gates);
-		assert.ok(result !== null);
-		assert.ok(result.includes("M"));
-		assert.ok(result.includes("L"));
+		expect(result).not.toBeNull();
+		expect(result).toContain("M");
+		expect(result).toContain("L");
 	});
 
 	it("returns a path string for a valid wire from gate to output", () => {
 		const wire: LogicWire = { from: "g1", to: "o1" };
 		const result = getWirePath(wire, inputs, outputs, gates);
-		assert.ok(result !== null);
-		assert.ok(result.includes("M"));
+		expect(result).not.toBeNull();
+		expect(result).toContain("M");
 	});
 
 	it("returns null for a wire with a missing source element", () => {
 		const wire: LogicWire = { from: "nonexistent", to: "g1" };
 		const result = getWirePath(wire, inputs, outputs, gates);
-		assert.equal(result, null);
+		expect(result).toBeNull();
 	});
 
 	it("returns null for a wire with a missing target element", () => {
 		const wire: LogicWire = { from: "i1", to: "nonexistent" };
 		const result = getWirePath(wire, inputs, outputs, gates);
-		assert.equal(result, null);
+		expect(result).toBeNull();
 	});
 
 	it("includes all waypoints in the path when wire has points", () => {
@@ -58,9 +57,9 @@ describe("getWirePath", () => {
 			],
 		};
 		const result = getWirePath(wire, inputs, outputs, gates);
-		assert.ok(result !== null);
-		assert.ok(result.includes("60 50"));
-		assert.ok(result.includes("80 70"));
+		expect(result).not.toBeNull();
+		expect(result).toContain("60 50");
+		expect(result).toContain("80 70");
 	});
 
 	it("connects an explicit route horizontally to a gate input", () => {
@@ -73,7 +72,7 @@ describe("getWirePath", () => {
 			],
 		};
 
-		assert.equal(getWirePath(wire, inputs, outputs, gates), "M 40 50 L 60 50 L 80 40 L 125 40");
+		expect(getWirePath(wire, inputs, outputs, gates)).toBe("M 40 50 L 60 50 L 80 40 L 125 40");
 	});
 });
 
@@ -92,9 +91,9 @@ describe("getLogicCircuitViewport", () => {
 			[],
 		);
 
-		assert.ok(viewport.width < 350);
-		assert.ok(viewport.height < 150);
-		assert.ok(viewport.x < 50);
-		assert.ok(viewport.y < 60);
+		expect(viewport.width).toBeLessThan(350);
+		expect(viewport.height).toBeLessThan(150);
+		expect(viewport.x).toBeLessThan(50);
+		expect(viewport.y).toBeLessThan(60);
 	});
 });

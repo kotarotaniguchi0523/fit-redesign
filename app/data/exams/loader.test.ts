@@ -1,103 +1,112 @@
-import * as assert from "remix/assert";
-import { describe, it } from "remix/test";
-
-import { safeParseOrThrow } from "../../lib/zod.ts";
-import { slides } from "../slides.ts";
-import { slideOnlyUnits, unitBasedTabs } from "../units.ts";
-import { getAllExams, getExamByNumber, selectVisibleExamNumbers } from "./index.ts";
-import { ExamJsonSchema } from "./schema.ts";
+import { describe, expect, it } from "vitest";
+import { safeParseOrThrow } from "../../lib/zod";
+import { slides } from "../slides";
+import { slideOnlyUnits, unitBasedTabs } from "../units";
+import { getAllExams, getExamByNumber, selectVisibleExamNumbers } from "./index";
+import { ExamJsonSchema } from "./schema";
 
 /**
  * loader の public API（getAllExams / getExamByNumber）の古典派ユニットテスト。
- * modules.generated.ts 経由で実データを読み込む純粋ロジックを直接呼び出し、
- * 入出力（AAA）を検証する。
+ * import.meta.glob 経由で実データを読み込む純粋ロジックを
+ * 直接呼び出して入出力（AAA）を検証する。
  */
 describe("exams loader public API", () => {
 	it("getAllExams returns 9 exam groups sorted by examNumber", async () => {
+		// Arrange / Act
 		const exams = await getAllExams();
 
-		assert.equal(exams.length, 9);
-		assert.deepEqual(
-			exams.map((exam) => exam.examNumber),
-			[1, 2, 3, 4, 5, 6, 7, 8, 9],
-		);
+		// Assert
+		expect(exams).toHaveLength(9);
+		expect(exams.map((e) => e.examNumber)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
 	});
 
 	it("getAllExams shapes each group with title, availableYears and exams map", async () => {
+		// Arrange / Act
 		const exams = await getAllExams();
-		const examOne = exams.find((exam) => exam.examNumber === 1);
+		const examOne = exams.find((e) => e.examNumber === 1);
 
-		assert.ok(examOne, "exam 1 exists");
-		assert.equal(examOne.title, "基数変換");
-		assert.deepEqual(examOne.availableYears, ["2013", "2014", "2015", "2016", "2017"]);
-		assert.deepEqual(Object.keys(examOne.exams).sort(), ["2013", "2014", "2015", "2016", "2017"]);
-
-		const exam2013 = examOne.exams["2013"];
-		assert.equal(exam2013?.id, "exam1-2013");
-		assert.equal(exam2013?.number, 1);
-		assert.ok((exam2013?.questions.length ?? 0) > 0, "questions exist");
+		// Assert
+		expect(examOne).toBeDefined();
+		expect(examOne?.title).toBe("基数変換");
+		expect(examOne?.availableYears).toEqual(["2013", "2014", "2015", "2016", "2017"]);
+		// exams map keyed by year, each value a fully-formed Exam
+		expect(Object.keys(examOne?.exams ?? {}).sort()).toEqual([
+			"2013",
+			"2014",
+			"2015",
+			"2016",
+			"2017",
+		]);
+		const exam2013 = examOne?.exams["2013"];
+		expect(exam2013?.id).toBe("exam1-2013");
+		expect(exam2013?.number).toBe(1);
+		expect(exam2013?.questions.length).toBeGreaterThan(0);
 	});
 
 	it("getAllExams returns the same cached promise across calls", async () => {
+		// Arrange / Act
 		const first = await getAllExams();
 		const second = await getAllExams();
 
-		assert.ok(Object.is(first, second), "memoized instance");
+		// Assert — index.ts memoizes the load promise
+		expect(first).toBe(second);
 	});
 
 	it("共有する静的カタログを再帰的に凍結する", async () => {
 		const exams = await getAllExams();
 		const firstExam = exams[0]?.exams["2013"];
 
-		assert.ok(Object.isFrozen(exams));
-		assert.ok(Object.isFrozen(firstExam));
-		assert.ok(Object.isFrozen(firstExam?.questions));
-		assert.ok(Object.isFrozen(slides));
-		assert.ok(Object.isFrozen(slides[0]));
-		assert.ok(Object.isFrozen(slideOnlyUnits));
-		assert.ok(Object.isFrozen(unitBasedTabs));
-		assert.ok(Object.isFrozen(unitBasedTabs[0]?.examMapping));
+		expect(Object.isFrozen(exams)).toBe(true);
+		expect(Object.isFrozen(firstExam)).toBe(true);
+		expect(Object.isFrozen(firstExam?.questions)).toBe(true);
+		expect(Object.isFrozen(slides)).toBe(true);
+		expect(Object.isFrozen(slides[0])).toBe(true);
+		expect(Object.isFrozen(slideOnlyUnits)).toBe(true);
+		expect(Object.isFrozen(unitBasedTabs)).toBe(true);
+		expect(Object.isFrozen(unitBasedTabs[0]?.examMapping)).toBe(true);
 	});
 
 	it("getExamByNumber returns the matching group", async () => {
+		// Arrange / Act
 		const examByYear = await getExamByNumber(9);
 
-		assert.equal(examByYear?.examNumber, 9);
-		assert.deepEqual(examByYear?.availableYears, ["2013", "2014"]);
+		// Assert — exam 9 only has 2013 / 2014 per meta
+		expect(examByYear?.examNumber).toBe(9);
+		expect(examByYear?.availableYears).toEqual(["2013", "2014"]);
 	});
 
 	it("getExamByNumber resolves every meta-declared exam number", async () => {
+		// Arrange
 		const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
-		const results = await Promise.all(numbers.map((number) => getExamByNumber(number)));
 
-		assert.ok(results.every((result) => result !== undefined));
-		assert.deepEqual(
-			results.map((result) => result?.examNumber),
-			[...numbers],
-		);
+		// Act
+		const results = await Promise.all(numbers.map((n) => getExamByNumber(n)));
+
+		// Assert — all 9 numbers present in meta resolve to a group
+		expect(results.every((r) => r !== undefined)).toBe(true);
+		expect(results.map((r) => r?.examNumber)).toEqual([...numbers]);
 	});
 });
 
 describe("selectVisibleExamNumbers", () => {
-	const integrated = {
-		examNumber: 4,
-		questionIds: [
-			"exam6-2016-q1",
-			"exam6-2016-q2",
-			"exam6-2016-q3",
-			"exam6-2016-q4",
-			"exam6-2016-q5",
-			"exam7-2016-q1",
-			"exam7-2016-q2",
-			"exam7-2016-q3",
-			"exam7-2016-q4",
-			"exam7-2016-q5",
-		],
-	};
-
-	it("真部分集合の候補を除外する（統合 exam ⊇ 原本 exam）", () => {
+	it("exam の問題集合が他候補の真部分集合なら除外する（統合 exam⊇原本 exam）", () => {
+		// Arrange: exam4 が exam6 と exam7 を内包するケース（unit-automaton/2016 相当）
 		const candidates = [
-			integrated,
+			{
+				examNumber: 4,
+				questionIds: [
+					"exam6-2016-q1",
+					"exam6-2016-q2",
+					"exam6-2016-q3",
+					"exam6-2016-q4",
+					"exam6-2016-q5",
+					"exam7-2016-q1",
+					"exam7-2016-q2",
+					"exam7-2016-q3",
+					"exam7-2016-q4",
+					"exam7-2016-q5",
+				],
+			},
 			{
 				examNumber: 6,
 				questionIds: [
@@ -110,36 +119,142 @@ describe("selectVisibleExamNumbers", () => {
 			},
 		];
 
-		assert.deepEqual(selectVisibleExamNumbers(candidates), [4]);
+		// Act / Assert
+		expect(selectVisibleExamNumbers(candidates)).toEqual([4]);
 	});
 
-	it("完全一致は番号が小さい方を残す", () => {
-		const ids = [
-			"exam8-2016-q1",
-			"exam8-2016-q2",
-			"exam8-2016-q3",
-			"exam8-2016-q4",
-			"exam8-2016-q5",
-		];
+	it("exam4⊇exam7 のケースで exam7 を除外する（unit-ecc/2016 相当）", () => {
+		// Arrange
 		const candidates = [
-			{ examNumber: 5, questionIds: ids },
-			{ examNumber: 8, questionIds: [...ids] },
+			{
+				examNumber: 4,
+				questionIds: [
+					"exam6-2016-q1",
+					"exam6-2016-q2",
+					"exam6-2016-q3",
+					"exam6-2016-q4",
+					"exam6-2016-q5",
+					"exam7-2016-q1",
+					"exam7-2016-q2",
+					"exam7-2016-q3",
+					"exam7-2016-q4",
+					"exam7-2016-q5",
+				],
+			},
+			{
+				examNumber: 7,
+				questionIds: [
+					"exam7-2016-q1",
+					"exam7-2016-q2",
+					"exam7-2016-q3",
+					"exam7-2016-q4",
+					"exam7-2016-q5",
+				],
+			},
 		];
 
-		assert.deepEqual(selectVisibleExamNumbers(candidates), [5]);
+		// Act / Assert
+		expect(selectVisibleExamNumbers(candidates)).toEqual([4]);
 	});
 
-	it("互いに素な候補は全て残す", () => {
+	it("問題集合が完全一致の場合は番号が小さい方を残す（unit-data-structure/2016 相当: exam5==exam8 → [5]）", () => {
+		// Arrange
+		const candidates = [
+			{
+				examNumber: 5,
+				questionIds: [
+					"exam8-2016-q1",
+					"exam8-2016-q2",
+					"exam8-2016-q3",
+					"exam8-2016-q4",
+					"exam8-2016-q5",
+				],
+			},
+			{
+				examNumber: 8,
+				questionIds: [
+					"exam8-2016-q1",
+					"exam8-2016-q2",
+					"exam8-2016-q3",
+					"exam8-2016-q4",
+					"exam8-2016-q5",
+				],
+			},
+		];
+
+		// Act / Assert
+		expect(selectVisibleExamNumbers(candidates)).toEqual([5]);
+	});
+
+	it("exam8 が除外されるが exam6 は別内容なので残す（unit-data-structure/2017 相当: [5,6,8] → [5,6]）", () => {
+		// Arrange
+		const candidates = [
+			{
+				examNumber: 5,
+				questionIds: [
+					"exam8-2017-q1",
+					"exam8-2017-q2",
+					"exam8-2017-q3",
+					"exam8-2017-q4",
+					"exam8-2017-q5",
+				],
+			},
+			{
+				examNumber: 6,
+				questionIds: [
+					"exam6-2017-q1",
+					"exam6-2017-q2",
+					"exam6-2017-q3",
+					"exam6-2017-q4",
+					"exam6-2017-q5",
+				],
+			},
+			{
+				examNumber: 8,
+				questionIds: [
+					"exam8-2017-q1",
+					"exam8-2017-q2",
+					"exam8-2017-q3",
+					"exam8-2017-q4",
+					"exam8-2017-q5",
+				],
+			},
+		];
+
+		// Act / Assert
+		expect(selectVisibleExamNumbers(candidates)).toEqual([5, 6]);
+	});
+
+	it("問題集合が互いに素の場合は全候補を残す（unit-set-prob/2013 相当: [5,6]→[5,6]）", () => {
+		// Arrange
 		const candidates = [
 			{ examNumber: 5, questionIds: ["exam5-q1", "exam5-q2"] },
 			{ examNumber: 6, questionIds: ["exam6-q1", "exam6-q2"] },
 		];
 
-		assert.deepEqual(selectVisibleExamNumbers(candidates), [5, 6]);
+		// Act / Assert
+		expect(selectVisibleExamNumbers(candidates)).toEqual([5, 6]);
 	});
 
 	it("候補が単一の場合はそのまま返す", () => {
-		assert.deepEqual(selectVisibleExamNumbers([{ examNumber: 1, questionIds: ["exam1-q1"] }]), [1]);
+		// Arrange
+		const candidates = [{ examNumber: 1, questionIds: ["exam1-q1", "exam1-q2"] }];
+
+		// Act / Assert
+		expect(selectVisibleExamNumbers(candidates)).toEqual([1]);
+	});
+
+	it("空配列の questionIds を持つ候補は他を除外しない", () => {
+		// Arrange: questionIds が空なら部分集合判定が空集合として扱われ、他に含まれることはない
+		const candidates = [
+			{ examNumber: 4, questionIds: [] },
+			{ examNumber: 6, questionIds: ["exam6-q1", "exam6-q2"] },
+		];
+
+		// Act: 空配列はどの集合の部分集合にもなる（every がゼロ要素で true）ため exam4 は除外される
+		// 一方 exam6 は exam4 に含まれないので残る
+		const result = selectVisibleExamNumbers(candidates);
+		expect(result).toContain(6);
 	});
 });
 
@@ -150,36 +265,51 @@ describe("exams loader schema validation (rejection path)", () => {
 		title: "テスト試験",
 		pdfPath: "https://www.isc.meiji.ac.jp/~kikn/FIT/test.pdf",
 		answerPdfPath: "https://www.isc.meiji.ac.jp/~kikn/FIT/test-answer.pdf",
-		questions: [{ id: "exam1-2013-q1", number: 1, text: "問題文", answer: "ア" }],
+		questions: [
+			{
+				id: "exam1-2013-q1",
+				number: 1,
+				text: "問題文",
+				answer: "ア",
+			},
+		],
 	};
 
 	it("accepts a well-formed exam object", () => {
+		// Arrange / Act / Assert
 		const parsed = safeParseOrThrow(ExamJsonSchema, baseValidExam, "valid");
-		assert.equal(parsed.id, "exam1-2013");
+		expect(parsed.id).toBe("exam1-2013");
 	});
 
 	it("rejects an exam with a malformed id", () => {
-		assert.throws(() =>
-			safeParseOrThrow(ExamJsonSchema, { ...baseValidExam, id: "not-an-exam-id" }, "bad id"),
-		);
+		// Arrange
+		const bad = { ...baseValidExam, id: "not-an-exam-id" };
+
+		// Act / Assert
+		expect(() => safeParseOrThrow(ExamJsonSchema, bad, "bad id")).toThrow(/bad id/);
 	});
 
 	it("rejects an exam with examNumber out of range", () => {
-		assert.throws(() => safeParseOrThrow(ExamJsonSchema, { ...baseValidExam, number: 99 }, "bad"));
+		// Arrange
+		const bad = { ...baseValidExam, number: 99 };
+
+		// Act / Assert
+		expect(() => safeParseOrThrow(ExamJsonSchema, bad, "bad number")).toThrow();
 	});
 
 	it("rejects an exam missing required questions field", () => {
+		// Arrange
 		const { questions: _omitted, ...bad } = baseValidExam;
-		assert.throws(() => safeParseOrThrow(ExamJsonSchema, bad, "missing questions"));
+
+		// Act / Assert
+		expect(() => safeParseOrThrow(ExamJsonSchema, bad, "missing questions")).toThrow();
 	});
 
 	it("rejects a pdfPath outside the 明治 配信 base", () => {
-		assert.throws(() =>
-			safeParseOrThrow(
-				ExamJsonSchema,
-				{ ...baseValidExam, pdfPath: "https://evil.example.com/test.pdf" },
-				"bad pdf path",
-			),
-		);
+		// Arrange
+		const bad = { ...baseValidExam, pdfPath: "https://evil.example.com/test.pdf" };
+
+		// Act / Assert
+		expect(() => safeParseOrThrow(ExamJsonSchema, bad, "bad pdf path")).toThrow();
 	});
 });

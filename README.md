@@ -24,26 +24,23 @@
 
 | 分類 | 使用技術 |
 | --- | --- |
-| Webフレームワーク | Remix 3（`remix/router` + `remix/component`） |
-| クライアントアセット | esbuild（`public/assets/client.js`、`clientEntry` は公開URL方式） |
-| スタイリング | `remix/component` の `css()` + 生成したプレーンCSS（Tailwind 非依存） |
+| Webフレームワーク | HonoX `0.1.61` + Hono `4.13` |
+| ビルド | Vite `8.3` |
+| UI | Hono JSX / `hono/jsx/dom` Islands |
+| スタイリング | Tailwind CSS `4.3` |
 | 実行環境 | Cloudflare Workers + Workers Assets |
 | データベース | Cloudflare D1（SQLite） |
-| データアクセス | `remix/data-table`（D1 ドライバを実装） |
-| バリデーション | Zod `4` |
-| ツールチェーン | CF CLI（`cf dev` / `cf build` / `cf deploy` / `cf d1`） |
-| 型チェック | TypeScript `7` |
-| テスト | `remix test` |
-| パッケージマネージャー | pnpm |
+| ORM | Drizzle ORM `1.0.0-rc.4` |
+| バリデーション | Zod `4` + `@hono/zod-validator` |
+| Lint / Format | Biome `2.5` |
+| 型チェック | TypeScript Native Preview `7` |
+| テスト | Vitest `5` + jsdom `30` |
+| 未使用コード検査 | Knip |
+| パッケージマネージャー | pnpm `11.5.0` |
 
 Vite 8のRolldownベースのビルドを使用しています。現行のHonoX/Workers実行経路でクライアント・SSRビルドとWrangler上のSSR実行を検証済みです。
 
 ## セットアップ
-
-> 一部のサンドボックス（virtiofs で symlink 不可）では `.bin` のシンボリックリンク作成だけが
-> 失敗します。`node scripts/fix-bin-shims.mjs` でシムを張ってください。詳細は
-> [scripts/sandbox/README.md](scripts/sandbox/README.md)。
-
 
 ### 前提条件
 
@@ -55,7 +52,7 @@ Vite 8のRolldownベースのビルドを使用しています。現行のHonoX/
 ```bash
 git clone https://github.com/kotarotaniguchi0523/fit-redesign.git
 cd fit-redesign
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
 ### 開発サーバー
@@ -85,24 +82,30 @@ pnpm db:query:local -- "SELECT name FROM sqlite_master WHERE type = 'table'"
 
 | コマンド | 内容 |
 | --- | --- |
-| `pnpm dev` | CSS/クライアントを生成して `cf dev` を起動 |
-| `pnpm build` | 生成物を作成して `cf build` |
-| `pnpm preview` | `cf dev --local` |
+| `pnpm dev` | Vite開発サーバーを起動 |
+| `pnpm build` | クライアントとWorkerをビルド |
+| `pnpm preview` | ビルド結果をWranglerで配信 |
 | `pnpm format` | Biomeでフォーマットを適用 |
-| `pnpm typecheck` | 型チェック（`tsc --noEmit`） |
-| `pnpm test` | `remix test` |
-| `pnpm routes` | ルートツリーを表示 |
-| `pnpm db:migrate:local` | ローカルD1へmigrationを適用（`cf d1`） |
-| `pnpm deploy` | `cf deploy` でデプロイ |
+| `pnpm check` | BiomeのLint・フォーマット検査 |
+| `pnpm typecheck:full` | プロジェクト全体の型チェック |
+| `pnpm test` | Vitestのwatch実行 |
+| `pnpm test:run` | Vitestを1回実行 |
+| `pnpm test:coverage` | カバレッジ付きテスト |
+| `pnpm perf:report` | representative route の SSR/HTML/island と production bundle サイズを測定（`pnpm build` 後） |
+| `pnpm knip` | 未使用コード・依存・exportの検査 |
+| `pnpm db:migrate:local` | ローカルD1へmigrationを適用 |
+| `pnpm db:query:local -- "SQL"` | ローカルD1でSQLを実行 |
+| `pnpm deploy` | Workerへデプロイ（明示的に必要な場合のみ） |
 
 コミット前は次の順で確認します。
 
 ```bash
 pnpm format
 pnpm check
-pnpm typecheck
-pnpm test
+pnpm typecheck:full
+pnpm test:run
 pnpm build
+pnpm knip
 ```
 
 ## 主なURL
@@ -153,7 +156,7 @@ fit-redesign/
 
 Pull Requestでは、GitHub Actionsが次を実行します。
 
-1. `pnpm install`
+1. `pnpm install --frozen-lockfile`
 2. Biomeチェック
 3. 型チェック
 4. Vitest

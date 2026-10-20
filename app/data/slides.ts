@@ -1,6 +1,6 @@
-import { deepFreezeInPlace } from "../lib/immutable.ts";
-import { safeParseOrThrow } from "../lib/zod.ts";
-import { type Slide, SlideIdSchema, SlideSchema } from "../types/index.ts";
+import { deepFreezeInPlace } from "../lib/immutable";
+import { safeParseOrThrow } from "../lib/zod";
+import { type Slide, SlideIdSchema, SlideSchema } from "../types";
 
 const SlidesSchema = SlideSchema.array();
 

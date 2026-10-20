@@ -1,7 +1,6 @@
-import * as assert from "remix/assert";
-import { describe, it } from "remix/test";
-import type { TableFigureData } from "./table-renderer.ts";
-import { buildTableConfig } from "./table-renderer.ts";
+import { describe, expect, it } from "vitest";
+import type { TableFigureData } from "./table-renderer";
+import { buildTableConfig } from "./table-renderer";
 
 describe("buildTableConfig", () => {
 	describe("truthTable", () => {
@@ -13,9 +12,9 @@ describe("buildTableConfig", () => {
 			};
 			const config = buildTableConfig(data);
 
-			assert.equal(config.ariaLabel, "真理値表");
-			assert.deepEqual(config.columns, data.columns);
-			assert.deepEqual(config.rows, data.rows);
+			expect(config.ariaLabel).toBe("真理値表");
+			expect(config.columns).toEqual(data.columns);
+			expect(config.rows).toEqual(data.rows);
 		});
 	});
 
@@ -34,9 +33,9 @@ describe("buildTableConfig", () => {
 			};
 			const config = buildTableConfig(data);
 
-			assert.equal(config.ariaLabel, "Data table");
-			assert.deepEqual(config.columns, data.columns);
-			assert.deepEqual(config.rows, data.rows);
+			expect(config.ariaLabel).toBe("Data table");
+			expect(config.columns).toEqual(data.columns);
+			expect(config.rows).toEqual(data.rows);
 		});
 	});
 
@@ -51,11 +50,11 @@ describe("buildTableConfig", () => {
 			};
 			const config = buildTableConfig(data);
 
-			assert.equal(config.ariaLabel, "Huffman coding table");
-			assert.equal(config.columns.length, 2);
-			assert.equal(config.columns[0].key, "character");
-			assert.equal(config.columns[1].key, "probability");
-			assert.deepEqual(config.rows, [
+			expect(config.ariaLabel).toBe("Huffman coding table");
+			expect(config.columns).toHaveLength(2);
+			expect(config.columns[0].key).toBe("character");
+			expect(config.columns[1].key).toBe("probability");
+			expect(config.rows).toEqual([
 				{ character: "A", probability: 0.5 },
 				{ character: "B", probability: 0.3 },
 				{ character: "C", probability: 0.2 },
@@ -74,9 +73,9 @@ describe("buildTableConfig", () => {
 			};
 			const config = buildTableConfig(data);
 
-			assert.equal(config.ariaLabel, "Linked list table");
-			assert.equal(config.columns.length, 3);
-			assert.deepEqual(config.rows, [
+			expect(config.ariaLabel).toBe("Linked list table");
+			expect(config.columns).toHaveLength(3);
+			expect(config.rows).toEqual([
 				{ address: "100", data: "X", pointer: "200" },
 				{ address: "200", data: "Y", pointer: "-1" },
 			]);
@@ -89,7 +88,7 @@ describe("buildTableConfig", () => {
 			};
 			const config = buildTableConfig(data);
 
-			assert.deepEqual(config.rows, [{ address: "0x0A", data: "Z", pointer: "NULL" }]);
+			expect(config.rows).toEqual([{ address: "0x0A", data: "Z", pointer: "NULL" }]);
 		});
 	});
 
@@ -105,11 +104,11 @@ describe("buildTableConfig", () => {
 			};
 			const config = buildTableConfig(data);
 
-			assert.equal(config.ariaLabel, "Normal distribution table");
-			assert.equal(config.columns.length, 2);
-			assert.equal(config.columns[0].key, "u");
-			assert.equal(config.columns[1].key, "probability");
-			assert.deepEqual(config.rows, [
+			expect(config.ariaLabel).toBe("Normal distribution table");
+			expect(config.columns).toHaveLength(2);
+			expect(config.columns[0].key).toBe("u");
+			expect(config.columns[1].key).toBe("probability");
+			expect(config.rows).toEqual([
 				{ u: 0.0, probability: 0.5 },
 				{ u: 1.0, probability: 0.8413 },
 				{ u: 2.0, probability: 0.9772 },
